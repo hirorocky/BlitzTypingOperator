@@ -1,14 +1,14 @@
 // Package integration_test は統合テストを提供します。
-// Requirements: 9.1, 9.16, 9.17, 10.2, 10.3
+
 package integration_test
 
 import (
 	"testing"
 	"time"
 
-	"hirorocky/type-battle/internal/battle"
 	"hirorocky/type-battle/internal/domain"
-	"hirorocky/type-battle/internal/typing"
+	"hirorocky/type-battle/internal/usecase/combat"
+	"hirorocky/type-battle/internal/usecase/typing"
 )
 
 // ==================================================
@@ -55,8 +55,8 @@ func createTestEnemyTypes() []domain.EnemyType {
 }
 
 func TestBattleFlow_Initialize(t *testing.T) {
-	// Requirement 9.1: バトル初期化
-	engine := battle.NewBattleEngine(createTestEnemyTypes())
+
+	engine := combat.NewBattleEngine(createTestEnemyTypes())
 	agents := createTestAgents()
 
 	state, err := engine.InitializeBattle(1, agents)
@@ -81,8 +81,8 @@ func TestBattleFlow_Initialize(t *testing.T) {
 }
 
 func TestBattleFlow_EnemyAttack(t *testing.T) {
-	// Requirement 11.4, 11.5: 敵攻撃→プレイヤーダメージ
-	engine := battle.NewBattleEngine(createTestEnemyTypes())
+
+	engine := combat.NewBattleEngine(createTestEnemyTypes())
 	agents := createTestAgents()
 
 	state, _ := engine.InitializeBattle(1, agents)
@@ -103,8 +103,8 @@ func TestBattleFlow_EnemyAttack(t *testing.T) {
 }
 
 func TestBattleFlow_ModuleUse_Attack(t *testing.T) {
-	// Requirement 10.2: 攻撃モジュール使用→効果適用
-	engine := battle.NewBattleEngine(createTestEnemyTypes())
+
+	engine := combat.NewBattleEngine(createTestEnemyTypes())
 	agents := createTestAgents()
 
 	state, _ := engine.InitializeBattle(1, agents)
@@ -136,8 +136,8 @@ func TestBattleFlow_ModuleUse_Attack(t *testing.T) {
 }
 
 func TestBattleFlow_ModuleUse_Heal(t *testing.T) {
-	// Requirement 10.3: 回復モジュール使用→効果適用
-	engine := battle.NewBattleEngine(createTestEnemyTypes())
+
+	engine := combat.NewBattleEngine(createTestEnemyTypes())
 	agents := createTestAgents()
 
 	state, _ := engine.InitializeBattle(1, agents)
@@ -172,8 +172,8 @@ func TestBattleFlow_ModuleUse_Heal(t *testing.T) {
 }
 
 func TestBattleFlow_VictoryCondition(t *testing.T) {
-	// Requirement 9.17: 敵HP=0での勝利
-	engine := battle.NewBattleEngine(createTestEnemyTypes())
+
+	engine := combat.NewBattleEngine(createTestEnemyTypes())
 	agents := createTestAgents()
 
 	state, _ := engine.InitializeBattle(1, agents)
@@ -193,8 +193,8 @@ func TestBattleFlow_VictoryCondition(t *testing.T) {
 }
 
 func TestBattleFlow_DefeatCondition(t *testing.T) {
-	// Requirement 9.16: プレイヤーHP=0での敗北
-	engine := battle.NewBattleEngine(createTestEnemyTypes())
+
+	engine := combat.NewBattleEngine(createTestEnemyTypes())
 	agents := createTestAgents()
 
 	state, _ := engine.InitializeBattle(1, agents)
@@ -214,8 +214,8 @@ func TestBattleFlow_DefeatCondition(t *testing.T) {
 }
 
 func TestBattleFlow_PhaseTransition(t *testing.T) {
-	// Requirement 11.15, 11.16: HP50%以下でフェーズ変化
-	engine := battle.NewBattleEngine(createTestEnemyTypes())
+
+	engine := combat.NewBattleEngine(createTestEnemyTypes())
 	agents := createTestAgents()
 
 	state, _ := engine.InitializeBattle(1, agents)
@@ -277,8 +277,8 @@ func TestBattleFlow_TypingChallenge(t *testing.T) {
 }
 
 func TestBattleFlow_BuffDebuffInteraction(t *testing.T) {
-	// Requirement 11.28-11.30: バフ・デバフの相互作用
-	engine := battle.NewBattleEngine(createTestEnemyTypes())
+
+	engine := combat.NewBattleEngine(createTestEnemyTypes())
 	agents := createTestAgents()
 
 	state, _ := engine.InitializeBattle(1, agents)
@@ -304,8 +304,8 @@ func TestBattleFlow_BuffDebuffInteraction(t *testing.T) {
 }
 
 func TestBattleFlow_AccuracyPenalty(t *testing.T) {
-	// Requirement 10.9: 正確性50%未満で効果半減
-	engine := battle.NewBattleEngine(createTestEnemyTypes())
+
+	engine := combat.NewBattleEngine(createTestEnemyTypes())
 	agents := createTestAgents()
 
 	// バトル初期化（stateは使用しないが、エンジン初期化のために呼び出す）
@@ -338,7 +338,7 @@ func TestBattleFlow_AccuracyPenalty(t *testing.T) {
 
 func TestBattleFlow_Statistics(t *testing.T) {
 	// バトル統計の記録
-	engine := battle.NewBattleEngine(createTestEnemyTypes())
+	engine := combat.NewBattleEngine(createTestEnemyTypes())
 	agents := createTestAgents()
 
 	state, _ := engine.InitializeBattle(1, agents)

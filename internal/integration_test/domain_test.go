@@ -1,5 +1,5 @@
 // Package integration_test は統合テストを提供します。
-// Requirements: 5.3, 6.3, 7.9, 10.2, 10.3
+
 package integration_test
 
 import (
@@ -13,7 +13,7 @@ import (
 // ==================================================
 
 func TestCoreModel_StatsCalculation(t *testing.T) {
-	// Requirement 5.3: ステータス計算のテスト
+
 	coreType := domain.CoreType{
 		ID:   "test_type",
 		Name: "テスト特性",
@@ -81,7 +81,7 @@ func TestCoreModel_TagAllowance(t *testing.T) {
 }
 
 func TestModuleModel_CategoryAndTags(t *testing.T) {
-	// Requirement 6.3: モジュールのカテゴリとタグ
+
 	module := domain.NewModule(
 		"module_1",
 		"物理打撃Lv1",
@@ -137,7 +137,7 @@ func TestModuleModel_CoreCompatibility(t *testing.T) {
 }
 
 func TestAgentModel_LevelEqualsCore(t *testing.T) {
-	// Requirement 7.9: エージェントのレベル = コアのレベル
+
 	coreType := domain.CoreType{
 		ID:          "test_type",
 		AllowedTags: []string{"physical_low", "magic_low", "heal_low", "buff_low"},
@@ -208,7 +208,7 @@ func TestEnemyModel_PhaseChange(t *testing.T) {
 }
 
 func TestEffectTable_Calculate(t *testing.T) {
-	// Requirement 10.2, 10.3: 効果テーブル計算
+
 	table := domain.NewEffectTable()
 
 	// バフを追加

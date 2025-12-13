@@ -4,17 +4,19 @@ package app
 
 import (
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 
-	"hirorocky/type-battle/internal/agent"
-	"hirorocky/type-battle/internal/battle"
-	"hirorocky/type-battle/internal/domain"
-	"hirorocky/type-battle/internal/loader"
-	"hirorocky/type-battle/internal/persistence"
-	"hirorocky/type-battle/internal/reward"
-	"hirorocky/type-battle/internal/startup"
+	"hirorocky/type-battle/internal/infra/masterdata"
+	"hirorocky/type-battle/internal/infra/savedata"
+	"hirorocky/type-battle/internal/infra/startup"
+	"hirorocky/type-battle/internal/infra/terminal"
+	"hirorocky/type-battle/internal/tui/presenter"
 	"hirorocky/type-battle/internal/tui/screens"
+	"hirorocky/type-battle/internal/tui/styles"
+	"hirorocky/type-battle/internal/usecase/rewarding"
+	gamestate "hirorocky/type-battle/internal/usecase/session"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -39,19 +41,31 @@ type RootModel struct {
 	currentScene Scene
 
 	// gameState はゲーム全体の共有状態を保持します
-	gameState *GameState
+	gameState *gamestate.GameState
 
 	// terminalState は現在のターミナルサイズと検証状態を保持します
-	terminalState *TerminalState
+	terminalState *terminal.TerminalState
 
 	// styles はアプリケーションのlipglossスタイルを保持します
-	styles *Styles
+	styles *styles.GameStyles
 
 	// saveDataIO はセーブデータの読み書きを担当します
-	saveDataIO *persistence.SaveDataIO
+	saveDataIO *savedata.SaveDataIO
 
 	// statusMessage はステータスメッセージ（セーブ/ロード結果など）です
 	statusMessage string
+
+	// sceneRouter はシーン遷移を管理します
+	sceneRouter *SceneRouter
+
+	// screenFactory は画面インスタンスを生成します
+	screenFactory *ScreenFactory
+
+	// messageHandlers はメッセージハンドリングを管理します
+	messageHandlers *MessageHandlers
+
+	// screenMap は画面のレンダリングと転送を管理します
+	screenMap *ScreenMap
 
 	// 各シーンの画面インスタンス
 	homeScreen              *screens.HomeScreen
@@ -75,89 +89,99 @@ func NewRootModel(dataDir string, embeddedFS fs.FS) *RootModel {
 	// セーブディレクトリを決定
 	homeDir, _ := os.UserHomeDir()
 	saveDir := filepath.Join(homeDir, ".BlitzTypingOperator")
-	saveDataIO := persistence.NewSaveDataIO(saveDir)
+	saveDataIO := savedata.NewSaveDataIO(saveDir)
 
 	// 外部データをロード
-	var dataLoader *loader.DataLoader
+	var dataLoader *masterdata.DataLoader
 	if dataDir != "" {
 		// 外部ディレクトリから読み込み
-		dataLoader = loader.NewDataLoader(dataDir)
+		dataLoader = masterdata.NewDataLoader(dataDir)
 	} else {
 		// 埋め込みFSから読み込み
-		dataLoader = loader.NewEmbeddedDataLoader(embeddedFS, "data")
+		dataLoader = masterdata.NewEmbeddedDataLoader(embeddedFS, "data")
 	}
 	externalData, loadErr := dataLoader.LoadAllExternalData()
 
+	// masterdata → domain型への変換（app層で変換を行う）
+	var domainSources *gamestate.DomainDataSources
+	if loadErr == nil && externalData != nil {
+		enemyTypes, coreTypes, moduleTypes := ConvertExternalDataToDomain(externalData)
+		domainSources = &gamestate.DomainDataSources{
+			CoreTypes:     coreTypes,
+			ModuleTypes:   moduleTypes,
+			EnemyTypes:    enemyTypes,
+			PassiveSkills: gamestate.GetDefaultPassiveSkills(),
+		}
+	}
+
 	// セーブデータをロードまたは新規作成
-	var gameState *GameState
+	var gs *gamestate.GameState
 	var statusMessage string
 
 	if saveDataIO.Exists() {
 		saveData, err := saveDataIO.LoadGame()
 		if err == nil {
-			gameState = GameStateFromSaveData(saveData, externalData)
+			gs = gamestate.GameStateFromSaveData(saveData, domainSources)
 			statusMessage = "セーブデータをロードしました"
 		} else {
 			// セーブデータの読み込みに失敗した場合、新規ゲームを初期化
 			initializer := startup.NewNewGameInitializer(externalData)
 			saveData := initializer.InitializeNewGame()
-			gameState = GameStateFromSaveData(saveData, externalData)
+			gs = gamestate.GameStateFromSaveData(saveData, domainSources)
 			statusMessage = "セーブデータの読み込みに失敗しました。新規ゲームを開始します"
 		}
 	} else {
 		// セーブデータが存在しない場合、新規ゲームを初期化（マスタデータ参照）
 		initializer := startup.NewNewGameInitializer(externalData)
 		saveData := initializer.InitializeNewGame()
-		gameState = GameStateFromSaveData(saveData, externalData)
+		gs = gamestate.GameStateFromSaveData(saveData, domainSources)
 		statusMessage = "新規ゲームを開始します"
 	}
 
-	// 外部データを設定
-	if loadErr == nil && externalData != nil {
-		gameState.SetExternalData(externalData)
-		// EnemyGeneratorを外部データで再初期化
-		gameState.UpdateEnemyGenerator(externalData.EnemyTypes)
+	// 外部データで敵生成器と報酬計算器を更新（ドメイン型を使用）
+	if domainSources != nil {
+		gs.UpdateEnemyGenerator(domainSources.EnemyTypes)
+		gs.UpdateRewardCalculator(domainSources.CoreTypes, domainSources.ModuleTypes, domainSources.PassiveSkills)
 	}
 
 	// インベントリプロバイダーアダプターを作成（複数画面で共有）
-	invAdapter := &inventoryProviderAdapter{
-		inv:      gameState.Inventory(),
-		agentMgr: gameState.AgentManager(),
-		player:   gameState.Player(),
-	}
-
-	// ホーム画面を初期化（AgentProviderとして渡す）
-	homeScreen := screens.NewHomeScreen(gameState.MaxLevelReached, invAdapter)
-	homeScreen.SetStatusMessage(statusMessage)
-
-	// バトル選択画面を初期化（AgentProviderとして渡す）
-	battleSelectScreen := screens.NewBattleSelectScreen(
-		gameState.MaxLevelReached,
-		invAdapter,
+	invAdapter := presenter.NewInventoryProviderAdapter(
+		gs.Inventory(),
+		gs.AgentManager(),
+		gs.Player(),
 	)
 
-	// エージェント管理画面を初期化（InventoryProviderとして渡す）
-	agentManagementScreen := screens.NewAgentManagementScreen(invAdapter)
+	// ScreenFactoryを作成
+	screenFactory := NewScreenFactory(gs)
+
+	// ホーム画面を初期化
+	homeScreen := screenFactory.CreateHomeScreen(gs.MaxLevelReached, invAdapter)
+	homeScreen.SetStatusMessage(statusMessage)
+
+	// バトル選択画面を初期化
+	battleSelectScreen := screenFactory.CreateBattleSelectScreen(gs.MaxLevelReached, invAdapter)
+
+	// エージェント管理画面を初期化
+	agentManagementScreen := screenFactory.CreateAgentManagementScreen(invAdapter)
 
 	// 図鑑画面を初期化
-	encyclopediaData := createDefaultEncyclopediaData()
-	encyclopediaScreen := screens.NewEncyclopediaScreen(encyclopediaData)
+	encyclopediaScreen := screenFactory.CreateEncyclopediaScreen()
 
 	// 統計・実績画面を初期化
-	statsData := createStatsDataFromGameState(gameState)
-	statsAchievementsScreen := screens.NewStatsAchievementsScreen(statsData)
+	statsAchievementsScreen := screenFactory.CreateStatsAchievementsScreen()
 
 	// 設定画面を初期化
-	settingsData := createSettingsDataFromGameState(gameState)
-	settingsScreen := screens.NewSettingsScreen(settingsData)
+	settingsScreen := screenFactory.CreateSettingsScreen()
 
-	return &RootModel{
+	model := &RootModel{
 		ready:                   false,
 		currentScene:            SceneHome,
-		gameState:               gameState,
-		styles:                  NewStyles(),
+		gameState:               gs,
+		styles:                  styles.NewGameStyles(),
 		saveDataIO:              saveDataIO,
 		statusMessage:           statusMessage,
+		sceneRouter:             NewSceneRouter(),
+		screenFactory:           screenFactory,
 		homeScreen:              homeScreen,
 		battleSelectScreen:      battleSelectScreen,
 		agentManagementScreen:   agentManagementScreen,
@@ -165,180 +189,12 @@ func NewRootModel(dataDir string, embeddedFS fs.FS) *RootModel {
 		statsAchievementsScreen: statsAchievementsScreen,
 		settingsScreen:          settingsScreen,
 	}
-}
 
-// inventoryProviderAdapter はInventoryManagerとAgentManagerをInventoryProviderインターフェースに適合させます。
-// コア・モジュールの管理はInventoryManager、エージェント・装備の管理はAgentManagerが担当します。
-type inventoryProviderAdapter struct {
-	inv      *InventoryManager
-	agentMgr *agent.AgentManager
-	player   *domain.PlayerModel
-}
+	// メッセージハンドラーと画面マップを初期化
+	model.messageHandlers = NewMessageHandlers(model)
+	model.screenMap = NewScreenMap(model)
 
-func (a *inventoryProviderAdapter) GetCores() []*domain.CoreModel {
-	return a.inv.GetCores()
-}
-
-func (a *inventoryProviderAdapter) GetModules() []*domain.ModuleModel {
-	return a.inv.GetModules()
-}
-
-func (a *inventoryProviderAdapter) GetAgents() []*domain.AgentModel {
-	return a.agentMgr.GetAgents()
-}
-
-func (a *inventoryProviderAdapter) GetEquippedAgents() []*domain.AgentModel {
-	return a.agentMgr.GetEquippedAgents()
-}
-
-func (a *inventoryProviderAdapter) AddAgent(agent *domain.AgentModel) error {
-	return a.agentMgr.AddAgent(agent)
-}
-
-func (a *inventoryProviderAdapter) RemoveCore(id string) error {
-	return a.inv.RemoveCore(id)
-}
-
-func (a *inventoryProviderAdapter) RemoveModule(id string) error {
-	return a.inv.RemoveModule(id)
-}
-
-func (a *inventoryProviderAdapter) EquipAgent(slot int, agentModel *domain.AgentModel) error {
-	return a.agentMgr.EquipAgent(slot, agentModel.ID, a.player)
-}
-
-func (a *inventoryProviderAdapter) UnequipAgent(slot int) error {
-	return a.agentMgr.UnequipAgent(slot, a.player)
-}
-
-// createStatsDataFromGameState はGameStateから統計データを生成します。
-func createStatsDataFromGameState(gs *GameState) *screens.StatsTestData {
-	stats := gs.Statistics()
-	achievements := gs.Achievements()
-
-	// 実績データを変換
-	allAchievements := achievements.GetAllAchievements()
-	achievementData := make([]screens.AchievementData, 0, len(allAchievements))
-	for _, ach := range allAchievements {
-		achievementData = append(achievementData, screens.AchievementData{
-			ID:          ach.ID,
-			Name:        ach.Name,
-			Description: ach.Description,
-			Achieved:    achievements.IsUnlocked(ach.ID),
-		})
-	}
-
-	return &screens.StatsTestData{
-		TypingStats: screens.TypingStatsData{
-			MaxWPM:               stats.Typing().MaxWPM,
-			AverageWPM:           stats.GetAverageWPM(),
-			PerfectAccuracyCount: stats.Typing().PerfectAccuracyCount,
-			TotalCharacters:      stats.Typing().TotalCharacters,
-		},
-		BattleStats: screens.BattleStatsData{
-			TotalBattles:    stats.Battle().TotalBattles,
-			Wins:            stats.Battle().Wins,
-			Losses:          stats.Battle().Losses,
-			MaxLevelReached: gs.MaxLevelReached,
-		},
-		Achievements: achievementData,
-	}
-}
-
-// createSettingsDataFromGameState はGameStateから設定データを生成します。
-func createSettingsDataFromGameState(gs *GameState) *screens.SettingsData {
-	settings := gs.Settings()
-	return &screens.SettingsData{
-		Keybinds:    settings.Keybinds(),
-		SoundVolume: settings.SoundVolume(),
-		Difficulty:  string(settings.Difficulty()),
-	}
-}
-
-// createDefaultEncyclopediaData は図鑑のデフォルトデータを作成します。
-func createDefaultEncyclopediaData() *screens.EncyclopediaTestData {
-	coreTypes := []domain.CoreType{
-		{
-			ID:             "all_rounder",
-			Name:           "オールラウンダー",
-			StatWeights:    map[string]float64{"STR": 1.0, "MAG": 1.0, "SPD": 1.0, "LUK": 1.0},
-			PassiveSkillID: "balance_mastery",
-			AllowedTags:    []string{"physical_low", "magic_low", "heal_low", "buff_low", "debuff_low"},
-			MinDropLevel:   1,
-		},
-		{
-			ID:             "attacker",
-			Name:           "攻撃バランス",
-			StatWeights:    map[string]float64{"STR": 1.2, "MAG": 1.2, "SPD": 0.8, "LUK": 0.8},
-			PassiveSkillID: "attack_boost",
-			AllowedTags:    []string{"physical_low", "physical_mid", "magic_low", "magic_mid"},
-			MinDropLevel:   1,
-		},
-		{
-			ID:             "healer",
-			Name:           "ヒーラー",
-			StatWeights:    map[string]float64{"STR": 0.8, "MAG": 1.4, "SPD": 0.9, "LUK": 0.9},
-			PassiveSkillID: "heal_boost",
-			AllowedTags:    []string{"heal_low", "heal_mid", "magic_low", "buff_low"},
-			MinDropLevel:   5,
-		},
-		{
-			ID:             "tank",
-			Name:           "タンク",
-			StatWeights:    map[string]float64{"STR": 1.1, "MAG": 0.7, "SPD": 0.7, "LUK": 1.5},
-			PassiveSkillID: "defense_boost",
-			AllowedTags:    []string{"physical_low", "buff_low", "buff_mid"},
-			MinDropLevel:   3,
-		},
-	}
-	moduleTypes := []screens.ModuleTypeInfo{
-		{ID: "physical_lv1", Name: "物理攻撃Lv1", Category: domain.PhysicalAttack, Level: 1, Description: "基本的な物理攻撃"},
-		{ID: "magic_lv1", Name: "魔法攻撃Lv1", Category: domain.MagicAttack, Level: 1, Description: "基本的な魔法攻撃"},
-		{ID: "heal_lv1", Name: "回復Lv1", Category: domain.Heal, Level: 1, Description: "基本的な回復"},
-		{ID: "buff_lv1", Name: "バフLv1", Category: domain.Buff, Level: 1, Description: "味方を強化"},
-		{ID: "debuff_lv1", Name: "デバフLv1", Category: domain.Debuff, Level: 1, Description: "敵を弱体化"},
-	}
-	enemyTypes := []domain.EnemyType{
-		{ID: "goblin", Name: "ゴブリン", BaseHP: 100, BaseAttackPower: 10, BaseAttackInterval: 3000000000, AttackType: "physical"},
-		{ID: "orc", Name: "オーク", BaseHP: 200, BaseAttackPower: 15, BaseAttackInterval: 4000000000, AttackType: "physical"},
-		{ID: "dragon", Name: "ドラゴン", BaseHP: 500, BaseAttackPower: 30, BaseAttackInterval: 5000000000, AttackType: "magic"},
-	}
-
-	return &screens.EncyclopediaTestData{
-		AllCoreTypes:        coreTypes,
-		AllModuleTypes:      moduleTypes,
-		AllEnemyTypes:       enemyTypes,
-		AcquiredCoreTypes:   []string{"all_rounder"},
-		AcquiredModuleTypes: []string{"physical_lv1"},
-		EncounteredEnemies:  []string{},
-	}
-}
-
-// createEncyclopediaDataFromGameState はGameStateから図鑑データを生成します。
-func createEncyclopediaDataFromGameState(gs *GameState) *screens.EncyclopediaTestData {
-	// 基本データを取得
-	baseData := createDefaultEncyclopediaData()
-
-	// 所持コアタイプを取得
-	acquiredCoreTypes := make([]string, 0)
-	for _, core := range gs.Inventory().GetCores() {
-		acquiredCoreTypes = append(acquiredCoreTypes, core.Type.ID)
-	}
-
-	// 所持モジュールタイプを取得
-	acquiredModuleTypes := make([]string, 0)
-	for _, module := range gs.Inventory().GetModules() {
-		acquiredModuleTypes = append(acquiredModuleTypes, module.ID)
-	}
-
-	return &screens.EncyclopediaTestData{
-		AllCoreTypes:        baseData.AllCoreTypes,
-		AllModuleTypes:      baseData.AllModuleTypes,
-		AllEnemyTypes:       baseData.AllEnemyTypes,
-		AcquiredCoreTypes:   acquiredCoreTypes,
-		AcquiredModuleTypes: acquiredModuleTypes,
-		EncounteredEnemies:  gs.GetEncounteredEnemies(),
-	}
+	return model
 }
 
 // Init はアプリケーションを初期化し、初期コマンドを返します。
@@ -351,72 +207,21 @@ func (m *RootModel) Init() tea.Cmd {
 
 // Update は受信メッセージを処理し、モデルの状態を更新します。
 // Elm Architectureのコアとなるメソッドで、すべての状態変更はここを通じて行われます。
+// メッセージハンドラーに処理を委譲することで循環的複雑度を削減しています。
 //
 // 処理されるメッセージ：
 // - tea.WindowSizeMsg: ターミナルサイズの変更
 // - tea.KeyMsg: キーボード入力（終了操作など）
 // - ChangeSceneMsg: シーン遷移要求
 // - screens.ChangeSceneMsg: 各画面からのシーン遷移要求
+// - screens.StartBattleMsg: バトル開始要求
+// - screens.BattleTickMsg: バトルのtick更新
+// - screens.BattleResultMsg: バトル結果
 //
 // 更新されたモデルと実行するコマンドを返します。
 func (m *RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.terminalState = NewTerminalState(msg.Width, msg.Height)
-		m.ready = m.terminalState.IsValid()
-		// 各画面にもサイズ変更を通知
-		if m.homeScreen != nil {
-			m.homeScreen.Update(msg)
-		}
-		return m, nil
-
-	case tea.KeyMsg:
-		// グローバルなキー処理
-		switch msg.String() {
-		case "ctrl+c":
-			return m, tea.Quit
-		case "esc":
-			// ホーム画面以外ならホームに戻る
-			if m.currentScene != SceneHome {
-				m.currentScene = SceneHome
-				return m, nil
-			}
-		case "q":
-			// ホーム画面でのみ終了可能
-			if m.currentScene == SceneHome {
-				return m, tea.Quit
-			}
-		}
-		// 各画面に入力を転送
-		return m.forwardToCurrentScene(msg)
-
-	case ChangeSceneMsg:
-		m.currentScene = msg.Scene
-		return m, nil
-
-	case screens.ChangeSceneMsg:
-		// 画面からのシーン遷移要求を処理
-		m.handleScreenSceneChange(msg.Scene)
-		return m, nil
-
-	case screens.StartBattleMsg:
-		// バトル開始メッセージを処理
-		cmd := m.startBattle(msg.Level)
-		return m, cmd
-
-	case screens.BattleTickMsg:
-		// バトル画面のtickメッセージを転送
-		if m.currentScene == SceneBattle && m.battleScreen != nil {
-			_, cmd := m.battleScreen.Update(msg)
-			return m, cmd
-		}
-
-	case screens.BattleResultMsg:
-		// バトル結果を処理
-		m.handleBattleResult(msg)
-		return m, nil
-	}
-	return m, nil
+	// メッセージハンドラーに処理を委譲
+	return m.messageHandlers.Handle(msg)
 }
 
 // handleBattleResult はバトル結果を処理します。
@@ -450,9 +255,16 @@ func (m *RootModel) handleBattleResult(result screens.BattleResultMsg) {
 		m.gameState.CheckBattleAchievementsWithNoDamage(noDamage)
 
 		// バトル統計を変換
-		rewardStats := convertBattleStatsToRewardStats(result.Stats)
+		rewardStats := &rewarding.BattleStatistics{
+			TotalWPM:         result.Stats.TotalWPM,
+			TotalAccuracy:    result.Stats.TotalAccuracy,
+			TotalTypingCount: result.Stats.TotalTypingCount,
+			TotalDamageDealt: result.Stats.TotalDamageDealt,
+			TotalDamageTaken: result.Stats.TotalDamageTaken,
+			TotalHealAmount:  result.Stats.TotalHealAmount,
+		}
 
-		// 報酬を計算
+		// 報酬を計算（ドメイン型API）
 		rewardResult := m.gameState.RewardCalculator().CalculateRewards(
 			true,
 			rewardStats,
@@ -489,28 +301,15 @@ func (m *RootModel) performAutoSave() {
 	}
 
 	saveData := m.gameState.ToSaveData()
-	if err := m.saveDataIO.SaveGame(saveData); err == nil {
-		m.statusMessage = "オートセーブしました"
-		m.homeScreen.SetStatusMessage(m.statusMessage)
-	} else {
+	if err := m.saveDataIO.SaveGame(saveData); err != nil {
+		slog.Error("オートセーブに失敗",
+			slog.Any("error", err),
+		)
 		m.statusMessage = "オートセーブに失敗しました"
-		m.homeScreen.SetStatusMessage(m.statusMessage)
+	} else {
+		m.statusMessage = "オートセーブしました"
 	}
-}
-
-// convertBattleStatsToRewardStats はバトル統計を報酬用統計に変換します。
-func convertBattleStatsToRewardStats(stats *battle.BattleStatistics) *reward.BattleStatistics {
-	if stats == nil {
-		return &reward.BattleStatistics{}
-	}
-	return &reward.BattleStatistics{
-		TotalWPM:         stats.TotalWPM,
-		TotalAccuracy:    stats.TotalAccuracy,
-		TotalTypingCount: stats.TotalTypingCount,
-		TotalDamageDealt: stats.TotalDamageDealt,
-		TotalDamageTaken: stats.TotalDamageTaken,
-		TotalHealAmount:  stats.TotalHealAmount,
-	}
+	m.homeScreen.SetStatusMessage(m.statusMessage)
 }
 
 // startBattle はバトルを開始します。
@@ -533,48 +332,6 @@ func (m *RootModel) startBattle(level int) tea.Cmd {
 	return m.battleScreen.Init()
 }
 
-// forwardToCurrentScene は現在のシーンにメッセージを転送します。
-func (m *RootModel) forwardToCurrentScene(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-
-	switch m.currentScene {
-	case SceneHome:
-		if m.homeScreen != nil {
-			_, cmd = m.homeScreen.Update(msg)
-		}
-	case SceneBattleSelect:
-		if m.battleSelectScreen != nil {
-			_, cmd = m.battleSelectScreen.Update(msg)
-		}
-	case SceneBattle:
-		if m.battleScreen != nil {
-			_, cmd = m.battleScreen.Update(msg)
-		}
-	case SceneAgentManagement:
-		if m.agentManagementScreen != nil {
-			_, cmd = m.agentManagementScreen.Update(msg)
-		}
-	case SceneEncyclopedia:
-		if m.encyclopediaScreen != nil {
-			_, cmd = m.encyclopediaScreen.Update(msg)
-		}
-	case SceneAchievement:
-		if m.statsAchievementsScreen != nil {
-			_, cmd = m.statsAchievementsScreen.Update(msg)
-		}
-	case SceneSettings:
-		if m.settingsScreen != nil {
-			_, cmd = m.settingsScreen.Update(msg)
-		}
-	case SceneReward:
-		if m.rewardScreen != nil {
-			_, cmd = m.rewardScreen.Update(msg)
-		}
-	}
-
-	return m, cmd
-}
-
 // handleScreenSceneChange は画面からのシーン遷移要求を処理します。
 func (m *RootModel) handleScreenSceneChange(sceneName string) {
 	// ホーム画面から別の画面に遷移する場合、ステータスメッセージをクリア
@@ -582,42 +339,42 @@ func (m *RootModel) handleScreenSceneChange(sceneName string) {
 		m.homeScreen.ClearStatusMessage()
 	}
 
+	// シーン固有の前処理を実行
+	m.prepareSceneTransition(sceneName)
+
+	// SceneRouterを使用してシーンを取得
+	m.currentScene = m.sceneRouter.Route(sceneName)
+}
+
+// prepareSceneTransition はシーン遷移前の準備処理を実行します。
+func (m *RootModel) prepareSceneTransition(sceneName string) {
 	switch sceneName {
 	case "home":
 		// ホーム画面の最高到達レベルを更新
 		m.homeScreen.SetMaxLevelReached(m.gameState.MaxLevelReached)
-		m.currentScene = SceneHome
 	case "battle_select":
 		// バトル選択画面を再初期化してリセット
-		invAdapter := &inventoryProviderAdapter{
-			inv:      m.gameState.Inventory(),
-			agentMgr: m.gameState.AgentManager(),
-			player:   m.gameState.Player(),
-		}
-		m.battleSelectScreen = screens.NewBattleSelectScreen(
+		invAdapter := m.createInventoryAdapter()
+		m.battleSelectScreen = m.screenFactory.CreateBattleSelectScreen(
 			m.gameState.MaxLevelReached,
 			invAdapter,
 		)
-		m.currentScene = SceneBattleSelect
-	case "battle":
-		m.currentScene = SceneBattle
-	case "agent_management":
-		m.currentScene = SceneAgentManagement
 	case "encyclopedia":
 		// 最新の図鑑データで画面を再初期化
-		encycData := createEncyclopediaDataFromGameState(m.gameState)
-		m.encyclopediaScreen = screens.NewEncyclopediaScreen(encycData)
-		m.currentScene = SceneEncyclopedia
+		m.encyclopediaScreen = m.screenFactory.CreateEncyclopediaScreen()
 	case "stats_achievements":
 		// 最新の統計データで画面を再初期化
-		statsData := createStatsDataFromGameState(m.gameState)
-		m.statsAchievementsScreen = screens.NewStatsAchievementsScreen(statsData)
-		m.currentScene = SceneAchievement
-	case "settings":
-		m.currentScene = SceneSettings
-	case "reward":
-		m.currentScene = SceneReward
+		m.statsAchievementsScreen = m.screenFactory.CreateStatsAchievementsScreen()
 	}
+}
+
+// createInventoryAdapter はインベントリプロバイダーアダプターを作成します。
+func (m *RootModel) createInventoryAdapter() *presenter.InventoryProviderAdapter {
+	return presenter.NewInventoryProviderAdapter(
+		m.gameState.Inventory(),
+		m.gameState.AgentManager(),
+		m.gameState.Player(),
+	)
 }
 
 // View はアプリケーションの現在の状態を文字列としてレンダリングします。
@@ -625,13 +382,13 @@ func (m *RootModel) handleScreenSceneChange(sceneName string) {
 func (m *RootModel) View() string {
 	// ターミナル状態がまだ設定されていない場合、ローディングメッセージを表示
 	if m.terminalState == nil {
-		return m.styles.Subtle.Render("Loading...")
+		return m.styles.Text.Subtle.Render("Loading...")
 	}
 
 	// ターミナルが小さすぎる場合、警告メッセージを表示
 	if !m.terminalState.IsValid() {
-		warning := m.styles.Warning.Render(m.terminalState.WarningMessage())
-		quitHint := m.styles.Subtle.Render("Press q to quit.")
+		warning := m.styles.Text.Warning.Render(m.terminalState.WarningMessage())
+		quitHint := m.styles.Text.Subtle.Render("Press q to quit.")
 		return warning + "\n\n" + quitHint
 	}
 
@@ -640,62 +397,13 @@ func (m *RootModel) View() string {
 }
 
 // renderCurrentScene は現在のシーンに応じたビューを返します。
+// ScreenMapに処理を委譲することで循環的複雑度を削減しています。
 func (m *RootModel) renderCurrentScene() string {
-	switch m.currentScene {
-	case SceneHome:
-		if m.homeScreen != nil {
-			return m.homeScreen.View()
-		}
-	case SceneBattleSelect:
-		if m.battleSelectScreen != nil {
-			return m.battleSelectScreen.View()
-		}
-		return m.renderPlaceholder("バトル選択画面")
-	case SceneBattle:
-		if m.battleScreen != nil {
-			return m.battleScreen.View()
-		}
-		return m.renderPlaceholder("バトル画面")
-	case SceneAgentManagement:
-		if m.agentManagementScreen != nil {
-			return m.agentManagementScreen.View()
-		}
-		return m.renderPlaceholder("エージェント管理画面")
-	case SceneEncyclopedia:
-		if m.encyclopediaScreen != nil {
-			return m.encyclopediaScreen.View()
-		}
-		return m.renderPlaceholder("図鑑画面")
-	case SceneAchievement:
-		if m.statsAchievementsScreen != nil {
-			return m.statsAchievementsScreen.View()
-		}
-		return m.renderPlaceholder("統計・実績画面")
-	case SceneSettings:
-		if m.settingsScreen != nil {
-			return m.settingsScreen.View()
-		}
-		return m.renderPlaceholder("設定画面")
-	case SceneReward:
-		if m.rewardScreen != nil {
-			return m.rewardScreen.View()
-		}
-		return m.renderPlaceholder("報酬画面")
-	}
-
-	return m.renderPlaceholder("不明な画面")
-}
-
-// renderPlaceholder はプレースホルダー画面をレンダリングします。
-func (m *RootModel) renderPlaceholder(name string) string {
-	title := m.styles.Title.Render("BlitzTypingOperator")
-	info := m.styles.Subtle.Render(name + " (準備中)")
-	hint := m.styles.Subtle.Render("Esc: ホームに戻る  q: 終了")
-	return title + "\n\n" + info + "\n\n" + hint
+	return m.screenMap.RenderScene(m.currentScene)
 }
 
 // GameState はゲーム全体の状態への参照を返します。
-func (m *RootModel) GameState() *GameState {
+func (m *RootModel) GameState() *gamestate.GameState {
 	return m.gameState
 }
 
@@ -712,12 +420,12 @@ func (m *RootModel) ChangeScene(scene Scene) {
 
 // TerminalState は現在のターミナル状態への参照を返します。
 // WindowSizeMsgを受信するまではnilが返されます。
-func (m *RootModel) TerminalState() *TerminalState {
+func (m *RootModel) TerminalState() *terminal.TerminalState {
 	return m.terminalState
 }
 
 // Styles はアプリケーションのスタイル設定への参照を返します。
-func (m *RootModel) Styles() *Styles {
+func (m *RootModel) Styles() *styles.GameStyles {
 	return m.styles
 }
 

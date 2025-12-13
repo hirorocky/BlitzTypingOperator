@@ -31,7 +31,7 @@ type StartBattleMsg struct {
 }
 
 // BattleSelectScreen はバトル選択画面を表します。
-// Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.10, 20.1
+
 type BattleSelectScreen struct {
 	input             *components.InputField
 	maxLevelReached   int
@@ -46,18 +46,18 @@ type BattleSelectScreen struct {
 }
 
 // NewBattleSelectScreen は新しいBattleSelectScreenを作成します。
-// Requirement 3.1: レベル番号入力欄を表示
+
 func NewBattleSelectScreen(maxLevelReached int, agentProvider AgentProvider) *BattleSelectScreen {
 	input := components.NewInputField("レベル番号を入力 (例: 1)")
 	input.InputMode = components.InputModeNumeric
 	input.MinValue = 1
-	input.MaxValue = maxLevelReached + 1 // Requirement 3.2: 挑戦可能最大レベル
+	input.MaxValue = maxLevelReached + 1
 	input.MaxLength = 3
 
 	return &BattleSelectScreen{
 		input:             input,
 		maxLevelReached:   maxLevelReached,
-		maxChallengeLevel: maxLevelReached + 1, // Requirement 20.1: プログレッシブレベルアンロック
+		maxChallengeLevel: maxLevelReached + 1,
 		agentProvider:     agentProvider,
 		state:             StateInput,
 		styles:            styles.NewGameStyles(),
@@ -101,7 +101,7 @@ func (s *BattleSelectScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (s *BattleSelectScreen) handleInputState(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
-		// Requirement 2.9: ホームに戻る
+
 		return s, func() tea.Msg {
 			return ChangeSceneMsg{Scene: "home"}
 		}
@@ -138,13 +138,13 @@ func (s *BattleSelectScreen) handleConfirmState(msg tea.KeyMsg) (tea.Model, tea.
 		s.state = StateInput
 		return s, nil
 	case "enter", "y":
-		// Requirement 3.8: エージェント未装備時のバトル開始拒否
+
 		equippedAgents := s.agentProvider.GetEquippedAgents()
 		if len(equippedAgents) == 0 {
 			s.error = "エージェントが装備されていません。\nエージェント管理でエージェントを装備してください。"
 			return s, nil
 		}
-		// Requirement 3.7: バトル開始
+
 		return s, func() tea.Msg {
 			return StartBattleMsg{Level: s.selectedLevel}
 		}
@@ -153,7 +153,7 @@ func (s *BattleSelectScreen) handleConfirmState(msg tea.KeyMsg) (tea.Model, tea.
 }
 
 // validateInput は入力を検証します。
-// Requirements 3.3, 3.4, 3.5: 入力値の検証
+
 func (s *BattleSelectScreen) validateInput() (bool, string) {
 	if s.input.Value == "" {
 		return false, "レベル番号を入力してください"
@@ -164,12 +164,10 @@ func (s *BattleSelectScreen) validateInput() (bool, string) {
 		return false, "有効な数値を入力してください"
 	}
 
-	// Requirement 3.4: 1未満のエラー
 	if level < 1 {
 		return false, "レベルは1以上を入力してください"
 	}
 
-	// Requirement 3.5: 最大レベル超過のエラー
 	if level > s.maxChallengeLevel {
 		return false, fmt.Sprintf("挑戦可能な最大レベルはLv.%dです", s.maxChallengeLevel)
 	}
@@ -203,7 +201,7 @@ func (s *BattleSelectScreen) renderInputState() string {
 	builder.WriteString("\n\n")
 
 	// レベル情報
-	// Requirement 3.2: 到達最高レベルと挑戦可能最大レベルを表示
+
 	infoStyle := lipgloss.NewStyle().
 		Foreground(styles.ColorSubtle).
 		Align(lipgloss.Center).
@@ -245,7 +243,7 @@ func (s *BattleSelectScreen) renderInputState() string {
 }
 
 // renderConfirmState は確認状態の画面をレンダリングします。
-// Requirement 3.6: 確認画面（レベル番号、予想敵情報）を表示
+
 func (s *BattleSelectScreen) renderConfirmState() string {
 	var builder strings.Builder
 

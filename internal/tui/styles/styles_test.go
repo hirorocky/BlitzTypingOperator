@@ -8,8 +8,7 @@ import (
 // ==================== Task 11.1: 基本スタイリングのテスト ====================
 
 // TestNewGameStyles はGameStylesの初期化をテストします。
-// Requirement 18.1: ボックス描画文字によるレイアウト
-// Requirement 18.2: カラー表示のサポート
+
 func TestNewGameStyles(t *testing.T) {
 	styles := NewGameStyles()
 
@@ -24,7 +23,7 @@ func TestNewGameStyles(t *testing.T) {
 }
 
 // TestHPColorRanges はHP色分けのテストです。
-// Requirement 18.2: HP色分け（緑/黄/赤）
+
 func TestHPColorRanges(t *testing.T) {
 	styles := NewGameStyles()
 
@@ -54,7 +53,7 @@ func TestHPColorRanges(t *testing.T) {
 }
 
 // TestRenderHPBar はHPバーの描画をテストします。
-// Requirement 18.4: HPバーの視覚的表示
+
 func TestRenderHPBar(t *testing.T) {
 	styles := NewGameStyles()
 
@@ -87,7 +86,7 @@ func TestRenderHPBar(t *testing.T) {
 }
 
 // TestDamageStyle はダメージ表示スタイルのテストです。
-// Requirement 18.2: ダメージは赤
+
 func TestDamageStyle(t *testing.T) {
 	styles := NewGameStyles()
 
@@ -98,7 +97,7 @@ func TestDamageStyle(t *testing.T) {
 }
 
 // TestHealStyle は回復表示スタイルのテストです。
-// Requirement 18.2: 回復は緑
+
 func TestHealStyle(t *testing.T) {
 	styles := NewGameStyles()
 
@@ -109,7 +108,7 @@ func TestHealStyle(t *testing.T) {
 }
 
 // TestBoxBorder はボックス描画文字のテストです。
-// Requirement 18.1: ボックス描画文字によるレイアウト
+
 func TestBoxBorder(t *testing.T) {
 	styles := NewGameStyles()
 
@@ -125,7 +124,7 @@ func TestBoxBorder(t *testing.T) {
 }
 
 // TestFallbackDisplay はカラー非対応ターミナルでの代替表示テストです。
-// Requirement 18.3: カラー非対応ターミナルでの代替表示
+
 func TestFallbackDisplay(t *testing.T) {
 	// NoColorモードでのスタイル作成
 	styles := NewGameStylesWithNoColor()
@@ -145,7 +144,7 @@ func TestFallbackDisplay(t *testing.T) {
 // ==================== Task 7.1-7.3: カラーテーマとスタイルの統一テスト ====================
 
 // TestColorPaletteConsistency はカラーパレットの一貫性をテストします。
-// Requirement 4.1: 全画面で統一されたカラーパレット
+
 func TestColorPaletteConsistency(t *testing.T) {
 	// カラーパレット変数が定義されていることを確認
 	colors := []struct {
@@ -174,7 +173,7 @@ func TestColorPaletteConsistency(t *testing.T) {
 }
 
 // TestRoundedBorderConsistency はボーダースタイルの一貫性をテストします。
-// Requirement 4.2: RoundedBorderを全画面で統一使用
+
 func TestRoundedBorderConsistency(t *testing.T) {
 	styles := NewGameStyles()
 
@@ -187,7 +186,7 @@ func TestRoundedBorderConsistency(t *testing.T) {
 }
 
 // TestTextHierarchyStyles はテキスト階層スタイルをテストします。
-// Requirement 4.5: タイトル、サブタイトル、本文、補足の4階層スタイル
+
 func TestTextHierarchyStyles(t *testing.T) {
 	styles := NewGameStyles()
 
@@ -216,7 +215,7 @@ func TestTextHierarchyStyles(t *testing.T) {
 }
 
 // TestMonochromeModeSupport はモノクロモードのサポートをテストします。
-// Requirement 4.4: カラー非対応ターミナルでの代替表示
+
 func TestMonochromeModeSupport(t *testing.T) {
 	colorStyles := NewGameStyles()
 	monoStyles := NewGameStylesWithNoColor()
@@ -241,7 +240,7 @@ func TestMonochromeModeSupport(t *testing.T) {
 }
 
 // TestBuffDebuffStyles はバフ・デバフスタイルの一貫性をテストします。
-// Requirement 3.7: バフは青系、デバフは赤系
+
 func TestBuffDebuffStyles(t *testing.T) {
 	styles := NewGameStyles()
 

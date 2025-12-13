@@ -18,7 +18,7 @@ import (
 // ==================== Task 9.1: ホーム画面の統合テスト ====================
 
 // TestIntegrationHomeScreen はホーム画面の表示と操作フローをテストします。
-// Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6
+
 func TestIntegrationHomeScreen(t *testing.T) {
 	// テスト用のAgentProvider
 	provider := &testAgentProvider{
@@ -33,12 +33,10 @@ func TestIntegrationHomeScreen(t *testing.T) {
 
 	rendered := screen.View()
 
-	// Requirement 1.1: ASCIIロゴ表示
 	if rendered == "" {
 		t.Error("ホーム画面のレンダリング結果が空です")
 	}
 
-	// Requirement 1.2, 1.3: レイアウトとヘルプ
 	if !containsS(rendered, "メインメニュー") {
 		t.Error("メインメニューが表示されていません")
 	}
@@ -46,14 +44,13 @@ func TestIntegrationHomeScreen(t *testing.T) {
 		t.Error("進行状況パネルが表示されていません")
 	}
 
-	// Requirement 1.4, 1.5: レベル表示と装備エージェント
 	if !containsS(rendered, "到達最高レベル") {
 		t.Error("到達最高レベルが表示されていません")
 	}
 }
 
 // TestIntegrationHomeScreenWithoutAgents は装備なし時の動作をテストします。
-// Requirement 1.6: 装備なし時の誘導メッセージとバトル無効化
+
 func TestIntegrationHomeScreenWithoutAgents(t *testing.T) {
 	screen := screens.NewHomeScreen(5, nil)
 	screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
@@ -68,7 +65,7 @@ func TestIntegrationHomeScreenWithoutAgents(t *testing.T) {
 // ==================== Task 9.2: エージェント管理画面の統合テスト ====================
 
 // TestIntegrationAgentManagement はエージェント管理画面の操作フローをテストします。
-// Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9
+
 func TestIntegrationAgentManagement(t *testing.T) {
 	inventory := createTestInventory()
 	screen := screens.NewAgentManagementScreen(inventory)
@@ -91,7 +88,7 @@ func TestIntegrationAgentManagement(t *testing.T) {
 // ==================== Task 9.3: バトル画面の統合テスト ====================
 
 // TestIntegrationBattleScreen はバトル画面のアニメーションと表示をテストします。
-// Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9
+
 func TestIntegrationBattleScreen(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -102,7 +99,6 @@ func TestIntegrationBattleScreen(t *testing.T) {
 
 	rendered := screen.View()
 
-	// Requirement 3.1: 3エリアレイアウト
 	if !containsS(rendered, enemy.Name) {
 		t.Error("敵情報エリアが表示されていません")
 	}
@@ -115,7 +111,7 @@ func TestIntegrationBattleScreen(t *testing.T) {
 }
 
 // TestIntegrationBattleScreenWinLose は勝敗表示をテストします。
-// Requirement 3.9: WIN/LOSE表示
+
 func TestIntegrationBattleScreenWinLose(t *testing.T) {
 	// 勝利ケース
 	enemy := createTestEnemy()
@@ -139,7 +135,7 @@ func TestIntegrationBattleScreenWinLose(t *testing.T) {
 // ==================== Task 9.4: カラーテーマと視覚フィードバックの統合テスト ====================
 
 // TestIntegrationColorTheme はカラーテーマの統一をテストします。
-// Requirements: 4.1, 4.2, 4.3, 4.4, 4.5
+
 func TestIntegrationColorTheme(t *testing.T) {
 	// カラーモード
 	colorStyles := styles.NewGameStyles()
@@ -162,7 +158,7 @@ func TestIntegrationColorTheme(t *testing.T) {
 }
 
 // TestIntegrationVisualFeedback は視覚フィードバックの統合をテストします。
-// Requirements: 5.1, 5.2, 5.3, 5.4
+
 func TestIntegrationVisualFeedback(t *testing.T) {
 	// メニューコンポーネント
 	items := []components.MenuItem{

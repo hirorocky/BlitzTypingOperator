@@ -46,7 +46,7 @@ type StatModifiers struct {
 }
 
 // EffectRow は効果テーブルの1行を表す構造体です。
-// Requirements 4.5, 4.6, 10.1, 11.28-11.30に基づいて設計されています。
+
 type EffectRow struct {
 	// ID は効果の一意識別子です（例: "core_001", "buff_a3f2"）
 	ID string
@@ -58,25 +58,11 @@ type EffectRow struct {
 	Name string
 
 	// Duration は残り秒数です（nil = 永続、Core/Moduleは永続）
-	// Requirement 4.5: 効果時間の表示
+
 	Duration *float64
 
 	// Modifiers はステータス修正値です
 	Modifiers StatModifiers
-}
-
-// IsPermanent は永続効果かどうかを返します。
-// Core特性とModuleパッシブは永続効果です。
-func (r *EffectRow) IsPermanent() bool {
-	return r.Duration == nil
-}
-
-// IsExpired は効果が期限切れかどうかを返します。
-func (r *EffectRow) IsExpired() bool {
-	if r.Duration == nil {
-		return false
-	}
-	return *r.Duration <= 0
 }
 
 // EffectTable は効果テーブルを表す構造体です。
@@ -112,7 +98,7 @@ func (t *EffectTable) RemoveRow(id string) {
 
 // UpdateDurations は時限効果の残り時間を更新します。
 // 毎ティック呼び出され、残り時間が0以下になった行は自動削除されます。
-// Requirement 4.6: 効果時間経過で削除
+
 func (t *EffectTable) UpdateDurations(deltaSeconds float64) {
 	for i := range t.Rows {
 		if t.Rows[i].Duration != nil {
@@ -127,7 +113,8 @@ func (t *EffectTable) UpdateDurations(deltaSeconds float64) {
 func filterExpired(rows []EffectRow) []EffectRow {
 	newRows := make([]EffectRow, 0, len(rows))
 	for _, row := range rows {
-		if !row.IsExpired() {
+		// 永続効果（Duration == nil）または残り時間がある行を保持
+		if row.Duration == nil || *row.Duration > 0 {
 			newRows = append(newRows, row)
 		}
 	}
@@ -193,17 +180,6 @@ func (t *EffectTable) Calculate(baseStats Stats) FinalStats {
 	}
 }
 
-// FindByID はIDで行を検索します。
-// 見つからない場合はnilを返します。
-func (t *EffectTable) FindByID(id string) *EffectRow {
-	for i := range t.Rows {
-		if t.Rows[i].ID == id {
-			return &t.Rows[i]
-		}
-	}
-	return nil
-}
-
 // GetRowsBySource はソース種別で行をフィルタします。
 func (t *EffectTable) GetRowsBySource(sourceType SourceType) []EffectRow {
 	result := make([]EffectRow, 0)
@@ -213,11 +189,6 @@ func (t *EffectTable) GetRowsBySource(sourceType SourceType) []EffectRow {
 		}
 	}
 	return result
-}
-
-// Clear は全ての行を削除します。
-func (t *EffectTable) Clear() {
-	t.Rows = make([]EffectRow, 0)
 }
 
 // FinalStats は効果適用後の最終ステータスを表す構造体です。

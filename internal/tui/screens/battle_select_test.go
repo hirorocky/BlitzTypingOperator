@@ -21,7 +21,7 @@ func (m *mockAgentProvider) GetEquippedAgents() []*domain.AgentModel {
 // ==================== Task 10.2: バトル選択画面のテスト ====================
 
 // TestNewBattleSelectScreen はBattleSelectScreenの初期化をテストします。
-// Requirement 3.1: レベル番号入力欄を表示
+
 func TestNewBattleSelectScreen(t *testing.T) {
 	screen := NewBattleSelectScreen(10, &mockAgentProvider{})
 
@@ -36,7 +36,7 @@ func TestNewBattleSelectScreen(t *testing.T) {
 }
 
 // TestBattleSelectMaxLevelDisplay は最高レベル表示をテストします。
-// Requirement 3.2: 到達最高レベルと挑戦可能最大レベルを表示
+
 func TestBattleSelectMaxLevelDisplay(t *testing.T) {
 	maxLevel := 15
 	screen := NewBattleSelectScreen(maxLevel, &mockAgentProvider{})
@@ -48,7 +48,7 @@ func TestBattleSelectMaxLevelDisplay(t *testing.T) {
 }
 
 // TestBattleSelectInputValidation は入力検証をテストします。
-// Requirements 3.3, 3.4, 3.5: 入力値の検証
+
 func TestBattleSelectInputValidation(t *testing.T) {
 	screen := NewBattleSelectScreen(10, &mockAgentProvider{})
 
@@ -83,7 +83,7 @@ func TestBattleSelectInputValidation(t *testing.T) {
 }
 
 // TestBattleSelectNoAgentEquipped はエージェント未装備時のテストです。
-// Requirement 3.8: エージェント未装備時のバトル開始拒否
+
 func TestBattleSelectNoAgentEquipped(t *testing.T) {
 	// エージェント未装備
 	screen := NewBattleSelectScreen(10, &mockAgentProvider{})
@@ -131,7 +131,7 @@ func TestBattleSelectWithAgentEquipped(t *testing.T) {
 }
 
 // TestBattleSelectConfirmScreen は確認画面のテストです。
-// Requirement 3.6: 確認画面（レベル番号、予想敵情報）を表示
+
 func TestBattleSelectConfirmScreen(t *testing.T) {
 	coreType := domain.CoreType{
 		ID:          "test",
@@ -160,7 +160,7 @@ func TestBattleSelectConfirmScreen(t *testing.T) {
 }
 
 // TestBattleSelectRechallenge は再挑戦のテストです。
-// Requirement 3.10: 過去にクリアしたレベルへの再挑戦を許可
+
 func TestBattleSelectRechallenge(t *testing.T) {
 	screen := NewBattleSelectScreen(10, &mockAgentProvider{})
 
@@ -187,7 +187,7 @@ func TestBattleSelectRender(t *testing.T) {
 }
 
 // TestBattleSelectBackNavigation は戻るナビゲーションのテストです。
-// Requirement 2.9: 各機能画面からホームに戻る
+
 func TestBattleSelectBackNavigation(t *testing.T) {
 	screen := NewBattleSelectScreen(10, &mockAgentProvider{})
 

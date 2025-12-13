@@ -43,7 +43,7 @@ func TestStatsAchievementsTabs(t *testing.T) {
 }
 
 // TestStatsAchievementsTypingStats はタイピング統計表示をテストします。
-// Requirement 15.2: タイピング統計（最高WPM、平均WPM、100%正確性回数、総タイプ文字数）
+
 func TestStatsAchievementsTypingStats(t *testing.T) {
 	data := createTestStatsData()
 	screen := NewStatsAchievementsScreen(data)
@@ -67,7 +67,7 @@ func TestStatsAchievementsTypingStats(t *testing.T) {
 }
 
 // TestStatsAchievementsBattleStats はバトル統計表示をテストします。
-// Requirement 15.3: バトル統計（総バトル数、勝利数、敗北数、到達最高レベル）
+
 func TestStatsAchievementsBattleStats(t *testing.T) {
 	data := createTestStatsData()
 	screen := NewStatsAchievementsScreen(data)
@@ -91,7 +91,7 @@ func TestStatsAchievementsBattleStats(t *testing.T) {
 }
 
 // TestStatsAchievementsAchievementsList は実績一覧をテストします。
-// Requirement 15.10: 達成済み実績と未達成実績を区別して表示
+
 func TestStatsAchievementsAchievementsList(t *testing.T) {
 	data := createTestStatsData()
 	screen := NewStatsAchievementsScreen(data)
@@ -116,7 +116,7 @@ func TestStatsAchievementsAchievementsList(t *testing.T) {
 }
 
 // TestStatsAchievementsCompletionRate はコンプリート率をテストします。
-// Requirement 15.11: コンプリート率表示
+
 func TestStatsAchievementsCompletionRate(t *testing.T) {
 	data := createTestStatsData()
 	screen := NewStatsAchievementsScreen(data)
@@ -157,8 +157,8 @@ func TestStatsAchievementsRender(t *testing.T) {
 
 // ==================== ヘルパー関数 ====================
 
-func createTestStatsData() *StatsTestData {
-	return &StatsTestData{
+func createTestStatsData() *StatsData {
+	return &StatsData{
 		TypingStats: TypingStatsData{
 			MaxWPM:               120,
 			AverageWPM:           85.5,

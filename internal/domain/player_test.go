@@ -37,7 +37,7 @@ func TestNewPlayer_プレイヤー作成(t *testing.T) {
 }
 
 // TestPlayerModel_最大HP計算 は装備エージェントのコアレベル平均からMaxHPを計算することを確認します。
-// Requirement 4.1: HP = 装備中エージェントのコアレベル平均 × HP係数 + 基礎HP
+
 func TestPlayerModel_最大HP計算(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -95,7 +95,7 @@ func TestPlayerModel_エージェント未装備時のHP(t *testing.T) {
 }
 
 // TestPlayerModel_HP再計算 は装備変更時のHP再計算を確認します。
-// Requirement 4.2: エージェントの装備・装備解除時にMaxHPを再計算し更新
+
 func TestPlayerModel_HP再計算(t *testing.T) {
 	player := NewPlayer()
 
@@ -131,7 +131,7 @@ func TestPlayerModel_HP再計算(t *testing.T) {
 }
 
 // TestPlayerModel_バトル開始時全回復 はバトル開始時にHPが全回復することを確認します。
-// Requirement 4.3: バトル開始時にHPを最大値まで全回復
+
 func TestPlayerModel_バトル開始時全回復(t *testing.T) {
 	player := NewPlayer()
 	agents := createTestAgents([]int{10})
@@ -200,7 +200,7 @@ func TestPlayerModel_生存確認(t *testing.T) {
 }
 
 // TestPlayerModel_バトル持ち越しなし はHPがバトル間で持ち越されないことを確認します。
-// Requirement 4.7: HPを次のバトルに持ち越さない（各バトルで全回復）
+
 func TestPlayerModel_バトル持ち越しなし(t *testing.T) {
 	player := NewPlayer()
 	agents := createTestAgents([]int{10})

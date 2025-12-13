@@ -1,5 +1,5 @@
 // Package styles はTUIスタイリングのテストを提供します。
-// Requirements: 3.6
+
 package styles
 
 import (
@@ -9,7 +9,7 @@ import (
 )
 
 // TestGetModuleIcon はモジュールアイコンの取得をテストします。
-// Requirement 3.6: モジュール一覧でカテゴリ別にアイコンを表示
+
 func TestGetModuleIcon(t *testing.T) {
 	tests := []struct {
 		category domain.ModuleCategory

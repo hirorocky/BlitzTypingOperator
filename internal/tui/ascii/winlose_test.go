@@ -1,5 +1,5 @@
 // Package ascii はASCIIアート描画機能を提供します。
-// Requirements: 3.9
+
 package ascii
 
 import (
@@ -19,7 +19,7 @@ func TestNewWinLoseRenderer(t *testing.T) {
 }
 
 // TestWinLoseRendererRenderWin は勝利時のASCIIアート描画をテストします。
-// Requirement 3.9: 勝利時は緑色でWINを大きく表示
+
 func TestWinLoseRendererRenderWin(t *testing.T) {
 	gs := styles.NewGameStyles()
 	renderer := NewWinLoseRenderer(gs)
@@ -37,7 +37,7 @@ func TestWinLoseRendererRenderWin(t *testing.T) {
 }
 
 // TestWinLoseRendererRenderLose は敗北時のASCIIアート描画をテストします。
-// Requirement 3.9: 敗北時は赤色でLOSEを大きく表示
+
 func TestWinLoseRendererRenderLose(t *testing.T) {
 	gs := styles.NewGameStyles()
 	renderer := NewWinLoseRenderer(gs)

@@ -3,7 +3,7 @@ package domain
 
 // HP計算に使用する定数
 // MaxHP = 装備中エージェントのコアレベル平均 × HP係数 + 基礎HP
-// Requirement 4.1, 20.7に基づく
+
 const (
 	HPCoefficient = 10.0 // レベル平均に掛ける係数
 	BaseHP        = 100  // 基礎HP値
@@ -11,20 +11,19 @@ const (
 
 // PlayerModel はゲーム内のプレイヤーエンティティを表す構造体です。
 // プレイヤーはHP（敵の攻撃対象）とバフ・デバフ状態（一時的なステータス効果）を持ちます。
-// Requirements 4.1-4.7に基づいて設計されています。
+
 type PlayerModel struct {
 	// HP はプレイヤーの現在HP値です。
-	// Requirement 4.4: バトル画面に現在HPを常時表示
+
 	HP int
 
 	// MaxHP はプレイヤーの最大HP値です。
-	// Requirement 4.1: 装備中エージェントのコアレベル平均 × HP係数 + 基礎HPで計算
+
 	MaxHP int
 
 	// EffectTable はプレイヤーに適用されているステータス効果テーブルです。
 	// バフ/デバフ/コア特性/モジュールパッシブなどの効果を集約します。
-	// Requirement 4.5: バフ・デバフの効果名、効果時間、効果量を表示
-	// Requirement 4.6: バフ・デバフの効果時間経過で削除
+
 	EffectTable *EffectTable
 }
 
@@ -39,7 +38,7 @@ func NewPlayer() *PlayerModel {
 }
 
 // CalculateMaxHP は装備中エージェントのコアレベル平均からMaxHPを計算します。
-// Requirement 4.1: HP = 装備中エージェントのコアレベル平均 × HP係数 + 基礎HP
+
 // エージェントが装備されていない場合は基礎HPを返します。
 func CalculateMaxHP(agents []*AgentModel) int {
 	if len(agents) == 0 {
@@ -57,7 +56,7 @@ func CalculateMaxHP(agents []*AgentModel) int {
 }
 
 // RecalculateHP は装備エージェントに基づいてMaxHPを再計算し、HPを全回復します。
-// Requirement 4.2: エージェントの装備・装備解除時にMaxHPを再計算し更新
+
 func (p *PlayerModel) RecalculateHP(agents []*AgentModel) {
 	p.MaxHP = CalculateMaxHP(agents)
 	p.HP = p.MaxHP
@@ -93,8 +92,7 @@ func (p *PlayerModel) IsAlive() bool {
 }
 
 // PrepareForBattle はバトル開始時の準備を行います。
-// Requirement 4.3: バトル開始時にHPを最大値まで全回復
-// Requirement 4.7: HPを次のバトルに持ち越さない
+
 func (p *PlayerModel) PrepareForBattle() {
 	p.FullHeal()
 	// EffectTableもリセット（バトル間で効果を持ち越さない）

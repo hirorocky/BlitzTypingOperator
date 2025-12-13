@@ -58,7 +58,7 @@ func TestEnemyType_フィールドの確認(t *testing.T) {
 }
 
 // TestEnemyModel_フィールドの確認 はEnemyModel構造体のフィールドが正しく設定されることを確認します。
-// Requirements 11.15, 13.2, 13.3に基づく
+
 func TestEnemyModel_フィールドの確認(t *testing.T) {
 	enemyType := EnemyType{
 		ID:                 "goblin",
@@ -131,7 +131,7 @@ func TestNewEnemy_敵作成(t *testing.T) {
 }
 
 // TestEnemyModel_HP50以下でフェーズ変化 は敵のHPが50%以下でフェーズ変化するルールを確認します。
-// Requirement 11.15: HP50%以下で強化フェーズに移行
+
 func TestEnemyModel_HP50以下でフェーズ変化(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -168,7 +168,7 @@ func TestEnemyModel_HP50以下でフェーズ変化(t *testing.T) {
 }
 
 // TestEnemyModel_フェーズ移行 は敵のフェーズ移行を確認します。
-// Requirement 11.16: 強化フェーズ移行時に特殊攻撃解禁
+
 func TestEnemyModel_フェーズ移行(t *testing.T) {
 	enemy := EnemyModel{
 		HP:    50,
@@ -285,7 +285,7 @@ func TestEnemyModel_強化フェーズ判定(t *testing.T) {
 }
 
 // TestEnemyModel_EffectTable操作 は敵のEffectTableを操作できることを確認します。
-// Requirement 11.18-11.21: 敵の自己バフ
+
 func TestEnemyModel_EffectTable操作(t *testing.T) {
 	enemy := NewEnemy("enemy_001", "テスト敵", 5, 100, 15, 3*time.Second, EnemyType{ID: "test"})
 

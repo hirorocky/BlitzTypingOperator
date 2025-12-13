@@ -8,7 +8,7 @@ import (
 // ==================== Task 11.2: アニメーションとフィードバックのテスト ====================
 
 // TestTypingColors はタイピング入力の色分けをテストします。
-// Requirement 18.6: タイピング入力の色分け（入力中、完了済み、未入力）
+
 func TestTypingColors(t *testing.T) {
 	styles := NewGameStyles()
 
@@ -55,7 +55,7 @@ func TestRenderTypingChallenge(t *testing.T) {
 }
 
 // TestDamageAnimation はダメージアニメーションのテストです。
-// Requirement 18.5: ダメージ発生時のアニメーション効果
+
 func TestDamageAnimation(t *testing.T) {
 	styles := NewGameStyles()
 
@@ -74,7 +74,7 @@ func TestDamageAnimation(t *testing.T) {
 }
 
 // TestHighlightMessage は重要メッセージの強調表示テストです。
-// Requirement 18.7: 重要メッセージの強調表示
+
 func TestHighlightMessage(t *testing.T) {
 	styles := NewGameStyles()
 
@@ -100,7 +100,7 @@ func TestHighlightMessage(t *testing.T) {
 }
 
 // TestFlickerMinimization は画面ちらつき最小化のテストです。
-// Requirement 18.8: 画面ちらつき最小化
+
 func TestFlickerMinimization(t *testing.T) {
 	// レンダリング最適化のテスト
 	// 同じ内容を複数回レンダリングしても一貫した結果が得られることを確認
@@ -115,7 +115,7 @@ func TestFlickerMinimization(t *testing.T) {
 }
 
 // TestCooldownProgressBar はクールダウンプログレスバーのテストです。
-// Requirement 18.9: モジュールのクールダウン状態を視覚的に表示
+
 func TestCooldownProgressBar(t *testing.T) {
 	styles := NewGameStyles()
 
@@ -143,7 +143,7 @@ func TestCooldownProgressBar(t *testing.T) {
 // ==================== Task 2.1: AnimatedHPBarのテスト ====================
 
 // TestNewAnimatedHPBar はAnimatedHPBarの作成をテストします。
-// Requirement 3.3: HPバーのスムーズアニメーション
+
 func TestNewAnimatedHPBar(t *testing.T) {
 	bar := NewAnimatedHPBar(100)
 	if bar == nil {
@@ -203,7 +203,7 @@ func TestAnimatedHPBarSetTargetBounds(t *testing.T) {
 }
 
 // TestAnimatedHPBarUpdate はアニメーション更新をテストします。
-// Requirement 3.3: 100msごとの更新で自然なアニメーション
+
 func TestAnimatedHPBarUpdate(t *testing.T) {
 	bar := NewAnimatedHPBar(100)
 	bar.SetTarget(50) // 100から50へ減少
@@ -299,7 +299,7 @@ func TestAnimatedHPBarHealingAnimation(t *testing.T) {
 // ==================== Task 2.2: FloatingDamageManagerのテスト ====================
 
 // TestNewFloatingDamageManager はFloatingDamageManagerの作成をテストします。
-// Requirement 3.4: フローティングダメージ/回復表示
+
 func TestNewFloatingDamageManager(t *testing.T) {
 	manager := NewFloatingDamageManager()
 	if manager == nil {
@@ -354,7 +354,7 @@ func TestFloatingDamageManagerAddHeal(t *testing.T) {
 }
 
 // TestFloatingDamageManagerUpdate は時間経過による更新をテストします。
-// Requirement 3.4: 2-3秒で消去
+
 func TestFloatingDamageManagerUpdate(t *testing.T) {
 	manager := NewFloatingDamageManager()
 	manager.AddDamage(50, "enemy")
@@ -373,7 +373,7 @@ func TestFloatingDamageManagerUpdate(t *testing.T) {
 }
 
 // TestFloatingDamageManagerYOffset はY方向オフセットの更新をテストします。
-// Requirement 3.4: Y方向への浮遊アニメーション
+
 func TestFloatingDamageManagerYOffset(t *testing.T) {
 	manager := NewFloatingDamageManager()
 	manager.AddDamage(50, "enemy")
@@ -389,7 +389,7 @@ func TestFloatingDamageManagerYOffset(t *testing.T) {
 }
 
 // TestFloatingDamageManagerMultipleTexts は複数の同時表示をテストします。
-// Requirement 3.4: 複数の同時表示をサポート
+
 func TestFloatingDamageManagerMultipleTexts(t *testing.T) {
 	manager := NewFloatingDamageManager()
 
@@ -415,7 +415,7 @@ func TestFloatingDamageManagerMultipleTexts(t *testing.T) {
 }
 
 // TestFloatingDamageManagerTargetArea は対象エリアの指定をテストします。
-// Requirement 3.4: 対象エリア（敵、プレイヤー、エージェント）を指定可能
+
 func TestFloatingDamageManagerTargetArea(t *testing.T) {
 	manager := NewFloatingDamageManager()
 

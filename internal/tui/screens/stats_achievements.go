@@ -27,9 +27,9 @@ const (
 )
 
 // StatsAchievementsScreen は統計・実績画面を表します。
-// Requirements: 15.1-15.11
+
 type StatsAchievementsScreen struct {
-	data          *StatsTestData
+	data          *StatsData
 	currentTab    StatsTab
 	selectedIndex int
 	styles        *styles.GameStyles
@@ -38,7 +38,7 @@ type StatsAchievementsScreen struct {
 }
 
 // NewStatsAchievementsScreen は新しいStatsAchievementsScreenを作成します。
-func NewStatsAchievementsScreen(data *StatsTestData) *StatsAchievementsScreen {
+func NewStatsAchievementsScreen(data *StatsData) *StatsAchievementsScreen {
 	return &StatsAchievementsScreen{
 		data:          data,
 		currentTab:    TabTypingStats,
@@ -209,7 +209,7 @@ func (s *StatsAchievementsScreen) renderMainContent() string {
 }
 
 // renderTypingStats はタイピング統計をレンダリングします。
-// Requirement 15.2: タイピング統計表示
+
 func (s *StatsAchievementsScreen) renderTypingStats() string {
 	panel := components.NewInfoPanel("タイピング統計")
 	panel.AddItem("最高WPM", fmt.Sprintf("%d WPM", s.data.TypingStats.MaxWPM))
@@ -233,7 +233,7 @@ func (s *StatsAchievementsScreen) renderTypingStats() string {
 }
 
 // renderBattleStats はバトル統計をレンダリングします。
-// Requirement 15.3: バトル統計表示
+
 func (s *StatsAchievementsScreen) renderBattleStats() string {
 	winRate := float64(0)
 	if s.data.BattleStats.TotalBattles > 0 {
@@ -263,7 +263,7 @@ func (s *StatsAchievementsScreen) renderBattleStats() string {
 }
 
 // renderAchievements は実績一覧をレンダリングします。
-// Requirements 15.10, 15.11: 達成済み/未達成を区別、コンプリート率表示
+
 func (s *StatsAchievementsScreen) renderAchievements() string {
 	var builder strings.Builder
 

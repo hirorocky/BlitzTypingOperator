@@ -22,7 +22,7 @@ func TestNewEncyclopediaScreen(t *testing.T) {
 }
 
 // TestEncyclopediaCategories は3カテゴリ表示をテストします。
-// Requirement 14.1: 3つのカテゴリ（コア図鑑、モジュール図鑑、敵図鑑）を表示
+
 func TestEncyclopediaCategories(t *testing.T) {
 	data := createTestEncyclopediaData()
 	screen := NewEncyclopediaScreen(data)
@@ -46,7 +46,7 @@ func TestEncyclopediaCategories(t *testing.T) {
 }
 
 // TestEncyclopediaCoreEncyclopedia はコア図鑑をテストします。
-// Requirement 14.2, 14.3: コア図鑑（全特性一覧、獲得状況）
+
 func TestEncyclopediaCoreEncyclopedia(t *testing.T) {
 	data := createTestEncyclopediaData()
 	screen := NewEncyclopediaScreen(data)
@@ -68,7 +68,7 @@ func TestEncyclopediaCoreEncyclopedia(t *testing.T) {
 }
 
 // TestEncyclopediaModuleEncyclopedia はモジュール図鑑をテストします。
-// Requirement 14.5, 14.6: モジュール図鑑（全タイプ一覧、獲得状況）
+
 func TestEncyclopediaModuleEncyclopedia(t *testing.T) {
 	data := createTestEncyclopediaData()
 	screen := NewEncyclopediaScreen(data)
@@ -83,7 +83,7 @@ func TestEncyclopediaModuleEncyclopedia(t *testing.T) {
 }
 
 // TestEncyclopediaEnemyEncyclopedia は敵図鑑をテストします。
-// Requirement 14.8, 14.9: 敵図鑑（遭遇済み一覧、詳細情報）
+
 func TestEncyclopediaEnemyEncyclopedia(t *testing.T) {
 	data := createTestEncyclopediaData()
 	screen := NewEncyclopediaScreen(data)
@@ -104,7 +104,7 @@ func TestEncyclopediaEnemyEncyclopedia(t *testing.T) {
 }
 
 // TestEncyclopediaUnacquiredDisplay は未獲得表示をテストします。
-// Requirement 14.4, 14.7, 14.10: 未獲得をシルエットまたは「???」で表示
+
 func TestEncyclopediaUnacquiredDisplay(t *testing.T) {
 	data := createTestEncyclopediaData()
 	// 獲得済みリストを空にする
@@ -125,7 +125,7 @@ func TestEncyclopediaUnacquiredDisplay(t *testing.T) {
 }
 
 // TestEncyclopediaCompletionRate はコンプリート率をテストします。
-// Requirement 14.11: コンプリート率表示
+
 func TestEncyclopediaCompletionRate(t *testing.T) {
 	data := createTestEncyclopediaData()
 	screen := NewEncyclopediaScreen(data)
@@ -175,7 +175,7 @@ func TestEncyclopediaRender(t *testing.T) {
 
 // ==================== ヘルパー関数 ====================
 
-func createTestEncyclopediaData() *EncyclopediaTestData {
+func createTestEncyclopediaData() *EncyclopediaData {
 	coreTypes := []domain.CoreType{
 		{ID: "all_rounder", Name: "オールラウンダー", StatWeights: map[string]float64{"STR": 1.0, "MAG": 1.0, "SPD": 1.0, "LUK": 1.0}},
 		{ID: "attacker", Name: "攻撃バランス", StatWeights: map[string]float64{"STR": 1.2, "MAG": 1.2, "SPD": 0.8, "LUK": 0.8}},
@@ -194,7 +194,7 @@ func createTestEncyclopediaData() *EncyclopediaTestData {
 		{ID: "dragon", Name: "ドラゴン"},
 	}
 
-	return &EncyclopediaTestData{
+	return &EncyclopediaData{
 		AllCoreTypes:        coreTypes,
 		AllModuleTypes:      moduleTypes,
 		AllEnemyTypes:       enemyTypes,

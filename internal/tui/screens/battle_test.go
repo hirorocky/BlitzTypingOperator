@@ -35,7 +35,7 @@ func TestNewBattleScreen(t *testing.T) {
 }
 
 // TestBattleScreenEnemyInfo は敵情報表示をテストします。
-// Requirement 9.2: 敵の名前、HP、レベルを表示
+
 func TestBattleScreenEnemyInfo(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -56,7 +56,7 @@ func TestBattleScreenEnemyInfo(t *testing.T) {
 }
 
 // TestBattleScreenPlayerInfo はプレイヤー情報表示をテストします。
-// Requirement 9.3: プレイヤーのHP、バフ・デバフを表示
+
 func TestBattleScreenPlayerInfo(t *testing.T) {
 	player := createTestPlayer()
 	player.HP = 50
@@ -86,8 +86,7 @@ func TestBattleScreenPlayerInfo(t *testing.T) {
 }
 
 // TestBattleScreenModuleList はモジュール一覧表示をテストします。
-// Requirement 9.4: 装備中の全エージェントのモジュールを一覧表示
-// Requirement 18.10: エージェントごとにモジュールをグループ化して表示
+
 func TestBattleScreenModuleList(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -108,8 +107,7 @@ func TestBattleScreenModuleList(t *testing.T) {
 }
 
 // TestBattleScreenCooldownDisplay はクールダウン表示をテストします。
-// Requirement 9.5: モジュールのクールダウン状態を表示
-// Requirement 18.9: プログレスバー、残り秒数表示
+
 func TestBattleScreenCooldownDisplay(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -134,7 +132,7 @@ func TestBattleScreenCooldownDisplay(t *testing.T) {
 }
 
 // TestBattleScreenTypingChallenge はタイピングチャレンジ表示をテストします。
-// Requirement 9.6: タイピングチャレンジテキスト表示と入力進捗
+
 func TestBattleScreenTypingChallenge(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -155,7 +153,7 @@ func TestBattleScreenTypingChallenge(t *testing.T) {
 }
 
 // TestBattleScreenTimeLimit は制限時間表示をテストします。
-// Requirement 9.15: 制限時間のリアルタイム表示
+
 func TestBattleScreenTimeLimit(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -494,7 +492,7 @@ func createTestAgents() []*domain.AgentModel {
 // ==================== Task 6.1-6.6: バトル画面UI改善のテスト ====================
 
 // TestBattleScreen3AreaLayout はバトル画面の3エリアレイアウトをテストします。
-// Requirement 3.1: 上から敵情報エリア、エージェントエリア、プレイヤー情報エリア
+
 func TestBattleScreen3AreaLayout(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -523,7 +521,7 @@ func TestBattleScreen3AreaLayout(t *testing.T) {
 }
 
 // TestBattleScreenAgentModuleDisplay はエージェントごとのモジュール表示をテストします。
-// Requirement 3.2: 装備中のエージェントのモジュール一覧とクールダウン状態を表示
+
 func TestBattleScreenAgentModuleDisplay(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -542,7 +540,7 @@ func TestBattleScreenAgentModuleDisplay(t *testing.T) {
 }
 
 // TestBattleScreenHPBarDisplay はHPバー表示をテストします。
-// Requirement 3.3: HPバーの表示
+
 func TestBattleScreenHPBarDisplay(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -561,7 +559,7 @@ func TestBattleScreenHPBarDisplay(t *testing.T) {
 }
 
 // TestBattleScreenEnemyAttackTimerDisplay は敵攻撃タイマー表示をテストします。
-// Requirement 3.5: 次の敵攻撃までの時間をプログレスバーで視覚化
+
 func TestBattleScreenEnemyAttackTimerDisplay(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -580,7 +578,7 @@ func TestBattleScreenEnemyAttackTimerDisplay(t *testing.T) {
 }
 
 // TestBattleScreenTypingColorDisplay はタイピングの色分け表示をテストします。
-// Requirement 3.8: 入力済み・現在位置・未入力の色分け
+
 func TestBattleScreenTypingColorDisplay(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -606,7 +604,7 @@ func TestBattleScreenTypingColorDisplay(t *testing.T) {
 }
 
 // TestBattleScreenWinDisplay は勝利時のWIN表示をテストします。
-// Requirement 3.9: 勝利時はWINを大きく表示
+
 func TestBattleScreenWinDisplay(t *testing.T) {
 	enemy := createTestEnemy()
 	enemy.HP = 0 // 敵HP0で勝利
@@ -634,7 +632,7 @@ func TestBattleScreenWinDisplay(t *testing.T) {
 }
 
 // TestBattleScreenLoseDisplay は敗北時のLOSE表示をテストします。
-// Requirement 3.9: 敗北時はLOSEを大きく表示
+
 func TestBattleScreenLoseDisplay(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -658,5 +656,182 @@ func TestBattleScreenLoseDisplay(t *testing.T) {
 	// 敗北メッセージが含まれること
 	if !strings.Contains(rendered, "敗北") {
 		t.Error("敗北メッセージが表示されていません")
+	}
+}
+
+// ==================== Task 6.1: ファイル分割検証テスト ====================
+
+// TestBattleScreenLogicSeparation はバトルロジックが正しく動作することを検証します。
+// Task 6.1: UIレンダリングとゲームロジックの分離後も機能が維持されることを確認
+func TestBattleScreenLogicSeparation(t *testing.T) {
+	enemy := createTestEnemy()
+	enemy.HP = 100
+	player := createTestPlayer()
+	player.HP = 100
+	agents := createTestAgents()
+
+	screen := NewBattleScreen(enemy, player, agents)
+
+	// checkGameOver - 正常状態では終了しない
+	if screen.checkGameOver() {
+		t.Error("HP残っているのにゲームオーバー判定されました")
+	}
+
+	// 敵HP0で勝利判定
+	enemy.HP = 0
+	if !screen.checkGameOver() {
+		t.Error("敵HP0でゲームオーバー判定されませんでした")
+	}
+	if !screen.IsVictory() {
+		t.Error("敵HP0で勝利判定されませんでした")
+	}
+}
+
+// TestBattleScreenViewSeparation はView関連メソッドが正しく動作することを検証します。
+// Task 6.1: UIレンダリングとゲームロジックの分離後も描画が維持されることを確認
+func TestBattleScreenViewSeparation(t *testing.T) {
+	enemy := createTestEnemy()
+	player := createTestPlayer()
+	agents := createTestAgents()
+
+	screen := NewBattleScreen(enemy, player, agents)
+	screen.width = 120
+	screen.height = 40
+
+	// renderEnemyArea
+	enemyArea := screen.renderEnemyArea()
+	if enemyArea == "" {
+		t.Error("renderEnemyAreaが空を返しました")
+	}
+	if !strings.Contains(enemyArea, enemy.Name) {
+		t.Error("敵エリアに敵名が含まれていません")
+	}
+
+	// renderAgentArea
+	agentArea := screen.renderAgentArea()
+	if agentArea == "" {
+		t.Error("renderAgentAreaが空を返しました")
+	}
+
+	// renderPlayerArea
+	playerArea := screen.renderPlayerArea()
+	if playerArea == "" {
+		t.Error("renderPlayerAreaが空を返しました")
+	}
+	if !strings.Contains(playerArea, "プレイヤー") {
+		t.Error("プレイヤーエリアにプレイヤー情報が含まれていません")
+	}
+}
+
+// TestBattleScreenCooldownLogic はクールダウンロジックが正しく動作することを検証します。
+// Task 6.1: ロジック分離後もクールダウン機能が維持されることを確認
+func TestBattleScreenCooldownLogic(t *testing.T) {
+	enemy := createTestEnemy()
+	player := createTestPlayer()
+	agents := createTestAgents()
+
+	screen := NewBattleScreen(enemy, player, agents)
+
+	if len(screen.moduleSlots) == 0 {
+		t.Skip("モジュールスロットがありません")
+	}
+
+	// クールダウン開始
+	screen.StartCooldown(0, 5.0)
+	if screen.moduleSlots[0].CooldownRemaining != 5.0 {
+		t.Errorf("クールダウン設定失敗: got %.2f, want 5.0", screen.moduleSlots[0].CooldownRemaining)
+	}
+
+	// クールダウン更新
+	screen.UpdateCooldowns(1.0)
+	if screen.moduleSlots[0].CooldownRemaining != 4.0 {
+		t.Errorf("クールダウン更新失敗: got %.2f, want 4.0", screen.moduleSlots[0].CooldownRemaining)
+	}
+
+	// IsReady確認
+	if screen.moduleSlots[0].IsReady() {
+		t.Error("クールダウン中なのにIsReady=trueになっています")
+	}
+
+	// クールダウン完了
+	screen.UpdateCooldowns(5.0)
+	if !screen.moduleSlots[0].IsReady() {
+		t.Error("クールダウン完了後もIsReady=falseのままです")
+	}
+}
+
+// TestBattleScreenTypingLogic はタイピングロジックが正しく動作することを検証します。
+// Task 6.1: ロジック分離後もタイピング機能が維持されることを確認
+func TestBattleScreenTypingLogic(t *testing.T) {
+	enemy := createTestEnemy()
+	player := createTestPlayer()
+	agents := createTestAgents()
+
+	screen := NewBattleScreen(enemy, player, agents)
+
+	// タイピング開始
+	screen.StartTypingChallenge("test", 10*time.Second)
+	if !screen.isTyping {
+		t.Error("タイピングが開始されていません")
+	}
+	if screen.typingText != "test" {
+		t.Errorf("タイピングテキストが正しくありません: got %s, want test", screen.typingText)
+	}
+
+	// タイピング入力処理
+	screen.ProcessTypingInput('t')
+	if screen.typingIndex != 1 {
+		t.Errorf("タイピングインデックスが更新されていません: got %d, want 1", screen.typingIndex)
+	}
+
+	// 誤入力
+	screen.ProcessTypingInput('x')
+	if len(screen.typingMistakes) == 0 {
+		t.Error("誤入力が記録されていません")
+	}
+
+	// タイピングキャンセル
+	screen.CancelTyping()
+	if screen.isTyping {
+		t.Error("タイピングがキャンセルされていません")
+	}
+}
+
+// TestBattleScreenEffectDuration はエフェクト持続時間更新が正しく動作することを検証します。
+// Task 6.1: ロジック分離後もエフェクト更新が維持されることを確認
+func TestBattleScreenEffectDuration(t *testing.T) {
+	enemy := createTestEnemy()
+	player := createTestPlayer()
+	agents := createTestAgents()
+
+	// プレイヤーにバフを追加
+	duration := 5.0
+	player.EffectTable.AddRow(domain.EffectRow{
+		ID:         "test_buff",
+		SourceType: domain.SourceBuff,
+		Name:       "テストバフ",
+		Duration:   &duration,
+	})
+
+	screen := NewBattleScreen(enemy, player, agents)
+
+	// 初期状態確認
+	buffs := player.EffectTable.GetRowsBySource(domain.SourceBuff)
+	if len(buffs) == 0 {
+		t.Fatal("バフが追加されていません")
+	}
+	if *buffs[0].Duration != 5.0 {
+		t.Errorf("初期持続時間が正しくありません: got %.2f, want 5.0", *buffs[0].Duration)
+	}
+
+	// エフェクト持続時間更新
+	screen.updateEffectDurations(1.0)
+
+	buffs = player.EffectTable.GetRowsBySource(domain.SourceBuff)
+	if len(buffs) == 0 {
+		t.Fatal("バフが消えてしまいました")
+	}
+	if *buffs[0].Duration != 4.0 {
+		t.Errorf("持続時間更新後の値が正しくありません: got %.2f, want 4.0", *buffs[0].Duration)
 	}
 }

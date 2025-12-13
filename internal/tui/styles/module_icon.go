@@ -1,5 +1,5 @@
 // Package styles はTUIスタイリングのモジュールアイコン機能を提供します。
-// Requirements: 3.6
+
 package styles
 
 import (
@@ -9,7 +9,7 @@ import (
 )
 
 // モジュールカテゴリに対応するアイコン
-// Requirement 3.6: モジュール一覧でカテゴリ別にアイコンを表示
+
 var moduleIcons = map[domain.ModuleCategory]string{
 	domain.PhysicalAttack: "⚔", // 剣（物理攻撃）
 	domain.MagicAttack:    "✦", // 星（魔法攻撃）
@@ -28,7 +28,7 @@ var moduleCategoryColors = map[domain.ModuleCategory]lipgloss.Color{
 }
 
 // GetModuleIcon はモジュールカテゴリに対応するアイコンを返します。
-// Requirement 3.6: 各ModuleCategoryに対応するUnicode/ASCIIアイコンを返す
+
 func GetModuleIcon(category domain.ModuleCategory) string {
 	if icon, ok := moduleIcons[category]; ok {
 		return icon
@@ -38,7 +38,7 @@ func GetModuleIcon(category domain.ModuleCategory) string {
 }
 
 // GetModuleIconColored はカラー付きアイコンを返します。
-// Requirement 3.6: カラーモード対応
+
 func GetModuleIconColored(category domain.ModuleCategory, styles *GameStyles) string {
 	icon := GetModuleIcon(category)
 	color, ok := moduleCategoryColors[category]

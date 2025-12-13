@@ -1,5 +1,5 @@
 // Package integration_test は統合テストを提供します。
-// Requirements: 17.3, 17.4, 17.5, 19.2
+
 package integration_test
 
 import (
@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"hirorocky/type-battle/internal/persistence"
-	"hirorocky/type-battle/internal/startup"
+	"hirorocky/type-battle/internal/infra/savedata"
+	"hirorocky/type-battle/internal/infra/startup"
 )
 
 // ==================================================
@@ -16,9 +16,9 @@ import (
 // ==================================================
 
 func TestSaveLoadFlow_WriteAndRead(t *testing.T) {
-	// Requirement 17.3: セーブデータ書き込み→ロード→整合性確認
+
 	tempDir := t.TempDir()
-	io := persistence.NewSaveDataIO(tempDir)
+	io := savedata.NewSaveDataIO(tempDir)
 
 	// 初期データを作成
 	initializer := startup.NewNewGameInitializer(createTestExternalData())
@@ -60,13 +60,13 @@ func TestSaveLoadFlow_WriteAndRead(t *testing.T) {
 func TestSaveLoadFlow_InventoryPersistence(t *testing.T) {
 	// インベントリの永続化テスト（ID化された構造）
 	tempDir := t.TempDir()
-	io := persistence.NewSaveDataIO(tempDir)
+	io := savedata.NewSaveDataIO(tempDir)
 
 	// テスト用データを作成
-	saveData := persistence.NewSaveData()
+	saveData := savedata.NewSaveData()
 
 	// コアインスタンスを追加（ID化された構造）
-	saveData.Inventory.CoreInstances = append(saveData.Inventory.CoreInstances, persistence.CoreInstanceSave{
+	saveData.Inventory.CoreInstances = append(saveData.Inventory.CoreInstances, savedata.CoreInstanceSave{
 		ID:         "core_1",
 		CoreTypeID: "test_type",
 		Level:      5,
@@ -106,9 +106,9 @@ func TestSaveLoadFlow_InventoryPersistence(t *testing.T) {
 }
 
 func TestSaveLoadFlow_CorruptedData_BackupRestore(t *testing.T) {
-	// Requirement 19.2: 破損データ検出→バックアップ復元
+
 	tempDir := t.TempDir()
-	io := persistence.NewSaveDataIO(tempDir)
+	io := savedata.NewSaveDataIO(tempDir)
 
 	// 正常なデータをセーブ
 	initializer := startup.NewNewGameInitializer(createTestExternalData())
@@ -152,9 +152,9 @@ func TestSaveLoadFlow_CorruptedData_BackupRestore(t *testing.T) {
 }
 
 func TestSaveLoadFlow_BackupRotation(t *testing.T) {
-	// Requirement 17.7: バックアップローテーション
+
 	tempDir := t.TempDir()
-	io := persistence.NewSaveDataIO(tempDir)
+	io := savedata.NewSaveDataIO(tempDir)
 
 	initializer := startup.NewNewGameInitializer(createTestExternalData())
 
@@ -191,9 +191,9 @@ func TestSaveLoadFlow_BackupRotation(t *testing.T) {
 }
 
 func TestSaveLoadFlow_NewGameWhenNoSave(t *testing.T) {
-	// Requirement 17.5: セーブデータ不在時の新規ゲーム開始
+
 	tempDir := t.TempDir()
-	io := persistence.NewSaveDataIO(tempDir)
+	io := savedata.NewSaveDataIO(tempDir)
 
 	// セーブファイルが存在しないことを確認
 	if io.Exists() {
@@ -229,9 +229,9 @@ func TestSaveLoadFlow_NewGameWhenNoSave(t *testing.T) {
 }
 
 func TestSaveLoadFlow_DataValidation(t *testing.T) {
-	// Requirement 17.6: データ検証
+
 	tempDir := t.TempDir()
-	io := persistence.NewSaveDataIO(tempDir)
+	io := savedata.NewSaveDataIO(tempDir)
 
 	// バージョンが空のデータを作成
 	savePath := filepath.Join(tempDir, "save.json")
@@ -253,9 +253,9 @@ func TestSaveLoadFlow_DataValidation(t *testing.T) {
 }
 
 func TestSaveLoadFlow_ResetSaveData(t *testing.T) {
-	// Requirement 17.8: セーブをリセットして最初からやり直せる
+
 	tempDir := t.TempDir()
-	io := persistence.NewSaveDataIO(tempDir)
+	io := savedata.NewSaveDataIO(tempDir)
 
 	// データをセーブ
 	initializer := startup.NewNewGameInitializer(createTestExternalData())

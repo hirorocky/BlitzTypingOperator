@@ -1,24 +1,24 @@
 // Package integration_test は統合テストを提供します。
-// Requirements: 1.1, 2.1, 3.7, 12.1, 17.5
+
 package integration_test
 
 import (
 	"testing"
 	"time"
 
-	"hirorocky/type-battle/internal/battle"
 	"hirorocky/type-battle/internal/domain"
-	"hirorocky/type-battle/internal/loader"
-	"hirorocky/type-battle/internal/persistence"
-	"hirorocky/type-battle/internal/reward"
-	"hirorocky/type-battle/internal/startup"
-	"hirorocky/type-battle/internal/typing"
+	"hirorocky/type-battle/internal/infra/masterdata"
+	"hirorocky/type-battle/internal/infra/savedata"
+	"hirorocky/type-battle/internal/infra/startup"
+	"hirorocky/type-battle/internal/usecase/combat"
+	"hirorocky/type-battle/internal/usecase/rewarding"
+	"hirorocky/type-battle/internal/usecase/typing"
 )
 
 // createTestExternalData はテスト用の外部データを作成します。
-func createTestExternalData() *loader.ExternalData {
-	return &loader.ExternalData{
-		CoreTypes: []loader.CoreTypeData{
+func createTestExternalData() *masterdata.ExternalData {
+	return &masterdata.ExternalData{
+		CoreTypes: []masterdata.CoreTypeData{
 			{
 				ID:             "all_rounder",
 				Name:           "オールラウンダー",
@@ -28,7 +28,7 @@ func createTestExternalData() *loader.ExternalData {
 				MinDropLevel:   1,
 			},
 		},
-		ModuleDefinitions: []loader.ModuleDefinitionData{
+		ModuleDefinitions: []masterdata.ModuleDefinitionData{
 			{
 				ID:            "physical_strike_lv1",
 				Name:          "物理打撃Lv1",
@@ -74,7 +74,7 @@ func createTestExternalData() *loader.ExternalData {
 				MinDropLevel:  1,
 			},
 		},
-		EnemyTypes: []loader.EnemyTypeData{
+		EnemyTypes: []masterdata.EnemyTypeData{
 			{
 				ID:              "slime",
 				Name:            "スライム",
@@ -86,8 +86,8 @@ func createTestExternalData() *loader.ExternalData {
 }
 
 // createTestRewardCalculator はテスト用のRewardCalculatorを作成します。
-func createTestRewardCalculator() *reward.RewardCalculator {
-	coreTypes := []loader.CoreTypeData{
+func createTestRewardCalculator() *rewarding.RewardCalculator {
+	coreTypes := []domain.CoreType{
 		{
 			ID:   "all_rounder",
 			Name: "オールラウンダー",
@@ -100,17 +100,17 @@ func createTestRewardCalculator() *reward.RewardCalculator {
 		},
 	}
 
-	moduleTypes := []loader.ModuleDefinitionData{
+	moduleTypes := []rewarding.ModuleDropInfo{
 		{
-			ID:            "physical_attack_1",
-			Name:          "物理打撃Lv1",
-			Category:      "physical_attack",
-			Level:         1,
-			Tags:          []string{"physical_low"},
-			BaseEffect:    10.0,
-			StatReference: "STR",
-			Description:   "物理ダメージを与える",
-			MinDropLevel:  1,
+			ID:           "physical_attack_1",
+			Name:         "物理打撃Lv1",
+			Category:     domain.PhysicalAttack,
+			Level:        1,
+			Tags:         []string{"physical_low"},
+			BaseEffect:   10.0,
+			StatRef:      "STR",
+			Description:  "物理ダメージを与える",
+			MinDropLevel: 1,
 		},
 	}
 
@@ -122,7 +122,7 @@ func createTestRewardCalculator() *reward.RewardCalculator {
 		},
 	}
 
-	return reward.NewRewardCalculator(coreTypes, moduleTypes, passiveSkills)
+	return rewarding.NewRewardCalculator(coreTypes, moduleTypes, passiveSkills)
 }
 
 // ==================================================
@@ -130,9 +130,9 @@ func createTestRewardCalculator() *reward.RewardCalculator {
 // ==================================================
 
 func TestE2E_NewGameFlow(t *testing.T) {
-	// Requirement 1.1, 17.5: 起動→新規ゲーム開始
+
 	tempDir := t.TempDir()
-	io := persistence.NewSaveDataIO(tempDir)
+	io := savedata.NewSaveDataIO(tempDir)
 	initializer := startup.NewNewGameInitializer(createTestExternalData())
 
 	// セーブデータがない場合は新規ゲーム開始
@@ -169,9 +169,9 @@ func TestE2E_NewGameFlow(t *testing.T) {
 }
 
 func TestE2E_BattleVictoryFlow(t *testing.T) {
-	// Requirement 2.1, 3.7, 12.1: ホーム→バトル選択→バトル→勝利→報酬
+
 	tempDir := t.TempDir()
-	io := persistence.NewSaveDataIO(tempDir)
+	io := savedata.NewSaveDataIO(tempDir)
 	initializer := startup.NewNewGameInitializer(createTestExternalData())
 
 	// 新規ゲーム開始
@@ -198,7 +198,7 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 			AttackType:         "physical",
 		},
 	}
-	engine := battle.NewBattleEngine(enemyTypes)
+	engine := combat.NewBattleEngine(enemyTypes)
 	battleState, err := engine.InitializeBattle(battleLevel, agents)
 	if err != nil {
 		t.Fatalf("バトル初期化に失敗: %v", err)
@@ -233,7 +233,7 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 	// 報酬計算
 	rewardCalc := createTestRewardCalculator()
 	// バトル統計を作成
-	battleStats := &reward.BattleStatistics{
+	battleStats := &rewarding.BattleStatistics{
 		TotalWPM:         result.Stats.TotalWPM,
 		TotalAccuracy:    result.Stats.TotalAccuracy,
 		TotalTypingCount: result.Stats.TotalTypingCount,
@@ -248,7 +248,7 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 
 	// 報酬をインベントリに追加（ID化された構造）
 	for _, c := range rewards.DroppedCores {
-		saveData.Inventory.CoreInstances = append(saveData.Inventory.CoreInstances, persistence.CoreInstanceSave{
+		saveData.Inventory.CoreInstances = append(saveData.Inventory.CoreInstances, savedata.CoreInstanceSave{
 			ID:         c.ID,
 			CoreTypeID: c.Type.ID,
 			Level:      c.Level,
@@ -288,7 +288,7 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 func TestE2E_AgentSynthesisFlow(t *testing.T) {
 	// エージェント合成フロー
 	tempDir := t.TempDir()
-	io := persistence.NewSaveDataIO(tempDir)
+	io := savedata.NewSaveDataIO(tempDir)
 	initializer := startup.NewNewGameInitializer(createTestExternalData())
 
 	// 追加アイテム付きで新規ゲーム開始
@@ -337,9 +337,9 @@ func TestE2E_AgentSynthesisFlow(t *testing.T) {
 	for i, m := range newAgent.Modules {
 		moduleIDs[i] = m.ID
 	}
-	saveData.Inventory.AgentInstances = append(saveData.Inventory.AgentInstances, persistence.AgentInstanceSave{
+	saveData.Inventory.AgentInstances = append(saveData.Inventory.AgentInstances, savedata.AgentInstanceSave{
 		ID: newAgent.ID,
-		Core: persistence.CoreInstanceSave{
+		Core: savedata.CoreInstanceSave{
 			ID:         newAgent.Core.ID,
 			CoreTypeID: newAgent.Core.Type.ID,
 			Level:      newAgent.Core.Level,
@@ -383,7 +383,7 @@ func TestE2E_AgentSynthesisFlow(t *testing.T) {
 func TestE2E_ProgressionFlow(t *testing.T) {
 	// ゲーム進行フロー：複数バトル→レベル上昇
 	tempDir := t.TempDir()
-	io := persistence.NewSaveDataIO(tempDir)
+	io := savedata.NewSaveDataIO(tempDir)
 	initializer := startup.NewNewGameInitializer(createTestExternalData())
 
 	saveData := initializer.InitializeNewGame()
@@ -401,7 +401,7 @@ func TestE2E_ProgressionFlow(t *testing.T) {
 			AttackType:         "physical",
 		},
 	}
-	engine := battle.NewBattleEngine(enemyTypes)
+	engine := combat.NewBattleEngine(enemyTypes)
 
 	typingResult := &typing.TypingResult{
 		Completed:      true,
@@ -460,9 +460,9 @@ func TestE2E_ProgressionFlow(t *testing.T) {
 }
 
 func TestE2E_SaveQuitRestartLoad(t *testing.T) {
-	// Requirement 17.5: セーブ→終了→再起動→ロード→状態確認
+
 	tempDir := t.TempDir()
-	io := persistence.NewSaveDataIO(tempDir)
+	io := savedata.NewSaveDataIO(tempDir)
 	initializer := startup.NewNewGameInitializer(createTestExternalData())
 
 	// ゲーム開始（セッション1）
@@ -479,7 +479,7 @@ func TestE2E_SaveQuitRestartLoad(t *testing.T) {
 	}
 
 	// 再起動シミュレート（新しいIOインスタンス）
-	io2 := persistence.NewSaveDataIO(tempDir)
+	io2 := savedata.NewSaveDataIO(tempDir)
 
 	// ロード
 	loadedData, err := io2.LoadGame()
@@ -510,7 +510,7 @@ func TestE2E_SaveQuitRestartLoad(t *testing.T) {
 func TestE2E_DefeatAndRetry(t *testing.T) {
 	// 敗北→リトライフロー
 	tempDir := t.TempDir()
-	io := persistence.NewSaveDataIO(tempDir)
+	io := savedata.NewSaveDataIO(tempDir)
 	initializer := startup.NewNewGameInitializer(createTestExternalData())
 
 	saveData := initializer.InitializeNewGame()
@@ -528,7 +528,7 @@ func TestE2E_DefeatAndRetry(t *testing.T) {
 			AttackType:         "magic",
 		},
 	}
-	engine := battle.NewBattleEngine(enemyTypes)
+	engine := combat.NewBattleEngine(enemyTypes)
 
 	// 強い敵とバトル
 	battleState, _ := engine.InitializeBattle(10, agents)

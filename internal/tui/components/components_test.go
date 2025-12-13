@@ -208,7 +208,7 @@ func TestInfoPanelItems(t *testing.T) {
 // ==================== Task 3.1: AgentCardコンポーネントのテスト ====================
 
 // TestNewAgentCard はAgentCardの作成をテストします。
-// Requirement 1.5, 2.7, 3.2: エージェント情報カード表示
+
 func TestNewAgentCard(t *testing.T) {
 	card := NewAgentCard(nil, AgentCardCompact)
 	if card == nil {
@@ -305,7 +305,7 @@ func TestAgentCardRenderDetailed(t *testing.T) {
 }
 
 // TestAgentCardRenderEmptySlot は空スロットの描画をテストします。
-// Requirement 3.1: エージェントがnilの場合は空スロット表示
+
 func TestAgentCardRenderEmptySlot(t *testing.T) {
 	card := NewAgentCard(nil, AgentCardCompact)
 	// AgentNameが空の場合は空スロット表示
@@ -332,7 +332,7 @@ func TestAgentCardRenderWithHP(t *testing.T) {
 // ==================== Task 3.2: ConfirmDialogコンポーネントのテスト ====================
 
 // TestNewConfirmDialog はConfirmDialogの作成をテストします。
-// Requirement 2.9: 確認ダイアログ表示
+
 func TestNewConfirmDialog(t *testing.T) {
 	dialog := NewConfirmDialog("削除確認", "本当に削除しますか？")
 	if dialog == nil {
@@ -460,7 +460,7 @@ func TestConfirmDialogRenderNotVisible(t *testing.T) {
 // ==================== Task 8.1-8.2: 視覚的フィードバックのテスト ====================
 
 // TestMenuSelectionHighlight はメニュー項目選択時のハイライト表示をテストします。
-// Requirement 5.1: メニュー項目選択時のハイライト表示
+
 func TestMenuSelectionHighlight(t *testing.T) {
 	items := []MenuItem{
 		{Label: "項目1", Value: "1"},
@@ -483,7 +483,7 @@ func TestMenuSelectionHighlight(t *testing.T) {
 }
 
 // TestMenuCursorPosition はカーソル位置の明示をテストします。
-// Requirement 5.2: カーソル位置の明示
+
 func TestMenuCursorPosition(t *testing.T) {
 	items := []MenuItem{
 		{Label: "項目1", Value: "1"},
@@ -505,7 +505,7 @@ func TestMenuCursorPosition(t *testing.T) {
 }
 
 // TestMenuDisabledItemStyle は無効項目のスタイルをテストします。
-// Requirement 5.3: 無効なメニュー項目の表示
+
 func TestMenuDisabledItemStyle(t *testing.T) {
 	items := []MenuItem{
 		{Label: "有効", Value: "1", Disabled: false},
@@ -522,7 +522,7 @@ func TestMenuDisabledItemStyle(t *testing.T) {
 }
 
 // TestInputFieldErrorDisplay はエラーメッセージ表示をテストします。
-// Requirement 5.3: 無効操作時のエラーメッセージ表示
+
 func TestInputFieldErrorDisplay(t *testing.T) {
 	field := NewInputField("テスト")
 
@@ -537,7 +537,7 @@ func TestInputFieldErrorDisplay(t *testing.T) {
 }
 
 // TestInputFieldSuccessFeedback は入力成功フィードバックをテストします。
-// Requirement 5.4: 操作成功時の成功フィードバック表示
+
 func TestInputFieldSuccessFeedback(t *testing.T) {
 	field := NewInputField("テスト")
 

@@ -27,20 +27,10 @@ const (
 	CategoryEnemy
 )
 
-// EncyclopediaData は図鑑データを提供するインターフェースです。
-type EncyclopediaData interface {
-	GetAllCoreTypes() []domain.CoreType
-	GetAllModuleTypes() []ModuleTypeInfo
-	GetAllEnemyTypes() []domain.EnemyType
-	GetAcquiredCoreTypes() []string
-	GetAcquiredModuleTypes() []string
-	GetEncounteredEnemies() []string
-}
-
 // EncyclopediaScreen は図鑑画面を表します。
-// Requirements: 14.1-14.11
+
 type EncyclopediaScreen struct {
-	data            *EncyclopediaTestData
+	data            *EncyclopediaData
 	currentCategory EncyclopediaCategory
 	selectedIndex   int
 	styles          *styles.GameStyles
@@ -49,7 +39,7 @@ type EncyclopediaScreen struct {
 }
 
 // NewEncyclopediaScreen は新しいEncyclopediaScreenを作成します。
-func NewEncyclopediaScreen(data *EncyclopediaTestData) *EncyclopediaScreen {
+func NewEncyclopediaScreen(data *EncyclopediaData) *EncyclopediaScreen {
 	return &EncyclopediaScreen{
 		data:            data,
 		currentCategory: CategoryCore,
@@ -566,4 +556,24 @@ func (s *EncyclopediaScreen) renderCompletionRate() string {
 		Width(s.width).
 		Align(lipgloss.Center).
 		Render(rateStyle.Render(content))
+}
+
+// ==================== Screenインターフェース実装 ====================
+
+// SetSize は画面サイズを設定します。
+// Screenインターフェースの実装です。
+func (s *EncyclopediaScreen) SetSize(width, height int) {
+	s.width = width
+	s.height = height
+}
+
+// GetTitle は画面のタイトルを返します。
+// Screenインターフェースの実装です。
+func (s *EncyclopediaScreen) GetTitle() string {
+	return "図鑑"
+}
+
+// GetSize は現在の画面サイズを返します。
+func (s *EncyclopediaScreen) GetSize() (width, height int) {
+	return s.width, s.height
 }

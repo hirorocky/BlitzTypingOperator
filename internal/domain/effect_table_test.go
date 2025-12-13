@@ -121,9 +121,6 @@ func TestEffectRow_永続効果(t *testing.T) {
 	if row.Duration != nil {
 		t.Error("永続効果のDurationはnilであるべきです")
 	}
-	if !row.IsPermanent() {
-		t.Error("永続効果はIsPermanent()がtrueを返すべきです")
-	}
 }
 
 // TestEffectTable_新規作成 はNewEffectTableで空のテーブルが作成されることを確認します。
@@ -139,7 +136,7 @@ func TestEffectTable_新規作成(t *testing.T) {
 }
 
 // TestEffectTable_行の追加 はAddRowで行を追加できることを確認します。
-// Requirement 4.5: バフ付与時の追加
+
 func TestEffectTable_行の追加(t *testing.T) {
 	table := NewEffectTable()
 
@@ -165,7 +162,7 @@ func TestEffectTable_行の追加(t *testing.T) {
 }
 
 // TestEffectTable_行の削除 はRemoveRowで行を削除できることを確認します。
-// Requirement 4.6: 効果時間経過で削除
+
 func TestEffectTable_行の削除(t *testing.T) {
 	table := NewEffectTable()
 
@@ -295,7 +292,6 @@ func TestEffectTable_最終ステータス計算_乗算のみ(t *testing.T) {
 }
 
 // TestEffectTable_最終ステータス計算_加算乗算順序 は加算→乗算の順序で計算されることを確認します。
-// Requirement: 最終ステータス計算（加算→乗算の順序で適用）
 func TestEffectTable_最終ステータス計算_加算乗算順序(t *testing.T) {
 	table := NewEffectTable()
 
@@ -416,29 +412,6 @@ func TestEffectTable_空テーブル計算(t *testing.T) {
 	}
 }
 
-// TestEffectTable_IDで行を検索 はFindByIDで行を検索できることを確認します。
-func TestEffectTable_IDで行を検索(t *testing.T) {
-	table := NewEffectTable()
-
-	duration := 5.0
-	table.AddRow(EffectRow{ID: "buff_001", SourceType: SourceBuff, Duration: &duration})
-	table.AddRow(EffectRow{ID: "buff_002", SourceType: SourceBuff, Duration: &duration})
-
-	// 存在するID
-	row := table.FindByID("buff_001")
-	if row == nil {
-		t.Error("buff_001が見つかりませんでした")
-	} else if row.ID != "buff_001" {
-		t.Errorf("見つかった行のIDが異なります: got %s, want buff_001", row.ID)
-	}
-
-	// 存在しないID
-	row = table.FindByID("buff_999")
-	if row != nil {
-		t.Error("存在しないIDでnilではない値が返されました")
-	}
-}
-
 // TestEffectTable_ソース種別でフィルタ はGetRowsBySourceでソース種別でフィルタできることを確認します。
 func TestEffectTable_ソース種別でフィルタ(t *testing.T) {
 	table := NewEffectTable()
@@ -461,7 +434,7 @@ func TestEffectTable_ソース種別でフィルタ(t *testing.T) {
 }
 
 // TestEffectTable_デバフの効果 はデバフがステータスを減少させることを確認します。
-// Requirements 11.28-11.30: バフ・デバフの相互作用
+
 func TestEffectTable_デバフの効果(t *testing.T) {
 	table := NewEffectTable()
 
@@ -508,24 +481,5 @@ func TestFinalStats_フィールドの確認(t *testing.T) {
 	}
 	if fs.CDReduction != 0.1 {
 		t.Errorf("CDReductionが期待値と異なります: got %f, want 0.1", fs.CDReduction)
-	}
-}
-
-// TestEffectTable_クリア はClearで全行を削除できることを確認します。
-func TestEffectTable_クリア(t *testing.T) {
-	table := NewEffectTable()
-
-	duration := 5.0
-	table.AddRow(EffectRow{ID: "buff_001", SourceType: SourceBuff, Duration: &duration})
-	table.AddRow(EffectRow{ID: "buff_002", SourceType: SourceBuff, Duration: &duration})
-
-	if len(table.Rows) != 2 {
-		t.Errorf("クリア前の行数が期待値と異なります: got %d, want 2", len(table.Rows))
-	}
-
-	table.Clear()
-
-	if len(table.Rows) != 0 {
-		t.Errorf("クリア後の行数が0ではありません: got %d", len(table.Rows))
 	}
 }

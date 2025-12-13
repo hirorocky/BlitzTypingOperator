@@ -1,5 +1,5 @@
 // Package ascii はASCIIアート描画機能を提供します。
-// Requirements: 1.1, 1.4, 3.9
+
 package ascii
 
 import (
@@ -16,7 +16,7 @@ func TestNewASCIILogo(t *testing.T) {
 }
 
 // TestASCIILogoRender はロゴのレンダリングをテストします。
-// Requirement 1.1: 5-8行程度のフィグレット風ASCIIアートでゲームロゴを表示
+
 func TestASCIILogoRender(t *testing.T) {
 	logo := NewASCIILogo()
 
@@ -51,7 +51,7 @@ func TestASCIILogoGetWidth(t *testing.T) {
 }
 
 // TestASCIILogoGetHeight はロゴの高さ取得をテストします。
-// Requirement 1.1: 5-8行程度
+
 func TestASCIILogoGetHeight(t *testing.T) {
 	logo := NewASCIILogo()
 	height := logo.GetHeight()

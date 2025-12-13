@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"hirorocky/type-battle/internal/reward"
 	"hirorocky/type-battle/internal/tui/styles"
+	"hirorocky/type-battle/internal/usecase/rewarding"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -15,18 +15,16 @@ import (
 // ==================== 報酬画面 ====================
 
 // RewardScreen は報酬画面を表します。
-// Requirement 12.1: 勝利時の報酬画面表示
-// Requirement 12.2: バトル統計表示
-// Requirement 12.7, 12.12: ドロップ情報表示
+
 type RewardScreen struct {
-	result *reward.RewardResult
+	result *rewarding.RewardResult
 	styles *styles.GameStyles
 	width  int
 	height int
 }
 
 // NewRewardScreen は新しいRewardScreenを作成します。
-func NewRewardScreen(result *reward.RewardResult) *RewardScreen {
+func NewRewardScreen(result *rewarding.RewardResult) *RewardScreen {
 	return &RewardScreen{
 		result: result,
 		styles: styles.NewGameStyles(),
@@ -126,7 +124,7 @@ func (s *RewardScreen) renderMainContent() string {
 }
 
 // renderBattleStats はバトル統計をレンダリングします。
-// Requirement 12.2: バトル統計表示
+
 func (s *RewardScreen) renderBattleStats() string {
 	var items []string
 
@@ -163,7 +161,7 @@ func (s *RewardScreen) renderBattleStats() string {
 }
 
 // renderDrops はドロップアイテムをレンダリングします。
-// Requirement 12.7, 12.12: ドロップ情報表示
+
 func (s *RewardScreen) renderDrops() string {
 	var items []string
 

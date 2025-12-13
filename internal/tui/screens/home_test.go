@@ -12,7 +12,7 @@ import (
 // ==================== Task 10.1: ホーム画面のテスト ====================
 
 // TestNewHomeScreen はHomeScreenの初期化をテストします。
-// Requirement 2.1: ゲーム起動時にホーム画面を表示
+
 func TestNewHomeScreen(t *testing.T) {
 	screen := NewHomeScreen(0, nil)
 
@@ -21,14 +21,14 @@ func TestNewHomeScreen(t *testing.T) {
 	}
 
 	// 初期状態で4つのメニューアイテムがあること
-	// Requirement 2.2: 4つの主要機能を表示
+
 	if len(screen.menu.Items) != 5 { // 4メニュー + 設定
 		t.Errorf("メニューアイテム数が不正: got %d, want 5", len(screen.menu.Items))
 	}
 }
 
 // TestHomeScreenMenuItems はメニューアイテムをテストします。
-// Requirement 2.2: エージェント管理、バトル選択、図鑑、統計/実績
+
 func TestHomeScreenMenuItems(t *testing.T) {
 	screen := NewHomeScreen(0, nil)
 
@@ -52,7 +52,7 @@ func TestHomeScreenMenuItems(t *testing.T) {
 }
 
 // TestHomeScreenNavigation はメニューナビゲーションをテストします。
-// Requirement 2.7: 矢印キーまたはhjklでメニュー選択
+
 func TestHomeScreenNavigation(t *testing.T) {
 	// モックAgentProviderを使用してバトル選択を有効化
 	screen := NewHomeScreen(0, &mockAgentProvider{agents: []*domain.AgentModel{{Level: 1}}})
@@ -83,7 +83,7 @@ func TestHomeScreenNavigation(t *testing.T) {
 }
 
 // TestHomeScreenEnterSelection はEnterキーによる選択をテストします。
-// Requirement 2.8: Enterキーで項目実行
+
 func TestHomeScreenEnterSelection(t *testing.T) {
 	screen := NewHomeScreen(0, nil)
 
@@ -97,7 +97,7 @@ func TestHomeScreenEnterSelection(t *testing.T) {
 }
 
 // TestHomeScreenProgressDisplay は進行状況表示をテストします。
-// Requirement 2.10: 現在の進行状況（到達最高レベル）を表示
+
 func TestHomeScreenProgressDisplay(t *testing.T) {
 	maxLevel := 15
 	screen := NewHomeScreen(maxLevel, nil)
@@ -129,7 +129,7 @@ func TestHomeScreenRender(t *testing.T) {
 // ==================== Task 4.1: ASCIIアートロゴ統合のテスト ====================
 
 // TestHomeScreenHasASCIILogo はASCIIロゴが表示されることをテストします。
-// Requirement 1.1: ホーム画面にASCIIアートロゴを表示
+
 func TestHomeScreenHasASCIILogo(t *testing.T) {
 	screen := NewHomeScreen(10, nil)
 	screen.width = 120
@@ -145,7 +145,7 @@ func TestHomeScreenHasASCIILogo(t *testing.T) {
 }
 
 // TestHomeScreenHasLevelASCII はレベルがASCII数字で表示されることをテストします。
-// Requirement 1.4: 進行状況パネルに到達レベルをASCII数字アートで表示
+
 func TestHomeScreenHasLevelASCII(t *testing.T) {
 	screen := NewHomeScreen(15, nil)
 	screen.width = 120
@@ -203,7 +203,7 @@ func findSubstring(s, substr string) bool {
 // ==================== Task 4.2: 左右分割レイアウトのテスト ====================
 
 // TestHomeScreenHasLeftRightLayout は左右分割レイアウトをテストします。
-// Requirement 1.2: 左側にメインメニュー、右側に進行状況パネルを横並び表示
+
 func TestHomeScreenHasLeftRightLayout(t *testing.T) {
 	screen := NewHomeScreen(10, nil)
 	screen.width = 120
@@ -223,7 +223,7 @@ func TestHomeScreenHasLeftRightLayout(t *testing.T) {
 }
 
 // TestHomeScreenHasKeyHelp は操作キーヘルプが表示されることをテストします。
-// Requirement 1.3: メインメニューの下部に操作キーのヘルプを表示
+
 func TestHomeScreenHasKeyHelp(t *testing.T) {
 	screen := NewHomeScreen(10, nil)
 	screen.width = 120
@@ -240,7 +240,7 @@ func TestHomeScreenHasKeyHelp(t *testing.T) {
 // ==================== Task 4.3: 進行状況パネルのテスト ====================
 
 // TestHomeScreenShowsEquippedAgentsWithCard は装備エージェント一覧がカード形式で表示されることをテストします。
-// Requirement 1.5: 装備中エージェント一覧をAgentCardで表示
+
 func TestHomeScreenShowsEquippedAgentsWithCard(t *testing.T) {
 	// mockAgentProviderを使用して装備エージェントがある状態を作成
 	coreType := domain.CoreType{
@@ -274,7 +274,7 @@ func TestHomeScreenShowsEquippedAgentsWithCard(t *testing.T) {
 }
 
 // TestHomeScreenShowsMaxLevel は到達最高レベルセクションが表示されることをテストします。
-// Requirement 1.4: 到達レベルをASCII数字アートで表示
+
 func TestHomeScreenShowsMaxLevel(t *testing.T) {
 	screen := NewHomeScreen(15, nil)
 	screen.width = 120
@@ -319,7 +319,7 @@ func TestHomeScreenEmptySlots(t *testing.T) {
 // ==================== Task 4.4: 装備なし時の誘導メッセージとバトル無効化のテスト ====================
 
 // TestHomeScreenBattleDisabledWhenNoAgent は装備エージェントがない場合にバトル選択が無効化されることをテストします。
-// Requirement 1.6, 5.3: 装備エージェントが空の場合、バトル選択メニューを無効化
+
 func TestHomeScreenBattleDisabledWhenNoAgent(t *testing.T) {
 	screen := NewHomeScreen(5, nil)
 	screen.width = 120
@@ -338,7 +338,7 @@ func TestHomeScreenBattleDisabledWhenNoAgent(t *testing.T) {
 }
 
 // TestHomeScreenGuidanceMessageWhenNoAgent は装備エージェントがない場合に誘導メッセージが表示されることをテストします。
-// Requirement 1.6: 装備エージェントが空の場合、エージェント管理への誘導メッセージを表示
+
 func TestHomeScreenGuidanceMessageWhenNoAgent(t *testing.T) {
 	screen := NewHomeScreen(5, nil)
 	screen.width = 120

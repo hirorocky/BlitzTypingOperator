@@ -26,7 +26,7 @@ func TestNewAgentManagementScreen(t *testing.T) {
 }
 
 // TestAgentManagementTabs はタブ切り替えをテストします。
-// Requirement 5.1, 6.1, 7.1, 8.1: サブ画面（コア一覧、モジュール一覧、合成、装備）
+
 func TestAgentManagementTabs(t *testing.T) {
 	inventory := createTestInventory()
 	screen := NewAgentManagementScreen(inventory)
@@ -50,7 +50,7 @@ func TestAgentManagementTabs(t *testing.T) {
 }
 
 // TestAgentManagementCoreList はコア一覧表示をテストします。
-// Requirement 5.1, 5.2: コア一覧機能
+
 func TestAgentManagementCoreList(t *testing.T) {
 	inventory := createTestInventory()
 	screen := NewAgentManagementScreen(inventory)
@@ -66,7 +66,7 @@ func TestAgentManagementCoreList(t *testing.T) {
 }
 
 // TestAgentManagementModuleList はモジュール一覧表示をテストします。
-// Requirement 6.1, 6.2: モジュール一覧機能
+
 func TestAgentManagementModuleList(t *testing.T) {
 	inventory := createTestInventory()
 	screen := NewAgentManagementScreen(inventory)
@@ -82,7 +82,7 @@ func TestAgentManagementModuleList(t *testing.T) {
 }
 
 // TestAgentManagementSynthesis は合成サブ画面をテストします。
-// Requirement 7.1, 7.2: エージェント合成
+
 func TestAgentManagementSynthesis(t *testing.T) {
 	inventory := createTestInventory()
 	screen := NewAgentManagementScreen(inventory)
@@ -102,7 +102,7 @@ func TestAgentManagementSynthesis(t *testing.T) {
 }
 
 // TestAgentManagementEquip は装備サブ画面をテストします。
-// Requirement 8.1, 8.2: エージェント装備
+
 func TestAgentManagementEquip(t *testing.T) {
 	inventory := createTestInventory()
 	screen := NewAgentManagementScreen(inventory)
@@ -118,7 +118,7 @@ func TestAgentManagementEquip(t *testing.T) {
 }
 
 // TestAgentManagementCoreDetailDisplay はコア詳細情報表示をテストします。
-// Requirement 5.5: コア詳細情報表示
+
 func TestAgentManagementCoreDetailDisplay(t *testing.T) {
 	inventory := createTestInventory()
 	screen := NewAgentManagementScreen(inventory)
@@ -138,7 +138,7 @@ func TestAgentManagementCoreDetailDisplay(t *testing.T) {
 }
 
 // TestAgentManagementModuleDetailDisplay はモジュール詳細情報表示をテストします。
-// Requirement 6.2: モジュール詳細情報表示
+
 func TestAgentManagementModuleDetailDisplay(t *testing.T) {
 	inventory := createTestInventory()
 	screen := NewAgentManagementScreen(inventory)
@@ -158,7 +158,7 @@ func TestAgentManagementModuleDetailDisplay(t *testing.T) {
 }
 
 // TestAgentManagementSynthesisFlow は合成フローをテストします。
-// Requirement 7.3, 7.4, 7.5, 7.6: コア選択→モジュール選択→合成確定
+
 func TestAgentManagementSynthesisFlow(t *testing.T) {
 	inventory := createTestInventory()
 	screen := NewAgentManagementScreen(inventory)
@@ -185,7 +185,7 @@ func TestAgentManagementSynthesisFlow(t *testing.T) {
 }
 
 // TestAgentManagementEquipFlow は装備フローをテストします。
-// Requirement 8.4, 8.5: エージェント装備・装備解除
+
 func TestAgentManagementEquipFlow(t *testing.T) {
 	inventory := createTestInventory()
 	screen := NewAgentManagementScreen(inventory)
@@ -356,7 +356,7 @@ func createTestInventory() *TestInventory {
 // ==================== Task 5.1-5.4: エージェント管理画面UI改善のテスト ====================
 
 // TestAgentManagementSynthesisLeftRightLayout は合成タブの左右分割レイアウトをテストします。
-// Requirement 2.1, 2.2: 左側に選択可能パーツリスト、右側に選択済みパーツリスト
+
 func TestAgentManagementSynthesisLeftRightLayout(t *testing.T) {
 	inventory := createTestInventory()
 	screen := NewAgentManagementScreen(inventory)
@@ -383,7 +383,7 @@ func TestAgentManagementSynthesisLeftRightLayout(t *testing.T) {
 }
 
 // TestAgentManagementSynthesisDetailAndPreview は合成タブのパーツ詳細と完成予測ステータス表示をテストします。
-// Requirement 2.3, 2.4: パーツ詳細と完成予測ステータス
+
 func TestAgentManagementSynthesisDetailAndPreview(t *testing.T) {
 	inventory := createTestInventory()
 	screen := NewAgentManagementScreen(inventory)
@@ -409,7 +409,7 @@ func TestAgentManagementSynthesisDetailAndPreview(t *testing.T) {
 }
 
 // TestAgentManagementEquipTopBottomLayout は装備タブの上下分割レイアウトをテストします。
-// Requirement 2.5, 2.6, 2.7: 上部にエージェント一覧と詳細、下部に装備スロット
+
 func TestAgentManagementEquipTopBottomLayout(t *testing.T) {
 	inventory := createTestInventory()
 	screen := NewAgentManagementScreen(inventory)
@@ -427,7 +427,7 @@ func TestAgentManagementEquipTopBottomLayout(t *testing.T) {
 }
 
 // TestAgentManagementEquipSlotSwitch は装備タブのスロット切替をテストします。
-// Requirement 2.8: Tabキーによるスロット切替
+
 func TestAgentManagementEquipSlotSwitch(t *testing.T) {
 	inventory := createTestInventory()
 	screen := NewAgentManagementScreen(inventory)

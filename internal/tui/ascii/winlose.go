@@ -1,6 +1,6 @@
 // Package ascii はASCIIアート描画機能を提供します。
 // 戦闘結果（WIN/LOSE）のASCIIアート描画を担当します。
-// Requirements: 3.9
+
 package ascii
 
 import (
@@ -12,7 +12,7 @@ import (
 )
 
 // WINのASCIIアート
-// Requirement 3.9: 勝利時は緑色で「WIN」を大きく表示
+
 var winArt = []string{
 	"██╗    ██╗██╗███╗   ██╗██╗",
 	"██║    ██║██║████╗  ██║██║",
@@ -23,7 +23,7 @@ var winArt = []string{
 }
 
 // LOSEのASCIIアート
-// Requirement 3.9: 敗北時は赤色で「LOSE」を大きく表示
+
 var loseArt = []string{
 	"██╗      ██████╗ ███████╗███████╗",
 	"██║     ██╔═══██╗██╔════╝██╔════╝",
@@ -85,7 +85,7 @@ func NewWinLoseRenderer(gs *styles.GameStyles) WinLoseRenderer {
 }
 
 // RenderWin は勝利時のASCIIアートを描画します。
-// Requirement 3.9: 勝利時は緑色でWINを大きく表示
+
 func (r *winLoseRenderer) RenderWin() string {
 	// 緑色（ColorHPHigh = 成功色）でスタイリング
 	style := lipgloss.NewStyle().
@@ -96,7 +96,7 @@ func (r *winLoseRenderer) RenderWin() string {
 }
 
 // RenderLose は敗北時のASCIIアートを描画します。
-// Requirement 3.9: 敗北時は赤色でLOSEを大きく表示
+
 func (r *winLoseRenderer) RenderLose() string {
 	// 赤色（ColorDamage = 失敗色）でスタイリング
 	style := lipgloss.NewStyle().

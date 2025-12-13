@@ -1,6 +1,6 @@
 // Package styles はTUIゲームのスタイリングを提供します。
 // ボックス描画、カラー表示、HPバーなどの視覚的表現を担当します。
-// Requirements: 18.1, 18.2, 18.3, 18.4
+
 package styles
 
 import (
@@ -46,8 +46,7 @@ var (
 )
 
 // GameStyles はゲーム全体で使用するスタイルを保持します。
-// Requirement 18.1: ボックス描画文字によるレイアウト
-// Requirement 18.2: カラー表示
+
 type GameStyles struct {
 	// Box はボックス（枠線）スタイル
 	Box BoxStyle
@@ -114,7 +113,7 @@ func NewGameStyles() *GameStyles {
 }
 
 // NewGameStylesWithNoColor はカラー無効モードでGameStylesを作成します。
-// Requirement 18.3: カラー非対応ターミナルでの代替表示
+
 func NewGameStylesWithNoColor() *GameStyles {
 	return createStyles(true)
 }
@@ -210,7 +209,7 @@ func createStyles(noColor bool) *GameStyles {
 }
 
 // GetHPColorType はHP割合に応じた色タイプを返します。
-// Requirement 18.2: HP色分け（緑/黄/赤）
+
 func (gs *GameStyles) GetHPColorType(percentage float64) string {
 	if percentage > HPHighThreshold {
 		return "green"
@@ -241,7 +240,7 @@ func (gs *GameStyles) GetHPStyle(percentage float64) lipgloss.Style {
 }
 
 // RenderHPBar はHPバーを描画します。
-// Requirement 18.4: HPバーの視覚的表示
+
 func (gs *GameStyles) RenderHPBar(current, max, width int) string {
 	if max <= 0 {
 		max = 1
@@ -274,7 +273,7 @@ func (gs *GameStyles) RenderHPBar(current, max, width int) string {
 
 	// カラーモードまたは非カラーモードで描画
 	if gs.noColor {
-		// Requirement 18.3: カラー非対応時は記号で代替
+
 		bar.WriteString(strings.Repeat("#", filledWidth))
 		bar.WriteString(strings.Repeat("-", emptyWidth))
 	} else {
@@ -299,7 +298,7 @@ func (gs *GameStyles) RenderHPBarWithValue(current, max, width int) string {
 }
 
 // RenderDamage はダメージ値を描画します。
-// Requirement 18.2: ダメージは赤
+
 func (gs *GameStyles) RenderDamage(amount int) string {
 	if gs.noColor {
 		return fmt.Sprintf("-%d", amount)
@@ -308,7 +307,7 @@ func (gs *GameStyles) RenderDamage(amount int) string {
 }
 
 // RenderHeal は回復値を描画します。
-// Requirement 18.2: 回復は緑
+
 func (gs *GameStyles) RenderHeal(amount int) string {
 	if gs.noColor {
 		return fmt.Sprintf("+%d", amount)
@@ -317,7 +316,7 @@ func (gs *GameStyles) RenderHeal(amount int) string {
 }
 
 // RenderBox はボックスで囲んだコンテンツを描画します。
-// Requirement 18.1: ボックス描画文字によるレイアウト
+
 func (gs *GameStyles) RenderBox(content string, width int) string {
 	style := lipgloss.NewStyle().
 		Border(gs.Box.Border).

@@ -57,7 +57,7 @@ func TestAgentModel_フィールドの確認(t *testing.T) {
 }
 
 // TestAgentModel_レベル等価制約 はエージェントのレベルがコアのレベルと一致することを確認します。
-// Requirement 7.9: エージェントレベル = コアレベル
+
 func TestAgentModel_レベル等価制約(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -163,7 +163,7 @@ func TestNewAgent_モジュール数確認(t *testing.T) {
 }
 
 // TestAgentModel_基礎ステータス算出 は基礎ステータスがコアから正しく導出されることを確認します。
-// Requirement 8.3: エージェントレベル = コアレベル、ステータス表示
+
 func TestAgentModel_基礎ステータス算出(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -243,8 +243,8 @@ func TestAgentModel_基礎ステータス算出(t *testing.T) {
 	}
 }
 
-// TestAgentModel_GetModule はエージェントから指定インデックスのモジュールを取得できることを確認します。
-func TestAgentModel_GetModule(t *testing.T) {
+// TestAgentModel_Modules はエージェントから指定インデックスのモジュールを直接取得できることを確認します。
+func TestAgentModel_Modules(t *testing.T) {
 	coreType := CoreType{
 		ID:          "test",
 		StatWeights: map[string]float64{"STR": 1.0, "MAG": 1.0, "SPD": 1.0, "LUK": 1.0},
@@ -262,9 +262,9 @@ func TestAgentModel_GetModule(t *testing.T) {
 
 	agent := NewAgent("agent_test", core, modules)
 
-	// 正常系: 各インデックスのモジュールを取得
+	// 正常系: 各インデックスのモジュールを取得（直接アクセス）
 	for i := 0; i < 4; i++ {
-		module := agent.GetModule(i)
+		module := agent.Modules[i]
 		if module == nil {
 			t.Errorf("インデックス%dのモジュールがnilです", i)
 			continue
@@ -274,12 +274,9 @@ func TestAgentModel_GetModule(t *testing.T) {
 		}
 	}
 
-	// 境界外アクセス: nilを返す
-	if agent.GetModule(-1) != nil {
-		t.Error("負のインデックスでnilを返すべきです")
-	}
-	if agent.GetModule(4) != nil {
-		t.Error("範囲外のインデックスでnilを返すべきです")
+	// モジュール数の確認
+	if len(agent.Modules) != 4 {
+		t.Errorf("モジュール数が4でありません: got %d, want 4", len(agent.Modules))
 	}
 }
 

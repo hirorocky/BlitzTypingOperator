@@ -17,7 +17,7 @@ import (
 	"os"
 
 	"hirorocky/type-battle/internal/app"
-	"hirorocky/type-battle/internal/embedded"
+	"hirorocky/type-battle/internal/infra/masterdata"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -29,7 +29,7 @@ func main() {
 
 	// RootModelを作成 - ゲーム全体の状態管理とシーンルーティングを担当
 	// 外部データディレクトリが指定されていない場合は埋め込みデータを使用
-	model := app.NewRootModel(*dataDir, embedded.Data)
+	model := app.NewRootModel(*dataDir, masterdata.EmbeddedData)
 
 	// Bubbleteaプログラムを作成
 	// tea.WithAltScreen(): 代替スクリーンバッファを使用し、

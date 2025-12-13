@@ -3,8 +3,10 @@ package screens
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
+	"hirorocky/type-battle/internal/config"
 	"hirorocky/type-battle/internal/domain"
 	"hirorocky/type-battle/internal/tui/components"
 	"hirorocky/type-battle/internal/tui/styles"
@@ -50,7 +52,7 @@ type SynthesisState struct {
 }
 
 // AgentManagementScreen はエージェント管理画面を表します。
-// Requirements: 5.1, 5.2, 5.5, 6.1, 6.2, 7.1, 7.2, 8.1, 8.2
+
 // UI-Improvement Requirements: 2.5, 2.6, 2.7, 2.8, 2.9
 type AgentManagementScreen struct {
 	inventory      InventoryProvider
@@ -69,6 +71,9 @@ type AgentManagementScreen struct {
 	pendingDeleteIdx int // 削除待ちのエージェントインデックス
 	// 装備タブ用: 選択中のスロットインデックス (0-2)
 	selectedEquipSlot int
+	// エラー/ステータスメッセージ
+	errorMessage  string
+	statusMessage string
 }
 
 // NewAgentManagementScreen は新しいAgentManagementScreenを作成します。
@@ -77,7 +82,7 @@ func NewAgentManagementScreen(inventory InventoryProvider) *AgentManagementScree
 		inventory:     inventory,
 		currentTab:    TabCoreList,
 		selectedIndex: 0,
-		equipSlots:    make([]*domain.AgentModel, 3),
+		equipSlots:    make([]*domain.AgentModel, config.MaxAgentEquipSlots),
 		synthesisState: SynthesisState{
 			selectedModules: []*domain.ModuleModel{},
 		},
@@ -185,13 +190,35 @@ func (s *AgentManagementScreen) handleEquipKeyMsg(msg tea.KeyMsg) (tea.Model, te
 		// 選択中のエージェントを選択中のスロットに装備
 		if s.selectedIndex < len(s.agentList) {
 			agent := s.agentList[s.selectedIndex]
-			_ = s.inventory.EquipAgent(s.selectedEquipSlot, agent)
+			if err := s.inventory.EquipAgent(s.selectedEquipSlot, agent); err != nil {
+				slog.Error("エージェント装備に失敗",
+					slog.Int("slot", s.selectedEquipSlot),
+					slog.String("agent_id", agent.ID),
+					slog.Any("error", err),
+				)
+				s.errorMessage = fmt.Sprintf("装備に失敗しました: %v", err)
+				s.statusMessage = ""
+			} else {
+				s.statusMessage = fmt.Sprintf("'%s'をスロット%dに装備しました", agent.GetCoreTypeName(), s.selectedEquipSlot+1)
+				s.errorMessage = ""
+			}
 			s.updateCurrentList()
 		}
 	case "backspace":
 		// 選択中のスロットからエージェントを取り外し
 		if s.equipSlots[s.selectedEquipSlot] != nil {
-			_ = s.inventory.UnequipAgent(s.selectedEquipSlot)
+			agentName := s.equipSlots[s.selectedEquipSlot].GetCoreTypeName()
+			if err := s.inventory.UnequipAgent(s.selectedEquipSlot); err != nil {
+				slog.Error("エージェント装備解除に失敗",
+					slog.Int("slot", s.selectedEquipSlot),
+					slog.Any("error", err),
+				)
+				s.errorMessage = fmt.Sprintf("装備解除に失敗しました: %v", err)
+				s.statusMessage = ""
+			} else {
+				s.statusMessage = fmt.Sprintf("'%s'をスロット%dから取り外しました", agentName, s.selectedEquipSlot+1)
+				s.errorMessage = ""
+			}
 			s.updateCurrentList()
 		}
 	case "d":
@@ -259,8 +286,8 @@ func (s *AgentManagementScreen) updateCurrentList() {
 	s.agentList = s.inventory.GetAgents()
 
 	equipped := s.inventory.GetEquippedAgents()
-	s.equipSlots = make([]*domain.AgentModel, 3)
-	for i := 0; i < 3 && i < len(equipped); i++ {
+	s.equipSlots = make([]*domain.AgentModel, config.MaxAgentEquipSlots)
+	for i := 0; i < config.MaxAgentEquipSlots && i < len(equipped); i++ {
 		s.equipSlots[i] = equipped[i]
 	}
 }
@@ -341,7 +368,12 @@ func (s *AgentManagementScreen) handleEquipEnter() (tea.Model, tea.Cmd) {
 	if s.selectedIndex < 3 {
 		// 装備解除
 		if s.equipSlots[s.selectedIndex] != nil {
-			_ = s.inventory.UnequipAgent(s.selectedIndex)
+			if err := s.inventory.UnequipAgent(s.selectedIndex); err != nil {
+				slog.Error("エージェント装備解除に失敗",
+					slog.Int("slot", s.selectedIndex),
+					slog.Any("error", err),
+				)
+			}
 			s.updateCurrentList()
 		}
 	} else {
@@ -351,7 +383,13 @@ func (s *AgentManagementScreen) handleEquipEnter() (tea.Model, tea.Cmd) {
 			// 空きスロットを探す
 			for i := 0; i < 3; i++ {
 				if s.equipSlots[i] == nil {
-					_ = s.inventory.EquipAgent(i, s.agentList[agentIndex])
+					if err := s.inventory.EquipAgent(i, s.agentList[agentIndex]); err != nil {
+						slog.Error("エージェント装備に失敗",
+							slog.Int("slot", i),
+							slog.String("agent_id", s.agentList[agentIndex].ID),
+							slog.Any("error", err),
+						)
+					}
 					s.updateCurrentList()
 					break
 				}
@@ -405,12 +443,22 @@ func (s *AgentManagementScreen) executeDelete() {
 	switch s.currentTab {
 	case TabCoreList:
 		if s.pendingDeleteIdx < len(s.coreList) {
-			_ = s.inventory.RemoveCore(s.coreList[s.pendingDeleteIdx].ID)
+			if err := s.inventory.RemoveCore(s.coreList[s.pendingDeleteIdx].ID); err != nil {
+				slog.Error("コア削除に失敗",
+					slog.String("core_id", s.coreList[s.pendingDeleteIdx].ID),
+					slog.Any("error", err),
+				)
+			}
 			s.updateCurrentList()
 		}
 	case TabModuleList:
 		if s.pendingDeleteIdx < len(s.moduleList) {
-			_ = s.inventory.RemoveModule(s.moduleList[s.pendingDeleteIdx].ID)
+			if err := s.inventory.RemoveModule(s.moduleList[s.pendingDeleteIdx].ID); err != nil {
+				slog.Error("モジュール削除に失敗",
+					slog.String("module_id", s.moduleList[s.pendingDeleteIdx].ID),
+					slog.Any("error", err),
+				)
+			}
 			s.updateCurrentList()
 		}
 	case TabEquip:
@@ -463,12 +511,33 @@ func (s *AgentManagementScreen) executeSynthesis() {
 	agent := domain.NewAgent(agentID, s.synthesisState.selectedCore, s.synthesisState.selectedModules)
 
 	// インベントリに追加
-	_ = s.inventory.AddAgent(agent)
+	if err := s.inventory.AddAgent(agent); err != nil {
+		slog.Error("エージェント追加に失敗",
+			slog.String("agent_id", agent.ID),
+			slog.Any("error", err),
+		)
+		s.errorMessage = fmt.Sprintf("エージェントの合成に失敗しました: %v", err)
+		return // 素材を消費しないように処理を中断
+	}
+
+	// エラーメッセージをクリアしてステータスメッセージを設定
+	s.errorMessage = ""
+	s.statusMessage = "エージェントを合成しました"
 
 	// 使用した素材を削除
-	_ = s.inventory.RemoveCore(s.synthesisState.selectedCore.ID)
+	if err := s.inventory.RemoveCore(s.synthesisState.selectedCore.ID); err != nil {
+		slog.Error("合成素材のコア削除に失敗",
+			slog.String("core_id", s.synthesisState.selectedCore.ID),
+			slog.Any("error", err),
+		)
+	}
 	for _, m := range s.synthesisState.selectedModules {
-		_ = s.inventory.RemoveModule(m.ID)
+		if err := s.inventory.RemoveModule(m.ID); err != nil {
+			slog.Error("合成素材のモジュール削除に失敗",
+				slog.String("module_id", m.ID),
+				slog.Any("error", err),
+			)
+		}
 	}
 
 	s.updateCurrentList()
@@ -520,6 +589,23 @@ func (s *AgentManagementScreen) View() string {
 	// メインコンテンツ
 	builder.WriteString(s.renderMainContent())
 	builder.WriteString("\n\n")
+
+	// ステータス/エラーメッセージ
+	if s.errorMessage != "" {
+		errorStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("196")). // 赤色
+			Align(lipgloss.Center).
+			Width(s.width)
+		builder.WriteString(errorStyle.Render(s.errorMessage))
+		builder.WriteString("\n")
+	} else if s.statusMessage != "" {
+		statusStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorSecondary).
+			Align(lipgloss.Center).
+			Width(s.width)
+		builder.WriteString(statusStyle.Render(s.statusMessage))
+		builder.WriteString("\n")
+	}
 
 	// ヒント
 	hintStyle := lipgloss.NewStyle().

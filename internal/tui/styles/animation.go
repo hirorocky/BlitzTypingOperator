@@ -1,6 +1,6 @@
 // Package styles はTUIゲームのアニメーションとフィードバック機能を提供します。
 // タイピング表示、ダメージアニメーション、強調メッセージなどを担当します。
-// Requirements: 18.5, 18.6, 18.7, 18.8
+
 package styles
 
 import (
@@ -62,21 +62,21 @@ func newTypingStyles() TypingStyles {
 }
 
 // RenderTypingCompleted は完了済み文字を描画します。
-// Requirement 18.6: タイピング入力の色分け（完了済み）
+
 func (gs *GameStyles) RenderTypingCompleted(text string) string {
 	ts := newTypingStyles()
 	return ts.Completed.Render(text)
 }
 
 // RenderTypingCurrent は入力中文字を描画します。
-// Requirement 18.6: タイピング入力の色分け（入力中）
+
 func (gs *GameStyles) RenderTypingCurrent(text string) string {
 	ts := newTypingStyles()
 	return ts.Current.Render(text)
 }
 
 // RenderTypingRemaining は未入力文字を描画します。
-// Requirement 18.6: タイピング入力の色分け（未入力）
+
 func (gs *GameStyles) RenderTypingRemaining(text string) string {
 	ts := newTypingStyles()
 	return ts.Remaining.Render(text)
@@ -89,7 +89,7 @@ func (gs *GameStyles) RenderTypingIncorrect(text string) string {
 }
 
 // RenderTypingChallenge はタイピングチャレンジ全体を描画します。
-// Requirement 18.6: タイピング入力の色分け
+
 func (gs *GameStyles) RenderTypingChallenge(text string, currentIndex int, mistakes []int) string {
 	if len(text) == 0 {
 		return ""
@@ -127,7 +127,7 @@ func (gs *GameStyles) RenderTypingChallenge(text string, currentIndex int, mista
 }
 
 // GetDamageAnimationFrames はダメージアニメーションのフレームを返します。
-// Requirement 18.5: ダメージ発生時のアニメーション効果
+
 func (gs *GameStyles) GetDamageAnimationFrames(damage int) []string {
 	// シンプルなテキストアニメーション
 	// 実際のアニメーションはUIレイヤーで時間経過で切り替える
@@ -158,7 +158,7 @@ func (gs *GameStyles) GetHealAnimationFrames(heal int) []string {
 }
 
 // RenderHighlightMessage は重要メッセージを強調表示します。
-// Requirement 18.7: 重要メッセージの強調表示
+
 func (gs *GameStyles) RenderHighlightMessage(message string, msgType MessageType) string {
 	var style lipgloss.Style
 
@@ -201,7 +201,7 @@ func (gs *GameStyles) RenderHighlightMessage(message string, msgType MessageType
 }
 
 // RenderCooldownBar はクールダウンプログレスバーを描画します。
-// Requirement 18.9: モジュールのクールダウン状態を視覚的に表示（プログレスバー）
+
 func (gs *GameStyles) RenderCooldownBar(remaining, total float64, width int) string {
 	if total <= 0 {
 		total = 1
@@ -246,7 +246,7 @@ func (gs *GameStyles) RenderCooldownBar(remaining, total float64, width int) str
 }
 
 // RenderCooldownBarWithTime はクールダウンバーと残り時間を描画します。
-// Requirement 18.9: 残り秒数表示
+
 func (gs *GameStyles) RenderCooldownBarWithTime(remaining, total float64, width int) string {
 	bar := gs.RenderCooldownBar(remaining, total, width)
 
@@ -259,7 +259,7 @@ func (gs *GameStyles) RenderCooldownBarWithTime(remaining, total float64, width 
 }
 
 // AnimationState はアニメーション状態を管理する構造体です。
-// Requirement 18.8: 画面ちらつき最小化（状態管理による最適化）
+
 type AnimationState struct {
 	// DamageAnimations は現在表示中のダメージアニメーション
 	DamageAnimations []DamageAnimation
@@ -390,7 +390,7 @@ func (as *AnimationState) HasActiveAnimations() bool {
 // ==================== AnimatedHPBar ====================
 
 // AnimatedHPBar はアニメーション付きHPバーの状態を管理します。
-// Requirement 3.3: HPバーのスムーズアニメーション
+
 type AnimatedHPBar struct {
 	// CurrentDisplayHP は現在表示中のHP値（アニメーション用）
 	CurrentDisplayHP float64
@@ -444,7 +444,7 @@ func (a *AnimatedHPBar) SetTarget(targetHP int) {
 }
 
 // Update はアニメーションを更新します（deltaMS: 経過ミリ秒）。
-// Requirement 3.3: 100msごとの更新で自然なアニメーション
+
 func (a *AnimatedHPBar) Update(deltaMS int) {
 	if !a.IsAnimating {
 		return
@@ -507,7 +507,7 @@ func (a *AnimatedHPBar) ForceComplete() {
 // ==================== FloatingDamageManager ====================
 
 // FloatingText は浮遊テキストの状態を表します。
-// Requirement 3.4: ダメージ/回復発生時に数値を一時表示
+
 type FloatingText struct {
 	Text        string
 	IsHealing   bool   // true=回復（緑）、false=ダメージ（赤）
@@ -517,7 +517,7 @@ type FloatingText struct {
 }
 
 // FloatingDamageManager はフローティングダメージの状態を管理します。
-// Requirement 3.4: フローティングダメージ/回復表示機能
+
 type FloatingDamageManager struct {
 	Texts []FloatingText
 }
@@ -525,11 +525,11 @@ type FloatingDamageManager struct {
 // フローティングテキストの設定
 const (
 	// FloatingTextDurationMS は表示時間（ミリ秒）
-	// Requirement 3.4: 2-3秒で消去
+
 	FloatingTextDurationMS = 2500
 
 	// FloatingTextRiseSpeed はY方向の移動速度（1秒あたりのピクセル数）
-	// Requirement 3.4: Y方向への浮遊アニメーション
+
 	FloatingTextRiseSpeed = 2
 )
 
@@ -541,7 +541,7 @@ func NewFloatingDamageManager() *FloatingDamageManager {
 }
 
 // AddDamage はダメージ表示を追加します。
-// Requirement 3.4: ダメージは赤で表示
+
 func (m *FloatingDamageManager) AddDamage(amount int, targetArea string) {
 	m.Texts = append(m.Texts, FloatingText{
 		Text:        fmt.Sprintf("-%d", amount),
@@ -553,7 +553,7 @@ func (m *FloatingDamageManager) AddDamage(amount int, targetArea string) {
 }
 
 // AddHeal は回復表示を追加します。
-// Requirement 3.4: 回復は緑で表示
+
 func (m *FloatingDamageManager) AddHeal(amount int, targetArea string) {
 	m.Texts = append(m.Texts, FloatingText{
 		Text:        fmt.Sprintf("+%d", amount),
@@ -565,7 +565,7 @@ func (m *FloatingDamageManager) AddHeal(amount int, targetArea string) {
 }
 
 // Update は状態を更新します（deltaMS: 経過ミリ秒）。
-// Requirement 3.4: 時間経過でテキストを消去、Y方向への浮遊
+
 func (m *FloatingDamageManager) Update(deltaMS int) {
 	// 経過時間を秒に変換
 	deltaSeconds := float64(deltaMS) / 1000.0
@@ -584,7 +584,7 @@ func (m *FloatingDamageManager) Update(deltaMS int) {
 }
 
 // GetTextsForArea は指定エリアの表示テキストを取得します。
-// Requirement 3.4: 対象エリア（敵、プレイヤー、エージェント）を指定可能
+
 func (m *FloatingDamageManager) GetTextsForArea(targetArea string) []FloatingText {
 	result := make([]FloatingText, 0)
 	for _, text := range m.Texts {

@@ -1,5 +1,5 @@
 // Package ascii はASCIIアート描画機能を提供します。
-// Requirements: 1.4
+
 package ascii
 
 import (
@@ -18,7 +18,7 @@ func TestNewASCIINumbers(t *testing.T) {
 }
 
 // TestASCIINumbersRenderDigit は単一の数字（0-9）のレンダリングをテストします。
-// Requirement 1.4: 0-9の数字を3-5行のASCIIアートで表現
+
 func TestASCIINumbersRenderDigit(t *testing.T) {
 	renderer := NewASCIINumbers()
 
@@ -54,7 +54,7 @@ func TestASCIINumbersRenderDigitInvalid(t *testing.T) {
 }
 
 // TestASCIINumbersRenderNumber は複数桁の数値レンダリングをテストします。
-// Requirement 1.4: 複数桁の数値を連結して表示
+
 func TestASCIINumbersRenderNumber(t *testing.T) {
 	renderer := NewASCIINumbers()
 
@@ -84,7 +84,7 @@ func TestASCIINumbersRenderNumber(t *testing.T) {
 }
 
 // TestASCIINumbersRenderNumberNegative は負数の処理をテストします。
-// Requirement 1.4: 負数は0として表示
+
 func TestASCIINumbersRenderNumberNegative(t *testing.T) {
 	renderer := NewASCIINumbers()
 
@@ -98,7 +98,7 @@ func TestASCIINumbersRenderNumberNegative(t *testing.T) {
 }
 
 // TestASCIINumbersRenderNumberLarge は大きな数値の処理をテストします。
-// Requirement 1.4: 1000以上は999+として表示
+
 func TestASCIINumbersRenderNumberLarge(t *testing.T) {
 	renderer := NewASCIINumbers()
 

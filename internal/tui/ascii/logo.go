@@ -1,6 +1,6 @@
 // Package ascii はASCIIアート描画機能を提供します。
 // ゲームロゴ、数字、WIN/LOSEなどのASCIIアートを担当します。
-// Requirements: 1.1, 1.4, 3.9
+
 package ascii
 
 import (
@@ -10,7 +10,7 @@ import (
 )
 
 // BlitzTypingOperatorロゴのASCIIアート（フィグレット風）
-// Requirement 1.1: 5-8行程度のフィグレット風ASCIIアートでゲームロゴを表示
+
 var blitzTypingOperatorLogo = []string{
 	"╔╗ ╦  ╦╔╦╗╔═╗╔╦╗╦ ╦╔═╗╦╔╗╔╔═╗╔═╗╔═╗╔═╗╦═╗╔═╗╔╦╗╔═╗╦═╗",
 	"╠╩╗║  ║ ║ ╔═╝ ║ ╚╦╝╠═╝║║║║║ ╦║ ║╠═╝║╣ ╠╦╝╠═╣ ║ ║ ║╠╦╝",

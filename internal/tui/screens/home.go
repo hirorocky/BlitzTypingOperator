@@ -23,7 +23,7 @@ type AgentProvider interface {
 }
 
 // HomeScreen はホーム画面を表します。
-// Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10, 21.1
+
 // UI-Improvement Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6
 type HomeScreen struct {
 	menu            *components.Menu
@@ -44,7 +44,7 @@ type ChangeSceneMsg struct {
 }
 
 // NewHomeScreen は新しいHomeScreenを作成します。
-// Requirement 2.1: ゲーム起動時にホーム画面を表示
+
 // UI-Improvement Requirement 1.6, 5.3: 装備エージェントが空の場合、バトル選択メニューを無効化
 func NewHomeScreen(maxLevelReached int, agentProvider AgentProvider) *HomeScreen {
 	// 装備エージェントがあるかチェック
@@ -54,14 +54,13 @@ func NewHomeScreen(maxLevelReached int, agentProvider AgentProvider) *HomeScreen
 		hasEquippedAgents = len(equippedAgents) > 0
 	}
 
-	// Requirement 2.2: 4つの主要機能 + 設定
 	// UI-Improvement Requirement 1.6, 5.3: 装備がない場合はバトル選択を無効化
 	items := []components.MenuItem{
 		{Label: "エージェント管理", Value: "agent_management"},
 		{Label: "バトル選択", Value: "battle_select", Disabled: !hasEquippedAgents},
 		{Label: "図鑑", Value: "encyclopedia"},
 		{Label: "統計/実績", Value: "stats_achievements"},
-		{Label: "設定", Value: "settings"}, // Requirement 21.1
+		{Label: "設定", Value: "settings"},
 	}
 
 	return &HomeScreen{
@@ -98,8 +97,7 @@ func (s *HomeScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // handleKeyMsg はキーボード入力を処理します。
-// Requirement 2.7: 矢印キーまたはhjklでメニュー選択
-// Requirement 2.8: Enterキーで項目実行
+
 func (s *HomeScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "up", "k":
@@ -117,7 +115,7 @@ func (s *HomeScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 // handleMenuSelection はメニュー選択を処理します。
-// Requirements 2.3, 2.4, 2.5, 2.6: 各機能画面への遷移
+
 func (s *HomeScreen) handleMenuSelection(value string) tea.Cmd {
 	return func() tea.Msg {
 		return ChangeSceneMsg{Scene: value}
@@ -130,7 +128,7 @@ func (s *HomeScreen) View() string {
 	var builder strings.Builder
 
 	// UI改善: ASCIIアートロゴを表示
-	// Requirement 1.1: ホーム画面にフィグレット風ASCIIアートでゲームロゴを表示
+
 	logo := s.logoRenderer.Render(true) // カラーモード
 	logoLines := strings.Split(logo, "\n")
 
@@ -212,7 +210,7 @@ func (s *HomeScreen) View() string {
 }
 
 // renderStatusPanel は進行状況パネルをレンダリングします。
-// Requirement 2.10: 現在の進行状況を表示
+
 // UI-Improvement Requirement 1.4: 到達レベルをASCII数字アートで表示
 func (s *HomeScreen) renderStatusPanel() string {
 	var builder strings.Builder
@@ -232,7 +230,7 @@ func (s *HomeScreen) renderStatusPanel() string {
 	builder.WriteString("\n\n")
 
 	// UI改善: 到達最高レベルをASCII数字アートで表示
-	// Requirement 1.4: 進行状況パネルに到達レベルをフィグレット風の大きなASCII数字アートで表示
+
 	builder.WriteString(labelStyle.Render("到達最高レベル:"))
 	builder.WriteString("\n")
 	if s.maxLevelReached == 0 {
@@ -309,4 +307,24 @@ func (s *HomeScreen) SetStatusMessage(msg string) {
 // ClearStatusMessage はステータスメッセージをクリアします。
 func (s *HomeScreen) ClearStatusMessage() {
 	s.statusMessage = ""
+}
+
+// ==================== Screenインターフェース実装 ====================
+
+// SetSize は画面サイズを設定します。
+// Screenインターフェースの実装です。
+func (s *HomeScreen) SetSize(width, height int) {
+	s.width = width
+	s.height = height
+}
+
+// GetTitle は画面のタイトルを返します。
+// Screenインターフェースの実装です。
+func (s *HomeScreen) GetTitle() string {
+	return "ホーム"
+}
+
+// GetSize は現在の画面サイズを返します。
+func (s *HomeScreen) GetSize() (width, height int) {
+	return s.width, s.height
 }

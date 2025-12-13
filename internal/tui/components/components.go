@@ -476,7 +476,7 @@ func (l *List) Render(width int) string {
 // ==================== AgentCardコンポーネント ====================
 
 // AgentCardStyle はカードのスタイルバリエーションです。
-// Requirement 1.5, 2.7, 3.2: エージェント情報カード表示
+
 type AgentCardStyle int
 
 const (
@@ -487,7 +487,7 @@ const (
 )
 
 // AgentCard はエージェント情報カードを表します。
-// Requirement 1.5, 2.6, 3.2: エージェント情報をカード形式で表示
+
 type AgentCard struct {
 	// AgentName はエージェント名です（空の場合は空スロット）
 	AgentName string
@@ -658,7 +658,7 @@ func (c *AgentCard) renderDetailed(width int) string {
 // ==================== ConfirmDialogコンポーネント ====================
 
 // ConfirmResult はダイアログの結果を表します。
-// Requirement 2.9: 確認ダイアログ表示
+
 type ConfirmResult int
 
 const (
@@ -673,7 +673,7 @@ const (
 )
 
 // ConfirmDialog は確認ダイアログを表します。
-// Requirement 2.9: エージェント削除確認ダイアログ
+
 type ConfirmDialog struct {
 	// Title はダイアログのタイトルです
 	Title string

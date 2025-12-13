@@ -50,28 +50,6 @@ func TestModuleCategory_String(t *testing.T) {
 	}
 }
 
-// TestModuleCategory_DefaultStatRef はカテゴリ別のデフォルト参照ステータスが正しいことを確認します。
-func TestModuleCategory_DefaultStatRef(t *testing.T) {
-	tests := []struct {
-		category ModuleCategory
-		expected string
-	}{
-		{PhysicalAttack, "STR"}, // 物理攻撃はSTR参照
-		{MagicAttack, "MAG"},    // 魔法攻撃はMAG参照
-		{Heal, "MAG"},           // 回復はMAG参照
-		{Buff, "SPD"},           // バフはSPD参照（効果時間に影響）
-		{Debuff, "SPD"},         // デバフはSPD参照（効果時間に影響）
-	}
-
-	for _, tt := range tests {
-		t.Run(string(tt.category), func(t *testing.T) {
-			if tt.category.DefaultStatRef() != tt.expected {
-				t.Errorf("DefaultStatRef()が期待値と異なります: got %s, want %s", tt.category.DefaultStatRef(), tt.expected)
-			}
-		})
-	}
-}
-
 // TestModuleModel_フィールドの確認 はModuleModel構造体のフィールドが正しく設定されることを確認します。
 func TestModuleModel_フィールドの確認(t *testing.T) {
 	module := ModuleModel{
@@ -254,133 +232,12 @@ func TestModuleModel_IsCompatibleWithCore_複数タグ(t *testing.T) {
 	}
 }
 
-// TestModuleCategory_IsAttack は攻撃系カテゴリかどうかを判定するメソッドをテストします。
-func TestModuleCategory_IsAttack(t *testing.T) {
-	if !PhysicalAttack.IsAttack() {
-		t.Error("PhysicalAttackは攻撃系のはずです")
-	}
-	if !MagicAttack.IsAttack() {
-		t.Error("MagicAttackは攻撃系のはずです")
-	}
-	if Heal.IsAttack() {
-		t.Error("Healは攻撃系ではないはずです")
-	}
-	if Buff.IsAttack() {
-		t.Error("Buffは攻撃系ではないはずです")
-	}
-	if Debuff.IsAttack() {
-		t.Error("Debuffは攻撃系ではないはずです")
-	}
-}
-
-// TestModuleCategory_IsSupport はサポート系カテゴリかどうかを判定するメソッドをテストします。
-func TestModuleCategory_IsSupport(t *testing.T) {
-	if PhysicalAttack.IsSupport() {
-		t.Error("PhysicalAttackはサポート系ではないはずです")
-	}
-	if MagicAttack.IsSupport() {
-		t.Error("MagicAttackはサポート系ではないはずです")
-	}
-	if !Heal.IsSupport() {
-		t.Error("Healはサポート系のはずです")
-	}
-	if !Buff.IsSupport() {
-		t.Error("Buffはサポート系のはずです")
-	}
-	if !Debuff.IsSupport() {
-		t.Error("Debuffはサポート系のはずです")
-	}
-}
-
-// TestModuleCategory_TargetsEnemy は敵をターゲットにするカテゴリかどうかを判定するメソッドをテストします。
-func TestModuleCategory_TargetsEnemy(t *testing.T) {
-	if !PhysicalAttack.TargetsEnemy() {
-		t.Error("PhysicalAttackは敵をターゲットにするはずです")
-	}
-	if !MagicAttack.TargetsEnemy() {
-		t.Error("MagicAttackは敵をターゲットにするはずです")
-	}
-	if Heal.TargetsEnemy() {
-		t.Error("Healは敵をターゲットにしないはずです")
-	}
-	if Buff.TargetsEnemy() {
-		t.Error("Buffは敵をターゲットにしないはずです")
-	}
-	if !Debuff.TargetsEnemy() {
-		t.Error("Debuffは敵をターゲットにするはずです")
-	}
-}
-
-// TestModuleCategory_TargetsPlayer はプレイヤーをターゲットにするカテゴリかどうかを判定するメソッドをテストします。
-func TestModuleCategory_TargetsPlayer(t *testing.T) {
-	if PhysicalAttack.TargetsPlayer() {
-		t.Error("PhysicalAttackはプレイヤーをターゲットにしないはずです")
-	}
-	if MagicAttack.TargetsPlayer() {
-		t.Error("MagicAttackはプレイヤーをターゲットにしないはずです")
-	}
-	if !Heal.TargetsPlayer() {
-		t.Error("Healはプレイヤーをターゲットにするはずです")
-	}
-	if !Buff.TargetsPlayer() {
-		t.Error("Buffはプレイヤーをターゲットにするはずです")
-	}
-	if Debuff.TargetsPlayer() {
-		t.Error("Debuffはプレイヤーをターゲットにしないはずです")
-	}
-}
-
-// TestModuleModel_GetCategoryTag はモジュールのカテゴリタグを取得するメソッドをテストします。
-func TestModuleModel_GetCategoryTag(t *testing.T) {
-	tests := []struct {
-		name     string
-		category ModuleCategory
-		level    int
-		expected string
-	}{
-		{"物理攻撃Lv1", PhysicalAttack, 1, "physical_low"},
-		{"物理攻撃Lv2", PhysicalAttack, 2, "physical_mid"},
-		{"物理攻撃Lv3", PhysicalAttack, 3, "physical_high"},
-		{"魔法攻撃Lv1", MagicAttack, 1, "magic_low"},
-		{"魔法攻撃Lv2", MagicAttack, 2, "magic_mid"},
-		{"魔法攻撃Lv3", MagicAttack, 3, "magic_high"},
-		{"回復Lv1", Heal, 1, "heal_low"},
-		{"回復Lv2", Heal, 2, "heal_mid"},
-		{"回復Lv3", Heal, 3, "heal_high"},
-		{"バフLv1", Buff, 1, "buff_low"},
-		{"バフLv2", Buff, 2, "buff_mid"},
-		{"デバフLv1", Debuff, 1, "debuff_low"},
-		{"デバフLv2", Debuff, 2, "debuff_mid"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			module := ModuleModel{
-				Category: tt.category,
-				Level:    tt.level,
-			}
-			if module.GetCategoryTag() != tt.expected {
-				t.Errorf("GetCategoryTag()が期待値と異なります: got %s, want %s", module.GetCategoryTag(), tt.expected)
-			}
-		})
-	}
-}
-
 // TestModuleCategory_Unknown_String は未知のカテゴリに対してString()が適切な値を返すことを確認します。
 func TestModuleCategory_Unknown_String(t *testing.T) {
 	unknownCategory := ModuleCategory("unknown")
 	result := unknownCategory.String()
 	if result != "不明" {
 		t.Errorf("未知のカテゴリに対するString()が期待値と異なります: got %s, want 不明", result)
-	}
-}
-
-// TestModuleCategory_Unknown_DefaultStatRef は未知のカテゴリに対してDefaultStatRef()が適切な値を返すことを確認します。
-func TestModuleCategory_Unknown_DefaultStatRef(t *testing.T) {
-	unknownCategory := ModuleCategory("unknown")
-	result := unknownCategory.DefaultStatRef()
-	if result != "STR" {
-		t.Errorf("未知のカテゴリに対するDefaultStatRef()が期待値と異なります: got %s, want STR", result)
 	}
 }
 
@@ -406,5 +263,49 @@ func TestGetLevelSuffix(t *testing.T) {
 				t.Errorf("GetLevelSuffix(%d)が期待値と異なります: got %s, want %s", tt.level, result, tt.expected)
 			}
 		})
+	}
+}
+
+// ==================== Task 7.2: Icon()メソッドのテスト ====================
+
+// TestModuleCategory_Icon はModuleCategoryのIcon()メソッドが正しいアイコンを返すことを確認します。
+// 要件 7.3: カテゴリごとにアイコン文字を返す
+func TestModuleCategory_Icon(t *testing.T) {
+	tests := []struct {
+		category ModuleCategory
+		expected string
+	}{
+		{PhysicalAttack, "⚔"},
+		{MagicAttack, "✦"},
+		{Heal, "♥"},
+		{Buff, "▲"},
+		{Debuff, "▼"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.category.String(), func(t *testing.T) {
+			result := tt.category.Icon()
+			if result != tt.expected {
+				t.Errorf("Icon()が期待値と異なります: got %s, want %s", result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestModuleCategory_Icon_Unknown は未知のカテゴリに対してIcon()がデフォルト値を返すことを確認します。
+func TestModuleCategory_Icon_Unknown(t *testing.T) {
+	unknownCategory := ModuleCategory("unknown")
+	result := unknownCategory.Icon()
+	if result != "•" {
+		t.Errorf("未知のカテゴリに対するIcon()が期待値と異なります: got %s, want •", result)
+	}
+}
+
+// TestModuleCategory_Icon_Empty は空のカテゴリに対してIcon()がデフォルト値を返すことを確認します。
+func TestModuleCategory_Icon_Empty(t *testing.T) {
+	emptyCategory := ModuleCategory("")
+	result := emptyCategory.Icon()
+	if result != "•" {
+		t.Errorf("空のカテゴリに対するIcon()が期待値と異なります: got %s, want •", result)
 	}
 }

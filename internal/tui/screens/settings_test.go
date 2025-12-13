@@ -20,7 +20,7 @@ func TestNewSettingsScreen(t *testing.T) {
 }
 
 // TestSettingsKeybindDisplay はキーバインド設定表示をテストします。
-// Requirement 21.2: キーバインド設定表示
+
 func TestSettingsKeybindDisplay(t *testing.T) {
 	settings := createTestSettings()
 	screen := NewSettingsScreen(settings)
@@ -32,7 +32,7 @@ func TestSettingsKeybindDisplay(t *testing.T) {
 }
 
 // TestSettingsKeybindChange はキーバインド変更をテストします。
-// Requirement 21.2: キーバインド設定変更
+
 func TestSettingsKeybindChange(t *testing.T) {
 	settings := createTestSettings()
 	screen := NewSettingsScreen(settings)
@@ -47,7 +47,7 @@ func TestSettingsKeybindChange(t *testing.T) {
 }
 
 // TestSettingsImmediateApply は設定の即時適用をテストします。
-// Requirement 21.3: 設定変更の即座適用
+
 func TestSettingsImmediateApply(t *testing.T) {
 	settings := createTestSettings()
 	screen := NewSettingsScreen(settings)

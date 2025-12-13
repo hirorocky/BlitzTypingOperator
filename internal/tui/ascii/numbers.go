@@ -1,6 +1,6 @@
 // Package ascii はASCIIアート描画機能を提供します。
 // 数字のASCIIアート描画を担当します。
-// Requirements: 1.4
+
 package ascii
 
 import (
@@ -10,7 +10,7 @@ import (
 )
 
 // 数字のASCIIアート定義（各数字は5行）
-// Requirement 1.4: 各数字は3-5行程度のASCIIアートで表現
+
 var asciiDigits = map[int][]string{
 	0: {
 		"█████",
@@ -124,7 +124,7 @@ func NewASCIINumbers() ASCIINumberRenderer {
 }
 
 // RenderDigit は単一の数字（0-9）を描画します。
-// Requirement 1.4: 各数字は3-5行のASCIIアートで表現
+
 func (n *asciiNumbers) RenderDigit(digit int) []string {
 	// 範囲外の数字はnilを返す
 	if digit < 0 || digit > 9 {
@@ -136,14 +136,13 @@ func (n *asciiNumbers) RenderDigit(digit int) []string {
 }
 
 // RenderNumber は指定された数値をASCIIアートで描画します。
-// Requirement 1.4: 複数桁の数値を連結して表示、カラー対応
+
 func (n *asciiNumbers) RenderNumber(number int, color lipgloss.Color) string {
-	// Requirement 1.4: 負数は0として扱う
+
 	if number < 0 {
 		number = 0
 	}
 
-	// Requirement 1.4: 1000以上は999+として表示
 	showPlus := false
 	if number >= 1000 {
 		number = 999
