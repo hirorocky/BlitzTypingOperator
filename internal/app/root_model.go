@@ -70,14 +70,15 @@ type RootModel struct {
 	screenMap *ScreenMap
 
 	// 各シーンの画面インスタンス
-	homeScreen              *screens.HomeScreen
-	battleSelectScreen      *screens.BattleSelectScreenCarousel
-	battleScreen            *screens.BattleScreen
-	agentManagementScreen   *screens.AgentManagementScreen
-	encyclopediaScreen      *screens.EncyclopediaScreen
-	statsAchievementsScreen *screens.StatsAchievementsScreen
-	settingsScreen          *screens.SettingsScreen
-	rewardScreen            *screens.RewardScreen
+	homeScreen               *screens.HomeScreen
+	battleSelectScreen       *screens.BattleSelectScreenCarousel
+	battleScreen             *screens.BattleScreen
+	agentManagementScreen    *screens.AgentManagementScreen
+	agentCustomizationScreen *screens.AgentCustomizationScreen
+	encyclopediaScreen       *screens.EncyclopediaScreen
+	statsAchievementsScreen  *screens.StatsAchievementsScreen
+	settingsScreen           *screens.SettingsScreen
+	rewardScreen             *screens.RewardScreen
 
 	// パッシブスキル定義（バトル開始時に BattleEngine へ渡す）
 	passiveSkills map[string]domain.PassiveSkill

@@ -5,7 +5,9 @@ import (
 	"hirorocky/type-battle/internal/domain"
 	"hirorocky/type-battle/internal/tui/presenter"
 	"hirorocky/type-battle/internal/tui/screens"
+	"hirorocky/type-battle/internal/usecase/inventory"
 	gamestate "hirorocky/type-battle/internal/usecase/session"
+	"hirorocky/type-battle/internal/usecase/slot"
 	"hirorocky/type-battle/internal/usecase/spawning"
 )
 
@@ -80,4 +82,15 @@ func (f *ScreenFactory) CreateStatsAchievementsScreen() *screens.StatsAchievemen
 func (f *ScreenFactory) CreateSettingsScreen() *screens.SettingsScreen {
 	settingsData := presenter.CreateSettingsData(f.gameState)
 	return screens.NewSettingsScreen(settingsData)
+}
+
+// CreateAgentCustomizationScreen はエージェントカスタマイズ画面を作成します。
+// コア・スキルの付け替えを行うための画面を生成します。
+func (f *ScreenFactory) CreateAgentCustomizationScreen(
+	invManager *inventory.InventoryManager,
+	slotManager *slot.AgentSlotManager,
+	coreTypes map[string]domain.CoreType,
+	skillTypes map[string]domain.SkillType,
+) *screens.AgentCustomizationScreen {
+	return screens.NewAgentCustomizationScreen(invManager, slotManager, coreTypes, skillTypes)
 }
