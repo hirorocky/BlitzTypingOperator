@@ -5,6 +5,7 @@ package screens
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -346,19 +347,12 @@ func (s *InventoryScreen) getEquippedSkillTypeIDs() map[string][]int {
 		}
 
 		// 各スキルスロットを確認
-		for j := 0; j < domain.MaxSkillSlotCount; j++ {
+		for j := range domain.MaxSkillSlotCount {
 			skillConfig := agentSlot.GetSkill(j)
 			if skillConfig != nil && !skillConfig.IsEmpty() {
 				typeID := skillConfig.TypeID
 				// 同じスロットで重複しないようにチェック
-				found := false
-				for _, slot := range result[typeID] {
-					if slot == i {
-						found = true
-						break
-					}
-				}
-				if !found {
+				if !slices.Contains(result[typeID], i) {
 					result[typeID] = append(result[typeID], i)
 				}
 			}
@@ -537,7 +531,7 @@ func (s *InventoryScreen) renderCorePreviewContent() string {
 		builder.WriteString(labelStyle.Render("ステータス重み:"))
 		builder.WriteString("\n")
 		for stat, weight := range coreType.StatWeights {
-			builder.WriteString(fmt.Sprintf("  %s: %.1f\n", stat, weight))
+			fmt.Fprintf(&builder, "  %s: %.1f\n", stat, weight)
 		}
 	}
 
