@@ -564,7 +564,7 @@ func (s *AgentCustomizationScreen) renderSlotList() string {
 
 	slots := s.slotManager.GetSlots()
 
-	for i := 0; i < slot.MaxAgentSlotCount; i++ {
+	for i := range slot.MaxAgentSlotCount {
 		agentSlot := slots[i]
 
 		style := lipgloss.NewStyle()
@@ -609,7 +609,7 @@ func (s *AgentCustomizationScreen) renderSlotList() string {
 func (s *AgentCustomizationScreen) renderSkillSlots(agentSlot *domain.AgentSlot) string {
 	var builder strings.Builder
 
-	for j := 0; j < domain.MaxSkillSlotCount; j++ {
+	for j := range domain.MaxSkillSlotCount {
 		skillConfig := agentSlot.GetSkill(j)
 
 		style := lipgloss.NewStyle().Padding(0, 0, 0, 4)
@@ -695,10 +695,10 @@ func (s *AgentCustomizationScreen) renderSlotDetail() string {
 	// スキル情報
 	builder.WriteString(labelStyle.Render("スキル:"))
 	builder.WriteString("\n")
-	for j := 0; j < domain.MaxSkillSlotCount; j++ {
+	for j := range domain.MaxSkillSlotCount {
 		skillConfig := slot.GetSkill(j)
 		if skillConfig == nil || skillConfig.IsEmpty() {
-			builder.WriteString(fmt.Sprintf("  %d: (空)\n", j+1))
+			fmt.Fprintf(&builder, "  %d: (空)\n", j+1)
 		} else {
 			skillName := skillConfig.TypeID
 			icon := "?"
@@ -706,7 +706,7 @@ func (s *AgentCustomizationScreen) renderSlotDetail() string {
 				skillName = skillType.Name
 				icon = skillType.Icon
 			}
-			builder.WriteString(fmt.Sprintf("  %d: %s %s\n", j+1, icon, skillName))
+			fmt.Fprintf(&builder, "  %d: %s %s\n", j+1, icon, skillName)
 		}
 	}
 
