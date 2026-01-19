@@ -164,3 +164,274 @@ func TestAgentSlotManager_GetSlots_ReturnsAllSlots(t *testing.T) {
 		}
 	}
 }
+
+// ==================== 5.2 コア付け替え機能のテスト ====================
+
+func TestAgentSlotManager_SetCore_Success(t *testing.T) {
+	manager, coreInv, _ := createTestManager()
+
+	// コアをインベントリに追加（最大レベル10）
+	coreInv.AddCore("core_001", 10)
+
+	// スロット0にコアを設定
+	err := manager.SetCore(0, "core_001", 5)
+
+	if err != nil {
+		t.Fatalf("SetCoreはエラーを返すべきではない: %v", err)
+	}
+
+	slot := manager.GetSlot(0)
+	if slot.CoreTypeID != "core_001" {
+		t.Errorf("CoreTypeID = %q, want %q", slot.CoreTypeID, "core_001")
+	}
+	if slot.CoreLevel != 5 {
+		t.Errorf("CoreLevel = %d, want %d", slot.CoreLevel, 5)
+	}
+	if slot.IsEmpty() {
+		t.Error("コア設定後のスロットは空であるべきではない")
+	}
+}
+
+func TestAgentSlotManager_SetCore_MaxLevel(t *testing.T) {
+	manager, coreInv, _ := createTestManager()
+
+	// コアをインベントリに追加（最大レベル10）
+	coreInv.AddCore("core_001", 10)
+
+	// 最大レベルで設定
+	err := manager.SetCore(0, "core_001", 10)
+
+	if err != nil {
+		t.Fatalf("最大レベルでのSetCoreはエラーを返すべきではない: %v", err)
+	}
+
+	slot := manager.GetSlot(0)
+	if slot.CoreLevel != 10 {
+		t.Errorf("CoreLevel = %d, want %d", slot.CoreLevel, 10)
+	}
+}
+
+func TestAgentSlotManager_SetCore_LevelOne(t *testing.T) {
+	manager, coreInv, _ := createTestManager()
+
+	// コアをインベントリに追加
+	coreInv.AddCore("core_001", 10)
+
+	// レベル1で設定
+	err := manager.SetCore(0, "core_001", 1)
+
+	if err != nil {
+		t.Fatalf("レベル1でのSetCoreはエラーを返すべきではない: %v", err)
+	}
+
+	slot := manager.GetSlot(0)
+	if slot.CoreLevel != 1 {
+		t.Errorf("CoreLevel = %d, want %d", slot.CoreLevel, 1)
+	}
+}
+
+func TestAgentSlotManager_SetCore_NotOwned(t *testing.T) {
+	manager, _, _ := createTestManager()
+
+	// インベントリにコアを追加せずに設定を試みる
+	err := manager.SetCore(0, "core_001", 5)
+
+	if err == nil {
+		t.Fatal("未保有コアでのSetCoreはエラーを返すべき")
+	}
+	if err != ErrCoreNotOwned {
+		t.Errorf("err = %v, want %v", err, ErrCoreNotOwned)
+	}
+
+	slot := manager.GetSlot(0)
+	if !slot.IsEmpty() {
+		t.Error("エラー時にスロットは変更されるべきではない")
+	}
+}
+
+func TestAgentSlotManager_SetCore_LevelTooHigh(t *testing.T) {
+	manager, coreInv, _ := createTestManager()
+
+	// コアをインベントリに追加（最大レベル10）
+	coreInv.AddCore("core_001", 10)
+
+	// 最大レベルより高いレベルで設定
+	err := manager.SetCore(0, "core_001", 11)
+
+	if err == nil {
+		t.Fatal("最大レベルより高いレベルでのSetCoreはエラーを返すべき")
+	}
+	if err != ErrLevelOutOfRange {
+		t.Errorf("err = %v, want %v", err, ErrLevelOutOfRange)
+	}
+}
+
+func TestAgentSlotManager_SetCore_LevelTooLow(t *testing.T) {
+	manager, coreInv, _ := createTestManager()
+
+	// コアをインベントリに追加
+	coreInv.AddCore("core_001", 10)
+
+	// レベル0で設定
+	err := manager.SetCore(0, "core_001", 0)
+
+	if err == nil {
+		t.Fatal("レベル0でのSetCoreはエラーを返すべき")
+	}
+	if err != ErrLevelOutOfRange {
+		t.Errorf("err = %v, want %v", err, ErrLevelOutOfRange)
+	}
+}
+
+func TestAgentSlotManager_SetCore_InvalidSlotIndex(t *testing.T) {
+	manager, coreInv, _ := createTestManager()
+	coreInv.AddCore("core_001", 10)
+
+	tests := []struct {
+		name string
+		slot int
+	}{
+		{"負のインデックス", -1},
+		{"範囲外のインデックス", 3},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := manager.SetCore(tt.slot, "core_001", 5)
+			if err == nil {
+				t.Fatal("無効なスロットインデックスでのSetCoreはエラーを返すべき")
+			}
+			if err != ErrSlotIndexOutOfRange {
+				t.Errorf("err = %v, want %v", err, ErrSlotIndexOutOfRange)
+			}
+		})
+	}
+}
+
+func TestAgentSlotManager_SetCore_SameCoreInMultipleSlots(t *testing.T) {
+	manager, coreInv, _ := createTestManager()
+
+	// コアをインベントリに追加
+	coreInv.AddCore("core_001", 10)
+
+	// 同一コアを複数スロットに設定
+	err1 := manager.SetCore(0, "core_001", 5)
+	err2 := manager.SetCore(1, "core_001", 7)
+	err3 := manager.SetCore(2, "core_001", 10)
+
+	if err1 != nil || err2 != nil || err3 != nil {
+		t.Fatalf("同一コアを複数スロットに設定できるべき: err1=%v, err2=%v, err3=%v", err1, err2, err3)
+	}
+
+	// 各スロットが独立していることを確認
+	if manager.GetSlot(0).CoreLevel != 5 {
+		t.Errorf("slot0.CoreLevel = %d, want %d", manager.GetSlot(0).CoreLevel, 5)
+	}
+	if manager.GetSlot(1).CoreLevel != 7 {
+		t.Errorf("slot1.CoreLevel = %d, want %d", manager.GetSlot(1).CoreLevel, 7)
+	}
+	if manager.GetSlot(2).CoreLevel != 10 {
+		t.Errorf("slot2.CoreLevel = %d, want %d", manager.GetSlot(2).CoreLevel, 10)
+	}
+}
+
+func TestAgentSlotManager_SetCore_RemovesIncompatibleSkills(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	// core_001 は physical, magic を許可
+	coreInv.AddCore("core_001", 10)
+	// core_003 は heal のみを許可
+	coreInv.AddCore("core_003", 10)
+
+	// スキルをインベントリに追加
+	skillInv.AddSkill("skill_001", "") // physical タグ
+	skillInv.AddSkill("skill_002", "") // magic タグ
+	skillInv.AddSkill("skill_003", "") // heal タグ
+
+	// まずcore_001を設定
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	// physicalとmagicスキルを設定
+	err = manager.SetSkill(0, 0, "skill_001", "")
+	if err != nil {
+		t.Fatalf("skill_001の設定でエラー: %v", err)
+	}
+	err = manager.SetSkill(0, 1, "skill_002", "")
+	if err != nil {
+		t.Fatalf("skill_002の設定でエラー: %v", err)
+	}
+
+	if manager.GetSlot(0).GetSkillCount() != 2 {
+		t.Errorf("スキル設定後のスキル数 = %d, want %d", manager.GetSlot(0).GetSkillCount(), 2)
+	}
+
+	// core_003に変更（healのみ許可）
+	err = manager.SetCore(0, "core_003", 5)
+	if err != nil {
+		t.Fatalf("コア変更でエラー: %v", err)
+	}
+
+	// 互換性のないスキル（physical, magic）は削除されるべき
+	slot := manager.GetSlot(0)
+	if slot.GetSkillCount() != 0 {
+		t.Errorf("互換性のないスキルが削除されていない: スキル数 = %d, want %d", slot.GetSkillCount(), 0)
+	}
+}
+
+func TestAgentSlotManager_ClearCore(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	coreInv.AddCore("core_001", 10)
+	skillInv.AddSkill("skill_001", "")
+
+	// コアとスキルを設定
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+	err = manager.SetSkill(0, 0, "skill_001", "")
+	if err != nil {
+		t.Fatalf("SetSkillでエラー: %v", err)
+	}
+
+	// コアをクリア
+	err = manager.ClearCore(0)
+	if err != nil {
+		t.Fatalf("ClearCoreはエラーを返すべきではない: %v", err)
+	}
+
+	slot := manager.GetSlot(0)
+	if !slot.IsEmpty() {
+		t.Error("ClearCore後のスロットは空であるべき")
+	}
+	if slot.GetSkillCount() != 0 {
+		t.Errorf("ClearCore後のスキル数 = %d, want %d", slot.GetSkillCount(), 0)
+	}
+}
+
+func TestAgentSlotManager_ClearCore_InvalidSlotIndex(t *testing.T) {
+	manager, _, _ := createTestManager()
+
+	tests := []struct {
+		name string
+		slot int
+	}{
+		{"負のインデックス", -1},
+		{"範囲外のインデックス", 3},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := manager.ClearCore(tt.slot)
+			if err == nil {
+				t.Fatal("無効なスロットインデックスでのClearCoreはエラーを返すべき")
+			}
+			if err != ErrSlotIndexOutOfRange {
+				t.Errorf("err = %v, want %v", err, ErrSlotIndexOutOfRange)
+			}
+		})
+	}
+}
