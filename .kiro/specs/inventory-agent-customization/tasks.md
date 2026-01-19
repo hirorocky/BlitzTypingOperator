@@ -34,13 +34,13 @@
   - 未保有TypeIDへのGetMaxLevelで0が返るテスト
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 3. スキルインベントリのユニーク管理実装
-- [ ] 3.1 (P) SkillOwnership構造体の実装
+- [x] 3. スキルインベントリのユニーク管理実装
+- [x] 3.1 (P) SkillOwnership構造体の実装
   - 保有フラグとチェイン効果バリエーションセットを保持
   - チェイン効果IDはmap[string]boolでセット管理
   - _Requirements: 2.1, 2.3_
 
-- [ ] 3.2 (P) SkillInventoryドメインモデルの実装
+- [x] 3.2 (P) SkillInventoryドメインモデルの実装
   - SkillTypeIDをキーとし、SkillOwnershipを値とするマップ構造で管理
   - AddSkillメソッド: 初回取得で保有状態をtrue、チェイン効果があれば追加
   - GetOwnedSkillsメソッド: 全保有スキル情報を返却
@@ -50,7 +50,7 @@
   - チェイン効果なしスキルは空文字列で表現
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
 
-- [ ] 3.3 SkillInventoryの単体テスト
+- [x] 3.3 SkillInventoryの単体テスト
   - 初回スキル取得で保有状態がtrueになるテスト
   - チェイン効果付きスキル取得でバリエーションが追加されるテスト
   - 同一スキル再取得で新しいチェイン効果が追加されるテスト
