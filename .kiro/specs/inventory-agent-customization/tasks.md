@@ -128,8 +128,8 @@
   - BuildAgentsForBattleの生成結果テスト
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 9.1, 9.2, 9.3_
 
-- [ ] 6. インベントリ統合管理ユースケースの実装
-- [ ] 6.1 (P) InventoryManager改の実装
+- [x] 6. インベントリ統合管理ユースケースの実装
+- [x] 6.1 (P) InventoryManager改の実装
   - CoreInventoryとSkillInventoryを統合管理
   - AddCoreメソッド: コア追加のラッパー
   - AddSkillメソッド: スキル追加のラッパー
@@ -137,7 +137,7 @@
   - GetOwnedCoreTypes、GetOwnedSkillTypesメソッド: 保有TypeID一覧を返却
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
 
-- [ ] 6.2 (P) InventoryManager改の単体テスト
+- [x] 6.2 (P) InventoryManager改の単体テスト
   - コア追加・取得のテスト
   - スキル追加・取得のテスト
   - _Requirements: 1.1, 1.5, 2.1, 2.6_
