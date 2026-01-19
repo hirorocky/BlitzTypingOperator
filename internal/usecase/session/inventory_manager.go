@@ -9,7 +9,7 @@ import (
 // エージェントの管理はAgentManagerが一元的に行います。
 type InventoryManager struct {
 	// cores はコアインベントリです。
-	cores *domain.CoreInventory
+	cores *domain.CoreInventoryLegacy
 
 	// modules はモジュールインベントリです。
 	modules *domain.ModuleInventory
@@ -18,13 +18,13 @@ type InventoryManager struct {
 // NewInventoryManager は新しいInventoryManagerを作成します。
 func NewInventoryManager() *InventoryManager {
 	return &InventoryManager{
-		cores:   domain.NewCoreInventory(100),
+		cores:   domain.NewCoreInventoryLegacy(100),
 		modules: domain.NewModuleInventory(200),
 	}
 }
 
 // Cores はコアインベントリを返します。
-func (m *InventoryManager) Cores() *domain.CoreInventory {
+func (m *InventoryManager) Cores() *domain.CoreInventoryLegacy {
 	return m.cores
 }
 
@@ -68,7 +68,7 @@ func (m *InventoryManager) RemoveModule(typeID string) error {
 
 // SetMaxCoreSlots はコアの最大スロット数を設定します。
 func (m *InventoryManager) SetMaxCoreSlots(slots int) {
-	m.cores = domain.NewCoreInventory(slots)
+	m.cores = domain.NewCoreInventoryLegacy(slots)
 }
 
 // SetMaxModuleSlots はモジュールの最大スロット数を設定します。

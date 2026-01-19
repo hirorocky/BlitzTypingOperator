@@ -1,18 +1,18 @@
 // Package domain はゲームのドメインモデルを定義します。
-// このファイルはユニーク管理版CoreInventoryを定義します。
+// このファイルはCoreInventoryを定義します。
 
 package domain
 
-// UniqueCoreInventory はコアをTypeIDごとにユニーク管理する構造体です。
+// CoreInventory はコアをTypeIDごとに管理する構造体です。
 // 各TypeIDに対して取得済み最大レベルのみを保存します。
-type UniqueCoreInventory struct {
+type CoreInventory struct {
 	// cores はCoreTypeID → 取得済み最大レベルのマップ
 	cores map[string]int
 }
 
-// NewUniqueCoreInventory は新しいUniqueCoreInventoryを作成します。
-func NewUniqueCoreInventory() *UniqueCoreInventory {
-	return &UniqueCoreInventory{
+// NewCoreInventory は新しいCoreInventoryを作成します。
+func NewCoreInventory() *CoreInventory {
+	return &CoreInventory{
 		cores: make(map[string]int),
 	}
 }
@@ -21,7 +21,7 @@ func NewUniqueCoreInventory() *UniqueCoreInventory {
 // 新規TypeIDの場合、または既存の最大レベルより高い場合に更新します。
 // 更新された場合はtrue、更新されなかった場合はfalseを返します。
 // レベルが1未満の場合、またはTypeIDが空の場合はfalseを返します。
-func (inv *UniqueCoreInventory) AddCore(typeID string, level int) bool {
+func (inv *CoreInventory) AddCore(typeID string, level int) bool {
 	// 検証: TypeIDが空でないこと
 	if typeID == "" {
 		return false
@@ -46,13 +46,13 @@ func (inv *UniqueCoreInventory) AddCore(typeID string, level int) bool {
 
 // GetMaxLevel は指定TypeIDの取得済み最大レベルを返します。
 // 未保有の場合は0を返します。
-func (inv *UniqueCoreInventory) GetMaxLevel(typeID string) int {
+func (inv *CoreInventory) GetMaxLevel(typeID string) int {
 	return inv.cores[typeID]
 }
 
 // GetOwnedCores は保有している全CoreTypeIDとその最大レベルを返します。
 // 返されるマップは内部状態のコピーです。
-func (inv *UniqueCoreInventory) GetOwnedCores() map[string]int {
+func (inv *CoreInventory) GetOwnedCores() map[string]int {
 	result := make(map[string]int, len(inv.cores))
 	for typeID, level := range inv.cores {
 		result[typeID] = level
@@ -61,7 +61,7 @@ func (inv *UniqueCoreInventory) GetOwnedCores() map[string]int {
 }
 
 // HasCore は指定TypeIDのコアを保有しているかを返します。
-func (inv *UniqueCoreInventory) HasCore(typeID string) bool {
+func (inv *CoreInventory) HasCore(typeID string) bool {
 	_, exists := inv.cores[typeID]
 	return exists
 }

@@ -1,5 +1,5 @@
 // Package domain はゲームのドメインモデルを定義します。
-// このテストファイルはユニーク管理版CoreInventoryのテストを含みます。
+// このテストファイルはCoreInventoryのテストを含みます。
 
 package domain
 
@@ -7,14 +7,14 @@ import (
 	"testing"
 )
 
-// ==================== ユニーク管理版 CoreInventory テスト ====================
+// ==================== CoreInventory テスト ====================
 
-// TestUniqueCoreInventory_NewUniqueCoreInventory は新しいUniqueCoreInventoryが正しく作成されることを確認します。
-func TestUniqueCoreInventory_NewUniqueCoreInventory(t *testing.T) {
-	inv := NewUniqueCoreInventory()
+// TestCoreInventory_NewCoreInventory は新しいCoreInventoryが正しく作成されることを確認します。
+func TestCoreInventory_NewCoreInventory(t *testing.T) {
+	inv := NewCoreInventory()
 
 	if inv == nil {
-		t.Fatal("NewUniqueCoreInventoryがnilを返しました")
+		t.Fatal("NewCoreInventoryがnilを返しました")
 	}
 
 	// 初期状態では空であること
@@ -24,9 +24,9 @@ func TestUniqueCoreInventory_NewUniqueCoreInventory(t *testing.T) {
 	}
 }
 
-// TestUniqueCoreInventory_AddCore_新規追加 は新規TypeIDのコア追加で保存されることを確認します。
-func TestUniqueCoreInventory_AddCore_新規追加(t *testing.T) {
-	inv := NewUniqueCoreInventory()
+// TestCoreInventory_AddCore_新規追加 は新規TypeIDのコア追加で保存されることを確認します。
+func TestCoreInventory_AddCore_新規追加(t *testing.T) {
+	inv := NewCoreInventory()
 
 	updated := inv.AddCore("attack_balance", 5)
 
@@ -40,9 +40,9 @@ func TestUniqueCoreInventory_AddCore_新規追加(t *testing.T) {
 	}
 }
 
-// TestUniqueCoreInventory_AddCore_レベル更新 は既存より高いレベルのコア取得で更新されることを確認します。
-func TestUniqueCoreInventory_AddCore_レベル更新(t *testing.T) {
-	inv := NewUniqueCoreInventory()
+// TestCoreInventory_AddCore_レベル更新 は既存より高いレベルのコア取得で更新されることを確認します。
+func TestCoreInventory_AddCore_レベル更新(t *testing.T) {
+	inv := NewCoreInventory()
 
 	// 初回追加
 	inv.AddCore("attack_balance", 5)
@@ -60,9 +60,9 @@ func TestUniqueCoreInventory_AddCore_レベル更新(t *testing.T) {
 	}
 }
 
-// TestUniqueCoreInventory_AddCore_レベル据え置き は既存以下のレベルのコア取得で変更されないことを確認します。
-func TestUniqueCoreInventory_AddCore_レベル据え置き(t *testing.T) {
-	inv := NewUniqueCoreInventory()
+// TestCoreInventory_AddCore_レベル据え置き は既存以下のレベルのコア取得で変更されないことを確認します。
+func TestCoreInventory_AddCore_レベル据え置き(t *testing.T) {
+	inv := NewCoreInventory()
 
 	// 初回追加
 	inv.AddCore("attack_balance", 10)
@@ -86,9 +86,9 @@ func TestUniqueCoreInventory_AddCore_レベル据え置き(t *testing.T) {
 	}
 }
 
-// TestUniqueCoreInventory_GetMaxLevel_未保有 は未保有TypeIDに対して0が返されることを確認します。
-func TestUniqueCoreInventory_GetMaxLevel_未保有(t *testing.T) {
-	inv := NewUniqueCoreInventory()
+// TestCoreInventory_GetMaxLevel_未保有 は未保有TypeIDに対して0が返されることを確認します。
+func TestCoreInventory_GetMaxLevel_未保有(t *testing.T) {
+	inv := NewCoreInventory()
 
 	maxLevel := inv.GetMaxLevel("nonexistent")
 	if maxLevel != 0 {
@@ -96,9 +96,9 @@ func TestUniqueCoreInventory_GetMaxLevel_未保有(t *testing.T) {
 	}
 }
 
-// TestUniqueCoreInventory_GetOwnedCores は保有している全コア情報を取得できることを確認します。
-func TestUniqueCoreInventory_GetOwnedCores(t *testing.T) {
-	inv := NewUniqueCoreInventory()
+// TestCoreInventory_GetOwnedCores は保有している全コア情報を取得できることを確認します。
+func TestCoreInventory_GetOwnedCores(t *testing.T) {
+	inv := NewCoreInventory()
 
 	inv.AddCore("attack_balance", 5)
 	inv.AddCore("healer", 10)
@@ -121,9 +121,9 @@ func TestUniqueCoreInventory_GetOwnedCores(t *testing.T) {
 	}
 }
 
-// TestUniqueCoreInventory_HasCore_保有 は保有しているTypeIDに対してtrueが返されることを確認します。
-func TestUniqueCoreInventory_HasCore_保有(t *testing.T) {
-	inv := NewUniqueCoreInventory()
+// TestCoreInventory_HasCore_保有 は保有しているTypeIDに対してtrueが返されることを確認します。
+func TestCoreInventory_HasCore_保有(t *testing.T) {
+	inv := NewCoreInventory()
 
 	inv.AddCore("attack_balance", 5)
 
@@ -132,18 +132,18 @@ func TestUniqueCoreInventory_HasCore_保有(t *testing.T) {
 	}
 }
 
-// TestUniqueCoreInventory_HasCore_未保有 は未保有TypeIDに対してfalseが返されることを確認します。
-func TestUniqueCoreInventory_HasCore_未保有(t *testing.T) {
-	inv := NewUniqueCoreInventory()
+// TestCoreInventory_HasCore_未保有 は未保有TypeIDに対してfalseが返されることを確認します。
+func TestCoreInventory_HasCore_未保有(t *testing.T) {
+	inv := NewCoreInventory()
 
 	if inv.HasCore("nonexistent") {
 		t.Error("未保有のコアに対してfalseが返されるべきです")
 	}
 }
 
-// TestUniqueCoreInventory_AddCore_レベル検証 はレベルが1以上の正整数であることを検証します。
-func TestUniqueCoreInventory_AddCore_レベル検証(t *testing.T) {
-	inv := NewUniqueCoreInventory()
+// TestCoreInventory_AddCore_レベル検証 はレベルが1以上の正整数であることを検証します。
+func TestCoreInventory_AddCore_レベル検証(t *testing.T) {
+	inv := NewCoreInventory()
 
 	// レベル0は無効
 	updated := inv.AddCore("test", 0)
@@ -164,9 +164,9 @@ func TestUniqueCoreInventory_AddCore_レベル検証(t *testing.T) {
 	}
 }
 
-// TestUniqueCoreInventory_AddCore_空TypeID は空のTypeIDが拒否されることを確認します。
-func TestUniqueCoreInventory_AddCore_空TypeID(t *testing.T) {
-	inv := NewUniqueCoreInventory()
+// TestCoreInventory_AddCore_空TypeID は空のTypeIDが拒否されることを確認します。
+func TestCoreInventory_AddCore_空TypeID(t *testing.T) {
+	inv := NewCoreInventory()
 
 	updated := inv.AddCore("", 5)
 	if updated {
@@ -179,9 +179,9 @@ func TestUniqueCoreInventory_AddCore_空TypeID(t *testing.T) {
 	}
 }
 
-// TestUniqueCoreInventory_GetOwnedCores_コピー返却 は返されるマップが内部状態のコピーであることを確認します。
-func TestUniqueCoreInventory_GetOwnedCores_コピー返却(t *testing.T) {
-	inv := NewUniqueCoreInventory()
+// TestCoreInventory_GetOwnedCores_コピー返却 は返されるマップが内部状態のコピーであることを確認します。
+func TestCoreInventory_GetOwnedCores_コピー返却(t *testing.T) {
+	inv := NewCoreInventory()
 
 	inv.AddCore("attack_balance", 5)
 
@@ -199,9 +199,9 @@ func TestUniqueCoreInventory_GetOwnedCores_コピー返却(t *testing.T) {
 	}
 }
 
-// TestUniqueCoreInventory_複数TypeIDの管理 は複数のTypeIDが独立して管理されることを確認します。
-func TestUniqueCoreInventory_複数TypeIDの管理(t *testing.T) {
-	inv := NewUniqueCoreInventory()
+// TestCoreInventory_複数TypeIDの管理 は複数のTypeIDが独立して管理されることを確認します。
+func TestCoreInventory_複数TypeIDの管理(t *testing.T) {
+	inv := NewCoreInventory()
 
 	// 複数のTypeIDを追加
 	inv.AddCore("attack_balance", 5)

@@ -44,7 +44,7 @@ type SynthesisPreview struct {
 
 type AgentManager struct {
 	// coreInventory はコアインベントリです。
-	coreInventory *domain.CoreInventory
+	coreInventory *domain.CoreInventoryLegacy
 
 	// moduleInventory はモジュールインベントリです。
 	moduleInventory *domain.ModuleInventory
@@ -60,7 +60,7 @@ type AgentManager struct {
 // NewAgentManager は新しいAgentManagerを作成します。
 // AgentInventoryは内部で作成・管理されます（最大20体）。
 func NewAgentManager(
-	coreInv *domain.CoreInventory,
+	coreInv *domain.CoreInventoryLegacy,
 	moduleInv *domain.ModuleInventory,
 ) *AgentManager {
 	return &AgentManager{

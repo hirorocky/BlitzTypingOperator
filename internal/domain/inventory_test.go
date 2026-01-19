@@ -73,7 +73,7 @@ func newTestBuffModuleForInv(id, name string, tags []string, description string)
 // TestCoreInventory_Add はコアの追加処理をテストします。
 
 func TestCoreInventory_Add(t *testing.T) {
-	inv := NewCoreInventory(10)
+	inv := NewCoreInventoryLegacy(10)
 	coreType := CoreType{
 		ID:          "attack_balance",
 		Name:        "攻撃バランス",
@@ -96,7 +96,7 @@ func TestCoreInventory_Add(t *testing.T) {
 // TestCoreInventory_AddOverCapacity はインベントリ上限チェックをテストします。
 
 func TestCoreInventory_AddOverCapacity(t *testing.T) {
-	inv := NewCoreInventory(1)
+	inv := NewCoreInventoryLegacy(1)
 	coreType := CoreType{
 		ID:          "attack_balance",
 		Name:        "攻撃バランス",
@@ -122,7 +122,7 @@ func TestCoreInventory_AddOverCapacity(t *testing.T) {
 // TestCoreInventory_Remove はコアの削除処理をテストします。
 
 func TestCoreInventory_Remove(t *testing.T) {
-	inv := NewCoreInventory(10)
+	inv := NewCoreInventoryLegacy(10)
 	coreType := CoreType{
 		ID:          "attack_balance",
 		Name:        "攻撃バランス",
@@ -146,7 +146,7 @@ func TestCoreInventory_Remove(t *testing.T) {
 // TestCoreInventory_List はコア一覧表示機能をテストします。
 
 func TestCoreInventory_List(t *testing.T) {
-	inv := NewCoreInventory(10)
+	inv := NewCoreInventoryLegacy(10)
 	coreType := CoreType{
 		ID:          "attack_balance",
 		Name:        "攻撃バランス",
@@ -170,7 +170,7 @@ func TestCoreInventory_List(t *testing.T) {
 // TestCoreInventory_FilterByType は特性によるフィルタリングをテストします。
 
 func TestCoreInventory_FilterByType(t *testing.T) {
-	inv := NewCoreInventory(10)
+	inv := NewCoreInventoryLegacy(10)
 	attackType := CoreType{
 		ID:          "attack_balance",
 		Name:        "攻撃バランス",
@@ -200,7 +200,7 @@ func TestCoreInventory_FilterByType(t *testing.T) {
 // TestCoreInventory_FilterByLevel はレベルによるフィルタリングをテストします。
 
 func TestCoreInventory_FilterByLevel(t *testing.T) {
-	inv := NewCoreInventory(10)
+	inv := NewCoreInventoryLegacy(10)
 	coreType := CoreType{
 		ID:          "attack_balance",
 		Name:        "攻撃バランス",
@@ -222,7 +222,7 @@ func TestCoreInventory_FilterByLevel(t *testing.T) {
 // TestCoreInventory_SortByLevel はレベルによるソートをテストします。
 
 func TestCoreInventory_SortByLevel(t *testing.T) {
-	inv := NewCoreInventory(10)
+	inv := NewCoreInventoryLegacy(10)
 	coreType := CoreType{
 		ID:          "attack_balance",
 		Name:        "攻撃バランス",

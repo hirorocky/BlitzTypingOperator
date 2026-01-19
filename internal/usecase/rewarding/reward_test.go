@@ -120,7 +120,7 @@ func TestBattleReward_Defeat_NoRewardScreen(t *testing.T) {
 
 // TestInventoryFull_Warning はインベントリ満杯時に警告を表示することをテストします。
 func TestInventoryFull_Warning(t *testing.T) {
-	coreInv := domain.NewCoreInventory(2)
+	coreInv := domain.NewCoreInventoryLegacy(2)
 	moduleInv := domain.NewModuleInventory(2)
 
 	// インベントリを満杯にする
@@ -175,7 +175,7 @@ func TestInventoryFull_TempStorage(t *testing.T) {
 func TestInventoryFull_PromptDiscard(t *testing.T) {
 	calculator := NewRewardCalculator(nil, nil, nil)
 
-	coreInv := domain.NewCoreInventory(2)
+	coreInv := domain.NewCoreInventoryLegacy(2)
 	core1 := domain.NewCore("core1", "コア1", 1, domain.CoreType{}, domain.PassiveSkill{})
 	core2 := domain.NewCore("core2", "コア2", 1, domain.CoreType{}, domain.PassiveSkill{})
 	coreInv.Add(core1)
@@ -353,7 +353,7 @@ func TestAddRewardsToInventory_WithChainEffect(t *testing.T) {
 
 	// インベントリを作成
 	moduleInv := domain.NewModuleInventory(10)
-	coreInv := domain.NewCoreInventory(10)
+	coreInv := domain.NewCoreInventoryLegacy(10)
 	tempStorage := &TempStorage{}
 
 	// インベントリに追加

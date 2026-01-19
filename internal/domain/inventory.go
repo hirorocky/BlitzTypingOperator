@@ -8,11 +8,13 @@ import (
 	"sort"
 )
 
-// ==================== コアインベントリ ====================
+// ==================== コアインベントリ（レガシー） ====================
 
-// CoreInventory はコアのインベントリを管理する構造体です。
+// CoreInventoryLegacy はコアのインベントリを管理する構造体です。
+// 注意: この構造体は後方互換性のために残されています。
+// 新しいコードではcore_inventory.goのCoreInventory（ユニーク管理版）を使用してください。
 
-type CoreInventory struct {
+type CoreInventoryLegacy struct {
 	// cores はコアのマップ（ID → CoreModel）です。
 	cores map[string]*CoreModel
 
@@ -20,9 +22,10 @@ type CoreInventory struct {
 	maxSlots int
 }
 
-// NewCoreInventory は新しいCoreInventoryを作成します。
-func NewCoreInventory(maxSlots int) *CoreInventory {
-	return &CoreInventory{
+// NewCoreInventoryLegacy は新しいCoreInventoryLegacyを作成します。
+// 後方互換性のために残されています。
+func NewCoreInventoryLegacy(maxSlots int) *CoreInventoryLegacy {
+	return &CoreInventoryLegacy{
 		cores:    make(map[string]*CoreModel),
 		maxSlots: maxSlots,
 	}
@@ -31,7 +34,7 @@ func NewCoreInventory(maxSlots int) *CoreInventory {
 // Add はコアをインベントリに追加します。
 // 上限に達している場合はエラーを返します。
 
-func (inv *CoreInventory) Add(core *CoreModel) error {
+func (inv *CoreInventoryLegacy) Add(core *CoreModel) error {
 	if len(inv.cores) >= inv.maxSlots {
 		return fmt.Errorf("コアインベントリが満杯です（上限: %d）", inv.maxSlots)
 	}
@@ -41,7 +44,7 @@ func (inv *CoreInventory) Add(core *CoreModel) error {
 
 // Remove はコアをインベントリから削除します。
 
-func (inv *CoreInventory) Remove(id string) *CoreModel {
+func (inv *CoreInventoryLegacy) Remove(id string) *CoreModel {
 	core, exists := inv.cores[id]
 	if !exists {
 		return nil
@@ -51,28 +54,28 @@ func (inv *CoreInventory) Remove(id string) *CoreModel {
 }
 
 // Get は指定されたIDのコアを取得します。
-func (inv *CoreInventory) Get(id string) *CoreModel {
+func (inv *CoreInventoryLegacy) Get(id string) *CoreModel {
 	return inv.cores[id]
 }
 
 // Count はインベントリ内のコア数を返します。
-func (inv *CoreInventory) Count() int {
+func (inv *CoreInventoryLegacy) Count() int {
 	return len(inv.cores)
 }
 
 // MaxSlots はコアの最大保持数を返します。
-func (inv *CoreInventory) MaxSlots() int {
+func (inv *CoreInventoryLegacy) MaxSlots() int {
 	return inv.maxSlots
 }
 
 // IsFull はインベントリが満杯かどうかを返します。
-func (inv *CoreInventory) IsFull() bool {
+func (inv *CoreInventoryLegacy) IsFull() bool {
 	return len(inv.cores) >= inv.maxSlots
 }
 
 // List は全てのコアをリストで返します。
 
-func (inv *CoreInventory) List() []*CoreModel {
+func (inv *CoreInventoryLegacy) List() []*CoreModel {
 	result := make([]*CoreModel, 0, len(inv.cores))
 	for _, core := range inv.cores {
 		result = append(result, core)
@@ -82,7 +85,7 @@ func (inv *CoreInventory) List() []*CoreModel {
 
 // FilterByType は指定されたコア特性でフィルタリングします。
 
-func (inv *CoreInventory) FilterByType(typeID string) []*CoreModel {
+func (inv *CoreInventoryLegacy) FilterByType(typeID string) []*CoreModel {
 	result := make([]*CoreModel, 0)
 	for _, core := range inv.cores {
 		if core.Type.ID == typeID {
@@ -94,7 +97,7 @@ func (inv *CoreInventory) FilterByType(typeID string) []*CoreModel {
 
 // FilterByLevelRange は指定されたレベル範囲でフィルタリングします。
 
-func (inv *CoreInventory) FilterByLevelRange(minLevel, maxLevel int) []*CoreModel {
+func (inv *CoreInventoryLegacy) FilterByLevelRange(minLevel, maxLevel int) []*CoreModel {
 	result := make([]*CoreModel, 0)
 	for _, core := range inv.cores {
 		if core.Level >= minLevel && core.Level <= maxLevel {
@@ -107,7 +110,7 @@ func (inv *CoreInventory) FilterByLevelRange(minLevel, maxLevel int) []*CoreMode
 // SortByLevel はレベルでソートしたコアリストを返します。
 
 // ascending: trueなら昇順、falseなら降順
-func (inv *CoreInventory) SortByLevel(ascending bool) []*CoreModel {
+func (inv *CoreInventoryLegacy) SortByLevel(ascending bool) []*CoreModel {
 	result := inv.List()
 	sort.Slice(result, func(i, j int) bool {
 		if ascending {
@@ -120,7 +123,7 @@ func (inv *CoreInventory) SortByLevel(ascending bool) []*CoreModel {
 
 // SortByType は特性名でソートしたコアリストを返します。
 
-func (inv *CoreInventory) SortByType(ascending bool) []*CoreModel {
+func (inv *CoreInventoryLegacy) SortByType(ascending bool) []*CoreModel {
 	result := inv.List()
 	sort.Slice(result, func(i, j int) bool {
 		if ascending {

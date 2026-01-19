@@ -387,7 +387,7 @@ func (c *RewardCalculator) GetEligibleModuleTypes(enemyLevel int) []ModuleDropIn
 
 // CheckInventoryFull はインベントリの満杯状態をチェックします。
 func (c *RewardCalculator) CheckInventoryFull(
-	coreInv *domain.CoreInventory,
+	coreInv *domain.CoreInventoryLegacy,
 	moduleInv *domain.ModuleInventory,
 ) *InventoryWarning {
 	warning := &InventoryWarning{
@@ -565,7 +565,7 @@ func (c *RewardCalculator) generateLevelBasedChainEffect(enemyLevel int) *domain
 // インベントリが満杯の場合は一時保管に追加します。
 func AddRewardsToInventory(
 	result *RewardResult,
-	coreInv *domain.CoreInventory,
+	coreInv *domain.CoreInventoryLegacy,
 	moduleInv *domain.ModuleInventory,
 	tempStorage *TempStorage,
 ) *InventoryWarning {

@@ -147,7 +147,7 @@ func TestGetAllowedTags(t *testing.T) {
 
 func TestSynthesizeAgent(t *testing.T) {
 	// インベントリをセットアップ
-	coreInv := domain.NewCoreInventory(10)
+	coreInv := domain.NewCoreInventoryLegacy(10)
 	moduleInv := domain.NewModuleInventory(20)
 
 	// コアを追加
@@ -206,7 +206,7 @@ func TestSynthesizeAgent(t *testing.T) {
 // TestSynthesizeAgent_IncompatibleModule は互換性のないモジュールでの合成拒否をテストします。
 
 func TestSynthesizeAgent_IncompatibleModule(t *testing.T) {
-	coreInv := domain.NewCoreInventory(10)
+	coreInv := domain.NewCoreInventoryLegacy(10)
 	moduleInv := domain.NewModuleInventory(20)
 
 	// 攻撃バランスコア（physical_low, magic_lowのみ許可）
@@ -237,7 +237,7 @@ func TestSynthesizeAgent_IncompatibleModule(t *testing.T) {
 // TestSynthesizeAgent_NotEnoughModules はモジュールが0個での合成拒否をテストします。
 
 func TestSynthesizeAgent_NotEnoughModules(t *testing.T) {
-	coreInv := domain.NewCoreInventory(10)
+	coreInv := domain.NewCoreInventoryLegacy(10)
 	moduleInv := domain.NewModuleInventory(20)
 
 	coreType := domain.CoreType{
@@ -274,7 +274,7 @@ func TestSynthesizeAgent_VariableModuleCount(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			coreInv := domain.NewCoreInventory(10)
+			coreInv := domain.NewCoreInventoryLegacy(10)
 			moduleInv := domain.NewModuleInventory(20)
 
 			coreType := domain.CoreType{
@@ -316,7 +316,7 @@ func TestSynthesizeAgent_VariableModuleCount(t *testing.T) {
 // TestGetSynthesisPreview は合成プレビューをテストします。
 
 func TestGetSynthesisPreview(t *testing.T) {
-	coreInv := domain.NewCoreInventory(10)
+	coreInv := domain.NewCoreInventoryLegacy(10)
 	moduleInv := domain.NewModuleInventory(20)
 
 	coreType := domain.CoreType{
