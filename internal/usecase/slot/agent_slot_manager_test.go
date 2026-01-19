@@ -435,3 +435,379 @@ func TestAgentSlotManager_ClearCore_InvalidSlotIndex(t *testing.T) {
 		})
 	}
 }
+
+// ==================== 5.3 スキル付け替え機能のテスト ====================
+
+func TestAgentSlotManager_SetSkill_Success(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	// コアとスキルをインベントリに追加
+	coreInv.AddCore("core_001", 10)             // physical, magic を許可
+	skillInv.AddSkill("skill_001", "chain_001") // physical タグ
+
+	// コアを設定
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	// スキルを設定
+	err = manager.SetSkill(0, 0, "skill_001", "chain_001")
+	if err != nil {
+		t.Fatalf("SetSkillはエラーを返すべきではない: %v", err)
+	}
+
+	slot := manager.GetSlot(0)
+	skillConfig := slot.GetSkill(0)
+	if skillConfig.TypeID != "skill_001" {
+		t.Errorf("TypeID = %q, want %q", skillConfig.TypeID, "skill_001")
+	}
+	if skillConfig.ChainEffectID != "chain_001" {
+		t.Errorf("ChainEffectID = %q, want %q", skillConfig.ChainEffectID, "chain_001")
+	}
+}
+
+func TestAgentSlotManager_SetSkill_WithoutChainEffect(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	// コアとスキルをインベントリに追加（チェイン効果なし）
+	coreInv.AddCore("core_001", 10)
+	skillInv.AddSkill("skill_001", "") // チェイン効果なし
+
+	// コアを設定
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	// チェイン効果なしでスキルを設定
+	err = manager.SetSkill(0, 0, "skill_001", "")
+	if err != nil {
+		t.Fatalf("チェイン効果なしでのSetSkillはエラーを返すべきではない: %v", err)
+	}
+
+	slot := manager.GetSlot(0)
+	skillConfig := slot.GetSkill(0)
+	if skillConfig.TypeID != "skill_001" {
+		t.Errorf("TypeID = %q, want %q", skillConfig.TypeID, "skill_001")
+	}
+	if skillConfig.ChainEffectID != "" {
+		t.Errorf("ChainEffectID = %q, want %q", skillConfig.ChainEffectID, "")
+	}
+}
+
+func TestAgentSlotManager_SetSkill_CoreNotSet(t *testing.T) {
+	manager, _, skillInv := createTestManager()
+
+	// スキルをインベントリに追加
+	skillInv.AddSkill("skill_001", "")
+
+	// コアを設定せずにスキル設定を試みる
+	err := manager.SetSkill(0, 0, "skill_001", "")
+
+	if err == nil {
+		t.Fatal("コア未設定でのSetSkillはエラーを返すべき")
+	}
+	if err != ErrCoreNotSet {
+		t.Errorf("err = %v, want %v", err, ErrCoreNotSet)
+	}
+}
+
+func TestAgentSlotManager_SetSkill_NotOwned(t *testing.T) {
+	manager, coreInv, _ := createTestManager()
+
+	// コアを設定
+	coreInv.AddCore("core_001", 10)
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	// インベントリにスキルを追加せずに設定を試みる
+	err = manager.SetSkill(0, 0, "skill_001", "")
+
+	if err == nil {
+		t.Fatal("未保有スキルでのSetSkillはエラーを返すべき")
+	}
+	if err != ErrSkillNotOwned {
+		t.Errorf("err = %v, want %v", err, ErrSkillNotOwned)
+	}
+}
+
+func TestAgentSlotManager_SetSkill_IncompatibleWithCore(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	// core_002 は physical のみを許可
+	coreInv.AddCore("core_002", 10)
+	// skill_002 は magic タグのみ
+	skillInv.AddSkill("skill_002", "")
+
+	// コアを設定
+	err := manager.SetCore(0, "core_002", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	// 互換性のないスキルを設定しようとする
+	err = manager.SetSkill(0, 0, "skill_002", "")
+
+	if err == nil {
+		t.Fatal("互換性のないスキルでのSetSkillはエラーを返すべき")
+	}
+	if err != ErrSkillIncompatible {
+		t.Errorf("err = %v, want %v", err, ErrSkillIncompatible)
+	}
+}
+
+func TestAgentSlotManager_SetSkill_ChainVariationNotOwned(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	// コアとスキルをインベントリに追加
+	coreInv.AddCore("core_001", 10)
+	skillInv.AddSkill("skill_001", "chain_001") // chain_001 のみ保有
+
+	// コアを設定
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	// 未保有のチェイン効果バリエーションを指定
+	err = manager.SetSkill(0, 0, "skill_001", "chain_002")
+
+	if err == nil {
+		t.Fatal("未保有チェイン効果でのSetSkillはエラーを返すべき")
+	}
+	if err != ErrChainVariationNotOwned {
+		t.Errorf("err = %v, want %v", err, ErrChainVariationNotOwned)
+	}
+}
+
+func TestAgentSlotManager_SetSkill_InvalidSlotIndex(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+	coreInv.AddCore("core_001", 10)
+	skillInv.AddSkill("skill_001", "")
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	tests := []struct {
+		name string
+		slot int
+	}{
+		{"負のインデックス", -1},
+		{"範囲外のインデックス", 3},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := manager.SetSkill(tt.slot, 0, "skill_001", "")
+			if err == nil {
+				t.Fatal("無効なスロットインデックスでのSetSkillはエラーを返すべき")
+			}
+			if err != ErrSlotIndexOutOfRange {
+				t.Errorf("err = %v, want %v", err, ErrSlotIndexOutOfRange)
+			}
+		})
+	}
+}
+
+func TestAgentSlotManager_SetSkill_InvalidSkillSlotIndex(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+	coreInv.AddCore("core_001", 10)
+	skillInv.AddSkill("skill_001", "")
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	tests := []struct {
+		name      string
+		skillSlot int
+	}{
+		{"負のインデックス", -1},
+		{"範囲外のインデックス", 4},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := manager.SetSkill(0, tt.skillSlot, "skill_001", "")
+			if err == nil {
+				t.Fatal("無効なスキルスロットインデックスでのSetSkillはエラーを返すべき")
+			}
+			if err != ErrSkillSlotIndexOutOfRange {
+				t.Errorf("err = %v, want %v", err, ErrSkillSlotIndexOutOfRange)
+			}
+		})
+	}
+}
+
+func TestAgentSlotManager_SetSkill_SameSkillInDifferentAgents(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	// コアとスキルをインベントリに追加
+	coreInv.AddCore("core_001", 10)
+	skillInv.AddSkill("skill_001", "")
+
+	// 2つのスロットにコアを設定
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCore(0)でエラー: %v", err)
+	}
+	err = manager.SetCore(1, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCore(1)でエラー: %v", err)
+	}
+
+	// 同じスキルを異なるエージェントに設定
+	err = manager.SetSkill(0, 0, "skill_001", "")
+	if err != nil {
+		t.Fatalf("スロット0へのSetSkillでエラー: %v", err)
+	}
+	err = manager.SetSkill(1, 0, "skill_001", "")
+	if err != nil {
+		t.Fatalf("スロット1へのSetSkillでエラー（同じスキルを異なるエージェントに設定可能であるべき）: %v", err)
+	}
+
+	// 両方のスロットにスキルが設定されていることを確認
+	if manager.GetSlot(0).GetSkill(0).TypeID != "skill_001" {
+		t.Error("スロット0にskill_001が設定されているべき")
+	}
+	if manager.GetSlot(1).GetSkill(0).TypeID != "skill_001" {
+		t.Error("スロット1にskill_001が設定されているべき")
+	}
+}
+
+func TestAgentSlotManager_SetSkill_SameSkillInSameAgentMultipleSlots(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	// コアとスキルをインベントリに追加
+	coreInv.AddCore("core_001", 10)
+	skillInv.AddSkill("skill_001", "")
+
+	// コアを設定
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	// 同じスキルを同一エージェント内の複数スロットに設定
+	err = manager.SetSkill(0, 0, "skill_001", "")
+	if err != nil {
+		t.Fatalf("スキルスロット0へのSetSkillでエラー: %v", err)
+	}
+	err = manager.SetSkill(0, 1, "skill_001", "")
+	if err != nil {
+		t.Fatalf("スキルスロット1へのSetSkillでエラー（同じスキルを同一エージェント内の複数スロットに設定可能であるべき）: %v", err)
+	}
+
+	// 2つのスキルスロットに同じスキルが設定されていることを確認
+	slot := manager.GetSlot(0)
+	if slot.GetSkill(0).TypeID != "skill_001" {
+		t.Error("スキルスロット0にskill_001が設定されているべき")
+	}
+	if slot.GetSkill(1).TypeID != "skill_001" {
+		t.Error("スキルスロット1にskill_001が設定されているべき")
+	}
+	if slot.GetSkillCount() != 2 {
+		t.Errorf("スキル数 = %d, want %d", slot.GetSkillCount(), 2)
+	}
+}
+
+func TestAgentSlotManager_ClearSkill(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	coreInv.AddCore("core_001", 10)
+	skillInv.AddSkill("skill_001", "")
+	skillInv.AddSkill("skill_004", "") // physical, magic タグ
+
+	// コアとスキルを設定
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+	err = manager.SetSkill(0, 0, "skill_001", "")
+	if err != nil {
+		t.Fatalf("SetSkillでエラー: %v", err)
+	}
+	err = manager.SetSkill(0, 1, "skill_004", "")
+	if err != nil {
+		t.Fatalf("SetSkill(skill_004)でエラー: %v", err)
+	}
+
+	// スキルをクリア
+	err = manager.ClearSkill(0, 0)
+	if err != nil {
+		t.Fatalf("ClearSkillはエラーを返すべきではない: %v", err)
+	}
+
+	slot := manager.GetSlot(0)
+	if !slot.GetSkill(0).IsEmpty() {
+		t.Error("ClearSkill後のスキルスロットは空であるべき")
+	}
+	// 他のスキルスロットは影響を受けない
+	if slot.GetSkill(1).IsEmpty() {
+		t.Error("ClearSkillは他のスキルスロットに影響しないべき")
+	}
+	if slot.GetSkillCount() != 1 {
+		t.Errorf("ClearSkill後のスキル数 = %d, want %d", slot.GetSkillCount(), 1)
+	}
+	// コア設定は変更されない
+	if slot.IsEmpty() {
+		t.Error("ClearSkillでスロット全体が空になるべきではない")
+	}
+}
+
+func TestAgentSlotManager_ClearSkill_InvalidSlotIndex(t *testing.T) {
+	manager, _, _ := createTestManager()
+
+	tests := []struct {
+		name string
+		slot int
+	}{
+		{"負のインデックス", -1},
+		{"範囲外のインデックス", 3},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := manager.ClearSkill(tt.slot, 0)
+			if err == nil {
+				t.Fatal("無効なスロットインデックスでのClearSkillはエラーを返すべき")
+			}
+			if err != ErrSlotIndexOutOfRange {
+				t.Errorf("err = %v, want %v", err, ErrSlotIndexOutOfRange)
+			}
+		})
+	}
+}
+
+func TestAgentSlotManager_ClearSkill_InvalidSkillSlotIndex(t *testing.T) {
+	manager, coreInv, _ := createTestManager()
+	coreInv.AddCore("core_001", 10)
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	tests := []struct {
+		name      string
+		skillSlot int
+	}{
+		{"負のインデックス", -1},
+		{"範囲外のインデックス", 4},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := manager.ClearSkill(0, tt.skillSlot)
+			if err == nil {
+				t.Fatal("無効なスキルスロットインデックスでのClearSkillはエラーを返すべき")
+			}
+			if err != ErrSkillSlotIndexOutOfRange {
+				t.Errorf("err = %v, want %v", err, ErrSkillSlotIndexOutOfRange)
+			}
+		})
+	}
+}

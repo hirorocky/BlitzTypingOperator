@@ -194,7 +194,6 @@ func (m *AgentSlotManager) isSkillCompatibleWithCoreType(skillType domain.SkillT
 }
 
 // SetSkill はスロットのスキルを設定します。
-// テストで必要なため、5.2の時点でスタブを追加します。
 func (m *AgentSlotManager) SetSkill(slot int, skillSlot int, typeID string, chainEffectID string) error {
 	// スロットインデックスの検証
 	if slot < 0 || slot >= MaxAgentSlotCount {
@@ -241,6 +240,24 @@ func (m *AgentSlotManager) SetSkill(slot int, skillSlot int, typeID string, chai
 
 	// スキルを設定
 	targetSlot.SetSkill(skillSlot, typeID, chainEffectID)
+
+	return nil
+}
+
+// ClearSkill はスロットの指定スキルスロットをクリアします。
+func (m *AgentSlotManager) ClearSkill(slot int, skillSlot int) error {
+	// スロットインデックスの検証
+	if slot < 0 || slot >= MaxAgentSlotCount {
+		return ErrSlotIndexOutOfRange
+	}
+
+	// スキルスロットインデックスの検証
+	if skillSlot < 0 || skillSlot >= domain.MaxSkillSlotCount {
+		return ErrSkillSlotIndexOutOfRange
+	}
+
+	// スキルスロットをクリア
+	m.slots[slot].ClearSkill(skillSlot)
 
 	return nil
 }
