@@ -261,3 +261,169 @@ func (m *AgentSlotManager) ClearSkill(slot int, skillSlot int) error {
 
 	return nil
 }
+
+// ==================== バトル連携機能 ====================
+
+// IsSlotReady はスロットがバトルに使用可能かを返します。
+// コアが設定されている場合に使用可能です。
+func (m *AgentSlotManager) IsSlotReady(slot int) bool {
+	if slot < 0 || slot >= MaxAgentSlotCount {
+		return false
+	}
+	return !m.slots[slot].IsEmpty()
+}
+
+// GetReadySlotCount はバトルに使用可能なスロット数を返します。
+func (m *AgentSlotManager) GetReadySlotCount() int {
+	count := 0
+	for i := 0; i < MaxAgentSlotCount; i++ {
+		if m.IsSlotReady(i) {
+			count++
+		}
+	}
+	return count
+}
+
+// ValidateSkillCompatibility はスキルがスロットのコアと互換性があるかを検証します。
+// スロットが空の場合やスキルTypeが見つからない場合はfalseを返します。
+func (m *AgentSlotManager) ValidateSkillCompatibility(slot int, skillTypeID string) bool {
+	if slot < 0 || slot >= MaxAgentSlotCount {
+		return false
+	}
+
+	targetSlot := m.slots[slot]
+	if targetSlot.IsEmpty() {
+		return false
+	}
+
+	// コアTypeを取得
+	coreType, exists := m.coreTypes[targetSlot.CoreTypeID]
+	if !exists {
+		return false
+	}
+
+	// スキルTypeを取得
+	skillType, exists := m.skillTypes[skillTypeID]
+	if !exists {
+		return false
+	}
+
+	return m.isSkillCompatibleWithCoreType(skillType, coreType)
+}
+
+// GetCompatibleSkills は指定スロットのコアと互換性のあるスキル一覧を返します。
+// インベントリに保有しているスキルのうち、互換性のあるもののTypeIDリストを返します。
+// スロットが空の場合は空のリストを返します。
+func (m *AgentSlotManager) GetCompatibleSkills(slot int) []string {
+	result := []string{}
+
+	if slot < 0 || slot >= MaxAgentSlotCount {
+		return result
+	}
+
+	targetSlot := m.slots[slot]
+	if targetSlot.IsEmpty() {
+		return result
+	}
+
+	// コアTypeを取得
+	coreType, exists := m.coreTypes[targetSlot.CoreTypeID]
+	if !exists {
+		return result
+	}
+
+	// 保有スキルを取得
+	ownedSkills := m.skillInv.GetOwnedSkills()
+
+	// 各スキルの互換性をチェック
+	for typeID := range ownedSkills {
+		skillType, exists := m.skillTypes[typeID]
+		if !exists {
+			continue
+		}
+
+		if m.isSkillCompatibleWithCoreType(skillType, coreType) {
+			result = append(result, typeID)
+		}
+	}
+
+	return result
+}
+
+// BuildAgentsForBattle はバトル用のAgentModelスライスを構築します。
+// 空スロットはバトルに含めません。
+func (m *AgentSlotManager) BuildAgentsForBattle() []*domain.AgentModel {
+	agents := make([]*domain.AgentModel, 0, MaxAgentSlotCount)
+
+	for i := 0; i < MaxAgentSlotCount; i++ {
+		if !m.IsSlotReady(i) {
+			continue
+		}
+
+		agent := m.buildAgentFromSlot(i)
+		if agent != nil {
+			agents = append(agents, agent)
+		}
+	}
+
+	return agents
+}
+
+// buildAgentFromSlot はスロットからAgentModelを構築します。
+func (m *AgentSlotManager) buildAgentFromSlot(slot int) *domain.AgentModel {
+	targetSlot := m.slots[slot]
+	if targetSlot.IsEmpty() {
+		return nil
+	}
+
+	// CoreTypeを取得
+	coreType, exists := m.coreTypes[targetSlot.CoreTypeID]
+	if !exists {
+		return nil
+	}
+
+	// PassiveSkillを取得
+	passiveSkill := m.passiveSkills[coreType.PassiveSkillID]
+
+	// CoreModelを作成
+	core := domain.NewCoreWithTypeID(
+		targetSlot.CoreTypeID,
+		targetSlot.CoreLevel,
+		coreType,
+		passiveSkill,
+	)
+
+	// スキルを構築
+	modules := make([]*domain.ModuleModel, 0, domain.MaxSkillSlotCount)
+	for i := 0; i < domain.MaxSkillSlotCount; i++ {
+		skillConfig := targetSlot.GetSkill(i)
+		if skillConfig == nil || skillConfig.IsEmpty() {
+			continue
+		}
+
+		module := m.buildModuleFromConfig(skillConfig)
+		if module != nil {
+			modules = append(modules, module)
+		}
+	}
+
+	// エージェントIDを生成（スロット番号ベース）
+	agentID := "agent_slot_" + string(rune('0'+slot))
+
+	return domain.NewAgent(agentID, core, modules)
+}
+
+// buildModuleFromConfig はスキルスロット構成からModuleModelを構築します。
+func (m *AgentSlotManager) buildModuleFromConfig(config *domain.SkillSlotConfig) *domain.ModuleModel {
+	skillType, exists := m.skillTypes[config.TypeID]
+	if !exists {
+		return nil
+	}
+
+	// チェイン効果の取得（現時点ではマスタデータからの取得は行わない）
+	// チェイン効果はChainEffectIDがあれば将来的に適用
+	var chainEffect *domain.ChainEffect = nil
+	// TODO: ChainEffectIDからChainEffectを構築する場合はここで実装
+
+	return domain.NewSkillFromType(skillType, chainEffect)
+}

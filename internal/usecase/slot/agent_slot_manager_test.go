@@ -811,3 +811,290 @@ func TestAgentSlotManager_ClearSkill_InvalidSkillSlotIndex(t *testing.T) {
 		})
 	}
 }
+
+// ==================== 5.4 バトル連携機能のテスト ====================
+
+func TestAgentSlotManager_IsSlotReady(t *testing.T) {
+	manager, coreInv, _ := createTestManager()
+
+	// 空スロットは使用不可
+	if manager.IsSlotReady(0) {
+		t.Error("空スロットはバトルに使用不可であるべき")
+	}
+
+	// コアを設定したスロットは使用可能
+	coreInv.AddCore("core_001", 10)
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	if !manager.IsSlotReady(0) {
+		t.Error("コア設定済みスロットはバトルに使用可能であるべき")
+	}
+
+	// 他のスロットは依然として使用不可
+	if manager.IsSlotReady(1) {
+		t.Error("コア未設定のスロット1は使用不可であるべき")
+	}
+}
+
+func TestAgentSlotManager_IsSlotReady_InvalidIndex(t *testing.T) {
+	manager, _, _ := createTestManager()
+
+	// 範囲外のインデックスは常にfalse
+	if manager.IsSlotReady(-1) {
+		t.Error("負のインデックスはfalseを返すべき")
+	}
+	if manager.IsSlotReady(3) {
+		t.Error("範囲外のインデックスはfalseを返すべき")
+	}
+}
+
+func TestAgentSlotManager_GetReadySlotCount(t *testing.T) {
+	manager, coreInv, _ := createTestManager()
+
+	// 全スロット空の場合
+	if manager.GetReadySlotCount() != 0 {
+		t.Errorf("全スロット空の場合のReadySlotCount = %d, want %d", manager.GetReadySlotCount(), 0)
+	}
+
+	// 1つのスロットにコアを設定
+	coreInv.AddCore("core_001", 10)
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	if manager.GetReadySlotCount() != 1 {
+		t.Errorf("1スロット設定後のReadySlotCount = %d, want %d", manager.GetReadySlotCount(), 1)
+	}
+
+	// 2つ目のスロットにコアを設定
+	err = manager.SetCore(1, "core_001", 7)
+	if err != nil {
+		t.Fatalf("SetCore(1)でエラー: %v", err)
+	}
+
+	if manager.GetReadySlotCount() != 2 {
+		t.Errorf("2スロット設定後のReadySlotCount = %d, want %d", manager.GetReadySlotCount(), 2)
+	}
+
+	// 全スロットにコアを設定
+	err = manager.SetCore(2, "core_001", 10)
+	if err != nil {
+		t.Fatalf("SetCore(2)でエラー: %v", err)
+	}
+
+	if manager.GetReadySlotCount() != 3 {
+		t.Errorf("全スロット設定後のReadySlotCount = %d, want %d", manager.GetReadySlotCount(), 3)
+	}
+}
+
+func TestAgentSlotManager_ValidateSkillCompatibility(t *testing.T) {
+	manager, coreInv, _ := createTestManager()
+
+	// core_001 は physical, magic を許可
+	coreInv.AddCore("core_001", 10)
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	// skill_001 は physical タグ → 互換性あり
+	if !manager.ValidateSkillCompatibility(0, "skill_001") {
+		t.Error("physical タグのスキルはcore_001と互換性があるべき")
+	}
+
+	// skill_002 は magic タグ → 互換性あり
+	if !manager.ValidateSkillCompatibility(0, "skill_002") {
+		t.Error("magic タグのスキルはcore_001と互換性があるべき")
+	}
+
+	// skill_003 は heal タグ → 互換性なし
+	if manager.ValidateSkillCompatibility(0, "skill_003") {
+		t.Error("heal タグのスキルはcore_001と互換性がないべき")
+	}
+}
+
+func TestAgentSlotManager_ValidateSkillCompatibility_EmptySlot(t *testing.T) {
+	manager, _, _ := createTestManager()
+
+	// 空スロットでの互換性チェックは常にfalse
+	if manager.ValidateSkillCompatibility(0, "skill_001") {
+		t.Error("空スロットでの互換性チェックはfalseを返すべき")
+	}
+}
+
+func TestAgentSlotManager_GetCompatibleSkills(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	// core_001 は physical, magic を許可
+	coreInv.AddCore("core_001", 10)
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	// スキルをインベントリに追加
+	skillInv.AddSkill("skill_001", "") // physical
+	skillInv.AddSkill("skill_002", "") // magic
+	skillInv.AddSkill("skill_003", "") // heal
+	skillInv.AddSkill("skill_004", "") // physical, magic
+
+	// 互換性のあるスキル一覧を取得
+	compatibleSkills := manager.GetCompatibleSkills(0)
+
+	// skill_001, skill_002, skill_004 が互換性あり
+	if len(compatibleSkills) != 3 {
+		t.Errorf("互換スキル数 = %d, want %d", len(compatibleSkills), 3)
+	}
+
+	// 含まれるべきスキルを確認
+	skillSet := make(map[string]bool)
+	for _, s := range compatibleSkills {
+		skillSet[s] = true
+	}
+
+	if !skillSet["skill_001"] {
+		t.Error("skill_001が互換スキルに含まれるべき")
+	}
+	if !skillSet["skill_002"] {
+		t.Error("skill_002が互換スキルに含まれるべき")
+	}
+	if !skillSet["skill_004"] {
+		t.Error("skill_004が互換スキルに含まれるべき")
+	}
+	if skillSet["skill_003"] {
+		t.Error("skill_003は互換スキルに含まれないべき")
+	}
+}
+
+func TestAgentSlotManager_GetCompatibleSkills_EmptySlot(t *testing.T) {
+	manager, _, skillInv := createTestManager()
+
+	// スキルをインベントリに追加
+	skillInv.AddSkill("skill_001", "")
+
+	// 空スロットでは空のリストを返す
+	compatibleSkills := manager.GetCompatibleSkills(0)
+	if len(compatibleSkills) != 0 {
+		t.Errorf("空スロットでの互換スキル数 = %d, want %d", len(compatibleSkills), 0)
+	}
+}
+
+func TestAgentSlotManager_BuildAgentsForBattle(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	// コアとスキルをインベントリに追加
+	coreInv.AddCore("core_001", 10)
+	coreInv.AddCore("core_002", 5)
+	skillInv.AddSkill("skill_001", "")
+	skillInv.AddSkill("skill_004", "") // physical, magic タグ
+
+	// スロット0: core_001 + skill_001, skill_004
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCore(0)でエラー: %v", err)
+	}
+	err = manager.SetSkill(0, 0, "skill_001", "")
+	if err != nil {
+		t.Fatalf("SetSkill(0,0)でエラー: %v", err)
+	}
+	err = manager.SetSkill(0, 1, "skill_004", "")
+	if err != nil {
+		t.Fatalf("SetSkill(0,1)でエラー: %v", err)
+	}
+
+	// スロット1: 空
+
+	// スロット2: core_002（スキルなし）
+	err = manager.SetCore(2, "core_002", 3)
+	if err != nil {
+		t.Fatalf("SetCore(2)でエラー: %v", err)
+	}
+
+	// バトル用エージェントを構築
+	agents := manager.BuildAgentsForBattle()
+
+	// 空スロットは含まれないので2体
+	if len(agents) != 2 {
+		t.Errorf("エージェント数 = %d, want %d", len(agents), 2)
+	}
+
+	// 最初のエージェント（スロット0）を確認
+	agent0 := agents[0]
+	if agent0.Core == nil {
+		t.Fatal("エージェント0のCoreがnilであるべきではない")
+	}
+	if agent0.Core.TypeID != "core_001" {
+		t.Errorf("エージェント0のCoreTypeID = %q, want %q", agent0.Core.TypeID, "core_001")
+	}
+	if agent0.Level != 5 {
+		t.Errorf("エージェント0のLevel = %d, want %d", agent0.Level, 5)
+	}
+	if len(agent0.Modules) != 2 {
+		t.Errorf("エージェント0のスキル数 = %d, want %d", len(agent0.Modules), 2)
+	}
+
+	// 2番目のエージェント（スロット2）を確認
+	agent2 := agents[1]
+	if agent2.Core.TypeID != "core_002" {
+		t.Errorf("エージェント2のCoreTypeID = %q, want %q", agent2.Core.TypeID, "core_002")
+	}
+	if agent2.Level != 3 {
+		t.Errorf("エージェント2のLevel = %d, want %d", agent2.Level, 3)
+	}
+	if len(agent2.Modules) != 0 {
+		t.Errorf("エージェント2のスキル数 = %d, want %d", len(agent2.Modules), 0)
+	}
+}
+
+func TestAgentSlotManager_BuildAgentsForBattle_AllEmpty(t *testing.T) {
+	manager, _, _ := createTestManager()
+
+	// 全スロット空の場合は空のスライス
+	agents := manager.BuildAgentsForBattle()
+
+	if agents == nil {
+		t.Fatal("BuildAgentsForBattleはnilを返すべきではない")
+	}
+	if len(agents) != 0 {
+		t.Errorf("全スロット空の場合のエージェント数 = %d, want %d", len(agents), 0)
+	}
+}
+
+func TestAgentSlotManager_BuildAgentsForBattle_AllFull(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	// コアとスキルをインベントリに追加
+	coreInv.AddCore("core_001", 10)
+	skillInv.AddSkill("skill_001", "")
+
+	// 全スロットにコアを設定
+	for i := 0; i < 3; i++ {
+		err := manager.SetCore(i, "core_001", 5+i)
+		if err != nil {
+			t.Fatalf("SetCore(%d)でエラー: %v", i, err)
+		}
+		err = manager.SetSkill(i, 0, "skill_001", "")
+		if err != nil {
+			t.Fatalf("SetSkill(%d,0)でエラー: %v", i, err)
+		}
+	}
+
+	// バトル用エージェントを構築
+	agents := manager.BuildAgentsForBattle()
+
+	if len(agents) != 3 {
+		t.Errorf("全スロット設定時のエージェント数 = %d, want %d", len(agents), 3)
+	}
+
+	// 各エージェントのレベルを確認
+	for i, agent := range agents {
+		expectedLevel := 5 + i
+		if agent.Level != expectedLevel {
+			t.Errorf("エージェント%dのLevel = %d, want %d", i, agent.Level, expectedLevel)
+		}
+	}
+}
