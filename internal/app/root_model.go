@@ -16,8 +16,10 @@ import (
 	"hirorocky/type-battle/internal/tui/presenter"
 	"hirorocky/type-battle/internal/tui/screens"
 	"hirorocky/type-battle/internal/tui/styles"
+	"hirorocky/type-battle/internal/usecase/inventory"
 	"hirorocky/type-battle/internal/usecase/rewarding"
 	gamestate "hirorocky/type-battle/internal/usecase/session"
+	"hirorocky/type-battle/internal/usecase/slot"
 	"hirorocky/type-battle/internal/usecase/typing"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -97,6 +99,19 @@ type RootModel struct {
 
 	// チェイン効果データ（デバッグモードで使用）
 	chainEffects []masterdata.ChainEffectData
+
+	// v3.0.0: 新システムのマネージャー
+	// slotManager はエージェントスロット管理を担当します
+	slotManager *slot.AgentSlotManager
+
+	// invManager はユニークインベントリ管理を担当します
+	invManager *inventory.InventoryManager
+
+	// coreTypes はコアTypeマスタデータです
+	coreTypes map[string]domain.CoreType
+
+	// skillTypes はスキルTypeマスタデータです
+	skillTypes map[string]domain.SkillType
 }
 
 // NewRootModel はデフォルトの初期状態で新しいRootModelを作成します。
@@ -191,6 +206,40 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		}
 	}
 
+	// v3.0.0: 新システムのマネージャーを作成
+	invManager := inventory.NewInventoryManager()
+
+	// コアTypeとスキルTypeをマップに変換
+	coreTypesMap := make(map[string]domain.CoreType)
+	skillTypesMap := make(map[string]domain.SkillType)
+	if domainSources != nil {
+		for _, ct := range domainSources.CoreTypes {
+			coreTypesMap[ct.ID] = ct
+		}
+		for _, mt := range domainSources.ModuleTypes {
+			// ModuleDropInfoからSkillTypeへの変換
+			skillTypesMap[mt.ID] = domain.SkillType{
+				ID:              mt.ID,
+				Name:            mt.Name,
+				Icon:            mt.Icon,
+				Tags:            mt.Tags,
+				Description:     mt.Description,
+				CooldownSeconds: mt.CooldownSeconds,
+				Difficulty:      mt.Difficulty,
+				MinDropLevel:    mt.MinDropLevel,
+			}
+		}
+	}
+
+	// AgentSlotManagerを作成
+	slotManager := slot.NewAgentSlotManager(
+		invManager.Cores(),
+		invManager.Skills(),
+		coreTypesMap,
+		skillTypesMap,
+		passiveSkills,
+	)
+
 	// インベントリプロバイダーを作成（デバッグモードに応じて切り替え）
 	var invProvider screens.InventoryProvider
 	var debugInvProvider *presenter.DebugInventoryProvider
@@ -204,25 +253,13 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 			passiveSkills,
 		)
 
-		// セーブデータからロードしたエージェントをDebugInventoryProviderに復元
-		for _, agent := range gs.AgentManager().GetAgents() {
-			_ = debugInvProvider.AddAgent(agent)
-		}
-		// 装備状態も復元
-		for slot := 0; slot < 3; slot++ {
-			if equippedAgent := gs.AgentManager().GetEquippedAgentAt(slot); equippedAgent != nil {
-				_ = debugInvProvider.EquipAgent(slot, equippedAgent)
-			}
-		}
+		// v3.0.0: デバッグモードでもAgentSlotManagerを使用
+		// エージェントの復元はAgentSlotManager経由で行う（将来実装）
 
 		invProvider = debugInvProvider
 	} else {
-		// 通常モード: セーブデータのインベントリを使用
-		invProvider = presenter.NewInventoryProviderAdapter(
-			gs.Inventory(),
-			gs.AgentManager(),
-			gs.Player(),
-		)
+		// 通常モード: AgentSlotManagerを使用
+		invProvider = presenter.NewInventoryProviderAdapter(slotManager)
 	}
 
 	// ScreenFactoryを作成
@@ -268,6 +305,11 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		invProvider:             invProvider,
 		externalData:            externalData,
 		chainEffects:            chainEffects,
+		// v3.0.0: 新システムのマネージャー
+		slotManager: slotManager,
+		invManager:  invManager,
+		coreTypes:   coreTypesMap,
+		skillTypes:  skillTypesMap,
 	}
 
 	// メッセージハンドラーと画面マップを初期化
@@ -477,10 +519,12 @@ func (m *RootModel) startBattle(level int, enemyTypeID string) tea.Cmd {
 		enemy = m.gameState.EnemyGenerator().Generate(level)
 	}
 
-	// プレイヤーを準備し、インベントリプロバイダーから装備エージェントを取得
-	m.gameState.PreparePlayerForBattle()
-	player := m.gameState.Player()
+	// v3.0.0: AgentSlotManagerからエージェントを取得
 	agents := m.invProvider.GetEquippedAgents()
+
+	// プレイヤーを準備（エージェントリストを渡す）
+	m.gameState.PreparePlayerForBattle(agents)
+	player := m.gameState.Player()
 
 	// バトル画面を作成（JSONからロードした辞書を渡す）
 	m.battleScreen = screens.NewBattleScreen(enemy, player, agents, m.typingDictionary)

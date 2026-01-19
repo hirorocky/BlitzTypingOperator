@@ -7,7 +7,6 @@ import (
 	"hirorocky/type-battle/internal/usecase/achievement"
 	"hirorocky/type-battle/internal/usecase/rewarding"
 	"hirorocky/type-battle/internal/usecase/spawning"
-	"hirorocky/type-battle/internal/usecase/synthesize"
 )
 
 // GameState はゲーム全体の状態を保持する構造体です。
@@ -23,10 +22,9 @@ type GameState struct {
 	player *domain.PlayerModel
 
 	// inventory はゲーム全体のインベントリマネージャーです。
+	// 注意: v3.0.0以降は新しいinventory.InventoryManagerを使用するが、
+	// GameState内では旧システムとの後方互換性のため維持
 	inventory *InventoryManager
-
-	// agentManager はエージェント管理を担当します。
-	agentManager *synthesize.AgentManager
 
 	// statistics は統計情報を管理します。
 	statistics *StatisticsManager
@@ -64,12 +62,6 @@ func NewGameState(
 	// インベントリマネージャーを作成
 	invManager := NewInventoryManager()
 
-	// エージェントマネージャーを作成（エージェント・装備管理を一元化）
-	agentMgr := synthesize.NewAgentManager(
-		invManager.Cores(),
-		invManager.Modules(),
-	)
-
 	// 実績マネージャーを作成
 	achievementMgr := achievement.NewAchievementManager()
 
@@ -83,7 +75,6 @@ func NewGameState(
 		MaxLevelReached:  0,
 		player:           domain.NewPlayer(),
 		inventory:        invManager,
-		agentManager:     agentMgr,
 		statistics:       NewStatisticsManager(),
 		achievements:     achievementMgr,
 		settings:         NewSettings(),
@@ -104,10 +95,9 @@ func (g *GameState) Inventory() *InventoryManager {
 	return g.inventory
 }
 
-// AgentManager はエージェントマネージャーを返します。
-func (g *GameState) AgentManager() *synthesize.AgentManager {
-	return g.agentManager
-}
+// AgentManager は削除されました。
+// v3.0.0以降は slot.AgentSlotManager を使用してください。
+// 後方互換性のため空の実装を維持していましたが、タスク11で完全に削除されました。
 
 // Statistics は統計マネージャーを返します。
 func (g *GameState) Statistics() *StatisticsManager {
@@ -229,14 +219,12 @@ func (g *GameState) GetEncounteredEnemies() []string {
 	return g.encounteredEnemies
 }
 
-// GetEquippedAgents は装備中のエージェント一覧を返します。
-func (g *GameState) GetEquippedAgents() []*domain.AgentModel {
-	return g.agentManager.GetEquippedAgents()
-}
+// GetEquippedAgents は削除されました。
+// v3.0.0以降は slot.AgentSlotManager.BuildAgentsForBattle() を使用してください。
 
 // PreparePlayerForBattle はプレイヤーをバトル用に準備します。
-func (g *GameState) PreparePlayerForBattle() {
-	agents := g.GetEquippedAgents()
+// agents: バトルに参加するエージェントのリスト（AgentSlotManager.BuildAgentsForBattle()から取得）
+func (g *GameState) PreparePlayerForBattle(agents []*domain.AgentModel) {
 	g.player.RecalculateHP(agents)
 	g.player.PrepareForBattle()
 }

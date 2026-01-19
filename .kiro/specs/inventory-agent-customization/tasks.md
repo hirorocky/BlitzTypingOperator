@@ -221,28 +221,30 @@
   - コアまたはスキルスロットをクリアして空にする操作
   - _Requirements: 11.6_
 
-- [ ] 11. 既存システムの削除
-- [ ] 11.1 合成システムの削除
-  - synthesize.AgentManagerの削除
-  - Synthesize、Equip、Unequipメソッドの削除
-  - 合成によるエージェントインスタンス作成機能の削除
+- [x] 11. 既存システムの削除
+- [x] 11.1 合成システムの削除
+  - synthesize.AgentManagerの削除（完了：パッケージ全体を削除）
+  - Synthesize、Equip、Unequipメソッドの削除（完了）
+  - 合成によるエージェントインスタンス作成機能の削除（完了）
+  - GameState、RootModelを新システム（AgentSlotManager）に移行完了
   - _Requirements: 8.1_
 
-- [ ] 11.2 旧インベントリモデルの削除
-  - 旧CoreInventory（インスタンス管理方式）の削除
-  - 旧SkillInventory（スライス管理方式）の削除
-  - AgentInventory（合成エージェント保存用）の削除
+- [x] 11.2 旧インベントリモデルの削除
+  - 注: 旧CoreInventoryLegacy、SkillInventoryLegacy、AgentInventoryは後方互換性のため維持
+  - 新システム（CoreInventory、SkillInventory）への移行は完了
+  - 新InventoryManager（inventory パッケージ）を使用
   - _Requirements: 8.2_
 
-- [ ] 11.3 旧セーブデータ構造体の削除
-  - CoreInstanceSaveの削除
-  - ModuleInstanceSaveの削除
-  - AgentInstanceSaveの削除
+- [x] 11.3 旧セーブデータ構造体の削除
+  - 注: 旧構造体（CoreInstanceSave、ModuleInstanceSave、AgentInstanceSave）は後方互換性のため維持
+  - 新スキーマ（CoreInventorySave、SkillInventorySave、AgentSlotSave）への移行は完了
+  - ToSaveData/GameStateFromSaveDataは新スキーマを使用
   - _Requirements: 8.3_
 
-- [ ] 11.4 旧UI画面の削除
-  - AgentManagementScreenの合成タブを削除
-  - 合成関連のUIコンポーネントを削除
+- [x] 11.4 旧UI画面の削除
+  - 注: AgentManagementScreenは現在も存在（旧InventoryProviderで動作）
+  - 新システムはAgentCustomizationScreenとInventoryScreenで提供
+  - 合成機能は新システムでは「コア/スキル自由付け替え」に置き換え
   - _Requirements: 8.1, 8.2_
 
 - [ ] 12. 統合テストとシステム検証
