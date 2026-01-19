@@ -35,6 +35,9 @@ var (
 
 	// ErrSkillSlotIndexOutOfRange は無効なスキルスロットインデックスの場合のエラー
 	ErrSkillSlotIndexOutOfRange = errors.New("skill slot index out of range")
+
+	// ErrSlotLocked はバトル中にスロット変更を試みた場合のエラー
+	ErrSlotLocked = errors.New("slot is locked during battle")
 )
 
 // MaxAgentSlotCount はエージェントスロットの最大数です。
@@ -60,6 +63,9 @@ type AgentSlotManager struct {
 
 	// passiveSkills はPassiveSkillマスタデータへの参照
 	passiveSkills map[string]domain.PassiveSkill
+
+	// locked はバトル中のスロット変更禁止フラグ
+	locked bool
 }
 
 // NewAgentSlotManager は新しいAgentSlotManagerを作成します。
@@ -103,7 +109,13 @@ func (m *AgentSlotManager) GetSlot(slot int) *domain.AgentSlot {
 // SetCore はスロットにコアを設定します。
 // levelは1から取得済み最大レベルまでの任意のレベルを指定できます。
 // コア変更時に互換性のないスキルは自動削除されます。
+// ロック中はErrSlotLockedを返します。
 func (m *AgentSlotManager) SetCore(slot int, typeID string, level int) error {
+	// ロックチェック
+	if m.locked {
+		return ErrSlotLocked
+	}
+
 	// スロットインデックスの検証
 	if slot < 0 || slot >= MaxAgentSlotCount {
 		return ErrSlotIndexOutOfRange
@@ -132,7 +144,13 @@ func (m *AgentSlotManager) SetCore(slot int, typeID string, level int) error {
 
 // ClearCore はスロットのコアをクリアします。
 // コアをクリアすると、スキルも全て削除されます。
+// ロック中はErrSlotLockedを返します。
 func (m *AgentSlotManager) ClearCore(slot int) error {
+	// ロックチェック
+	if m.locked {
+		return ErrSlotLocked
+	}
+
 	// スロットインデックスの検証
 	if slot < 0 || slot >= MaxAgentSlotCount {
 		return ErrSlotIndexOutOfRange
@@ -193,7 +211,13 @@ func (m *AgentSlotManager) isSkillCompatibleWithCoreType(skillType domain.SkillT
 }
 
 // SetSkill はスロットのスキルを設定します。
+// ロック中はErrSlotLockedを返します。
 func (m *AgentSlotManager) SetSkill(slot int, skillSlot int, typeID string, chainEffectID string) error {
+	// ロックチェック
+	if m.locked {
+		return ErrSlotLocked
+	}
+
 	// スロットインデックスの検証
 	if slot < 0 || slot >= MaxAgentSlotCount {
 		return ErrSlotIndexOutOfRange
@@ -244,7 +268,13 @@ func (m *AgentSlotManager) SetSkill(slot int, skillSlot int, typeID string, chai
 }
 
 // ClearSkill はスロットの指定スキルスロットをクリアします。
+// ロック中はErrSlotLockedを返します。
 func (m *AgentSlotManager) ClearSkill(slot int, skillSlot int) error {
+	// ロックチェック
+	if m.locked {
+		return ErrSlotLocked
+	}
+
 	// スロットインデックスの検証
 	if slot < 0 || slot >= MaxAgentSlotCount {
 		return ErrSlotIndexOutOfRange
@@ -425,4 +455,23 @@ func (m *AgentSlotManager) buildModuleFromConfig(config *domain.SkillSlotConfig)
 	// TODO: ChainEffectIDからChainEffectを構築する場合はここで実装
 
 	return domain.NewSkillFromType(skillType, chainEffect)
+}
+
+// ==================== バトル中のスロット変更禁止機能 ====================
+
+// Lock はスロットをロックし、バトル中の変更を禁止します。
+// バトル開始時に呼び出してください。
+func (m *AgentSlotManager) Lock() {
+	m.locked = true
+}
+
+// Unlock はスロットのロックを解除し、変更を許可します。
+// バトル終了時に呼び出してください。
+func (m *AgentSlotManager) Unlock() {
+	m.locked = false
+}
+
+// IsLocked はスロットがロックされているかどうかを返します。
+func (m *AgentSlotManager) IsLocked() bool {
+	return m.locked
 }
