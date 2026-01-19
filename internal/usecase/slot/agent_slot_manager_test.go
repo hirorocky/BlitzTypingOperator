@@ -158,7 +158,7 @@ func TestAgentSlotManager_GetSlots_ReturnsAllSlots(t *testing.T) {
 	}
 
 	// 各スロットがGetSlotと同じ参照を返すことを確認
-	for i := 0; i < MaxAgentSlotCount; i++ {
+	for i := range MaxAgentSlotCount {
 		if slots[i] != manager.GetSlot(i) {
 			t.Errorf("slots[%d]はGetSlot(%d)と同じ参照であるべき", i, i)
 		}
@@ -1072,7 +1072,7 @@ func TestAgentSlotManager_BuildAgentsForBattle_AllFull(t *testing.T) {
 	skillInv.AddSkill("skill_001", "")
 
 	// 全スロットにコアを設定
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		err := manager.SetCore(i, "core_001", 5+i)
 		if err != nil {
 			t.Fatalf("SetCore(%d)でエラー: %v", i, err)

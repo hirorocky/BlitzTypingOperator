@@ -5,6 +5,7 @@ package slot
 
 import (
 	"errors"
+	"slices"
 
 	"hirorocky/type-battle/internal/domain"
 )
@@ -159,7 +160,7 @@ func (m *AgentSlotManager) removeIncompatibleSkills(slot int) {
 	}
 
 	// 各スキルスロットをチェック
-	for i := 0; i < domain.MaxSkillSlotCount; i++ {
+	for i := range domain.MaxSkillSlotCount {
 		skillConfig := targetSlot.GetSkill(i)
 		if skillConfig == nil || skillConfig.IsEmpty() {
 			continue
@@ -184,10 +185,8 @@ func (m *AgentSlotManager) removeIncompatibleSkills(slot int) {
 func (m *AgentSlotManager) isSkillCompatibleWithCoreType(skillType domain.SkillType, coreType domain.CoreType) bool {
 	// スキルのタグのうち1つでもコアの許可タグに含まれていれば互換性あり
 	for _, skillTag := range skillType.Tags {
-		for _, allowedTag := range coreType.AllowedTags {
-			if skillTag == allowedTag {
-				return true
-			}
+		if slices.Contains(coreType.AllowedTags, skillTag) {
+			return true
 		}
 	}
 	return false
@@ -276,7 +275,7 @@ func (m *AgentSlotManager) IsSlotReady(slot int) bool {
 // GetReadySlotCount はバトルに使用可能なスロット数を返します。
 func (m *AgentSlotManager) GetReadySlotCount() int {
 	count := 0
-	for i := 0; i < MaxAgentSlotCount; i++ {
+	for i := range MaxAgentSlotCount {
 		if m.IsSlotReady(i) {
 			count++
 		}
@@ -355,7 +354,7 @@ func (m *AgentSlotManager) GetCompatibleSkills(slot int) []string {
 func (m *AgentSlotManager) BuildAgentsForBattle() []*domain.AgentModel {
 	agents := make([]*domain.AgentModel, 0, MaxAgentSlotCount)
 
-	for i := 0; i < MaxAgentSlotCount; i++ {
+	for i := range MaxAgentSlotCount {
 		if !m.IsSlotReady(i) {
 			continue
 		}
@@ -395,7 +394,7 @@ func (m *AgentSlotManager) buildAgentFromSlot(slot int) *domain.AgentModel {
 
 	// スキルを構築
 	modules := make([]*domain.ModuleModel, 0, domain.MaxSkillSlotCount)
-	for i := 0; i < domain.MaxSkillSlotCount; i++ {
+	for i := range domain.MaxSkillSlotCount {
 		skillConfig := targetSlot.GetSkill(i)
 		if skillConfig == nil || skillConfig.IsEmpty() {
 			continue
