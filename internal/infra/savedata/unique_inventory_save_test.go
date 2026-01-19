@@ -621,3 +621,295 @@ func TestConvertSaveToAgentSlot_InvalidCore(t *testing.T) {
 		}
 	}
 }
+
+// ==================== タスク7.3: セーブ/ロードの統合テスト ====================
+
+// TestSaveLoadIntegration_FullCycle は新スキーマでの保存・復元の統合テストです。
+func TestSaveLoadIntegration_FullCycle(t *testing.T) {
+	tmpDir := t.TempDir()
+	io := NewSaveDataIO(tmpDir, false)
+
+	// 1. v3.0.0形式のセーブデータを作成
+	saveData := NewSaveData()
+
+	// ユニークコアを設定
+	saveData.Inventory.UniqueCores.Cores["all_rounder"] = 5
+	saveData.Inventory.UniqueCores.Cores["attack_balance"] = 3
+	saveData.Inventory.UniqueCores.Cores["defense_balance"] = 7
+
+	// ユニークスキルを設定
+	saveData.Inventory.UniqueSkills.Skills["physical_lv1"] = []string{"damage_bonus", "life_steal"}
+	saveData.Inventory.UniqueSkills.Skills["heal_lv1"] = []string{"heal_bonus"}
+	saveData.Inventory.UniqueSkills.Skills["buff_lv1"] = []string{}
+
+	// エージェントスロット0を設定（フル装備）
+	saveData.Player.AgentSlots[0] = AgentSlotSave{
+		CoreTypeID: "all_rounder",
+		CoreLevel:  5,
+		Skills: [4]SkillSlotSaveCfg{
+			{TypeID: "physical_lv1", ChainEffectID: "damage_bonus"},
+			{TypeID: "heal_lv1", ChainEffectID: "heal_bonus"},
+			{TypeID: "buff_lv1", ChainEffectID: ""},
+			{TypeID: "physical_lv1", ChainEffectID: "life_steal"},
+		},
+	}
+
+	// エージェントスロット1を設定（一部装備）
+	saveData.Player.AgentSlots[1] = AgentSlotSave{
+		CoreTypeID: "attack_balance",
+		CoreLevel:  2,
+		Skills: [4]SkillSlotSaveCfg{
+			{TypeID: "physical_lv1"},
+			{},
+			{},
+			{},
+		},
+	}
+
+	// エージェントスロット2は空のまま
+
+	// 統計も設定
+	saveData.Statistics.TotalBattles = 100
+	saveData.Statistics.Victories = 80
+
+	// 2. セーブ
+	if err := io.SaveGame(saveData); err != nil {
+		t.Fatalf("セーブに失敗: %v", err)
+	}
+
+	// 3. ロード
+	loadedData, err := io.LoadGame()
+	if err != nil {
+		t.Fatalf("ロードに失敗: %v", err)
+	}
+
+	// 4. 検証
+
+	// バージョン
+	if loadedData.Version != "3.0.0" {
+		t.Errorf("Version: got %s, want 3.0.0", loadedData.Version)
+	}
+
+	// ユニークコア
+	if len(loadedData.Inventory.UniqueCores.Cores) != 3 {
+		t.Errorf("UniqueCores count: got %d, want 3", len(loadedData.Inventory.UniqueCores.Cores))
+	}
+	if loadedData.Inventory.UniqueCores.Cores["all_rounder"] != 5 {
+		t.Errorf("all_rounder: got %d, want 5", loadedData.Inventory.UniqueCores.Cores["all_rounder"])
+	}
+	if loadedData.Inventory.UniqueCores.Cores["defense_balance"] != 7 {
+		t.Errorf("defense_balance: got %d, want 7", loadedData.Inventory.UniqueCores.Cores["defense_balance"])
+	}
+
+	// ユニークスキル
+	if len(loadedData.Inventory.UniqueSkills.Skills) != 3 {
+		t.Errorf("UniqueSkills count: got %d, want 3", len(loadedData.Inventory.UniqueSkills.Skills))
+	}
+	if len(loadedData.Inventory.UniqueSkills.Skills["physical_lv1"]) != 2 {
+		t.Errorf("physical_lv1 chains: got %d, want 2", len(loadedData.Inventory.UniqueSkills.Skills["physical_lv1"]))
+	}
+
+	// エージェントスロット0
+	slot0 := loadedData.Player.AgentSlots[0]
+	if slot0.CoreTypeID != "all_rounder" {
+		t.Errorf("Slot0 CoreTypeID: got %s, want all_rounder", slot0.CoreTypeID)
+	}
+	if slot0.CoreLevel != 5 {
+		t.Errorf("Slot0 CoreLevel: got %d, want 5", slot0.CoreLevel)
+	}
+	if slot0.Skills[0].TypeID != "physical_lv1" {
+		t.Errorf("Slot0 Skill0 TypeID: got %s, want physical_lv1", slot0.Skills[0].TypeID)
+	}
+	if slot0.Skills[0].ChainEffectID != "damage_bonus" {
+		t.Errorf("Slot0 Skill0 ChainEffectID: got %s, want damage_bonus", slot0.Skills[0].ChainEffectID)
+	}
+	if slot0.Skills[3].TypeID != "physical_lv1" {
+		t.Errorf("Slot0 Skill3 TypeID: got %s, want physical_lv1", slot0.Skills[3].TypeID)
+	}
+	if slot0.Skills[3].ChainEffectID != "life_steal" {
+		t.Errorf("Slot0 Skill3 ChainEffectID: got %s, want life_steal", slot0.Skills[3].ChainEffectID)
+	}
+
+	// エージェントスロット1
+	slot1 := loadedData.Player.AgentSlots[1]
+	if slot1.CoreTypeID != "attack_balance" {
+		t.Errorf("Slot1 CoreTypeID: got %s, want attack_balance", slot1.CoreTypeID)
+	}
+	if slot1.CoreLevel != 2 {
+		t.Errorf("Slot1 CoreLevel: got %d, want 2", slot1.CoreLevel)
+	}
+
+	// エージェントスロット2（空）
+	slot2 := loadedData.Player.AgentSlots[2]
+	if slot2.CoreTypeID != "" {
+		t.Errorf("Slot2 should be empty, got CoreTypeID: %s", slot2.CoreTypeID)
+	}
+
+	// 統計
+	if loadedData.Statistics.TotalBattles != 100 {
+		t.Errorf("TotalBattles: got %d, want 100", loadedData.Statistics.TotalBattles)
+	}
+	if loadedData.Statistics.Victories != 80 {
+		t.Errorf("Victories: got %d, want 80", loadedData.Statistics.Victories)
+	}
+}
+
+// TestSaveLoadIntegration_InvalidTypeIDsIgnored はマスタに存在しないTypeIDが無視されることをテストします。
+func TestSaveLoadIntegration_InvalidTypeIDsIgnored(t *testing.T) {
+	// セーブデータにマスタに存在しないTypeIDを含める
+	saveData := NewSaveData()
+
+	// 一部有効、一部無効なコア
+	saveData.Inventory.UniqueCores.Cores["valid_core"] = 5
+	saveData.Inventory.UniqueCores.Cores["invalid_core"] = 3
+
+	// 一部有効、一部無効なスキル
+	saveData.Inventory.UniqueSkills.Skills["valid_skill"] = []string{"valid_chain"}
+	saveData.Inventory.UniqueSkills.Skills["invalid_skill"] = []string{"invalid_chain"}
+
+	// エージェントスロット: 有効なコアだが一部無効なスキル
+	saveData.Player.AgentSlots[0] = AgentSlotSave{
+		CoreTypeID: "valid_core",
+		CoreLevel:  5,
+		Skills: [4]SkillSlotSaveCfg{
+			{TypeID: "valid_skill", ChainEffectID: "valid_chain"},
+			{TypeID: "invalid_skill"},
+			{},
+			{},
+		},
+	}
+
+	// エージェントスロット: 無効なコア
+	saveData.Player.AgentSlots[1] = AgentSlotSave{
+		CoreTypeID: "invalid_core",
+		CoreLevel:  3,
+		Skills: [4]SkillSlotSaveCfg{
+			{TypeID: "valid_skill"},
+			{},
+			{},
+			{},
+		},
+	}
+
+	// マスタデータセット（実際にはapp層で用意される）
+	validCoreTypeIDs := map[string]bool{
+		"valid_core": true,
+	}
+	validSkillTypeIDs := map[string]bool{
+		"valid_skill": true,
+	}
+
+	// コアインベントリの変換テスト
+	cores := ConvertSaveToCoreInventory(saveData.Inventory.UniqueCores, validCoreTypeIDs)
+	if len(cores) != 1 {
+		t.Errorf("Cores after filter: got %d, want 1", len(cores))
+	}
+	if cores["valid_core"] != 5 {
+		t.Errorf("valid_core: got %d, want 5", cores["valid_core"])
+	}
+	if _, exists := cores["invalid_core"]; exists {
+		t.Error("invalid_core should be filtered out")
+	}
+
+	// スキルインベントリの変換テスト
+	skills := ConvertSaveToSkillInventory(saveData.Inventory.UniqueSkills, validSkillTypeIDs)
+	if len(skills) != 1 {
+		t.Errorf("Skills after filter: got %d, want 1", len(skills))
+	}
+	if _, exists := skills["invalid_skill"]; exists {
+		t.Error("invalid_skill should be filtered out")
+	}
+
+	// エージェントスロット0の変換テスト（コア有効、スキル一部無効）
+	coreTypeID, coreLevel, skillSlots := ConvertSaveToAgentSlot(
+		saveData.Player.AgentSlots[0],
+		validCoreTypeIDs,
+		validSkillTypeIDs,
+	)
+	if coreTypeID != "valid_core" {
+		t.Errorf("Slot0 CoreTypeID: got %s, want valid_core", coreTypeID)
+	}
+	if coreLevel != 5 {
+		t.Errorf("Slot0 CoreLevel: got %d, want 5", coreLevel)
+	}
+	if skillSlots[0].TypeID != "valid_skill" {
+		t.Errorf("Slot0 Skill0: got %s, want valid_skill", skillSlots[0].TypeID)
+	}
+	if skillSlots[1].TypeID != "" {
+		t.Errorf("Slot0 Skill1 should be empty (invalid skill filtered), got %s", skillSlots[1].TypeID)
+	}
+
+	// エージェントスロット1の変換テスト（コア無効→スロット全体空）
+	coreTypeID, coreLevel, skillSlots = ConvertSaveToAgentSlot(
+		saveData.Player.AgentSlots[1],
+		validCoreTypeIDs,
+		validSkillTypeIDs,
+	)
+	if coreTypeID != "" {
+		t.Errorf("Slot1 CoreTypeID should be empty (invalid core), got %s", coreTypeID)
+	}
+	if coreLevel != 0 {
+		t.Errorf("Slot1 CoreLevel should be 0, got %d", coreLevel)
+	}
+	for i, skill := range skillSlots {
+		if skill.TypeID != "" {
+			t.Errorf("Slot1 Skill%d should be empty when core is invalid, got %s", i, skill.TypeID)
+		}
+	}
+}
+
+// TestSaveLoadIntegration_EmptyData は空データのセーブ・ロードをテストします。
+func TestSaveLoadIntegration_EmptyData(t *testing.T) {
+	tmpDir := t.TempDir()
+	io := NewSaveDataIO(tmpDir, false)
+
+	// 空のセーブデータ
+	saveData := NewSaveData()
+
+	// セーブ
+	if err := io.SaveGame(saveData); err != nil {
+		t.Fatalf("セーブに失敗: %v", err)
+	}
+
+	// ロード
+	loadedData, err := io.LoadGame()
+	if err != nil {
+		t.Fatalf("ロードに失敗: %v", err)
+	}
+
+	// 空のデータが正しく復元されることを検証
+	if loadedData.Inventory.UniqueCores == nil {
+		t.Fatal("UniqueCores should not be nil")
+	}
+	if len(loadedData.Inventory.UniqueCores.Cores) != 0 {
+		t.Errorf("UniqueCores should be empty, got %d", len(loadedData.Inventory.UniqueCores.Cores))
+	}
+	if loadedData.Inventory.UniqueSkills == nil {
+		t.Fatal("UniqueSkills should not be nil")
+	}
+	if len(loadedData.Inventory.UniqueSkills.Skills) != 0 {
+		t.Errorf("UniqueSkills should be empty, got %d", len(loadedData.Inventory.UniqueSkills.Skills))
+	}
+	for i, slot := range loadedData.Player.AgentSlots {
+		if slot.CoreTypeID != "" {
+			t.Errorf("AgentSlots[%d] should be empty, got CoreTypeID: %s", i, slot.CoreTypeID)
+		}
+	}
+}
+
+// TestSaveLoadIntegration_NilConversion はnilセーブデータの変換をテストします。
+func TestSaveLoadIntegration_NilConversion(t *testing.T) {
+	validTypeIDs := map[string]bool{"valid": true}
+
+	// nil CoreInventorySave
+	cores := ConvertSaveToCoreInventory(nil, validTypeIDs)
+	if len(cores) != 0 {
+		t.Errorf("nil CoreInventorySave should return empty map, got %d", len(cores))
+	}
+
+	// nil SkillInventorySave
+	skills := ConvertSaveToSkillInventory(nil, validTypeIDs)
+	if len(skills) != 0 {
+		t.Errorf("nil SkillInventorySave should return empty map, got %d", len(skills))
+	}
+}
