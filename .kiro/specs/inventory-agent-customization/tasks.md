@@ -2,16 +2,19 @@
 
 ## タスク一覧
 
-- [ ] 1. ユビキタス言語の変更（Module → Skill）
-- [ ] 1.1 (P) ドメインモデル名の変更
-  - ModuleModelをSkillTypeへの参照方式に変更
-  - ModuleInventoryをSkillInventoryに名称変更
-  - 関連するメソッド名・変数名を一括変更
+- [x] 1. ユビキタス言語の変更（Module → Skill）
+- [x] 1.1 (P) ドメインモデル名の変更
+  - ModuleModelをSkillModelに名称変更、ModuleTypeをSkillTypeに変更
+  - ModuleEffectをSkillEffectに変更
+  - ModuleInventoryをSkillInventoryLegacyに名称変更
+  - 後方互換性のためModule*はSkill*のエイリアスとして残存
   - _Requirements: 2.1_
 
-- [ ] 1.2 (P) セーブデータスキーマの変更
-  - JSONキー名を「modules」から「skills」に変更
-  - マスタデータファイルのキー名変更
+- [x] 1.2 (P) セーブデータスキーマの変更
+  - savedata.AgentInstanceSaveのModulesフィールドをSkillsに変更
+  - ModuleInstanceSaveをSkillInstanceSaveに変更
+  - ModuleEffectDataをSkillEffectDataに変更
+  - JSONキーは後方互換性のため"modules"のまま
   - _Requirements: 2.1_
 
 - [ ] 2. コアインベントリのユニーク管理実装

@@ -91,7 +91,7 @@ func TestGameStateFromSaveDataLogsAgentErrors(t *testing.T) {
 					CoreTypeID: "all_rounder",
 					Level:      1,
 				},
-				Modules: []savedata.ModuleInstanceSave{
+				Skills: []savedata.SkillInstanceSave{
 					{TypeID: "mod_slash"},
 					{TypeID: "mod_slash"},
 					{TypeID: "mod_slash"},

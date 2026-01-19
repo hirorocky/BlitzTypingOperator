@@ -93,17 +93,21 @@ type ChainEffectSave struct {
 	Value float64 `json:"value"`
 }
 
-// ModuleInstanceSave はモジュールインスタンスのセーブデータです。
-// v1.0.0ではTypeIDとChainEffectのペアとして永続化します。
+// SkillInstanceSave はスキルインスタンスのセーブデータです。
+// v2.0.0ではTypeIDとChainEffectのペアとして永続化します。
 // 同一TypeIDでも異なるChainEffectを持つことを許容します。
-type ModuleInstanceSave struct {
-	// TypeID はモジュール種別ID（マスタデータ参照用）です。
+type SkillInstanceSave struct {
+	// TypeID はスキル種別ID（マスタデータ参照用）です。
 	TypeID string `json:"type_id"`
 
-	// ChainEffect はこのモジュールインスタンスのチェイン効果です。
+	// ChainEffect はこのスキルインスタンスのチェイン効果です。
 	// nilの場合はチェイン効果なしとしてomitemptyで省略されます。
 	ChainEffect *ChainEffectSave `json:"chain_effect,omitempty"`
 }
+
+// ModuleInstanceSave はSkillInstanceSaveのエイリアスです。
+// 後方互換性のために残されています。新規コードではSkillInstanceSaveを使用してください。
+type ModuleInstanceSave = SkillInstanceSave
 
 // AgentInstanceSave はエージェントインスタンスの軽量セーブデータです。
 // コア情報を直接保持し、インベントリに依存せずにロード時に再構築します。
@@ -115,9 +119,10 @@ type AgentInstanceSave struct {
 	// エージェント合成時にコアは消費されるため、インベントリとは別に保持します。
 	Core CoreInstanceSave `json:"core"`
 
-	// Modules はモジュールインスタンスのリストです（4つ）。
-	// 各モジュールのTypeIDとChainEffectをペアで保持し、データの整合性を保証します。
-	Modules []ModuleInstanceSave `json:"modules"`
+	// Skills はスキルインスタンスのリストです（4つ）。
+	// 各スキルのTypeIDとChainEffectをペアで保持し、データの整合性を保証します。
+	// JSONキーは後方互換性のため"modules"のままです。
+	Skills []SkillInstanceSave `json:"modules"`
 }
 
 // InventorySaveData はインベントリのセーブデータです。

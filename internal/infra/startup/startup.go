@@ -183,14 +183,14 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 	equippedAgentIDs := [3]string{"", "", ""}
 
 	for idx, agent := range initialAgents {
-		modules := make([]savedata.ModuleInstanceSave, len(agent.Modules))
-		for modIdx, m := range agent.Modules {
-			modules[modIdx] = savedata.ModuleInstanceSave{
+		skills := make([]savedata.SkillInstanceSave, len(agent.Modules))
+		for skillIdx, m := range agent.Modules {
+			skills[skillIdx] = savedata.SkillInstanceSave{
 				TypeID: m.TypeID,
 			}
 			// チェイン効果があれば変換
 			if m.ChainEffect != nil {
-				modules[modIdx].ChainEffect = &savedata.ChainEffectSave{
+				skills[skillIdx].ChainEffect = &savedata.ChainEffectSave{
 					Type:  string(m.ChainEffect.Type),
 					Value: m.ChainEffect.Value,
 				}
@@ -203,7 +203,7 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 				CoreTypeID: agent.Core.TypeID,
 				Level:      agent.Core.Level,
 			},
-			Modules: modules,
+			Skills: skills,
 		})
 
 		// 最大3体まで装備スロットに設定
@@ -247,19 +247,19 @@ func (i *NewGameInitializer) CreateNewGameWithExtraItems() *savedata.SaveData {
 		Level:      extraAgent.Core.Level,
 	})
 
-	// 追加のモジュールをインベントリにModuleInstancesとして追加
-	for _, module := range extraAgent.Modules {
-		modSave := savedata.ModuleInstanceSave{
-			TypeID: module.TypeID,
+	// 追加のスキルをインベントリにModuleInstancesとして追加
+	for _, skill := range extraAgent.Modules {
+		skillSave := savedata.SkillInstanceSave{
+			TypeID: skill.TypeID,
 		}
 		// チェイン効果があれば変換
-		if module.ChainEffect != nil {
-			modSave.ChainEffect = &savedata.ChainEffectSave{
-				Type:  string(module.ChainEffect.Type),
-				Value: module.ChainEffect.Value,
+		if skill.ChainEffect != nil {
+			skillSave.ChainEffect = &savedata.ChainEffectSave{
+				Type:  string(skill.ChainEffect.Type),
+				Value: skill.ChainEffect.Value,
 			}
 		}
-		saveData.Inventory.ModuleInstances = append(saveData.Inventory.ModuleInstances, modSave)
+		saveData.Inventory.ModuleInstances = append(saveData.Inventory.ModuleInstances, skillSave)
 	}
 
 	return saveData

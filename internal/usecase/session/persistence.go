@@ -56,16 +56,16 @@ func (g *GameState) ToSaveData() *savedata.SaveData {
 	}
 	saveData.Inventory.ModuleInstances = moduleInstances
 
-	// エージェントを保存（コア情報を直接埋め込み、モジュールはオブジェクト配列）
+	// エージェントを保存（コア情報を直接埋め込み、スキルはオブジェクト配列）
 	agentInstances := make([]savedata.AgentInstanceSave, 0)
 	for _, ag := range g.agentManager.GetAgents() {
-		modules := make([]savedata.ModuleInstanceSave, len(ag.Modules))
+		skills := make([]savedata.SkillInstanceSave, len(ag.Modules))
 		for i, m := range ag.Modules {
-			modules[i] = savedata.ModuleInstanceSave{
+			skills[i] = savedata.SkillInstanceSave{
 				TypeID: m.TypeID,
 			}
 			if m.ChainEffect != nil {
-				modules[i].ChainEffect = &savedata.ChainEffectSave{
+				skills[i].ChainEffect = &savedata.ChainEffectSave{
 					Type:  string(m.ChainEffect.Type),
 					Value: m.ChainEffect.Value,
 				}
@@ -77,7 +77,7 @@ func (g *GameState) ToSaveData() *savedata.SaveData {
 				CoreTypeID: ag.Core.TypeID,
 				Level:      ag.Core.Level,
 			},
-			Modules: modules,
+			Skills: skills,
 		})
 	}
 	saveData.Inventory.AgentInstances = agentInstances
@@ -227,20 +227,20 @@ func GameStateFromSaveData(data *savedata.SaveData, sources *DomainDataSources) 
 				passiveSkill,
 			)
 
-			// モジュールを再構築（オブジェクト配列形式）
-			modules := make([]*domain.ModuleModel, 0, len(agentSave.Modules))
-			for _, modSave := range agentSave.Modules {
-				moduleDropInfo := findModuleDropInfo(moduleTypes, modSave.TypeID)
+			// スキルを再構築（オブジェクト配列形式）
+			modules := make([]*domain.SkillModel, 0, len(agentSave.Skills))
+			for _, skillSave := range agentSave.Skills {
+				moduleDropInfo := findModuleDropInfo(moduleTypes, skillSave.TypeID)
 				if moduleDropInfo != nil {
 					// チェイン効果を復元
 					var chainEffect *domain.ChainEffect
-					if modSave.ChainEffect != nil {
-						effectType := domain.ChainEffectType(modSave.ChainEffect.Type)
+					if skillSave.ChainEffect != nil {
+						effectType := domain.ChainEffectType(skillSave.ChainEffect.Type)
 						chainEffectDef := findChainEffectDefinition(chainEffectDefs, effectType)
 						if chainEffectDef != nil {
 							ce := domain.NewChainEffectWithTemplate(
 								effectType,
-								modSave.ChainEffect.Value,
+								skillSave.ChainEffect.Value,
 								chainEffectDef.Description,
 								chainEffectDef.ShortDescription,
 							)

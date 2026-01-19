@@ -131,111 +131,113 @@ func (inv *CoreInventory) SortByType(ascending bool) []*CoreModel {
 	return result
 }
 
-// ==================== モジュールインベントリ ====================
+// ==================== スキルインベントリ ====================
 
-// ModuleInventory はモジュールのインベントリを管理する構造体です。
-// モジュールはTypeIDとChainEffectの組み合わせで識別されるため、スライスで管理します。
+// SkillInventoryLegacy はスキルのインベントリを管理する構造体です。
+// スキルはTypeIDとChainEffectの組み合わせで識別されるため、スライスで管理します。
+// 注意: この構造体は後方互換性のために残されています。
+// 新しいコードではTask 3で実装されるSkillInventory（ユニーク管理版）を使用してください。
 
-type ModuleInventory struct {
-	// modules はモジュールのスライスです。
-	modules []*ModuleModel
+type SkillInventoryLegacy struct {
+	// skills はスキルのスライスです。
+	skills []*SkillModel
 
-	// maxSlots はモジュールの最大保持数です。
+	// maxSlots はスキルの最大保持数です。
 	maxSlots int
 }
 
-// NewModuleInventory は新しいModuleInventoryを作成します。
-func NewModuleInventory(maxSlots int) *ModuleInventory {
-	return &ModuleInventory{
-		modules:  make([]*ModuleModel, 0),
+// NewSkillInventoryLegacy は新しいSkillInventoryLegacyを作成します。
+func NewSkillInventoryLegacy(maxSlots int) *SkillInventoryLegacy {
+	return &SkillInventoryLegacy{
+		skills:   make([]*SkillModel, 0),
 		maxSlots: maxSlots,
 	}
 }
 
-// Add はモジュールをインベントリに追加します。
+// Add はスキルをインベントリに追加します。
 // 上限に達している場合はエラーを返します。
 
-func (inv *ModuleInventory) Add(module *ModuleModel) error {
-	if len(inv.modules) >= inv.maxSlots {
-		return fmt.Errorf("モジュールインベントリが満杯です（上限: %d）", inv.maxSlots)
+func (inv *SkillInventoryLegacy) Add(skill *SkillModel) error {
+	if len(inv.skills) >= inv.maxSlots {
+		return fmt.Errorf("スキルインベントリが満杯です（上限: %d）", inv.maxSlots)
 	}
-	inv.modules = append(inv.modules, module)
+	inv.skills = append(inv.skills, skill)
 	return nil
 }
 
-// Remove はモジュールをインベントリから削除します。
+// Remove はスキルをインベントリから削除します。
 // インデックスで指定します。無効なインデックスの場合はnilを返します。
 
-func (inv *ModuleInventory) Remove(index int) *ModuleModel {
-	if index < 0 || index >= len(inv.modules) {
+func (inv *SkillInventoryLegacy) Remove(index int) *SkillModel {
+	if index < 0 || index >= len(inv.skills) {
 		return nil
 	}
-	module := inv.modules[index]
-	inv.modules = append(inv.modules[:index], inv.modules[index+1:]...)
-	return module
+	skill := inv.skills[index]
+	inv.skills = append(inv.skills[:index], inv.skills[index+1:]...)
+	return skill
 }
 
-// RemoveByTypeID は指定されたTypeIDの最初のモジュールを削除します。
+// RemoveByTypeID は指定されたTypeIDの最初のスキルを削除します。
 // 後方互換性のためのメソッドです。
 
-func (inv *ModuleInventory) RemoveByTypeID(typeID string) *ModuleModel {
-	for i, module := range inv.modules {
-		if module.TypeID == typeID {
+func (inv *SkillInventoryLegacy) RemoveByTypeID(typeID string) *SkillModel {
+	for i, skill := range inv.skills {
+		if skill.TypeID == typeID {
 			return inv.Remove(i)
 		}
 	}
 	return nil
 }
 
-// Get は指定されたインデックスのモジュールを取得します。
-func (inv *ModuleInventory) Get(index int) *ModuleModel {
-	if index < 0 || index >= len(inv.modules) {
+// Get は指定されたインデックスのスキルを取得します。
+func (inv *SkillInventoryLegacy) Get(index int) *SkillModel {
+	if index < 0 || index >= len(inv.skills) {
 		return nil
 	}
-	return inv.modules[index]
+	return inv.skills[index]
 }
 
-// GetByTypeID は指定されたTypeIDの最初のモジュールを取得します。
+// GetByTypeID は指定されたTypeIDの最初のスキルを取得します。
 // 後方互換性のためのメソッドです。
-func (inv *ModuleInventory) GetByTypeID(typeID string) *ModuleModel {
-	for _, module := range inv.modules {
-		if module.TypeID == typeID {
-			return module
+func (inv *SkillInventoryLegacy) GetByTypeID(typeID string) *SkillModel {
+	for _, skill := range inv.skills {
+		if skill.TypeID == typeID {
+			return skill
 		}
 	}
 	return nil
 }
 
-// Count はインベントリ内のモジュール数を返します。
-func (inv *ModuleInventory) Count() int {
-	return len(inv.modules)
+// Count はインベントリ内のスキル数を返します。
+func (inv *SkillInventoryLegacy) Count() int {
+	return len(inv.skills)
 }
 
-// MaxSlots はモジュールの最大保持数を返します。
-func (inv *ModuleInventory) MaxSlots() int {
+// MaxSlots はスキルの最大保持数を返します。
+func (inv *SkillInventoryLegacy) MaxSlots() int {
 	return inv.maxSlots
 }
 
 // IsFull はインベントリが満杯かどうかを返します。
-func (inv *ModuleInventory) IsFull() bool {
-	return len(inv.modules) >= inv.maxSlots
+func (inv *SkillInventoryLegacy) IsFull() bool {
+	return len(inv.skills) >= inv.maxSlots
 }
 
-// List は全てのモジュールをリストで返します。
+// List は全てのスキルをリストで返します。
 
-func (inv *ModuleInventory) List() []*ModuleModel {
-	result := make([]*ModuleModel, len(inv.modules))
-	copy(result, inv.modules)
+func (inv *SkillInventoryLegacy) List() []*SkillModel {
+	result := make([]*SkillModel, len(inv.skills))
+	copy(result, inv.skills)
 	return result
 }
 
-// FilterByDamageEffect はダメージ効果を持つモジュールをフィルタリングします。
-func (inv *ModuleInventory) FilterByDamageEffect() []*ModuleModel {
-	result := make([]*ModuleModel, 0)
-	for _, module := range inv.modules {
-		for _, effect := range module.Effects() {
+// FilterByDamageEffect はダメージ効果を持つスキルをフィルタリングします。
+func (inv *SkillInventoryLegacy) FilterByDamageEffect() []*SkillModel {
+	result := make([]*SkillModel, 0)
+	for _, skill := range inv.skills {
+		for _, effect := range skill.Effects() {
 			if effect.IsDamageEffect() {
-				result = append(result, module)
+				result = append(result, skill)
 				break
 			}
 		}
@@ -243,13 +245,13 @@ func (inv *ModuleInventory) FilterByDamageEffect() []*ModuleModel {
 	return result
 }
 
-// FilterByHealEffect は回復効果を持つモジュールをフィルタリングします。
-func (inv *ModuleInventory) FilterByHealEffect() []*ModuleModel {
-	result := make([]*ModuleModel, 0)
-	for _, module := range inv.modules {
-		for _, effect := range module.Effects() {
+// FilterByHealEffect は回復効果を持つスキルをフィルタリングします。
+func (inv *SkillInventoryLegacy) FilterByHealEffect() []*SkillModel {
+	result := make([]*SkillModel, 0)
+	for _, skill := range inv.skills {
+		for _, effect := range skill.Effects() {
 			if effect.IsHealEffect() {
-				result = append(result, module)
+				result = append(result, skill)
 				break
 			}
 		}
@@ -258,26 +260,36 @@ func (inv *ModuleInventory) FilterByHealEffect() []*ModuleModel {
 }
 
 // FilterByTag はタグでフィルタリングします。
-func (inv *ModuleInventory) FilterByTag(tag string) []*ModuleModel {
-	result := make([]*ModuleModel, 0)
-	for _, module := range inv.modules {
-		if module.HasTag(tag) {
-			result = append(result, module)
+func (inv *SkillInventoryLegacy) FilterByTag(tag string) []*SkillModel {
+	result := make([]*SkillModel, 0)
+	for _, skill := range inv.skills {
+		if skill.HasTag(tag) {
+			result = append(result, skill)
 		}
 	}
 	return result
 }
 
-// FilterCompatibleWithCore はコアに装備可能なモジュールのみをフィルタリングします。
+// FilterCompatibleWithCore はコアに装備可能なスキルのみをフィルタリングします。
 
-func (inv *ModuleInventory) FilterCompatibleWithCore(core *CoreModel) []*ModuleModel {
-	result := make([]*ModuleModel, 0)
-	for _, module := range inv.modules {
-		if module.IsCompatibleWithCore(core) {
-			result = append(result, module)
+func (inv *SkillInventoryLegacy) FilterCompatibleWithCore(core *CoreModel) []*SkillModel {
+	result := make([]*SkillModel, 0)
+	for _, skill := range inv.skills {
+		if skill.IsCompatibleWithCore(core) {
+			result = append(result, skill)
 		}
 	}
 	return result
+}
+
+// ModuleInventory はSkillInventoryLegacyのエイリアスです。
+// 後方互換性のために残されています。新規コードではSkillInventoryLegacyを使用してください。
+type ModuleInventory = SkillInventoryLegacy
+
+// NewModuleInventory はNewSkillInventoryLegacyの後方互換ラッパーです。
+// 後方互換性のために残されています。
+func NewModuleInventory(maxSlots int) *ModuleInventory {
+	return NewSkillInventoryLegacy(maxSlots)
 }
 
 // ==================== エージェントインベントリ ====================

@@ -3,7 +3,7 @@ package domain
 
 import "math/rand"
 
-// EffectTarget はモジュール効果の対象を表します。
+// EffectTarget はスキル効果の対象を表します。
 type EffectTarget string
 
 const (
@@ -43,9 +43,12 @@ type EffectColumnSpec struct {
 	Duration float64
 }
 
-// ModuleEffect はモジュールの1つの効果を表します。
-// 各モジュールは複数のModuleEffectを持つことができます。
-type ModuleEffect struct {
+// BaseLUK はLUK補正の基準値です。
+const BaseLUK = 10
+
+// SkillEffect はスキルの1つの効果を表します。
+// 各スキルは複数のSkillEffectを持つことができます。
+type SkillEffect struct {
 	// Target は効果の対象です。
 	Target EffectTarget
 
@@ -68,12 +71,9 @@ type ModuleEffect struct {
 	Icon string
 }
 
-// BaseLUK はLUK補正の基準値です。
-const BaseLUK = 10
-
 // CalculateHPChange はステータス値からHP変化量を計算します。
 // 正の値は回復、負の値はダメージを表します。
-func (e *ModuleEffect) CalculateHPChange(stats Stats) int {
+func (e *SkillEffect) CalculateHPChange(stats Stats) int {
 	if e.HPFormula == nil {
 		return 0
 	}
@@ -96,7 +96,7 @@ func (e *ModuleEffect) CalculateHPChange(stats Stats) int {
 // AdjustedProbability はLUK補正を適用した発動確率を計算します。
 // 計算式: Probability + (LUK - 10) × LUKFactor
 // 結果は0.0-1.0の範囲にクランプされます。
-func (e *ModuleEffect) AdjustedProbability(luk int) float64 {
+func (e *SkillEffect) AdjustedProbability(luk int) float64 {
 	adjustedProb := e.Probability + float64(luk-BaseLUK)*e.LUKFactor
 
 	// 0.0-1.0の範囲にクランプ
@@ -110,7 +110,7 @@ func (e *ModuleEffect) AdjustedProbability(luk int) float64 {
 }
 
 // ShouldTrigger はLUK補正を考慮して効果が発動するかを判定します。
-func (e *ModuleEffect) ShouldTrigger(luk int, rng *rand.Rand) bool {
+func (e *SkillEffect) ShouldTrigger(luk int, rng *rand.Rand) bool {
 	adjustedProb := e.AdjustedProbability(luk)
 	if adjustedProb >= 1.0 {
 		return true
@@ -122,17 +122,17 @@ func (e *ModuleEffect) ShouldTrigger(luk int, rng *rand.Rand) bool {
 }
 
 // IsHPEffect はHP増減効果を持つかを判定します。
-func (e *ModuleEffect) IsHPEffect() bool {
+func (e *SkillEffect) IsHPEffect() bool {
 	return e.HPFormula != nil
 }
 
 // IsColumnEffect はEffectColumn効果を持つかを判定します。
-func (e *ModuleEffect) IsColumnEffect() bool {
+func (e *SkillEffect) IsColumnEffect() bool {
 	return e.ColumnSpec != nil
 }
 
 // IsDamageEffect は敵へのダメージ効果かを判定します。
-func (e *ModuleEffect) IsDamageEffect() bool {
+func (e *SkillEffect) IsDamageEffect() bool {
 	if e.HPFormula == nil {
 		return false
 	}
@@ -141,7 +141,7 @@ func (e *ModuleEffect) IsDamageEffect() bool {
 }
 
 // IsHealEffect は自分への回復効果かを判定します。
-func (e *ModuleEffect) IsHealEffect() bool {
+func (e *SkillEffect) IsHealEffect() bool {
 	if e.HPFormula == nil {
 		return false
 	}
@@ -150,7 +150,7 @@ func (e *ModuleEffect) IsHealEffect() bool {
 }
 
 // IsBuffEffect は自分へのバフ効果かを判定します。
-func (e *ModuleEffect) IsBuffEffect() bool {
+func (e *SkillEffect) IsBuffEffect() bool {
 	if e.ColumnSpec == nil {
 		return false
 	}
@@ -159,10 +159,14 @@ func (e *ModuleEffect) IsBuffEffect() bool {
 }
 
 // IsDebuffEffect は敵へのデバフ効果かを判定します。
-func (e *ModuleEffect) IsDebuffEffect() bool {
+func (e *SkillEffect) IsDebuffEffect() bool {
 	if e.ColumnSpec == nil {
 		return false
 	}
 	// 敵対象かつカラム効果（デバフ = 敵へのステータス弱化）
 	return e.Target == TargetEnemy
 }
+
+// ModuleEffect はSkillEffectのエイリアスです。
+// 後方互換性のために残されています。新規コードではSkillEffectを使用してください。
+type ModuleEffect = SkillEffect

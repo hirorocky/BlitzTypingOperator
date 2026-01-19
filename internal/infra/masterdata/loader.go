@@ -133,7 +133,7 @@ func (c *CoreTypeData) ToDomain() domain.CoreType {
 	}
 }
 
-// ==================== モジュール定義 ====================
+// ==================== スキル（モジュール）定義 ====================
 
 // HPFormulaData はHP増減計算式のJSONデータ構造体です。
 type HPFormulaData struct {
@@ -149,8 +149,8 @@ type EffectColumnData struct {
 	Duration float64 `json:"duration"`
 }
 
-// ModuleEffectData はモジュール効果のJSONデータ構造体です。
-type ModuleEffectData struct {
+// SkillEffectData はスキル効果のJSONデータ構造体です。
+type SkillEffectData struct {
 	Target       string            `json:"target"`
 	HPFormula    *HPFormulaData    `json:"hp_formula,omitempty"`
 	EffectColumn *EffectColumnData `json:"effect_column,omitempty"`
@@ -159,18 +159,26 @@ type ModuleEffectData struct {
 	Icon         string            `json:"icon"`
 }
 
-// ModuleDefinitionData はmodules.jsonから読み込むモジュール定義データの構造体です。
-type ModuleDefinitionData struct {
-	ID              string             `json:"id"`
-	Name            string             `json:"name"`
-	Icon            string             `json:"icon"`
-	Tags            []string           `json:"tags"`
-	Description     string             `json:"description"`
-	CooldownSeconds float64            `json:"cooldown_seconds"`
-	Difficulty      int                `json:"difficulty"`
-	MinDropLevel    int                `json:"min_drop_level"`
-	Effects         []ModuleEffectData `json:"effects"`
+// ModuleEffectData はSkillEffectDataのエイリアスです。
+// 後方互換性のために残されています。新規コードではSkillEffectDataを使用してください。
+type ModuleEffectData = SkillEffectData
+
+// SkillDefinitionData はskills.json（またはmodules.json）から読み込むスキル定義データの構造体です。
+type SkillDefinitionData struct {
+	ID              string            `json:"id"`
+	Name            string            `json:"name"`
+	Icon            string            `json:"icon"`
+	Tags            []string          `json:"tags"`
+	Description     string            `json:"description"`
+	CooldownSeconds float64           `json:"cooldown_seconds"`
+	Difficulty      int               `json:"difficulty"`
+	MinDropLevel    int               `json:"min_drop_level"`
+	Effects         []SkillEffectData `json:"effects"`
 }
+
+// ModuleDefinitionData はSkillDefinitionDataのエイリアスです。
+// 後方互換性のために残されています。新規コードではSkillDefinitionDataを使用してください。
+type ModuleDefinitionData = SkillDefinitionData
 
 // modulesFileData はmodules.jsonのルート構造です。
 type modulesFileData struct {
@@ -193,19 +201,19 @@ func (l *DataLoader) LoadModuleDefinitions() ([]ModuleDefinitionData, error) {
 	return fileData.ModuleTypes, nil
 }
 
-// ToDomainType はModuleDefinitionDataをドメインモデルのModuleTypeに変換します。
-func (m *ModuleDefinitionData) ToDomainType() domain.ModuleType {
+// ToDomainType はSkillDefinitionDataをドメインモデルのSkillTypeに変換します。
+func (m *SkillDefinitionData) ToDomainType() domain.SkillType {
 	// Tagsをコピー（スライスの参照共有を避ける）
 	tagsCopy := make([]string, len(m.Tags))
 	copy(tagsCopy, m.Tags)
 
 	// Effectsを変換
-	effects := make([]domain.ModuleEffect, len(m.Effects))
+	effects := make([]domain.SkillEffect, len(m.Effects))
 	for i, e := range m.Effects {
 		effects[i] = e.ToDomain()
 	}
 
-	return domain.ModuleType{
+	return domain.SkillType{
 		ID:              m.ID,
 		Name:            m.Name,
 		Icon:            m.Icon,
@@ -218,9 +226,9 @@ func (m *ModuleDefinitionData) ToDomainType() domain.ModuleType {
 	}
 }
 
-// ToDomain はModuleEffectDataをドメインモデルのModuleEffectに変換します。
-func (e *ModuleEffectData) ToDomain() domain.ModuleEffect {
-	effect := domain.ModuleEffect{
+// ToDomain はSkillEffectDataをドメインモデルのSkillEffectに変換します。
+func (e *SkillEffectData) ToDomain() domain.SkillEffect {
+	effect := domain.SkillEffect{
 		Target:      convertEffectTarget(e.Target),
 		Probability: e.Probability,
 		LUKFactor:   e.LUKFactor,
@@ -260,11 +268,11 @@ func convertEffectTarget(s string) domain.EffectTarget {
 	}
 }
 
-// ToDomain はModuleDefinitionDataをドメインモデルのModuleModelに変換します。
-// チェイン効果なしのモジュールを作成します。
-func (m *ModuleDefinitionData) ToDomain() *domain.ModuleModel {
-	moduleType := m.ToDomainType()
-	return domain.NewModuleFromType(moduleType, nil)
+// ToDomain はSkillDefinitionDataをドメインモデルのSkillModelに変換します。
+// チェイン効果なしのスキルを作成します。
+func (m *SkillDefinitionData) ToDomain() *domain.SkillModel {
+	skillType := m.ToDomainType()
+	return domain.NewSkillFromType(skillType, nil)
 }
 
 // ==================== 敵タイプ定義 ====================
@@ -950,18 +958,24 @@ func ValidateCoreTypeData(data CoreTypeData) error {
 	return nil
 }
 
-// ValidateModuleDefinitionData はモジュール定義データのバリデーションを行います。
-func ValidateModuleDefinitionData(data ModuleDefinitionData) error {
+// ValidateSkillDefinitionData はスキル定義データのバリデーションを行います。
+func ValidateSkillDefinitionData(data SkillDefinitionData) error {
 	if data.ID == "" {
-		return fmt.Errorf("モジュールIDが空です")
+		return fmt.Errorf("スキルIDが空です")
 	}
 	if data.Name == "" {
-		return fmt.Errorf("モジュール名が空です: ID=%s", data.ID)
+		return fmt.Errorf("スキル名が空です: ID=%s", data.ID)
 	}
 	if len(data.Effects) == 0 {
-		return fmt.Errorf("モジュール効果が空です: ID=%s", data.ID)
+		return fmt.Errorf("スキル効果が空です: ID=%s", data.ID)
 	}
 	return nil
+}
+
+// ValidateModuleDefinitionData はValidateSkillDefinitionDataの後方互換ラッパーです。
+// 後方互換性のために残されています。新規コードではValidateSkillDefinitionDataを使用してください。
+func ValidateModuleDefinitionData(data ModuleDefinitionData) error {
+	return ValidateSkillDefinitionData(data)
 }
 
 // ValidateEnemyTypeData は敵タイプデータのバリデーションを行います。
