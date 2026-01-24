@@ -50,7 +50,7 @@ func newTestHealModuleBattle(id, name string, tags []string, statCoef float64, s
 }
 
 // newTestBuffModuleBattle はテスト用のバフモジュールを作成するヘルパー関数です。
-func newTestBuffModuleBattle(id, name string, tags []string, value float64, statRef, description string) *domain.ModuleModel {
+func newTestBuffModuleBattle(id, name string, tags []string, value float64, _, description string) *domain.ModuleModel {
 	return domain.NewModuleFromType(domain.ModuleType{
 		ID:          id,
 		Name:        name,
