@@ -77,7 +77,8 @@ func NewHomeScreen(maxLevelReached int, agentProvider AgentProvider) *HomeScreen
 
 	// UI-Improvement Requirement 1.6, 5.3: 装備がない場合はバトル選択を無効化
 	items := []components.MenuItem{
-		{Label: "エージェント管理", Value: "agent_management"},
+		{Label: "エージェントカスタマイズ", Value: "agent_customization"},
+		{Label: "インベントリ", Value: "inventory"},
 		{Label: "バトル選択", Value: "battle_select", Disabled: !hasEquippedAgents},
 		{Label: "図鑑", Value: "encyclopedia"},
 		{Label: "統計/実績", Value: "stats_achievements"},

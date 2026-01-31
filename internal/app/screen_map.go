@@ -58,6 +58,9 @@ func (sm *ScreenMap) registerScreens() {
 	sm.screens[SceneAgentCustomization] = func() ScreenGetter {
 		return sm.model.agentCustomizationScreen
 	}
+	sm.screens[SceneInventory] = func() ScreenGetter {
+		return sm.model.inventoryScreen
+	}
 }
 
 // GetScreen は指定されたシーンの画面を返します。

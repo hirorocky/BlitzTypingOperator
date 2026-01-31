@@ -77,6 +77,7 @@ type RootModel struct {
 	battleScreen             *screens.BattleScreen
 	agentManagementScreen    *screens.AgentManagementScreen
 	agentCustomizationScreen *screens.AgentCustomizationScreen
+	inventoryScreen          *screens.InventoryScreen
 	encyclopediaScreen       *screens.EncyclopediaScreen
 	statsAchievementsScreen  *screens.StatsAchievementsScreen
 	settingsScreen           *screens.SettingsScreen
@@ -173,24 +174,25 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	// セーブデータをロードまたは新規作成
 	var gs *gamestate.GameState
 	var statusMessage string
+	var loadedSaveData *savedata.SaveData
 
 	if saveDataIO.Exists() {
-		saveData, err := saveDataIO.LoadGame()
+		loadedSaveData, err := saveDataIO.LoadGame()
 		if err == nil {
-			gs = gamestate.GameStateFromSaveData(saveData, domainSources)
+			gs = gamestate.GameStateFromSaveData(loadedSaveData, domainSources)
 			statusMessage = "セーブデータをロードしました"
 		} else {
 			// セーブデータの読み込みに失敗した場合、新規ゲームを初期化
 			initializer := startup.NewNewGameInitializer(externalData)
-			saveData := initializer.InitializeNewGame()
-			gs = gamestate.GameStateFromSaveData(saveData, domainSources)
+			loadedSaveData = initializer.InitializeNewGame()
+			gs = gamestate.GameStateFromSaveData(loadedSaveData, domainSources)
 			statusMessage = "セーブデータの読み込みに失敗しました。新規ゲームを開始します"
 		}
 	} else {
 		// セーブデータが存在しない場合、新規ゲームを初期化（マスタデータ参照）
 		initializer := startup.NewNewGameInitializer(externalData)
-		saveData := initializer.InitializeNewGame()
-		gs = gamestate.GameStateFromSaveData(saveData, domainSources)
+		loadedSaveData = initializer.InitializeNewGame()
+		gs = gamestate.GameStateFromSaveData(loadedSaveData, domainSources)
 		statusMessage = "新規ゲームを開始します"
 	}
 
@@ -208,6 +210,54 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 
 	// v3.0.0: 新システムのマネージャーを作成
 	invManager := inventory.NewInventoryManager()
+
+	// v3.0.0: セーブデータからユニークインベントリを復元
+	if loadedSaveData != nil && loadedSaveData.Inventory != nil {
+		// UniqueCoresを復元
+		if loadedSaveData.Inventory.UniqueCores != nil && loadedSaveData.Inventory.UniqueCores.Cores != nil {
+			for typeID, level := range loadedSaveData.Inventory.UniqueCores.Cores {
+				invManager.AddCore(typeID, level)
+			}
+		}
+
+		// UniqueSkillsを復元
+		if loadedSaveData.Inventory.UniqueSkills != nil && loadedSaveData.Inventory.UniqueSkills.Skills != nil {
+			for typeID, chainVariations := range loadedSaveData.Inventory.UniqueSkills.Skills {
+				if len(chainVariations) == 0 {
+					// チェイン効果がない場合でもスキルを保有状態にする
+					invManager.AddSkill(typeID, "")
+				} else {
+					// 各チェイン効果バリエーションを復元
+					for _, chainID := range chainVariations {
+						invManager.AddSkill(typeID, chainID)
+					}
+				}
+			}
+		}
+	}
+
+	// デバッグモード: 全コアと全スキルを最大レベルで所持
+	if debugMode && externalData != nil {
+		// 全コアを最大レベル(100)で追加
+		for _, ct := range externalData.CoreTypes {
+			invManager.AddCore(ct.ID, 100)
+		}
+		// 全スキルを追加
+		for _, mt := range externalData.ModuleDefinitions {
+			invManager.AddSkill(mt.ID, "")
+		}
+		// 全チェイン効果バリエーションを追加
+		for _, ce := range chainEffects {
+			// 各スキルに対してチェイン効果を追加
+			for _, mt := range externalData.ModuleDefinitions {
+				invManager.AddSkill(mt.ID, ce.ID)
+			}
+		}
+		slog.Info("デバッグモード: 全コア・スキルを追加",
+			slog.Int("cores", len(externalData.CoreTypes)),
+			slog.Int("skills", len(externalData.ModuleDefinitions)),
+		)
+	}
 
 	// コアTypeとスキルTypeをマップに変換
 	coreTypesMap := make(map[string]domain.CoreType)
@@ -239,6 +289,38 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		skillTypesMap,
 		passiveSkills,
 	)
+
+	// v3.0.0: セーブデータからエージェントスロットを復元
+	if loadedSaveData != nil && loadedSaveData.Player != nil {
+		for i, agentSlotSave := range loadedSaveData.Player.AgentSlots {
+			if agentSlotSave.CoreTypeID == "" {
+				continue
+			}
+			// コアを設定
+			if err := slotManager.SetCore(i, agentSlotSave.CoreTypeID, agentSlotSave.CoreLevel); err != nil {
+				slog.Warn("スロット復元時にコア設定に失敗",
+					slog.Int("slot", i),
+					slog.String("coreTypeID", agentSlotSave.CoreTypeID),
+					slog.Any("error", err),
+				)
+				continue
+			}
+			// スキルを設定
+			for j, skillSlotSave := range agentSlotSave.Skills {
+				if skillSlotSave.TypeID == "" {
+					continue
+				}
+				if err := slotManager.SetSkill(i, j, skillSlotSave.TypeID, skillSlotSave.ChainEffectID); err != nil {
+					slog.Warn("スロット復元時にスキル設定に失敗",
+						slog.Int("slot", i),
+						slog.Int("skillSlot", j),
+						slog.String("skillTypeID", skillSlotSave.TypeID),
+						slog.Any("error", err),
+					)
+				}
+			}
+		}
+	}
 
 	// インベントリプロバイダーを作成（デバッグモードに応じて切り替え）
 	var invProvider screens.InventoryProvider
@@ -284,27 +366,45 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	// 設定画面を初期化
 	settingsScreen := screenFactory.CreateSettingsScreen()
 
+	// v3.0.0: エージェントカスタマイズ画面を初期化
+	agentCustomizationScreen := screenFactory.CreateAgentCustomizationScreen(
+		invManager,
+		slotManager,
+		coreTypesMap,
+		skillTypesMap,
+	)
+
+	// v3.0.0: インベントリ画面を初期化
+	inventoryScreen := screenFactory.CreateInventoryScreen(
+		invManager,
+		slotManager,
+		coreTypesMap,
+		skillTypesMap,
+	)
+
 	model := &RootModel{
-		ready:                   false,
-		currentScene:            SceneHome,
-		gameState:               gs,
-		styles:                  styles.NewGameStyles(),
-		saveDataIO:              saveDataIO,
-		statusMessage:           statusMessage,
-		sceneRouter:             NewSceneRouter(),
-		screenFactory:           screenFactory,
-		homeScreen:              homeScreen,
-		battleSelectScreen:      battleSelectScreen,
-		agentManagementScreen:   agentManagementScreen,
-		encyclopediaScreen:      encyclopediaScreen,
-		statsAchievementsScreen: statsAchievementsScreen,
-		settingsScreen:          settingsScreen,
-		passiveSkills:           passiveSkills,
-		typingDictionary:        typingDict,
-		debugMode:               debugMode,
-		invProvider:             invProvider,
-		externalData:            externalData,
-		chainEffects:            chainEffects,
+		ready:                    false,
+		currentScene:             SceneHome,
+		gameState:                gs,
+		styles:                   styles.NewGameStyles(),
+		saveDataIO:               saveDataIO,
+		statusMessage:            statusMessage,
+		sceneRouter:              NewSceneRouter(),
+		screenFactory:            screenFactory,
+		homeScreen:               homeScreen,
+		battleSelectScreen:       battleSelectScreen,
+		agentManagementScreen:    agentManagementScreen,
+		agentCustomizationScreen: agentCustomizationScreen,
+		inventoryScreen:          inventoryScreen,
+		encyclopediaScreen:       encyclopediaScreen,
+		statsAchievementsScreen:  statsAchievementsScreen,
+		settingsScreen:           settingsScreen,
+		passiveSkills:            passiveSkills,
+		typingDictionary:         typingDict,
+		debugMode:                debugMode,
+		invProvider:              invProvider,
+		externalData:             externalData,
+		chainEffects:             chainEffects,
 		// v3.0.0: 新システムのマネージャー
 		slotManager: slotManager,
 		invManager:  invManager,
@@ -432,6 +532,7 @@ func (m *RootModel) performAutoSave() {
 	}
 
 	saveData := m.gameState.ToSaveData()
+	m.appendNewSchemaToSaveData(saveData)
 	if err := m.saveDataIO.SaveGame(saveData); err != nil {
 		slog.Error("オートセーブに失敗",
 			slog.Any("error", err),
@@ -443,6 +544,63 @@ func (m *RootModel) performAutoSave() {
 	m.homeScreen.SetStatusMessage(m.statusMessage)
 }
 
+// appendNewSchemaToSaveData はv3.0.0新スキーマ（UniqueCores, UniqueSkills, AgentSlots）を
+// セーブデータに追加します。
+func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
+	if m.invManager == nil || m.slotManager == nil {
+		return
+	}
+
+	// UniqueCoresを追加（CoreTypeID → 最大レベル）
+	if saveData.Inventory.UniqueCores == nil {
+		saveData.Inventory.UniqueCores = &savedata.CoreInventorySave{
+			Cores: make(map[string]int),
+		}
+	}
+	ownedCores := m.invManager.Cores().GetOwnedCores()
+	for typeID, level := range ownedCores {
+		saveData.Inventory.UniqueCores.Cores[typeID] = level
+	}
+
+	// UniqueSkillsを追加（SkillTypeID → チェイン効果IDリスト）
+	if saveData.Inventory.UniqueSkills == nil {
+		saveData.Inventory.UniqueSkills = &savedata.SkillInventorySave{
+			Skills: make(map[string][]string),
+		}
+	}
+	ownedSkills := m.invManager.Skills().GetOwnedSkills()
+	for typeID, ownership := range ownedSkills {
+		saveData.Inventory.UniqueSkills.Skills[typeID] = ownership.GetChainVariations()
+	}
+
+	// AgentSlotsを追加（3スロットの構成）
+	slots := m.slotManager.GetSlots()
+	for i, agentSlot := range slots {
+		if agentSlot == nil || agentSlot.IsEmpty() {
+			saveData.Player.AgentSlots[i] = savedata.AgentSlotSave{}
+			continue
+		}
+
+		slotSave := savedata.AgentSlotSave{
+			CoreTypeID: agentSlot.CoreTypeID,
+			CoreLevel:  agentSlot.CoreLevel,
+		}
+
+		// スキルスロット構成を保存
+		for j := range domain.MaxSkillSlotCount {
+			skillConfig := agentSlot.GetSkill(j)
+			if skillConfig != nil && !skillConfig.IsEmpty() {
+				slotSave.Skills[j] = savedata.SkillSlotSaveCfg{
+					TypeID:        skillConfig.TypeID,
+					ChainEffectID: skillConfig.ChainEffectID,
+				}
+			}
+		}
+
+		saveData.Player.AgentSlots[i] = slotSave
+	}
+}
+
 // handleSaveRequest はメニューからのセーブ要求を処理します。
 func (m *RootModel) handleSaveRequest() {
 	if m.saveDataIO == nil {
@@ -451,6 +609,7 @@ func (m *RootModel) handleSaveRequest() {
 	}
 
 	saveData := m.gameState.ToSaveData()
+	m.appendNewSchemaToSaveData(saveData)
 
 	// デバッグモードの場合、invProviderからエージェント情報をオーバーライド
 	if m.debugMode && m.invProvider != nil {

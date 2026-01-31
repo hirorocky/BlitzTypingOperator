@@ -16,6 +16,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/rivo/uniseg"
 )
 
 // InventoryTab はインベントリ画面のタブを表します。
@@ -440,11 +441,11 @@ func (s *InventoryScreen) renderCoreInventory() string {
 	listContent := s.renderCoreListItems()
 	previewContent := s.renderCorePreviewContent()
 
+	// Width()を使わない - コンテンツが既に固定幅にパディングされているため
 	listBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(styles.ColorPrimary).
 		Padding(1).
-		Width(50).
 		Render(listContent)
 
 	previewBox := lipgloss.NewStyle().
@@ -465,9 +466,14 @@ func (s *InventoryScreen) renderCoreInventory() string {
 func (s *InventoryScreen) renderCoreListItems() string {
 	var items []string
 
+	// 内部コンテンツの固定表示幅
+	// lipglossのWidth()に依存せず、全行を同じ幅にパディングしてボーダーを正しく描画
+	const contentWidth = 50
+
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
-	items = append(items, titleStyle.Render("保有コア一覧"))
-	items = append(items, "")
+	titleText := padToDisplayWidth("保有コア一覧", contentWidth)
+	items = append(items, titleStyle.Render(titleText))
+	items = append(items, padToDisplayWidth("", contentWidth))
 
 	for i, core := range s.coreList {
 		style := lipgloss.NewStyle()
@@ -491,7 +497,12 @@ func (s *InventoryScreen) renderCoreListItems() string {
 		}
 
 		item := fmt.Sprintf("%s Lv.%d%s", core.TypeName, core.MaxLevel, equipMark)
-		items = append(items, style.Render(prefix+item))
+
+		// プレフィックスを含めた全体の内容を作成し、表示幅で切り詰め後パディング
+		fullContent := prefix + item
+		truncated := truncateToDisplayWidth(fullContent, contentWidth)
+		padded := padToDisplayWidth(truncated, contentWidth)
+		items = append(items, style.Render(padded))
 	}
 
 	return strings.Join(items, "\n")
@@ -565,11 +576,11 @@ func (s *InventoryScreen) renderSkillInventory() string {
 	listContent := s.renderSkillListItems()
 	previewContent := s.renderSkillPreviewContent()
 
+	// Width()を使わない - コンテンツが既に固定幅にパディングされているため
 	listBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(styles.ColorPrimary).
 		Padding(1).
-		Width(50).
 		Render(listContent)
 
 	previewBox := lipgloss.NewStyle().
@@ -590,9 +601,14 @@ func (s *InventoryScreen) renderSkillInventory() string {
 func (s *InventoryScreen) renderSkillListItems() string {
 	var items []string
 
+	// 内部コンテンツの固定表示幅
+	// lipglossのWidth()に依存せず、全行を同じ幅にパディングしてボーダーを正しく描画
+	const contentWidth = 50
+
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
-	items = append(items, titleStyle.Render("保有スキル一覧"))
-	items = append(items, "")
+	titleText := padToDisplayWidth("保有スキル一覧", contentWidth)
+	items = append(items, titleStyle.Render(titleText))
+	items = append(items, padToDisplayWidth("", contentWidth))
 
 	for i, skill := range s.skillList {
 		style := lipgloss.NewStyle()
@@ -618,11 +634,23 @@ func (s *InventoryScreen) renderSkillListItems() string {
 		// チェイン効果バリエーション数
 		chainInfo := ""
 		if skill.ChainCount > 0 {
-			chainInfo = fmt.Sprintf(" (%d種)", skill.ChainCount)
+			chainInfo = fmt.Sprintf("(%d種)", skill.ChainCount)
 		}
 
-		item := fmt.Sprintf("%s %s%s%s", skill.Icon, skill.TypeName, chainInfo, equipMark)
-		items = append(items, style.Render(prefix+item))
+		// アイコン + スキル名 + チェイン情報 + 装備マーカーを構成
+		icon := normalizeInventoryIcon(skill.Icon)
+		var itemContent string
+		if chainInfo != "" {
+			itemContent = fmt.Sprintf("%s %s %s%s", icon, skill.TypeName, chainInfo, equipMark)
+		} else {
+			itemContent = fmt.Sprintf("%s %s%s", icon, skill.TypeName, equipMark)
+		}
+
+		// プレフィックスを含めた全体の内容を作成し、表示幅で切り詰め後パディング
+		fullContent := prefix + itemContent
+		truncated := truncateToDisplayWidth(fullContent, contentWidth)
+		padded := padToDisplayWidth(truncated, contentWidth)
+		items = append(items, style.Render(padded))
 	}
 
 	return strings.Join(items, "\n")
@@ -642,7 +670,7 @@ func (s *InventoryScreen) renderSkillPreviewContent() string {
 	valueStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary)
 	chainStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff)
 
-	builder.WriteString(titleStyle.Render(skill.Icon + " " + skill.TypeName))
+	builder.WriteString(titleStyle.Render(normalizeInventoryIcon(skill.Icon) + " " + skill.TypeName))
 	builder.WriteString("\n\n")
 
 	builder.WriteString(labelStyle.Render("TypeID: "))
@@ -742,4 +770,57 @@ func (s *InventoryScreen) GetTitle() string {
 // GetSize は現在の画面サイズを返します。
 func (s *InventoryScreen) GetSize() (width, height int) {
 	return s.width, s.height
+}
+
+// ==================== 表示幅ヘルパー ====================
+
+// normalizeInventoryIcon はボックスの幅ズレを避けるためにアイコン表現を正規化します。
+// VS16を含む絵文字は端末によって1幅表示になるため、テキスト表示に寄せて幅を合わせます。
+func normalizeInventoryIcon(icon string) string {
+	const variationSelectorEmoji = "\ufe0f"
+	const variationSelectorText = "\ufe0e"
+	if !strings.Contains(icon, variationSelectorEmoji) {
+		return icon
+	}
+	return strings.ReplaceAll(icon, variationSelectorEmoji, variationSelectorText)
+}
+
+// stringDisplayWidth はlipglossで文字列の表示幅を計算します。
+// lipglossのレンダリングと一致する幅計算を行います。
+func stringDisplayWidth(s string) int {
+	return lipgloss.Width(s)
+}
+
+// truncateToDisplayWidth は文字列を指定した表示幅に切り詰めます。
+// グラフェムクラスター単位で処理し、lipgloss.Width()で幅計算を行います。
+func truncateToDisplayWidth(s string, maxWidth int) string {
+	if maxWidth <= 0 {
+		return ""
+	}
+
+	var result strings.Builder
+	gr := uniseg.NewGraphemes(s)
+	currentWidth := 0
+
+	for gr.Next() {
+		cluster := gr.Str()
+		w := lipgloss.Width(cluster)
+		if currentWidth+w > maxWidth {
+			break
+		}
+		result.WriteString(cluster)
+		currentWidth += w
+	}
+
+	return result.String()
+}
+
+// padToDisplayWidth は文字列を指定した表示幅になるようにスペースでパディングします。
+func padToDisplayWidth(s string, targetWidth int) string {
+	currentWidth := lipgloss.Width(s)
+	if currentWidth >= targetWidth {
+		return s
+	}
+	padding := targetWidth - currentWidth
+	return s + strings.Repeat(" ", padding)
 }

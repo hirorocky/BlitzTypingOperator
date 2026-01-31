@@ -169,16 +169,36 @@ func convertChainEffectType(s string) domain.ChainEffectType {
 }
 
 // InitializeNewGame は新規ゲームを初期化してセーブデータを作成します。
-
-// ID化最適化に対応：フルオブジェクトではなくID参照を保存
+// v3.0.0形式：ユニークインベントリ + エージェントスロットシステム
 func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 	// 基本のセーブデータを作成
 	saveData := savedata.NewSaveData()
 
-	// 初期エージェントを作成
+	// v3.0.0: 初期コアとスキルをユニークインベントリに追加
+	// コア：オールラウンダーLv1
+	// スキル：軽斬撃、応急手当、気合い溜め
+	saveData.Inventory.UniqueCores.Cores["all_rounder"] = 1
+
+	saveData.Inventory.UniqueSkills.Skills["physical_strike_lv1"] = []string{}
+	saveData.Inventory.UniqueSkills.Skills["heal_lv1"] = []string{}
+	saveData.Inventory.UniqueSkills.Skills["str_buff_lv1"] = []string{}
+
+	// v3.0.0: 初期エージェントスロット構成
+	// スロット0にオールラウンダーLv1 + 3つのスキルを設定
+	saveData.Player.AgentSlots[0] = savedata.AgentSlotSave{
+		CoreTypeID: "all_rounder",
+		CoreLevel:  1,
+		Skills: [4]savedata.SkillSlotSaveCfg{
+			{TypeID: "physical_strike_lv1"},
+			{TypeID: "heal_lv1"},
+			{TypeID: "str_buff_lv1"},
+			{}, // スキルスロット4は空
+		},
+	}
+
+	// 旧形式の初期化（後方互換性のため残す）
 	initialAgents := i.CreateInitialAgents()
 
-	// インベントリにエージェントを追加（コア情報を直接埋め込み）
 	agentInstances := make([]savedata.AgentInstanceSave, 0, len(initialAgents))
 	equippedAgentIDs := [3]string{"", "", ""}
 
@@ -188,7 +208,6 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 			skills[skillIdx] = savedata.SkillInstanceSave{
 				TypeID: m.TypeID,
 			}
-			// チェイン効果があれば変換
 			if m.ChainEffect != nil {
 				skills[skillIdx].ChainEffect = &savedata.ChainEffectSave{
 					Type:  string(m.ChainEffect.Type),
@@ -206,21 +225,13 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 			Skills: skills,
 		})
 
-		// 最大3体まで装備スロットに設定
 		if idx < 3 {
 			equippedAgentIDs[idx] = agent.ID
 		}
 	}
 
 	saveData.Inventory.AgentInstances = agentInstances
-
-	// インベントリのコアは空（エージェントのコアはエージェント内に保持される）
 	saveData.Inventory.CoreInstances = []savedata.CoreInstanceSave{}
-
-	// コアとモジュールはエージェント合成で消費されるため、インベントリには追加しない
-	// （エージェントに含まれているコアとモジュールは参照として保持される）
-
-	// 初期エージェントを装備
 	saveData.Player.EquippedAgentIDs = equippedAgentIDs
 
 	return saveData
