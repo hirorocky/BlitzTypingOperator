@@ -461,11 +461,9 @@ func (io *SaveDataIO) loadFromFile(filePath string) (*SaveData, error) {
 	}
 
 	// バージョンチェック
-	if data.Version == "" {
-		return nil, fmt.Errorf("セーブデータのバージョンが不正です")
+	if err := ValidateSaveVersion(data.Version); err != nil {
+		return nil, err
 	}
-
-	// 将来的なバージョンマイグレーションはここで実装
 
 	return &data, nil
 }
@@ -546,6 +544,21 @@ func ValidateSaveData(data *SaveData) error {
 	if data.Settings == nil {
 		return fmt.Errorf("設定データがnilです")
 	}
+	return nil
+}
+
+// ValidateSaveVersion はセーブデータのバージョンが現在のバージョンと互換性があるか検証します。
+// v4.0.0以降のセーブデータのみ受け付けます。旧バージョンはエラーを返します。
+func ValidateSaveVersion(version string) error {
+	if version == "" {
+		return fmt.Errorf("セーブデータのバージョンが空です")
+	}
+
+	// 現在のバージョン（v4.0.0）のみサポート
+	if version != CurrentSaveDataVersion {
+		return fmt.Errorf("セーブデータのバージョン %s はサポートされていません。v%s が必要です", version, CurrentSaveDataVersion)
+	}
+
 	return nil
 }
 

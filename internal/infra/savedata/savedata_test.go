@@ -778,3 +778,117 @@ func TestNewSaveData_V4Defaults(t *testing.T) {
 		t.Errorf("EnemyProgress.CurrentRank: got %d, want 1", saveData.EnemyProgress.CurrentRank)
 	}
 }
+
+// ==================== v4.0.0: バージョンチェックテスト ====================
+
+// TestValidateSaveVersion_ValidVersion は有効なバージョンの検証をテストします。
+func TestValidateSaveVersion_ValidVersion(t *testing.T) {
+	// v4.0.0は有効
+	err := ValidateSaveVersion("4.0.0")
+	if err != nil {
+		t.Errorf("v4.0.0 should be valid, got error: %v", err)
+	}
+}
+
+// TestValidateSaveVersion_OldVersion は旧バージョンがエラーになることをテストします。
+func TestValidateSaveVersion_OldVersion(t *testing.T) {
+	testCases := []struct {
+		version string
+	}{
+		{"3.0.0"},
+		{"2.0.0"},
+		{"1.0.0"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.version, func(t *testing.T) {
+			err := ValidateSaveVersion(tc.version)
+			if err == nil {
+				t.Errorf("Version %s should return error", tc.version)
+			}
+		})
+	}
+}
+
+// TestValidateSaveVersion_EmptyVersion は空のバージョンがエラーになることをテストします。
+func TestValidateSaveVersion_EmptyVersion(t *testing.T) {
+	err := ValidateSaveVersion("")
+	if err == nil {
+		t.Error("Empty version should return error")
+	}
+}
+
+// TestLoadGame_VersionCheck はLoadGame時のバージョンチェックをテストします。
+func TestLoadGame_VersionCheck(t *testing.T) {
+	tmpDir := t.TempDir()
+	io := NewSaveDataIO(tmpDir, false)
+
+	// 旧バージョンのセーブデータを作成（手動でJSONを書き込み）
+	oldVersionSave := `{
+		"version": "3.0.0",
+		"timestamp": "2025-01-01T00:00:00Z",
+		"player": {
+			"equipped_agent_ids": ["", "", ""],
+			"agent_slots": [{}, {}, {}]
+		},
+		"inventory": {
+			"core_instances": [],
+			"module_instances": [],
+			"agent_instances": [],
+			"max_core_slots": 100,
+			"max_module_slots": 200,
+			"max_agent_slots": 20
+		},
+		"statistics": {
+			"total_battles": 0,
+			"victories": 0,
+			"defeats": 0,
+			"max_level_reached": 0,
+			"highest_wpm": 0,
+			"average_wpm": 0,
+			"perfect_accuracy_count": 0,
+			"total_characters_typed": 0
+		},
+		"achievements": {
+			"unlocked": [],
+			"progress": {}
+		},
+		"settings": {
+			"key_bindings": {}
+		}
+	}`
+
+	savePath := filepath.Join(tmpDir, SaveFileName)
+	if err := os.WriteFile(savePath, []byte(oldVersionSave), 0644); err != nil {
+		t.Fatalf("セーブファイル作成に失敗: %v", err)
+	}
+
+	// LoadGameがエラーを返すことを確認
+	_, err := io.LoadGame()
+	if err == nil {
+		t.Error("旧バージョンのセーブデータをロードするとエラーが返されるべき")
+	}
+}
+
+// TestLoadGame_CurrentVersion は現在バージョンが正常にロードされることをテストします。
+func TestLoadGame_CurrentVersion(t *testing.T) {
+	tmpDir := t.TempDir()
+	io := NewSaveDataIO(tmpDir, false)
+
+	// v4.0.0のセーブデータを作成
+	saveData := NewSaveData()
+	if err := io.SaveGame(saveData); err != nil {
+		t.Fatalf("セーブに失敗: %v", err)
+	}
+
+	// LoadGameが成功することを確認
+	loadedData, err := io.LoadGame()
+	if err != nil {
+		t.Fatalf("ロードに失敗: %v", err)
+	}
+
+	// バージョンが正しいことを確認
+	if loadedData.Version != CurrentSaveDataVersion {
+		t.Errorf("Version: got %s, want %s", loadedData.Version, CurrentSaveDataVersion)
+	}
+}
