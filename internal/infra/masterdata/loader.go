@@ -299,6 +299,10 @@ type EnemyTypeData struct {
 	// VoltageRisePer10s は10秒あたりのボルテージ上昇量です。
 	// 0の場合はボルテージが上昇しません。未設定時のデフォルト値は10です。
 	VoltageRisePer10s *float64 `json:"voltage_rise_per_10s,omitempty"`
+
+	// ランクシステム
+	// Rank は敵のランクです（1から開始）。未設定時のデフォルト値は1です。
+	Rank *int `json:"rank,omitempty"`
 }
 
 // enemiesFileData はenemies.jsonのルート構造です。
@@ -325,9 +329,13 @@ func (l *DataLoader) LoadEnemyTypes() ([]EnemyTypeData, error) {
 // DefaultVoltageRisePer10s はボルテージ上昇量のデフォルト値（10ポイント/10秒）です。
 const DefaultVoltageRisePer10s = 10.0
 
+// DefaultEnemyRank は敵ランクのデフォルト値（ランク1）です。
+const DefaultEnemyRank = 1
+
 // ToDomain はEnemyTypeDataをドメインモデルのEnemyTypeに変換します。
 // actionMap が指定された場合、行動パターンIDを解決します。
 // VoltageRisePer10sが未設定の場合はデフォルト値（10）を適用します。
+// Rankが未設定の場合はデフォルト値（1）を適用します。
 func (e *EnemyTypeData) ToDomain() domain.EnemyType {
 	return domain.EnemyType{
 		ID:                       e.ID,
@@ -342,6 +350,7 @@ func (e *EnemyTypeData) ToDomain() domain.EnemyType {
 		DropItemCategory:         e.DropItemCategory,
 		DropItemTypeID:           e.DropItemTypeID,
 		VoltageRisePer10s:        e.GetVoltageRisePer10s(),
+		Rank:                     e.GetRank(),
 	}
 }
 
@@ -352,6 +361,15 @@ func (e *EnemyTypeData) GetVoltageRisePer10s() float64 {
 		return DefaultVoltageRisePer10s
 	}
 	return *e.VoltageRisePer10s
+}
+
+// GetRank は敵のランクを返します。
+// 未設定の場合はデフォルト値（1）を返します。
+func (e *EnemyTypeData) GetRank() int {
+	if e.Rank == nil {
+		return DefaultEnemyRank
+	}
+	return *e.Rank
 }
 
 // ==================== 敵行動定義 ====================

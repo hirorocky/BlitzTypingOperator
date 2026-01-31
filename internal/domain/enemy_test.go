@@ -35,6 +35,7 @@ func TestEnemyType_フィールドの確認(t *testing.T) {
 		BaseHP:          100,
 		BaseAttackPower: 10,
 		AttackType:      "physical",
+		Rank:            1,
 	}
 
 	if enemyType.ID != "goblin" {
@@ -51,6 +52,53 @@ func TestEnemyType_フィールドの確認(t *testing.T) {
 	}
 	if enemyType.AttackType != "physical" {
 		t.Errorf("AttackTypeが期待値と異なります: got %s, want physical", enemyType.AttackType)
+	}
+	if enemyType.Rank != 1 {
+		t.Errorf("Rankが期待値と異なります: got %d, want 1", enemyType.Rank)
+	}
+}
+
+// TestEnemyType_ランクシステム は敵ランクの検証機能をテストします。
+func TestEnemyType_ランクシステム(t *testing.T) {
+	tests := []struct {
+		name      string
+		rank      int
+		wantValid bool
+	}{
+		{
+			name:      "ランク1は有効",
+			rank:      1,
+			wantValid: true,
+		},
+		{
+			name:      "ランク5は有効",
+			rank:      5,
+			wantValid: true,
+		},
+		{
+			name:      "ランク0は無効",
+			rank:      0,
+			wantValid: false,
+		},
+		{
+			name:      "負のランクは無効",
+			rank:      -1,
+			wantValid: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			enemyType := EnemyType{
+				ID:   "test_enemy",
+				Name: "テスト敵",
+				Rank: tt.rank,
+			}
+
+			if got := enemyType.IsValidRank(); got != tt.wantValid {
+				t.Errorf("IsValidRank() = %v, want %v", got, tt.wantValid)
+			}
+		})
 	}
 }
 
