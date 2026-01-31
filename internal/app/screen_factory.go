@@ -5,7 +5,9 @@ import (
 	"hirorocky/type-battle/internal/domain"
 	"hirorocky/type-battle/internal/tui/presenter"
 	"hirorocky/type-battle/internal/tui/screens"
+	"hirorocky/type-battle/internal/usecase/inventory"
 	gamestate "hirorocky/type-battle/internal/usecase/session"
+	"hirorocky/type-battle/internal/usecase/slot"
 	"hirorocky/type-battle/internal/usecase/spawning"
 )
 
@@ -57,13 +59,6 @@ func (f *ScreenFactory) CreateBattleSelectScreenCarousel(
 	return screens.NewBattleSelectScreenCarousel(invProvider, defeatedProvider, f.enemyGenerator)
 }
 
-// CreateAgentManagementScreen はエージェント管理画面を作成します。
-// debugMode: デバッグモードを有効化
-// debugProvider: デバッグモード用のプロバイダー（nilの場合は通常モード）
-func (f *ScreenFactory) CreateAgentManagementScreen(invProvider InventoryProvider, debugMode bool, debugProvider screens.DebugInventoryProvider) *screens.AgentManagementScreen {
-	return screens.NewAgentManagementScreen(invProvider, debugMode, debugProvider)
-}
-
 // CreateEncyclopediaScreen は図鑑画面を作成します。
 func (f *ScreenFactory) CreateEncyclopediaScreen() *screens.EncyclopediaScreen {
 	encycData := presenter.CreateEncyclopediaData(f.gameState)
@@ -80,4 +75,28 @@ func (f *ScreenFactory) CreateStatsAchievementsScreen() *screens.StatsAchievemen
 func (f *ScreenFactory) CreateSettingsScreen() *screens.SettingsScreen {
 	settingsData := presenter.CreateSettingsData(f.gameState)
 	return screens.NewSettingsScreen(settingsData)
+}
+
+// CreateAgentCustomizationScreen はエージェントカスタマイズ画面を作成します。
+// コア・スキルの付け替えを行うための画面を生成します。
+func (f *ScreenFactory) CreateAgentCustomizationScreen(
+	invManager *inventory.InventoryManager,
+	slotManager *slot.AgentSlotManager,
+	coreTypes map[string]domain.CoreType,
+	skillTypes map[string]domain.SkillType,
+	passiveSkills map[string]domain.PassiveSkill,
+	chainEffects map[string]domain.ChainEffect,
+) *screens.AgentCustomizationScreen {
+	return screens.NewAgentCustomizationScreen(invManager, slotManager, coreTypes, skillTypes, passiveSkills, chainEffects)
+}
+
+// CreateInventoryScreen はインベントリ画面を作成します。
+// コア・スキルの一覧表示と装備状況の確認ができる画面を生成します。
+func (f *ScreenFactory) CreateInventoryScreen(
+	invManager *inventory.InventoryManager,
+	slotManager *slot.AgentSlotManager,
+	coreTypes map[string]domain.CoreType,
+	skillTypes map[string]domain.SkillType,
+) *screens.InventoryScreen {
+	return screens.NewInventoryScreen(invManager, slotManager, coreTypes, skillTypes)
 }

@@ -39,7 +39,9 @@
 - **ルーターパターン**: シーン遷移を`SceneRouter`に委譲
 - **型変換のapp層集約**: infra→domain型変換はapp層で実施し、usecase層のinfra依存を排除
 - **EffectTableパターン**: 複数種の効果（バフ、デバフ、パッシブ、チェイン）を統一テーブルで管理し、列（EffectColumn）ベースで集計
-- **Managerパターン**: usecase層でXxxManager構造体を使用し、状態管理とビジネスロジックをカプセル化（例: RecastManager, ChainEffectManager, AchievementManager）
+- **Managerパターン**: usecase層でXxxManager構造体を使用し、状態管理とビジネスロジックをカプセル化（例: RecastManager, ChainEffectManager, AgentSlotManager, InventoryManager）
+- **ユニークインベントリパターン**: コア・スキルをTypeIDベースでユニーク管理し、最大レベルやチェイン効果バリエーションを追跡
+- **スロット構成パターン**: 固定数のエージェントスロットにコア・スキルを自由に付け替え可能（合成不要）
 
 ---
-_updated_at: 2026-01-04_
+_updated_at: 2026-01-31_

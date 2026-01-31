@@ -8,11 +8,7 @@
       "attack_type": "physical",
       "ascii_art": "   ___\n  /   \\\n |     |\n  \\___/",
       "default_level": 1,
-      "normal_action_pattern": [
-        "act_slime_attack_phys",
-        "act_slime_defense_phys",
-        "act_goblin_buff_attack"
-      ],
+      "normal_action_pattern": ["act_slime_attack_phys"],
       "enhanced_action_pattern": [
         "act_slime_attack_phys",
         "act_slime_attack_magic"
@@ -21,7 +17,7 @@
       "enhanced_passive_id": "slime_enhanced",
       "drop_item_category": "core",
       "drop_item_type_id": "attack_balance",
-      "voltage_rise_per_10s": 100
+      "voltage_rise_per_10s": 10
     },
     {
       "id": "bat",

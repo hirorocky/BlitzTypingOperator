@@ -37,6 +37,14 @@ const (
 	// SceneReward は報酬画面を表します。
 	// バトル勝利後のドロップアイテムとバトル統計を表示します。
 	SceneReward
+
+	// SceneAgentCustomization はエージェントカスタマイズ画面を表します。
+	// 3つのエージェントスロットに対してコアとスキルを自由に付け替えできます。
+	SceneAgentCustomization
+
+	// SceneInventory はインベントリ画面を表します。
+	// 保有コアとスキルの一覧を確認できます。
+	SceneInventory
 )
 
 // String はシーンの文字列表現を返します。
@@ -58,6 +66,10 @@ func (s Scene) String() string {
 		return "Settings"
 	case SceneReward:
 		return "Reward"
+	case SceneAgentCustomization:
+		return "AgentCustomization"
+	case SceneInventory:
+		return "Inventory"
 	default:
 		return "Unknown"
 	}

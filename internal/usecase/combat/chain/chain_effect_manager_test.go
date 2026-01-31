@@ -26,7 +26,7 @@ func TestRegisterChainEffect(t *testing.T) {
 	cem := NewChainEffectManager()
 
 	// チェイン効果を作成
-	effect := domain.NewChainEffect(domain.ChainEffectDamageBonus, 20.0)
+	effect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 20.0)
 
 	// 登録
 	cem.RegisterChainEffect(0, &effect, "slash_lv1")
@@ -57,7 +57,7 @@ func TestCheckAndTrigger(t *testing.T) {
 	cem := NewChainEffectManager()
 
 	// エージェント0のチェイン効果を登録（説明文テンプレート付き）
-	effect := domain.NewChainEffectWithTemplate(domain.ChainEffectDamageBonus, 25.0,
+	effect := domain.NewChainEffectWithTemplate("test_damage_bonus", domain.ChainEffectDamageBonus, 25.0,
 		"次の攻撃のダメージ+%.0f%%", "次攻撃ダメ+%.0f%%")
 	cem.RegisterChainEffect(0, &effect, "slash_lv1")
 
@@ -92,7 +92,7 @@ func TestCheckAndTriggerSameAgent(t *testing.T) {
 	cem := NewChainEffectManager()
 
 	// エージェント0のチェイン効果を登録
-	effect := domain.NewChainEffect(domain.ChainEffectDamageBonus, 25.0)
+	effect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
 	cem.RegisterChainEffect(0, &effect, "slash_lv1")
 
 	// 同じエージェント0がモジュールを使用（発動しない）
@@ -115,8 +115,8 @@ func TestExpireEffectsForAgent(t *testing.T) {
 	cem := NewChainEffectManager()
 
 	// 複数エージェントのチェイン効果を登録
-	effect1 := domain.NewChainEffect(domain.ChainEffectDamageBonus, 20.0)
-	effect2 := domain.NewChainEffect(domain.ChainEffectHealBonus, 30.0)
+	effect1 := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 20.0)
+	effect2 := domain.NewChainEffect("test_effect", domain.ChainEffectHealBonus, 30.0)
 	cem.RegisterChainEffect(0, &effect1, "slash_lv1")
 	cem.RegisterChainEffect(1, &effect2, "heal_lv1")
 
@@ -146,8 +146,8 @@ func TestMultipleEffectsFromSameAgent(t *testing.T) {
 	cem := NewChainEffectManager()
 
 	// 同一エージェントから複数効果を登録（通常は1つだが、上書きされる）
-	effect1 := domain.NewChainEffect(domain.ChainEffectDamageBonus, 20.0)
-	effect2 := domain.NewChainEffect(domain.ChainEffectHealBonus, 30.0)
+	effect1 := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 20.0)
+	effect2 := domain.NewChainEffect("test_effect", domain.ChainEffectHealBonus, 30.0)
 	cem.RegisterChainEffect(0, &effect1, "slash_lv1")
 	cem.RegisterChainEffect(0, &effect2, "heal_lv1") // 上書き
 
@@ -166,8 +166,8 @@ func TestClearAll(t *testing.T) {
 	cem := NewChainEffectManager()
 
 	// 複数効果を登録
-	effect1 := domain.NewChainEffect(domain.ChainEffectDamageBonus, 20.0)
-	effect2 := domain.NewChainEffect(domain.ChainEffectHealBonus, 30.0)
+	effect1 := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 20.0)
+	effect2 := domain.NewChainEffect("test_effect", domain.ChainEffectHealBonus, 30.0)
 	cem.RegisterChainEffect(0, &effect1, "slash_lv1")
 	cem.RegisterChainEffect(1, &effect2, "heal_lv1")
 
@@ -203,7 +203,7 @@ func TestHasPendingEffect(t *testing.T) {
 	}
 
 	// 効果を登録
-	effect := domain.NewChainEffect(domain.ChainEffectDamageBonus, 20.0)
+	effect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 20.0)
 	cem.RegisterChainEffect(0, &effect, "slash_lv1")
 
 	// 登録後
@@ -220,7 +220,7 @@ func TestDamageAmpEffect(t *testing.T) {
 	cem := NewChainEffectManager()
 
 	// ダメージアンプ効果を登録
-	effect := domain.NewChainEffect(domain.ChainEffectDamageAmp, 15.0)
+	effect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageAmp, 15.0)
 	cem.RegisterChainEffect(0, &effect, "amp_skill")
 
 	// 他エージェントが攻撃（発動）
@@ -239,7 +239,7 @@ func TestHealBonusEffect(t *testing.T) {
 	cem := NewChainEffectManager()
 
 	// 回復ボーナス効果を登録
-	effect := domain.NewChainEffect(domain.ChainEffectHealBonus, 30.0)
+	effect := domain.NewChainEffect("test_effect", domain.ChainEffectHealBonus, 30.0)
 	cem.RegisterChainEffect(0, &effect, "heal_amp")
 
 	// 他エージェントが回復（発動）
@@ -258,7 +258,7 @@ func TestBuffExtendEffect(t *testing.T) {
 	cem := NewChainEffectManager()
 
 	// バフ延長効果を登録
-	effect := domain.NewChainEffect(domain.ChainEffectBuffExtend, 2.0)
+	effect := domain.NewChainEffect("test_effect", domain.ChainEffectBuffExtend, 2.0)
 	cem.RegisterChainEffect(0, &effect, "buff_extend")
 
 	// 他エージェントがバフ（発動）
@@ -300,7 +300,7 @@ func TestEffectCategoryMatching(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cem := NewChainEffectManager()
-			effect := domain.NewChainEffect(tt.effectType, 10.0)
+			effect := domain.NewChainEffect("test_effect", tt.effectType, 10.0)
 			cem.RegisterChainEffect(0, &effect, "test_module")
 
 			triggered := cem.CheckAndTrigger(1, tt.moduleFlags)

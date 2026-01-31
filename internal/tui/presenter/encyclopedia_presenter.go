@@ -70,16 +70,18 @@ func CreateEncyclopediaData(gs *session.GameState) *screens.EncyclopediaData {
 	// 基本データを取得
 	baseData := CreateDefaultEncyclopediaData()
 
-	// 所持コアタイプを取得
-	acquiredCoreTypes := make([]string, 0)
-	for _, core := range gs.Inventory().GetCores() {
-		acquiredCoreTypes = append(acquiredCoreTypes, core.Type.ID)
+	// 所持コアタイプを取得（新システム: TypeIDベースのユニーク管理）
+	ownedCores := gs.Inventory().GetOwnedCores()
+	acquiredCoreTypes := make([]string, 0, len(ownedCores))
+	for typeID := range ownedCores {
+		acquiredCoreTypes = append(acquiredCoreTypes, typeID)
 	}
 
-	// 所持モジュールタイプを取得
-	acquiredModuleTypes := make([]string, 0)
-	for _, module := range gs.Inventory().GetModules() {
-		acquiredModuleTypes = append(acquiredModuleTypes, module.TypeID)
+	// 所持スキルタイプを取得（新システム: TypeIDベースのユニーク管理）
+	ownedSkills := gs.Inventory().GetOwnedSkills()
+	acquiredModuleTypes := make([]string, 0, len(ownedSkills))
+	for typeID := range ownedSkills {
+		acquiredModuleTypes = append(acquiredModuleTypes, typeID)
 	}
 
 	return &screens.EncyclopediaData{

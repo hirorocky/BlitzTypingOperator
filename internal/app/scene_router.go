@@ -13,14 +13,15 @@ type SceneRouter struct {
 func NewSceneRouter() *SceneRouter {
 	return &SceneRouter{
 		routes: map[string]Scene{
-			"home":               SceneHome,
-			"battle_select":      SceneBattleSelect,
-			"battle":             SceneBattle,
-			"agent_management":   SceneAgentManagement,
-			"encyclopedia":       SceneEncyclopedia,
-			"stats_achievements": SceneAchievement,
-			"settings":           SceneSettings,
-			"reward":             SceneReward,
+			"home":                SceneHome,
+			"battle_select":       SceneBattleSelect,
+			"battle":              SceneBattle,
+			"encyclopedia":        SceneEncyclopedia,
+			"stats_achievements":  SceneAchievement,
+			"settings":            SceneSettings,
+			"reward":              SceneReward,
+			"agent_customization": SceneAgentCustomization,
+			"inventory":           SceneInventory,
 		},
 	}
 }

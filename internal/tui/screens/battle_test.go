@@ -1226,7 +1226,7 @@ func createTestAgentsWithChainEffect() []*domain.AgentModel {
 	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
 
 	// チェイン効果付きモジュール
-	chainEffect := domain.NewChainEffect(domain.ChainEffectDamageBonus, 25)
+	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25)
 	modules := []*domain.ModuleModel{
 		newTestModuleWithChainEffect("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect),
 		newTestDamageModule("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
@@ -1614,7 +1614,7 @@ func createTestAgentsWithChainEffectMultiple() []*domain.AgentModel {
 
 	// エージェント1
 	core1 := domain.NewCore("core1", "テストコア1", 5, coreType, domain.PassiveSkill{})
-	chainEffect1 := domain.NewChainEffect(domain.ChainEffectDamageBonus, 25)
+	chainEffect1 := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25)
 	modules1 := []*domain.ModuleModel{
 		newTestModuleWithChainEffect("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect1),
 		newTestDamageModule("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
@@ -1625,7 +1625,7 @@ func createTestAgentsWithChainEffectMultiple() []*domain.AgentModel {
 
 	// エージェント2
 	core2 := domain.NewCore("core2", "テストコア2", 5, coreType, domain.PassiveSkill{})
-	chainEffect2 := domain.NewChainEffect(domain.ChainEffectHealBonus, 30)
+	chainEffect2 := domain.NewChainEffect("test_effect", domain.ChainEffectHealBonus, 30)
 	modules2 := []*domain.ModuleModel{
 		newTestModuleWithChainEffect("m5", "物理攻撃2", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect2),
 		newTestDamageModule("m6", "魔法攻撃2", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),

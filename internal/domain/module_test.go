@@ -239,7 +239,7 @@ func TestModuleModel_TypeIDフィールドの確認(t *testing.T) {
 
 // TestModuleModel_ChainEffect付きの作成 はChainEffect付きのモジュール作成をテストします。
 func TestModuleModel_ChainEffect付きの作成(t *testing.T) {
-	chainEffect := NewChainEffectWithTemplate(ChainEffectDamageBonus, 25.0, "次の攻撃のダメージ+%.0f%%", "次攻撃ダメ+%.0f%%")
+	chainEffect := NewChainEffectWithTemplate("test_damage_bonus", ChainEffectDamageBonus, 25.0, "次の攻撃のダメージ+%.0f%%", "次攻撃ダメ+%.0f%%")
 	module := NewModuleFromType(ModuleType{
 		ID:          "physical_attack_lv1",
 		Name:        "物理打撃",
@@ -268,8 +268,8 @@ func TestModuleModel_ChainEffect付きの作成(t *testing.T) {
 
 // TestModuleModel_同一TypeID異なるChainEffect は同一TypeIDで異なるChainEffectを持つモジュールを許容することを確認します。
 func TestModuleModel_同一TypeID異なるChainEffect(t *testing.T) {
-	chainEffect1 := NewChainEffectWithTemplate(ChainEffectDamageBonus, 25.0, "次の攻撃のダメージ+%.0f%%", "次攻撃ダメ+%.0f%%")
-	chainEffect2 := NewChainEffectWithTemplate(ChainEffectHealBonus, 20.0, "次の回復量+%.0f%%", "次回復量+%.0f%%")
+	chainEffect1 := NewChainEffectWithTemplate("test_damage_bonus", ChainEffectDamageBonus, 25.0, "次の攻撃のダメージ+%.0f%%", "次攻撃ダメ+%.0f%%")
+	chainEffect2 := NewChainEffectWithTemplate("test_heal_bonus", ChainEffectHealBonus, 20.0, "次の回復量+%.0f%%", "次回復量+%.0f%%")
 
 	moduleType := ModuleType{
 		ID:          "physical_attack_lv1",
@@ -327,7 +327,7 @@ func TestModuleModel_ChainEffectなし(t *testing.T) {
 
 // TestModuleModel_HasChainEffect はHasChainEffectメソッドをテストします。
 func TestModuleModel_HasChainEffect(t *testing.T) {
-	chainEffect := NewChainEffectWithTemplate(ChainEffectBuffExtend, 5.0, "バフ効果時間+%.0f秒", "バフ時間+%.0f秒")
+	chainEffect := NewChainEffectWithTemplate("test_buff_extend", ChainEffectBuffExtend, 5.0, "バフ効果時間+%.0f秒", "バフ時間+%.0f秒")
 	moduleWithEffect := NewModuleFromType(ModuleType{
 		ID:          "buff_lv1",
 		Name:        "バフ",

@@ -117,7 +117,7 @@ func TestRefactoring_SaveDataBackwardCompatibility(t *testing.T) {
 				CoreTypeID: "all_rounder",
 				Level:      5,
 			},
-			Modules: []savedata.ModuleInstanceSave{
+			Skills: []savedata.SkillInstanceSave{
 				{TypeID: "physical_strike_lv1"},
 				{TypeID: "fireball_lv1"},
 				{TypeID: "heal_lv1"},
@@ -447,15 +447,23 @@ func TestRefactoring_HPDisplayComponent(t *testing.T) {
 func TestRefactoring_TypeRenaming(t *testing.T) {
 	// EncyclopediaData（旧EncyclopediaTestData）のテスト
 	encycData := &screens.EncyclopediaData{
-		AllCoreTypes:        []domain.CoreType{},
-		AllModuleTypes:      []screens.ModuleTypeInfo{},
-		AllEnemyTypes:       []domain.EnemyType{},
-		AcquiredCoreTypes:   []string{},
-		AcquiredModuleTypes: []string{},
-		EncounteredEnemies:  []string{},
+		AllCoreTypes: []domain.CoreType{},
 	}
 	if encycData.AllCoreTypes == nil {
 		t.Error("EncyclopediaData.AllCoreTypes should not be nil")
+	}
+
+	// 他のフィールドも存在することを確認（構造体の完全性テスト）
+	encycDataFull := screens.EncyclopediaData{
+		AllCoreTypes:        []domain.CoreType{},
+		AllModuleTypes:      []screens.ModuleTypeInfo{},
+		AllEnemyTypes:       []domain.EnemyType{},
+		AcquiredCoreTypes:   []string{"core1"},
+		AcquiredModuleTypes: []string{"module1"},
+		EncounteredEnemies:  []string{"enemy1"},
+	}
+	if len(encycDataFull.AcquiredCoreTypes) != 1 {
+		t.Error("EncyclopediaData fields should be accessible")
 	}
 
 	// StatsData（旧StatsTestData）のテスト
@@ -494,9 +502,6 @@ func TestRefactoring_RewardConversion(t *testing.T) {
 	}
 
 	// 変換結果の検証
-	if rewardStats == nil {
-		t.Fatal("RewardStats should not be nil")
-	}
 	if rewardStats.TotalWPM != 250.0 {
 		t.Errorf("TotalWPM expected 250.0, got %f", rewardStats.TotalWPM)
 	}
@@ -586,7 +591,7 @@ func TestRefactoring_AllComponentsIntegrated(t *testing.T) {
 		t.Error("勝利であるべき")
 	}
 
-	// 8. 報酬統計の構築
+	// 8. 報酬統計の構築（変換が正しく動作することを確認）
 	rewardStats := &rewarding.BattleStatistics{
 		TotalWPM:         result.Stats.TotalWPM,
 		TotalAccuracy:    result.Stats.TotalAccuracy,
@@ -595,8 +600,8 @@ func TestRefactoring_AllComponentsIntegrated(t *testing.T) {
 		TotalDamageTaken: result.Stats.TotalDamageTaken,
 		TotalHealAmount:  result.Stats.TotalHealAmount,
 	}
-	if rewardStats == nil {
-		t.Fatal("報酬統計の変換に失敗")
+	if rewardStats.TotalWPM != result.Stats.TotalWPM {
+		t.Errorf("報酬統計のTotalWPMが一致しない: %f vs %f", rewardStats.TotalWPM, result.Stats.TotalWPM)
 	}
 
 	// 9. GameStateへの統計更新と保存（選択レベル1, デフォルトレベル1）

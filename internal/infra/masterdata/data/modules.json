@@ -3,7 +3,7 @@
     {
       "id": "physical_strike_lv1",
       "name": "軽斬撃",
-      "icon": "⚔️",
+      "icon": "🔪",
       "tags": ["physical_low"],
       "description": "基本的な物理攻撃。敵に物理ダメージを与える。",
       "cooldown_seconds": 10.0,
@@ -15,14 +15,14 @@
           "hp_formula": { "base": 0, "stat_coef": 10.0, "stat_ref": "STR" },
           "probability": 1.0,
           "luk_factor": 0,
-          "icon": "⚔️"
+          "icon": "🔪"
         }
       ]
     },
     {
       "id": "physical_strike_lv2",
       "name": "斬撃",
-      "icon": "⚔️",
+      "icon": "🔪",
       "tags": ["physical_mid"],
       "description": "強化された物理攻撃。敵に中程度の物理ダメージを与える。",
       "cooldown_seconds": 15.0,
@@ -34,14 +34,14 @@
           "hp_formula": { "base": 0, "stat_coef": 2.5, "stat_ref": "STR" },
           "probability": 1.0,
           "luk_factor": 0,
-          "icon": "⚔️"
+          "icon": "🔪"
         }
       ]
     },
     {
       "id": "physical_strike_lv3",
       "name": "重斬撃",
-      "icon": "⚔️",
+      "icon": "🔪",
       "tags": ["physical_high"],
       "description": "最強の物理攻撃。敵に大ダメージを与える。",
       "cooldown_seconds": 20.0,
@@ -53,7 +53,7 @@
           "hp_formula": { "base": 0, "stat_coef": 5.0, "stat_ref": "STR" },
           "probability": 1.0,
           "luk_factor": 0,
-          "icon": "⚔️"
+          "icon": "🔪"
         }
       ]
     },
@@ -204,7 +204,7 @@
     {
       "id": "defense_buff_lv1",
       "name": "防御強化1",
-      "icon": "🛡️",
+      "icon": "🧱",
       "tags": ["buff_low"],
       "description": "一時的に受けるダメージを軽減する。",
       "cooldown_seconds": 10.0,
@@ -220,7 +220,7 @@
           },
           "probability": 1.0,
           "luk_factor": 0,
-          "icon": "🛡️"
+          "icon": "🧱"
         }
       ]
     },
@@ -250,7 +250,7 @@
     {
       "id": "defense_buff_lv2",
       "name": "防御強化2",
-      "icon": "🛡️",
+      "icon": "🧱",
       "tags": ["buff_mid"],
       "description": "受けるダメージを大きく軽減する。",
       "cooldown_seconds": 15.0,
@@ -266,7 +266,7 @@
           },
           "probability": 1.0,
           "luk_factor": 0,
-          "icon": "🛡️"
+          "icon": "🧱"
         }
       ]
     },

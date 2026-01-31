@@ -82,3 +82,29 @@ type ModuleModel struct { ... }
 - Default files: `product.md`, `tech.md`, `structure.md`
 - Custom files are supported (managed via `/kiro:steering-custom`)
 
+## TUI Testing (MCP: tui-test)
+- 本プロジェクトは複雑なTUIを持つため、テスト時は必ず**バッファモード**を使用すること
+- `launch_tui`実行時に `mode: "buffer"` を指定する
+- バッファモードでは位置ベースのアサーション、カーソル追跡、領域抽出が可能
+
+### 特殊キーの送信方法
+| キー | 送信方法 | 備考 |
+|------|----------|------|
+| Enter | `\r` | `\n`は機能しない（bubbleteaはCRを使用） |
+| ESC | `\x1b` | 画面遷移の「戻る」操作に使用 |
+| Tab | `\t` | |
+| Ctrl+X | `send_ctrl("x")` | 例: Ctrl+C は `send_ctrl("c")` |
+
+### 使用例
+```
+# ゲーム起動（常に最新コードを使用）
+launch_tui(command="go run ./cmd/BlitzTypingOperator", mode="buffer", dimensions="160x45")
+
+# メニュー操作
+send_keys("j")      # 下に移動
+send_keys("\r")     # Enter（選択）
+send_keys("\x1b")   # ESC（戻る）
+```
+
+※ 初回起動時はコンパイルのため数秒かかる。delayを長め（2秒程度）に設定すると安定する。
+

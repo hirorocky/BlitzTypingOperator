@@ -14,7 +14,8 @@ import (
 // CurrentSaveDataVersion は現在のセーブデータバージョンです。
 // セーブデータの形式が変更された場合にインクリメントします。
 // v2.0.0: ID化最適化（フルオブジェクト → ID参照）
-const CurrentSaveDataVersion = "2.0.0"
+// v3.0.0: ユニークインベントリ管理 + エージェントスロットシステム
+const CurrentSaveDataVersion = "3.0.0"
 
 // SaveFileName はセーブファイル名です。
 const SaveFileName = "save.json"
@@ -67,8 +68,12 @@ type SaveData struct {
 type PlayerSaveData struct {
 	// EquippedAgentIDs は装備中のエージェントIDリストです（スロット番号順）。
 	// 空きスロットは空文字列で表現されます。
-
+	// 注意: v3.0.0以降はAgentSlotsを使用。後方互換性のため残存。
 	EquippedAgentIDs [3]string `json:"equipped_agent_ids"`
+
+	// AgentSlots はエージェントスロット構成です（3スロット）。
+	// v3.0.0で追加。コア・スキルの自由付け替え方式で管理します。
+	AgentSlots [3]AgentSlotSave `json:"agent_slots"`
 }
 
 // CoreInstanceSave はコアインスタンスの軽量セーブデータです。
@@ -93,20 +98,25 @@ type ChainEffectSave struct {
 	Value float64 `json:"value"`
 }
 
-// ModuleInstanceSave はモジュールインスタンスのセーブデータです。
-// v1.0.0ではTypeIDとChainEffectのペアとして永続化します。
+// SkillInstanceSave はスキルインスタンスのセーブデータです。
+// v2.0.0ではTypeIDとChainEffectのペアとして永続化します。
 // 同一TypeIDでも異なるChainEffectを持つことを許容します。
-type ModuleInstanceSave struct {
-	// TypeID はモジュール種別ID（マスタデータ参照用）です。
+type SkillInstanceSave struct {
+	// TypeID はスキル種別ID（マスタデータ参照用）です。
 	TypeID string `json:"type_id"`
 
-	// ChainEffect はこのモジュールインスタンスのチェイン効果です。
+	// ChainEffect はこのスキルインスタンスのチェイン効果です。
 	// nilの場合はチェイン効果なしとしてomitemptyで省略されます。
 	ChainEffect *ChainEffectSave `json:"chain_effect,omitempty"`
 }
 
+// ModuleInstanceSave はSkillInstanceSaveのエイリアスです。
+// 後方互換性のために残されています。新規コードではSkillInstanceSaveを使用してください。
+type ModuleInstanceSave = SkillInstanceSave
+
 // AgentInstanceSave はエージェントインスタンスの軽量セーブデータです。
 // コア情報を直接保持し、インベントリに依存せずにロード時に再構築します。
+// 注意: v3.0.0以降はAgentSlotSaveを使用。後方互換性のため残存。
 type AgentInstanceSave struct {
 	// ID はエージェントインスタンスの一意識別子です。
 	ID string `json:"id"`
@@ -115,15 +125,65 @@ type AgentInstanceSave struct {
 	// エージェント合成時にコアは消費されるため、インベントリとは別に保持します。
 	Core CoreInstanceSave `json:"core"`
 
-	// Modules はモジュールインスタンスのリストです（4つ）。
-	// 各モジュールのTypeIDとChainEffectをペアで保持し、データの整合性を保証します。
-	Modules []ModuleInstanceSave `json:"modules"`
+	// Skills はスキルインスタンスのリストです（4つ）。
+	// 各スキルのTypeIDとChainEffectをペアで保持し、データの整合性を保証します。
+	// JSONキーは後方互換性のため"modules"のままです。
+	Skills []SkillInstanceSave `json:"modules"`
+}
+
+// ==================== v3.0.0 新構造体 ====================
+
+// CoreInventorySave はユニークコアインベントリのセーブデータです。
+// TypeID→最大レベルのマップ形式で管理します。
+type CoreInventorySave struct {
+	// Cores はCoreTypeID → 最大レベルのマップです。
+	Cores map[string]int `json:"cores"`
+}
+
+// SkillInventorySave はユニークスキルインベントリのセーブデータです。
+// TypeID→チェイン効果IDリストのマップ形式で管理します。
+type SkillInventorySave struct {
+	// Skills はSkillTypeID → チェイン効果IDリストのマップです。
+	Skills map[string][]string `json:"skills"`
+}
+
+// SkillSlotSaveCfg はスキルスロット構成のセーブデータです。
+// スキルTypeIDとチェイン効果IDを保持します。
+type SkillSlotSaveCfg struct {
+	// TypeID はスキルTypeID（空の場合は未設定）です。
+	TypeID string `json:"type_id,omitempty"`
+
+	// ChainEffectID はチェイン効果ID（なしの場合は空文字列）です。
+	ChainEffectID string `json:"chain_effect_id,omitempty"`
+}
+
+// AgentSlotSave はエージェントスロットのセーブデータです。
+// コアTypeID、レベル、4つのスキルスロット構成を保持します。
+type AgentSlotSave struct {
+	// CoreTypeID はコアTypeID（空の場合はスロット空）です。
+	CoreTypeID string `json:"core_type_id,omitempty"`
+
+	// CoreLevel は選択されたコアレベルです。
+	CoreLevel int `json:"core_level,omitempty"`
+
+	// Skills はスキルスロット構成（4つ）です。
+	Skills [4]SkillSlotSaveCfg `json:"skills"`
 }
 
 // InventorySaveData はインベントリのセーブデータです。
 // v1.0.0ではModuleCountsをModuleInstancesに置き換え、チェイン効果を管理します。
+// v3.0.0ではUniqueCores/UniqueSkillsでユニーク管理に移行します。
 type InventorySaveData struct {
+	// UniqueCores はユニークコアインベントリです（v3.0.0で追加）。
+	// TypeID→最大レベルのマップ形式で管理します。
+	UniqueCores *CoreInventorySave `json:"unique_cores,omitempty"`
+
+	// UniqueSkills はユニークスキルインベントリです（v3.0.0で追加）。
+	// TypeID→チェイン効果IDリストのマップ形式で管理します。
+	UniqueSkills *SkillInventorySave `json:"skills,omitempty"`
+
 	// CoreInstances は所持コアのTypeID+Levelリストです。
+	// 注意: v3.0.0以降はUniqueCoresを使用。後方互換性のため残存。
 	CoreInstances []CoreInstanceSave `json:"core_instances"`
 
 	// ModuleCounts は所持モジュールの個数マップです（後方互換性のため保持）。
@@ -131,19 +191,23 @@ type InventorySaveData struct {
 	ModuleCounts map[string]int `json:"module_counts,omitempty"`
 
 	// ModuleInstances は所持モジュールのインスタンスリストです（v1.0.0で追加）。
-	// 同一TypeIDでも異なるChainEffectを持つモジュールを個別に管理します。
+	// 注意: v3.0.0以降はUniqueSkillsを使用。後方互換性のため残存。
 	ModuleInstances []ModuleInstanceSave `json:"module_instances,omitempty"`
 
 	// AgentInstances は所持エージェントの参照リストです。
+	// 注意: v3.0.0以降はPlayerSaveData.AgentSlotsを使用。後方互換性のため残存。
 	AgentInstances []AgentInstanceSave `json:"agent_instances"`
 
 	// MaxCoreSlots はコアの最大所持数です。
+	// 注意: v3.0.0以降はユニーク管理のため不要。後方互換性のため残存。
 	MaxCoreSlots int `json:"max_core_slots"`
 
 	// MaxModuleSlots はモジュールの最大所持数です。
+	// 注意: v3.0.0以降はユニーク管理のため不要。後方互換性のため残存。
 	MaxModuleSlots int `json:"max_module_slots"`
 
 	// MaxAgentSlots はエージェントの最大所持数です。
+	// 注意: v3.0.0以降はユニーク管理のため不要。後方互換性のため残存。
 	MaxAgentSlots int `json:"max_agent_slots"`
 }
 
@@ -197,14 +261,26 @@ type SettingsSaveData struct {
 }
 
 // NewSaveData は新しいセーブデータを作成します。
+// v3.0.0形式で初期化されます。
 func NewSaveData() *SaveData {
 	return &SaveData{
 		Version:   CurrentSaveDataVersion,
 		Timestamp: time.Now(),
 		Player: &PlayerSaveData{
+			// レガシーフィールド（後方互換性のため）
 			EquippedAgentIDs: [3]string{},
+			// v3.0.0: エージェントスロット
+			AgentSlots: [3]AgentSlotSave{},
 		},
 		Inventory: &InventorySaveData{
+			// v3.0.0: ユニークインベントリ
+			UniqueCores: &CoreInventorySave{
+				Cores: make(map[string]int),
+			},
+			UniqueSkills: &SkillInventorySave{
+				Skills: make(map[string][]string),
+			},
+			// レガシーフィールド（後方互換性のため）
 			CoreInstances:   make([]CoreInstanceSave, 0),
 			ModuleCounts:    make(map[string]int),
 			ModuleInstances: make([]ModuleInstanceSave, 0),

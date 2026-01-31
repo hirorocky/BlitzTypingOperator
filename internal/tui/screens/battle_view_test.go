@@ -74,7 +74,7 @@ func TestBattleScreen_RenderAgentAreaWithRecast(t *testing.T) {
 // TestBattleScreen_RenderAgentAreaWithChainEffect はチェイン効果待機表示のテストです。
 func TestBattleScreen_RenderAgentAreaWithChainEffect(t *testing.T) {
 	// チェイン効果付きモジュール作成
-	chainEffect := domain.NewChainEffect(domain.ChainEffectDamageBonus, 25.0)
+	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
 	modules := []*domain.ModuleModel{
 		createTestModuleWithChain("攻撃A", &chainEffect),
 		createTestModuleWithChain("攻撃B", nil),
@@ -178,7 +178,7 @@ func TestGetRecastInfoForAgent(t *testing.T) {
 // TestGetPendingChainEffectForAgent はエージェントチェイン効果取得のテストです。
 func TestGetPendingChainEffectForAgent(t *testing.T) {
 	cm := chain.NewChainEffectManager()
-	chainEffect := domain.NewChainEffect(domain.ChainEffectDamageBonus, 25.0)
+	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
 
 	// チェイン効果を登録
 	cm.RegisterChainEffect(0, &chainEffect, "test_module")
@@ -197,7 +197,7 @@ func TestGetPendingChainEffectForAgent(t *testing.T) {
 
 // TestRenderModuleWithChainEffectBadge はモジュール表示にチェイン効果バッジが含まれるかのテストです。
 func TestRenderModuleWithChainEffectBadge(t *testing.T) {
-	chainEffect := domain.NewChainEffect(domain.ChainEffectDamageBonus, 25.0)
+	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
 	modules := []*domain.ModuleModel{
 		createTestModuleWithChain("攻撃A", &chainEffect),
 		createTestModuleWithChain("攻撃B", nil),
@@ -247,7 +247,7 @@ func TestBattleScreen_RenderRecastProgress(t *testing.T) {
 
 // TestBattleScreen_ChainEffectFeedback はチェイン効果発動フィードバックのテストです。
 func TestBattleScreen_ChainEffectFeedback(t *testing.T) {
-	chainEffect := domain.NewChainEffect(domain.ChainEffectDamageBonus, 25.0)
+	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
 	modules := []*domain.ModuleModel{
 		createTestModuleWithChain("攻撃A", &chainEffect),
 		createTestModuleWithChain("攻撃B", nil),

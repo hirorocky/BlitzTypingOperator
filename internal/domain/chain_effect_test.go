@@ -121,6 +121,7 @@ func TestChainEffect_Equals_異なるDescription(t *testing.T) {
 // TestNewChainEffectWithTemplate はNewChainEffectWithTemplate関数でチェイン効果が正しく作成されることを確認します。
 func TestNewChainEffectWithTemplate(t *testing.T) {
 	effect := NewChainEffectWithTemplate(
+		"test_damage_bonus",
 		ChainEffectDamageBonus,
 		25.0,
 		"次の攻撃のダメージ+%.0f%%",
@@ -148,6 +149,7 @@ func TestNewChainEffectWithTemplate(t *testing.T) {
 // TestChainEffect_イミュータブル性 はChainEffectがイミュータブルであることを確認します。
 func TestChainEffect_イミュータブル性(t *testing.T) {
 	effect := NewChainEffectWithTemplate(
+		"test_heal_bonus",
 		ChainEffectHealBonus,
 		15.0,
 		"次の回復量+%.0f%%",
@@ -212,7 +214,7 @@ func TestNewChainEffectWithTemplate_攻撃強化カテゴリ(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(string(tt.effectType), func(t *testing.T) {
-			effect := NewChainEffectWithTemplate(tt.effectType, tt.value, tt.descTemplate, tt.shortDescTemplate)
+			effect := NewChainEffectWithTemplate("test_effect", tt.effectType, tt.value, tt.descTemplate, tt.shortDescTemplate)
 			if effect.Type != tt.effectType {
 				t.Errorf("Typeが期待値と異なります: got %s, want %s", effect.Type, tt.effectType)
 			}

@@ -59,7 +59,7 @@ func TestSaveLoad_NewFormatPersistence(t *testing.T) {
 				CoreTypeID: "attack_balance",
 				Level:      5,
 			},
-			Modules: []savedata.ModuleInstanceSave{
+			Skills: []savedata.SkillInstanceSave{
 				{TypeID: "physical_lv1", ChainEffect: &savedata.ChainEffectSave{Type: "damage_amp", Value: 25.0}},
 				{TypeID: "magic_lv1"},
 				{TypeID: "heal_lv1", ChainEffect: &savedata.ChainEffectSave{Type: "buff_extend", Value: 3.0}},
@@ -128,13 +128,13 @@ func TestSaveLoad_NewFormatPersistence(t *testing.T) {
 	if agent.Core.CoreTypeID != "attack_balance" {
 		t.Error("エージェントのコアTypeIDが正しく復元されていません")
 	}
-	if len(agent.Modules) != 4 {
-		t.Fatalf("Modules数 expected 4, got %d", len(agent.Modules))
+	if len(agent.Skills) != 4 {
+		t.Fatalf("Modules数 expected 4, got %d", len(agent.Skills))
 	}
-	if agent.Modules[0].ChainEffect == nil || agent.Modules[0].ChainEffect.Type != "damage_amp" {
+	if agent.Skills[0].ChainEffect == nil || agent.Skills[0].ChainEffect.Type != "damage_amp" {
 		t.Error("エージェントのモジュール1のチェイン効果が正しく復元されていません")
 	}
-	if agent.Modules[1].ChainEffect != nil {
+	if agent.Skills[1].ChainEffect != nil {
 		t.Error("エージェントのモジュール2はチェイン効果なしであるべきです")
 	}
 }
@@ -226,7 +226,7 @@ func TestSaveLoad_PassiveSkillDataIntegrity(t *testing.T) {
 				CoreTypeID: "attack_balance",
 				Level:      10,
 			},
-			Modules: []savedata.ModuleInstanceSave{
+			Skills: []savedata.SkillInstanceSave{
 				{TypeID: "m1"},
 				{TypeID: "m2"},
 				{TypeID: "m3"},
@@ -372,7 +372,7 @@ func TestSaveLoad_ComplexAgentData(t *testing.T) {
 				CoreTypeID: "attack_balance",
 				Level:      5,
 			},
-			Modules: []savedata.ModuleInstanceSave{
+			Skills: []savedata.SkillInstanceSave{
 				{TypeID: "physical_lv1", ChainEffect: &savedata.ChainEffectSave{Type: "damage_amp", Value: 25.0}},
 				{TypeID: "magic_lv1", ChainEffect: &savedata.ChainEffectSave{Type: "armor_pierce", Value: 1.0}},
 				{TypeID: "heal_lv1"},
@@ -385,7 +385,7 @@ func TestSaveLoad_ComplexAgentData(t *testing.T) {
 				CoreTypeID: "healer",
 				Level:      3,
 			},
-			Modules: []savedata.ModuleInstanceSave{
+			Skills: []savedata.SkillInstanceSave{
 				{TypeID: "heal_lv2", ChainEffect: &savedata.ChainEffectSave{Type: "heal_amp", Value: 30.0}},
 				{TypeID: "buff_lv2", ChainEffect: &savedata.ChainEffectSave{Type: "regen", Value: 2.0}},
 				{TypeID: "debuff_lv1", ChainEffect: &savedata.ChainEffectSave{Type: "debuff_duration", Value: 4.0}},
@@ -398,7 +398,7 @@ func TestSaveLoad_ComplexAgentData(t *testing.T) {
 				CoreTypeID: "speedster",
 				Level:      7,
 			},
-			Modules: []savedata.ModuleInstanceSave{
+			Skills: []savedata.SkillInstanceSave{
 				{TypeID: "physical_lv3", ChainEffect: &savedata.ChainEffectSave{Type: "life_steal", Value: 15.0}},
 				{TypeID: "buff_lv3", ChainEffect: &savedata.ChainEffectSave{Type: "cooldown_reduce", Value: 20.0}},
 				{TypeID: "debuff_lv2", ChainEffect: &savedata.ChainEffectSave{Type: "double_cast", Value: 10.0}},
@@ -435,8 +435,8 @@ func TestSaveLoad_ComplexAgentData(t *testing.T) {
 		}
 
 		// モジュール数の確認
-		if len(agent.Modules) != 4 {
-			t.Errorf("エージェント %d のModules数 expected 4, got %d", i, len(agent.Modules))
+		if len(agent.Skills) != 4 {
+			t.Errorf("エージェント %d のModules数 expected 4, got %d", i, len(agent.Skills))
 		}
 	}
 
@@ -458,6 +458,7 @@ func TestDomainConversion_ChainEffect(t *testing.T) {
 
 	// ドメインChainEffectへの変換（テンプレート付き）
 	chainEffect := domain.NewChainEffectWithTemplate(
+		"test_damage_bonus",
 		domain.ChainEffectType(chainEffectSave.Type),
 		chainEffectSave.Value,
 		"次の攻撃のダメージ+%.0f%%",

@@ -9,7 +9,7 @@ import (
 )
 
 func TestChainEffectBadge_NewChainEffectBadge(t *testing.T) {
-	effect := domain.NewChainEffect(domain.ChainEffectDamageBonus, 25.0)
+	effect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
 	badge := NewChainEffectBadge(&effect)
 
 	if badge == nil {
@@ -54,7 +54,7 @@ func TestChainEffectBadge_GetCategoryIcon(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			effect := domain.NewChainEffect(tt.effectType, 10.0)
+			effect := domain.NewChainEffect("test_effect", tt.effectType, 10.0)
 			badge := NewChainEffectBadge(&effect)
 
 			got := badge.GetCategoryIcon()
@@ -66,7 +66,7 @@ func TestChainEffectBadge_GetCategoryIcon(t *testing.T) {
 }
 
 func TestChainEffectBadge_Render(t *testing.T) {
-	effect := domain.NewChainEffect(domain.ChainEffectDamageBonus, 25.0)
+	effect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
 	badge := NewChainEffectBadge(&effect)
 
 	result := badge.Render()
@@ -78,7 +78,7 @@ func TestChainEffectBadge_Render(t *testing.T) {
 }
 
 func TestChainEffectBadge_RenderWithValue(t *testing.T) {
-	effect := domain.NewChainEffectWithTemplate(domain.ChainEffectDamageBonus, 25.0,
+	effect := domain.NewChainEffectWithTemplate("test_damage_bonus", domain.ChainEffectDamageBonus, 25.0,
 		"次の攻撃のダメージ+%.0f%%", "次攻撃ダメ+%.0f%%")
 	badge := NewChainEffectBadge(&effect)
 
@@ -105,7 +105,7 @@ func TestChainEffectBadge_RenderNilEffect(t *testing.T) {
 }
 
 func TestChainEffectBadge_GetDescription(t *testing.T) {
-	effect := domain.NewChainEffectWithTemplate(domain.ChainEffectDamageBonus, 25.0,
+	effect := domain.NewChainEffectWithTemplate("test_damage_bonus", domain.ChainEffectDamageBonus, 25.0,
 		"次の攻撃のダメージ+%.0f%%", "次攻撃ダメ+%.0f%%")
 	badge := NewChainEffectBadge(&effect)
 

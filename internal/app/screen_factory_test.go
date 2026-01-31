@@ -80,18 +80,6 @@ func TestScreenFactory_CreateBattleSelectScreen(t *testing.T) {
 	}
 }
 
-// TestScreenFactory_CreateAgentManagementScreen はエージェント管理画面の生成を検証します
-func TestScreenFactory_CreateAgentManagementScreen(t *testing.T) {
-	model := NewRootModel("", masterdata.EmbeddedData, false)
-	factory := NewScreenFactory(model.GameState())
-
-	mockProvider := &mockInventoryProvider{}
-	screen := factory.CreateAgentManagementScreen(mockProvider, false, nil)
-	if screen == nil {
-		t.Fatal("CreateAgentManagementScreen() returned nil")
-	}
-}
-
 // TestScreenFactory_CreateEncyclopediaScreen は図鑑画面の生成を検証します
 func TestScreenFactory_CreateEncyclopediaScreen(t *testing.T) {
 	model := NewRootModel("", masterdata.EmbeddedData, false)

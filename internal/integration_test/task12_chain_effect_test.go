@@ -90,7 +90,7 @@ func TestChainEffect_AllTypes(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// ChainEffect作成（説明文はテンプレートから別途生成するため、ここでは簡易コンストラクタを使用）
-			effect := domain.NewChainEffect(tc.effectType, tc.value)
+			effect := domain.NewChainEffect("test_effect", tc.effectType, tc.value)
 
 			// Type確認
 			if effect.Type != tc.effectType {
@@ -115,7 +115,7 @@ func TestChainEffect_AllTypes(t *testing.T) {
 func TestChainEffect_AttackCategory(t *testing.T) {
 	t.Run("DamageAmp", func(t *testing.T) {
 		// ダメージアンプ: 効果中の攻撃ダメージ+X%
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectDamageAmp, 25.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectDamageAmp, 25.0,
 			"効果中の攻撃ダメージ+%.0f%%", "攻撃ダメ+%.0f%%")
 
 		if effect.Type != domain.ChainEffectDamageAmp {
@@ -136,7 +136,7 @@ func TestChainEffect_AttackCategory(t *testing.T) {
 
 	t.Run("ArmorPierce", func(t *testing.T) {
 		// アーマーピアス: 効果中の攻撃が防御バフ無視（プレースホルダなし）
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectArmorPierce, 1.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectArmorPierce, 1.0,
 			"効果中の攻撃が防御バフ無視", "防御バフ無視")
 
 		if effect.Type != domain.ChainEffectArmorPierce {
@@ -153,7 +153,7 @@ func TestChainEffect_AttackCategory(t *testing.T) {
 
 	t.Run("LifeSteal", func(t *testing.T) {
 		// ライフスティール: 効果中の攻撃ダメージのX%回復
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectLifeSteal, 10.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectLifeSteal, 10.0,
 			"効果中の攻撃ダメージの%.0f%%回復", "与ダメの%.0f%%回復")
 
 		if effect.Type != domain.ChainEffectLifeSteal {
@@ -170,7 +170,7 @@ func TestChainEffect_AttackCategory(t *testing.T) {
 func TestChainEffect_DefenseCategory(t *testing.T) {
 	t.Run("DamageCut", func(t *testing.T) {
 		// ダメージカット: 効果中の被ダメージ-X%
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectDamageCut, 25.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectDamageCut, 25.0,
 			"効果中の被ダメージ-%.0f%%", "被ダメ-%.0f%%")
 
 		if effect.Type != domain.ChainEffectDamageCut {
@@ -187,7 +187,7 @@ func TestChainEffect_DefenseCategory(t *testing.T) {
 
 	t.Run("Evasion", func(t *testing.T) {
 		// イベイジョン: 効果中X%で攻撃回避
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectEvasion, 10.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectEvasion, 10.0,
 			"効果中%.0f%%で攻撃回避", "%.0f%%回避")
 
 		expectedDesc := "効果中10%で攻撃回避"
@@ -198,7 +198,7 @@ func TestChainEffect_DefenseCategory(t *testing.T) {
 
 	t.Run("Reflect", func(t *testing.T) {
 		// リフレクト: 効果中被ダメージの X%反射
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectReflect, 15.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectReflect, 15.0,
 			"効果中被ダメージの%.0f%%反射", "被ダメ%.0f%%反射")
 
 		expectedDesc := "効果中被ダメージの15%反射"
@@ -209,7 +209,7 @@ func TestChainEffect_DefenseCategory(t *testing.T) {
 
 	t.Run("Regen", func(t *testing.T) {
 		// リジェネ: 効果中毎秒HP X%回復
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectRegen, 2.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectRegen, 2.0,
 			"効果中毎秒HP%.0f%%回復", "毎秒HP%.0f%%回復")
 
 		expectedDesc := "効果中毎秒HP2%回復"
@@ -223,7 +223,7 @@ func TestChainEffect_DefenseCategory(t *testing.T) {
 func TestChainEffect_HealCategory(t *testing.T) {
 	t.Run("HealAmp", func(t *testing.T) {
 		// ヒールアンプ: 効果中の回復量+X%
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectHealAmp, 25.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectHealAmp, 25.0,
 			"効果中の回復量+%.0f%%", "回復量+%.0f%%")
 
 		if effect.Type.Category() != domain.ChainEffectCategoryHeal {
@@ -237,7 +237,7 @@ func TestChainEffect_HealCategory(t *testing.T) {
 
 	t.Run("Overheal", func(t *testing.T) {
 		// オーバーヒール: 効果中の超過回復を一時HPに（プレースホルダなし）
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectOverheal, 1.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectOverheal, 1.0,
 			"効果中の超過回復を一時HPに", "超過回復→一時HP")
 
 		expectedDesc := "効果中の超過回復を一時HPに"
@@ -251,7 +251,7 @@ func TestChainEffect_HealCategory(t *testing.T) {
 func TestChainEffect_TypingCategory(t *testing.T) {
 	t.Run("TimeExtend", func(t *testing.T) {
 		// タイムエクステンド: 効果中のタイピング制限時間+X秒
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectTimeExtend, 3.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectTimeExtend, 3.0,
 			"効果中のタイピング制限時間+%.0f秒", "入力時間+%.0f秒")
 
 		if effect.Type.Category() != domain.ChainEffectCategoryTyping {
@@ -265,7 +265,7 @@ func TestChainEffect_TypingCategory(t *testing.T) {
 
 	t.Run("AutoCorrect", func(t *testing.T) {
 		// オートコレクト: 効果中ミスX回まで無視
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectAutoCorrect, 2.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectAutoCorrect, 2.0,
 			"効果中ミス%.0f回まで無視", "ミス%.0f回無視")
 
 		expectedDesc := "効果中ミス2回まで無視"
@@ -279,7 +279,7 @@ func TestChainEffect_TypingCategory(t *testing.T) {
 func TestChainEffect_RecastCategory(t *testing.T) {
 	t.Run("CooldownReduce", func(t *testing.T) {
 		// クールダウンリデュース: 効果中発生した他エージェントのリキャスト時間X%短縮
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectCooldownReduce, 20.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectCooldownReduce, 20.0,
 			"効果中発生した他エージェントのリキャスト時間%.0f%%短縮", "他CD%.0f%%短縮")
 
 		if effect.Type.Category() != domain.ChainEffectCategoryRecast {
@@ -296,7 +296,7 @@ func TestChainEffect_RecastCategory(t *testing.T) {
 func TestChainEffect_EffectExtendCategory(t *testing.T) {
 	t.Run("BuffDuration", func(t *testing.T) {
 		// バフデュレーション: 効果中のバフスキル効果時間+X秒
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectBuffDuration, 5.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectBuffDuration, 5.0,
 			"効果中のバフスキル効果時間+%.0f秒", "バフ延長+%.0f秒")
 
 		if effect.Type.Category() != domain.ChainEffectCategoryEffectExtend {
@@ -310,7 +310,7 @@ func TestChainEffect_EffectExtendCategory(t *testing.T) {
 
 	t.Run("DebuffDuration", func(t *testing.T) {
 		// デバフデュレーション: 効果中のデバフスキル効果時間+X秒
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectDebuffDuration, 5.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectDebuffDuration, 5.0,
 			"効果中のデバフスキル効果時間+%.0f秒", "デバフ延長+%.0f秒")
 
 		expectedDesc := "効果中のデバフスキル効果時間+5秒"
@@ -321,7 +321,7 @@ func TestChainEffect_EffectExtendCategory(t *testing.T) {
 
 	t.Run("BuffExtend", func(t *testing.T) {
 		// バフ延長
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectBuffExtend, 5.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectBuffExtend, 5.0,
 			"バフ効果時間+%.0f秒", "バフ時間+%.0f秒")
 
 		expectedDesc := "バフ効果時間+5秒"
@@ -332,7 +332,7 @@ func TestChainEffect_EffectExtendCategory(t *testing.T) {
 
 	t.Run("DebuffExtend", func(t *testing.T) {
 		// デバフ延長
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectDebuffExtend, 4.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectDebuffExtend, 4.0,
 			"デバフ効果時間+%.0f秒", "デバフ時間+%.0f秒")
 
 		expectedDesc := "デバフ効果時間+4秒"
@@ -346,7 +346,7 @@ func TestChainEffect_EffectExtendCategory(t *testing.T) {
 func TestChainEffect_SpecialCategory(t *testing.T) {
 	t.Run("DoubleCast", func(t *testing.T) {
 		// ダブルキャスト: 効果中X%でスキル2回発動
-		effect := domain.NewChainEffectWithTemplate(domain.ChainEffectDoubleCast, 10.0,
+		effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectDoubleCast, 10.0,
 			"効果中%.0f%%でスキル2回発動", "%.0f%%で2回発動")
 
 		if effect.Type.Category() != domain.ChainEffectCategorySpecial {
@@ -361,10 +361,10 @@ func TestChainEffect_SpecialCategory(t *testing.T) {
 
 // TestChainEffect_Equality はチェイン効果の等価性判定を検証します。
 func TestChainEffect_Equality(t *testing.T) {
-	effect1 := domain.NewChainEffect(domain.ChainEffectDamageAmp, 25.0)
-	effect2 := domain.NewChainEffect(domain.ChainEffectDamageAmp, 25.0)
-	effect3 := domain.NewChainEffect(domain.ChainEffectDamageAmp, 30.0)
-	effect4 := domain.NewChainEffect(domain.ChainEffectDamageCut, 25.0)
+	effect1 := domain.NewChainEffect("test_effect", domain.ChainEffectDamageAmp, 25.0)
+	effect2 := domain.NewChainEffect("test_effect", domain.ChainEffectDamageAmp, 25.0)
+	effect3 := domain.NewChainEffect("test_effect", domain.ChainEffectDamageAmp, 30.0)
+	effect4 := domain.NewChainEffect("test_effect", domain.ChainEffectDamageCut, 25.0)
 
 	// 同じ効果は等価
 	if !effect1.Equals(effect2) {
@@ -403,7 +403,7 @@ func TestChainEffect_ValueCalculation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			effect := domain.NewChainEffect(tc.effectType, tc.value)
+			effect := domain.NewChainEffect("test_effect", tc.effectType, tc.value)
 
 			if effect.Value != tc.value {
 				t.Errorf("Value expected %f, got %f", tc.value, effect.Value)
@@ -420,7 +420,7 @@ func TestChainEffect_ValueCalculation(t *testing.T) {
 // TestChainEffect_ModuleIntegration はモジュールへのチェイン効果統合を検証します。
 func TestChainEffect_ModuleIntegration(t *testing.T) {
 	// チェイン効果付きモジュール
-	chainEffect := domain.NewChainEffect(domain.ChainEffectDamageAmp, 25.0)
+	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageAmp, 25.0)
 	module := newTestModuleWithChainEffectForChain(
 		"physical_lv1", "物理打撃Lv1",
 		[]string{"physical_low"}, 1.0, "STR", "物理ダメージ",
@@ -507,7 +507,7 @@ func TestChainEffect_AllDescriptionsGenerated(t *testing.T) {
 
 	for effectType, templates := range descTemplates {
 		t.Run(string(effectType), func(t *testing.T) {
-			effect := domain.NewChainEffectWithTemplate(effectType, 10.0, templates.desc, templates.shortDesc)
+			effect := domain.NewChainEffectWithTemplate("test_effect", effectType, 10.0, templates.desc, templates.shortDesc)
 
 			// 説明文が生成されていることを確認
 			if effect.Description == "" {
@@ -530,7 +530,7 @@ func TestChainEffect_AllDescriptionsGenerated(t *testing.T) {
 // TestChainEffect_ZeroValue はゼロ値のチェイン効果を検証します。
 func TestChainEffect_ZeroValue(t *testing.T) {
 	// ゼロ値でも説明文が生成されることを確認
-	effect := domain.NewChainEffectWithTemplate(domain.ChainEffectDamageAmp, 0,
+	effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectDamageAmp, 0,
 		"効果中の攻撃ダメージ+%.0f%%", "攻撃ダメ+%.0f%%")
 
 	if effect.Description == "" {
@@ -546,7 +546,7 @@ func TestChainEffect_ZeroValue(t *testing.T) {
 // TestChainEffect_NegativeValue は負の値のチェイン効果を検証します。
 func TestChainEffect_NegativeValue(t *testing.T) {
 	// 負の値でも動作することを確認（通常は使用しないが）
-	effect := domain.NewChainEffect(domain.ChainEffectDamageAmp, -10.0)
+	effect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageAmp, -10.0)
 
 	if effect.Value != -10.0 {
 		t.Errorf("Value expected -10.0, got %f", effect.Value)
@@ -555,7 +555,7 @@ func TestChainEffect_NegativeValue(t *testing.T) {
 
 // TestChainEffect_LargeValue は大きな値のチェイン効果を検証します。
 func TestChainEffect_LargeValue(t *testing.T) {
-	effect := domain.NewChainEffectWithTemplate(domain.ChainEffectDamageAmp, 1000.0,
+	effect := domain.NewChainEffectWithTemplate("test_effect", domain.ChainEffectDamageAmp, 1000.0,
 		"効果中の攻撃ダメージ+%.0f%%", "攻撃ダメ+%.0f%%")
 
 	if effect.Value != 1000.0 {
@@ -571,7 +571,7 @@ func TestChainEffect_LargeValue(t *testing.T) {
 // TestChainEffect_DecimalValue は小数値のチェイン効果を検証します。
 func TestChainEffect_DecimalValue(t *testing.T) {
 	// 小数値の場合、説明文では整数に丸められる
-	effect := domain.NewChainEffect(domain.ChainEffectRegen, 1.5)
+	effect := domain.NewChainEffect("test_effect", domain.ChainEffectRegen, 1.5)
 
 	if effect.Value != 1.5 {
 		t.Errorf("Value expected 1.5, got %f", effect.Value)

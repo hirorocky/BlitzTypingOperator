@@ -5,6 +5,7 @@ import (
 
 	"hirorocky/type-battle/internal/domain"
 	"hirorocky/type-battle/internal/infra/masterdata"
+	"hirorocky/type-battle/internal/usecase/slot"
 )
 
 // DebugInventoryProvider はデバッグモード用のInventoryProviderです。
@@ -19,6 +20,9 @@ type DebugInventoryProvider struct {
 	// 作成されたエージェント（メモリ上で管理）
 	agents         []*domain.AgentModel
 	equippedAgents [3]*domain.AgentModel
+
+	// v3.0.0: スロットマネージャーへの参照（装備エージェント取得用）
+	slotManager *slot.AgentSlotManager
 }
 
 // NewDebugInventoryProvider は新しいDebugInventoryProviderを作成します。
@@ -35,6 +39,12 @@ func NewDebugInventoryProvider(
 		passiveSkills: passiveSkills,
 		agents:        make([]*domain.AgentModel, 0),
 	}
+}
+
+// SetSlotManager はスロットマネージャーを設定します。
+// v3.0.0: 装備エージェント取得でAgentSlotManagerを使用するために必要です。
+func (p *DebugInventoryProvider) SetSlotManager(slotMgr *slot.AgentSlotManager) {
+	p.slotManager = slotMgr
 }
 
 // ==================== InventoryProvider インターフェース実装 ====================
@@ -57,7 +67,14 @@ func (p *DebugInventoryProvider) GetAgents() []*domain.AgentModel {
 }
 
 // GetEquippedAgents は装備中のエージェント一覧を返します。
+// v3.0.0: slotManagerがある場合はそちらから取得します。
 func (p *DebugInventoryProvider) GetEquippedAgents() []*domain.AgentModel {
+	// v3.0.0: slotManagerがある場合はそちらを優先
+	if p.slotManager != nil {
+		return p.slotManager.BuildAgentsForBattle()
+	}
+
+	// 後方互換: 旧来のequippedAgents配列から取得
 	result := make([]*domain.AgentModel, 0, 3)
 	for _, agent := range p.equippedAgents {
 		if agent != nil {

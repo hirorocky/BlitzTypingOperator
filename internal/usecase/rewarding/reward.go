@@ -104,6 +104,7 @@ func (p *ChainEffectPool) GenerateRandomEffect() *domain.ChainEffect {
 	}
 
 	effect := domain.NewChainEffectWithTemplate(
+		selected.ID,
 		selected.EffectType,
 		value,
 		selected.Description,
@@ -180,17 +181,12 @@ type RewardResult struct {
 }
 
 // InventoryWarning はインベントリ警告を表す構造体です。
+// 注: 新しいインベントリシステムでは容量制限がないため、この構造体は後方互換性のために残されています。
 type InventoryWarning struct {
-	// CoreInventoryFull はコアインベントリが満杯かどうかです。
-	CoreInventoryFull bool
-
-	// ModuleInventoryFull はモジュールインベントリが満杯かどうかです。
-	ModuleInventoryFull bool
-
 	// WarningMessage は警告メッセージです。
 	WarningMessage string
 
-	// SuggestDiscard は破棄を促すかどうかです。
+	// SuggestDiscard は破棄を促すかどうかです（現在は未使用）。
 	SuggestDiscard bool
 }
 
@@ -386,21 +382,13 @@ func (c *RewardCalculator) GetEligibleModuleTypes(enemyLevel int) []ModuleDropIn
 }
 
 // CheckInventoryFull はインベントリの満杯状態をチェックします。
+// 注: 新しいインベントリシステムでは容量制限がないため、常に空の警告を返します。
 func (c *RewardCalculator) CheckInventoryFull(
 	coreInv *domain.CoreInventory,
-	moduleInv *domain.ModuleInventory,
+	skillInv *domain.SkillInventory,
 ) *InventoryWarning {
-	warning := &InventoryWarning{
-		CoreInventoryFull:   coreInv.IsFull(),
-		ModuleInventoryFull: moduleInv.IsFull(),
-	}
-
-	if warning.CoreInventoryFull || warning.ModuleInventoryFull {
-		warning.WarningMessage = "インベントリが満杯です。不要なアイテムを破棄してください。"
-		warning.SuggestDiscard = true
-	}
-
-	return warning
+	// 新しいシステムでは容量制限がないため、警告は不要
+	return &InventoryWarning{}
 }
 
 // CreateTempStorage は一時保管を作成します。
@@ -553,6 +541,7 @@ func (c *RewardCalculator) generateLevelBasedChainEffect(enemyLevel int) *domain
 	}
 
 	effect := domain.NewChainEffectWithTemplate(
+		selected.ID,
 		selected.EffectType,
 		value,
 		selected.Description,
@@ -562,52 +551,38 @@ func (c *RewardCalculator) generateLevelBasedChainEffect(enemyLevel int) *domain
 }
 
 // AddRewardsToInventory はドロップしたアイテムをインベントリに追加します。
-// インベントリが満杯の場合は一時保管に追加します。
+// 新しいインベントリシステムではTypeIDベースでユニーク管理されるため、
+// 同一TypeIDのより高いレベルのみが保存されます（コア）。
+// スキルは保有状態とチェイン効果バリエーションが追加されます。
 func AddRewardsToInventory(
 	result *RewardResult,
 	coreInv *domain.CoreInventory,
-	moduleInv *domain.ModuleInventory,
-	tempStorage *TempStorage,
+	skillInv *domain.SkillInventory,
 ) *InventoryWarning {
-	warning := &InventoryWarning{}
-
-	// コアをインベントリに追加
+	// コアをインベントリに追加（TypeID + Level）
 	for _, core := range result.DroppedCores {
-		if coreInv.IsFull() {
-			warning.CoreInventoryFull = true
-			warning.SuggestDiscard = true
-			tempStorage.AddCore(core)
-		} else {
-			if err := coreInv.Add(core); err != nil {
-				slog.Error("報酬コアのインベントリ追加に失敗",
-					slog.String("core_id", core.ID),
-					slog.String("core_type", core.Type.ID),
-					slog.Any("error", err),
-				)
-			}
+		updated := coreInv.AddCore(core.Type.ID, core.Level)
+		if updated {
+			slog.Info("コアをインベントリに追加",
+				slog.String("core_type_id", core.Type.ID),
+				slog.Int("level", core.Level),
+			)
 		}
 	}
 
-	// モジュールをインベントリに追加
+	// モジュール（スキル）をインベントリに追加（TypeID + ChainEffectID）
 	for _, module := range result.DroppedModules {
-		if moduleInv.IsFull() {
-			warning.ModuleInventoryFull = true
-			warning.SuggestDiscard = true
-			tempStorage.AddModule(module)
-		} else {
-			if err := moduleInv.Add(module); err != nil {
-				slog.Error("報酬モジュールのインベントリ追加に失敗",
-					slog.String("module_type_id", module.TypeID),
-					slog.String("module_name", module.Name()),
-					slog.Any("error", err),
-				)
-			}
+		chainEffectID := ""
+		if module.HasChainEffect() {
+			chainEffectID = module.ChainEffect.ID
 		}
+		skillInv.AddSkill(module.TypeID, chainEffectID)
+		slog.Info("スキルをインベントリに追加",
+			slog.String("skill_type_id", module.TypeID),
+			slog.String("chain_effect_id", chainEffectID),
+		)
 	}
 
-	if warning.CoreInventoryFull || warning.ModuleInventoryFull {
-		warning.WarningMessage = "インベントリが満杯です。一部のアイテムは一時保管されました。"
-	}
-
-	return warning
+	// 新しいシステムでは容量制限がないため、警告は不要
+	return &InventoryWarning{}
 }

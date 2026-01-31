@@ -398,14 +398,14 @@ func TestE2E_AgentSynthesisFlow(t *testing.T) {
 		t.Errorf("エージェントは%d個のモジュールを持つべきです", len(selectedModules))
 	}
 
-	// インベントリに追加（v1.0.0形式: コア情報とチェイン効果を埋め込み）
-	modules := make([]savedata.ModuleInstanceSave, len(newAgent.Modules))
+	// インベントリに追加（v2.0.0形式: コア情報とチェイン効果を埋め込み）
+	skills := make([]savedata.SkillInstanceSave, len(newAgent.Modules))
 	for i, m := range newAgent.Modules {
-		modules[i] = savedata.ModuleInstanceSave{
+		skills[i] = savedata.SkillInstanceSave{
 			TypeID: m.TypeID,
 		}
 		if m.ChainEffect != nil {
-			modules[i].ChainEffect = &savedata.ChainEffectSave{
+			skills[i].ChainEffect = &savedata.ChainEffectSave{
 				Type:  string(m.ChainEffect.Type),
 				Value: m.ChainEffect.Value,
 			}
@@ -417,7 +417,7 @@ func TestE2E_AgentSynthesisFlow(t *testing.T) {
 			CoreTypeID: newAgent.Core.TypeID,
 			Level:      newAgent.Core.Level,
 		},
-		Modules: modules,
+		Skills: skills,
 	})
 
 	// エージェント装備（空きスロットを探して装備）

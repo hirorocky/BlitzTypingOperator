@@ -22,6 +22,13 @@ type AgentProvider interface {
 	GetEquippedAgents() []*domain.AgentModel
 }
 
+// SlotReadinessProvider はエージェントスロットの準備状態を提供するインターフェースです。
+// v3.0.0 AgentSlotManager で実装されます。
+type SlotReadinessProvider interface {
+	// GetReadySlotCount はバトルに使用可能なスロット数を返します。
+	GetReadySlotCount() int
+}
+
 // DefeatedEnemyProvider は撃破済み敵情報を提供するインターフェースです。
 // BattleSelectScreenがレベル選択の制約を判断するために使用します。
 type DefeatedEnemyProvider interface {
@@ -43,7 +50,8 @@ type DefeatedEnemyProvider interface {
 type HomeScreen struct {
 	menu            *components.Menu
 	maxLevelReached int
-	agentProvider   AgentProvider // 装備エージェントを取得するプロバイダー
+	agentProvider   AgentProvider         // 装備エージェントを取得するプロバイダー
+	slotProvider    SlotReadinessProvider // v3.0.0 スロット準備状態プロバイダー
 	styles          *styles.GameStyles
 	width           int
 	height          int
@@ -77,7 +85,8 @@ func NewHomeScreen(maxLevelReached int, agentProvider AgentProvider) *HomeScreen
 
 	// UI-Improvement Requirement 1.6, 5.3: 装備がない場合はバトル選択を無効化
 	items := []components.MenuItem{
-		{Label: "エージェント管理", Value: "agent_management"},
+		{Label: "エージェントカスタマイズ", Value: "agent_customization"},
+		{Label: "インベントリ", Value: "inventory"},
 		{Label: "バトル選択", Value: "battle_select", Disabled: !hasEquippedAgents},
 		{Label: "図鑑", Value: "encyclopedia"},
 		{Label: "統計/実績", Value: "stats_achievements"},
@@ -354,10 +363,21 @@ func (s *HomeScreen) SetMaxLevelReached(level int) {
 	s.maxLevelReached = level
 }
 
+// SetSlotProvider はスロット準備状態プロバイダーを設定します。
+// v3.0.0 AgentSlotManager を使用してバトル選択の有効/無効を判断します。
+func (s *HomeScreen) SetSlotProvider(provider SlotReadinessProvider) {
+	s.slotProvider = provider
+}
+
 // RefreshMenuState はメニューの有効/無効状態を最新の装備状態に基づいて更新します。
 func (s *HomeScreen) RefreshMenuState() {
 	hasEquippedAgents := false
-	if s.agentProvider != nil {
+
+	// v3.0.0: slotProviderがある場合は優先使用（AgentSlotManager経由）
+	if s.slotProvider != nil {
+		hasEquippedAgents = s.slotProvider.GetReadySlotCount() > 0
+	} else if s.agentProvider != nil {
+		// 後方互換: 旧来のagentProvider経由
 		equippedAgents := s.agentProvider.GetEquippedAgents()
 		hasEquippedAgents = len(equippedAgents) > 0
 	}

@@ -97,6 +97,7 @@ func (i *NewGameInitializer) CreateInitialAgents() []*domain.AgentModel {
 				}
 				if chainEffectDef != nil {
 					ce := domain.NewChainEffectWithTemplate(
+						chainEffectDef.ID,
 						convertChainEffectType(modData.ChainEffectType),
 						modData.ChainEffectValue,
 						chainEffectDef.Description,
@@ -169,28 +170,67 @@ func convertChainEffectType(s string) domain.ChainEffectType {
 }
 
 // InitializeNewGame は新規ゲームを初期化してセーブデータを作成します。
-
-// ID化最適化に対応：フルオブジェクトではなくID参照を保存
+// v3.0.0形式：ユニークインベントリ + エージェントスロットシステム
 func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 	// 基本のセーブデータを作成
 	saveData := savedata.NewSaveData()
 
-	// 初期エージェントを作成
+	// v3.0.0: 初期コアとスキルをユニークインベントリに追加
+	// コア：オールラウンダーLv1
+	// スキル：軽斬撃、応急手当、気合い溜め
+	saveData.Inventory.UniqueCores.Cores["all_rounder"] = 1
+
+	saveData.Inventory.UniqueSkills.Skills["physical_strike_lv1"] = []string{}
+	saveData.Inventory.UniqueSkills.Skills["heal_lv1"] = []string{}
+	saveData.Inventory.UniqueSkills.Skills["str_buff_lv1"] = []string{}
+
+	// v3.0.0: 初期エージェントスロット構成
+	// 3スロットにオールラウンダーLv1 + 1スキルずつ分散
+	saveData.Player.AgentSlots[0] = savedata.AgentSlotSave{
+		CoreTypeID: "all_rounder",
+		CoreLevel:  1,
+		Skills: [4]savedata.SkillSlotSaveCfg{
+			{TypeID: "physical_strike_lv1"},
+			{},
+			{},
+			{},
+		},
+	}
+	saveData.Player.AgentSlots[1] = savedata.AgentSlotSave{
+		CoreTypeID: "all_rounder",
+		CoreLevel:  1,
+		Skills: [4]savedata.SkillSlotSaveCfg{
+			{TypeID: "heal_lv1"},
+			{},
+			{},
+			{},
+		},
+	}
+	saveData.Player.AgentSlots[2] = savedata.AgentSlotSave{
+		CoreTypeID: "all_rounder",
+		CoreLevel:  1,
+		Skills: [4]savedata.SkillSlotSaveCfg{
+			{TypeID: "str_buff_lv1"},
+			{},
+			{},
+			{},
+		},
+	}
+
+	// 旧形式の初期化（後方互換性のため残す）
 	initialAgents := i.CreateInitialAgents()
 
-	// インベントリにエージェントを追加（コア情報を直接埋め込み）
 	agentInstances := make([]savedata.AgentInstanceSave, 0, len(initialAgents))
 	equippedAgentIDs := [3]string{"", "", ""}
 
 	for idx, agent := range initialAgents {
-		modules := make([]savedata.ModuleInstanceSave, len(agent.Modules))
-		for modIdx, m := range agent.Modules {
-			modules[modIdx] = savedata.ModuleInstanceSave{
+		skills := make([]savedata.SkillInstanceSave, len(agent.Modules))
+		for skillIdx, m := range agent.Modules {
+			skills[skillIdx] = savedata.SkillInstanceSave{
 				TypeID: m.TypeID,
 			}
-			// チェイン効果があれば変換
 			if m.ChainEffect != nil {
-				modules[modIdx].ChainEffect = &savedata.ChainEffectSave{
+				skills[skillIdx].ChainEffect = &savedata.ChainEffectSave{
 					Type:  string(m.ChainEffect.Type),
 					Value: m.ChainEffect.Value,
 				}
@@ -203,24 +243,16 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 				CoreTypeID: agent.Core.TypeID,
 				Level:      agent.Core.Level,
 			},
-			Modules: modules,
+			Skills: skills,
 		})
 
-		// 最大3体まで装備スロットに設定
 		if idx < 3 {
 			equippedAgentIDs[idx] = agent.ID
 		}
 	}
 
 	saveData.Inventory.AgentInstances = agentInstances
-
-	// インベントリのコアは空（エージェントのコアはエージェント内に保持される）
 	saveData.Inventory.CoreInstances = []savedata.CoreInstanceSave{}
-
-	// コアとモジュールはエージェント合成で消費されるため、インベントリには追加しない
-	// （エージェントに含まれているコアとモジュールは参照として保持される）
-
-	// 初期エージェントを装備
 	saveData.Player.EquippedAgentIDs = equippedAgentIDs
 
 	return saveData
@@ -247,19 +279,19 @@ func (i *NewGameInitializer) CreateNewGameWithExtraItems() *savedata.SaveData {
 		Level:      extraAgent.Core.Level,
 	})
 
-	// 追加のモジュールをインベントリにModuleInstancesとして追加
-	for _, module := range extraAgent.Modules {
-		modSave := savedata.ModuleInstanceSave{
-			TypeID: module.TypeID,
+	// 追加のスキルをインベントリにModuleInstancesとして追加
+	for _, skill := range extraAgent.Modules {
+		skillSave := savedata.SkillInstanceSave{
+			TypeID: skill.TypeID,
 		}
 		// チェイン効果があれば変換
-		if module.ChainEffect != nil {
-			modSave.ChainEffect = &savedata.ChainEffectSave{
-				Type:  string(module.ChainEffect.Type),
-				Value: module.ChainEffect.Value,
+		if skill.ChainEffect != nil {
+			skillSave.ChainEffect = &savedata.ChainEffectSave{
+				Type:  string(skill.ChainEffect.Type),
+				Value: skill.ChainEffect.Value,
 			}
 		}
-		saveData.Inventory.ModuleInstances = append(saveData.Inventory.ModuleInstances, modSave)
+		saveData.Inventory.ModuleInstances = append(saveData.Inventory.ModuleInstances, skillSave)
 	}
 
 	return saveData

@@ -28,9 +28,7 @@ func TestNewGameState(t *testing.T) {
 		t.Error("Inventory() returned nil")
 	}
 
-	if gs.AgentManager() == nil {
-		t.Error("AgentManager() returned nil")
-	}
+	// v3.0.0: AgentManager()は削除されました
 
 	if gs.Statistics() == nil {
 		t.Error("Statistics() returned nil")
@@ -137,8 +135,8 @@ func TestAddEncounteredEnemy(t *testing.T) {
 func TestPreparePlayerForBattle(t *testing.T) {
 	gs := NewGameStateForTest()
 
-	// プレイヤーの準備
-	gs.PreparePlayerForBattle()
+	// v3.0.0: 空のエージェントリストでバトル準備
+	gs.PreparePlayerForBattle([]*domain.AgentModel{})
 
 	player := gs.Player()
 	// HPが設定されていることを確認（最小でもBaseHP）
