@@ -67,6 +67,9 @@ type AgentSlotManager struct {
 	// passiveSkills はPassiveSkillマスタデータへの参照
 	passiveSkills map[string]domain.PassiveSkill
 
+	// chainEffects はChainEffectマスタデータへの参照（ID→ChainEffect）
+	chainEffects map[string]domain.ChainEffect
+
 	// locked はバトル中のスロット変更禁止フラグ
 	locked bool
 }
@@ -78,6 +81,7 @@ func NewAgentSlotManager(
 	coreTypes map[string]domain.CoreType,
 	skillTypes map[string]domain.SkillType,
 	passiveSkills map[string]domain.PassiveSkill,
+	chainEffects map[string]domain.ChainEffect,
 ) *AgentSlotManager {
 	// 3つの空スロットを初期化
 	var slots [MaxAgentSlotCount]*domain.AgentSlot
@@ -92,6 +96,7 @@ func NewAgentSlotManager(
 		coreTypes:     coreTypes,
 		skillTypes:    skillTypes,
 		passiveSkills: passiveSkills,
+		chainEffects:  chainEffects,
 	}
 }
 
@@ -482,10 +487,13 @@ func (m *AgentSlotManager) buildModuleFromConfig(config *domain.SkillSlotConfig)
 		return nil
 	}
 
-	// チェイン効果の取得（現時点ではマスタデータからの取得は行わない）
-	// チェイン効果はChainEffectIDがあれば将来的に適用
+	// チェイン効果の取得
 	var chainEffect *domain.ChainEffect = nil
-	// TODO: ChainEffectIDからChainEffectを構築する場合はここで実装
+	if config.ChainEffectID != "" && m.chainEffects != nil {
+		if ce, exists := m.chainEffects[config.ChainEffectID]; exists {
+			chainEffect = &ce
+		}
+	}
 
 	return domain.NewSkillFromType(skillType, chainEffect)
 }

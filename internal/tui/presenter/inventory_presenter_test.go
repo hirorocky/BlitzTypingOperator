@@ -19,6 +19,7 @@ func TestInventoryProviderAdapter(t *testing.T) {
 		map[string]domain.CoreType{},
 		map[string]domain.SkillType{},
 		map[string]domain.PassiveSkill{},
+		nil, // chainEffects
 	)
 
 	adapter := NewInventoryProviderAdapter(slotMgr)
@@ -81,6 +82,7 @@ func TestInventoryProviderAdapter_WithData(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		map[string]domain.PassiveSkill{},
+		nil, // chainEffects
 	)
 
 	// スロットにコアを設定
@@ -119,6 +121,7 @@ func TestInventoryProviderAdapter_AddAgent(t *testing.T) {
 		map[string]domain.CoreType{},
 		map[string]domain.SkillType{},
 		map[string]domain.PassiveSkill{},
+		nil, // chainEffects
 	)
 
 	adapter := NewInventoryProviderAdapter(slotMgr)

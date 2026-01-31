@@ -194,7 +194,7 @@ sequenceDiagram
 | 2.1-2.6 | スキルのユニーク管理 | SkillInventory | AddSkill, GetOwnedSkills | - |
 | 3.1-3.4 | エージェントスロットシステム | AgentSlot, AgentSlotManager | GetSlots, IsSlotReady | - |
 | 4.1-4.5 | エージェントコア付け替え | AgentSlotManager | SetCore, ClearCore | カスタマイズフロー |
-| 5.1-5.7 | エージェントスキル付け替え | AgentSlotManager | SetSkill, ClearSkill | カスタマイズフロー |
+| 5.1-5.6 | エージェントスキル付け替え | AgentSlotManager | SetSkill, ClearSkill | カスタマイズフロー |
 | 6.1-6.4 | チェイン効果バリエーション選択 | SkillInventory, AgentSlotManager | GetChainVariations, SetSkill | - |
 | 7.1-7.3 | レベル選択によるエージェント調整 | AgentSlotManager | SetCore (level param) | カスタマイズフロー |
 | 8.1-8.3 | 既存合成システム廃止 | synthesize.AgentManager削除 | - | - |
@@ -210,8 +210,8 @@ sequenceDiagram
 |---------------|-----------------|------|---------------|-----------------|-------------|
 | CoreInventory | domain | TypeID+最大レベルでコアをユニーク管理 | 1.1-1.5 | なし | State |
 | SkillInventory | domain | TypeID+保有状態+チェインバリエーションでスキル管理 | 2.1-2.6, 6.1-6.4 | ChainEffect (P1) | State |
-| AgentSlot | domain | エージェントスロット構成を表現 | 3.1-3.4, 4.1-4.5, 5.1-5.7 | CoreType, SkillType (P0) | State |
-| AgentSlotManager | usecase | スロット管理とバトル連携を担当 | 4.1-4.5, 5.1-5.7, 7.1-7.3, 9.1-9.4 | CoreInventory (P0), SkillInventory (P0), AgentSlot (P0) | Service |
+| AgentSlot | domain | エージェントスロット構成を表現 | 3.1-3.4, 4.1-4.5, 5.1-5.6 | CoreType, SkillType (P0) | State |
+| AgentSlotManager | usecase | スロット管理とバトル連携を担当 | 4.1-4.5, 5.1-5.6, 7.1-7.3, 9.1-9.4 | CoreInventory (P0), SkillInventory (P0), AgentSlot (P0) | Service |
 | InventoryManager改 | usecase | 改良版インベントリ統合管理 | 1.1-1.5, 2.1-2.6 | CoreInventory (P0), SkillInventory (P0) | Service |
 | SaveData改 | infra | 新スキーマでの永続化 | 3.4, 全体 | AgentSlot (P1) | State |
 | AgentCustomizationScreen | tui | カスタマイズUI | 11.1-11.6 | AgentSlotManager (P0) | - |
@@ -401,7 +401,7 @@ func (s *AgentSlot) Clear()
 | フィールド | 詳細 |
 |-----------|------|
 | 意図 | 3つのエージェントスロットの管理とバトルシステムとの連携を担当 |
-| 要件 | 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4, 4.5, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 7.1, 7.2, 7.3, 9.1, 9.2, 9.3, 9.4 |
+| 要件 | 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4, 4.5, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 7.1, 7.2, 7.3, 9.1, 9.2, 9.3, 9.4 |
 
 **責務と制約**
 - 3つの固定スロットを管理

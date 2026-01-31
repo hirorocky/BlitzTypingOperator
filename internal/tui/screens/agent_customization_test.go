@@ -66,7 +66,7 @@ func setupTestCustomizationScreen() (*AgentCustomizationScreen, *domain.CoreInve
 	chainEffects := map[string]domain.ChainEffect{}
 
 	// スロットマネージャーを作成
-	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills)
+	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, chainEffects)
 
 	// インベントリマネージャーを作成
 	invManager := inventory.NewInventoryManagerWithInventories(coreInv, skillInv)

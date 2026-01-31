@@ -69,7 +69,10 @@ func createTestManager() (*AgentSlotManager, *domain.CoreInventory, *domain.Skil
 		"passive_001": createTestPassiveSkill("passive_001"),
 	}
 
-	manager := NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills)
+	// ChainEffectsは空マップで渡す（テスト用）
+	chainEffects := map[string]domain.ChainEffect{}
+
+	manager := NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, chainEffects)
 	return manager, coreInv, skillInv
 }
 
@@ -1187,5 +1190,138 @@ func TestAgentSlotManager_BuildAgentsForBattle_AllFull(t *testing.T) {
 		if agent.Level != expectedLevel {
 			t.Errorf("エージェント%dのLevel = %d, want %d", i, agent.Level, expectedLevel)
 		}
+	}
+}
+
+// ==================== ChainEffect適用のテスト ====================
+
+func TestAgentSlotManager_BuildAgentsForBattle_WithChainEffect(t *testing.T) {
+	// ChainEffectsを含むマネージャーを作成
+	coreInv := domain.NewCoreInventory()
+	skillInv := domain.NewSkillInventory()
+
+	coreTypes := map[string]domain.CoreType{
+		"core_001": {
+			ID:          "core_001",
+			Name:        "テストコア",
+			AllowedTags: []string{"physical"},
+		},
+	}
+
+	skillTypes := map[string]domain.SkillType{
+		"skill_001": {
+			ID:   "skill_001",
+			Name: "テストスキル",
+			Tags: []string{"physical"},
+		},
+	}
+
+	passiveSkills := map[string]domain.PassiveSkill{}
+
+	// ChainEffectsマップを作成
+	chainEffects := map[string]domain.ChainEffect{
+		"chain_damage_bonus": domain.NewChainEffectWithTemplate(
+			domain.ChainEffectDamageBonus,
+			50.0,
+			"次の攻撃のダメージ+%.0f",
+			"ダメージ+%.0f",
+		),
+	}
+
+	manager := NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, chainEffects)
+
+	// インベントリにコアとスキルを追加
+	coreInv.AddCore("core_001", 10)
+	skillInv.AddSkill("skill_001", "chain_damage_bonus")
+
+	// スロットを設定
+	if err := manager.SetCore(0, "core_001", 5); err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+	if err := manager.SetSkill(0, 0, "skill_001", "chain_damage_bonus"); err != nil {
+		t.Fatalf("SetSkillでエラー: %v", err)
+	}
+
+	// バトル用エージェントを構築
+	agents := manager.BuildAgentsForBattle()
+
+	if len(agents) != 1 {
+		t.Fatalf("エージェント数 = %d, want %d", len(agents), 1)
+	}
+
+	// スキルにChainEffectが適用されていることを確認
+	agent := agents[0]
+	if len(agent.Modules) != 1 {
+		t.Fatalf("スキル数 = %d, want %d", len(agent.Modules), 1)
+	}
+
+	skill := agent.Modules[0]
+	if !skill.HasChainEffect() {
+		t.Error("スキルにChainEffectが適用されていない")
+	}
+
+	if skill.ChainEffect.Type != domain.ChainEffectDamageBonus {
+		t.Errorf("ChainEffectType = %v, want %v", skill.ChainEffect.Type, domain.ChainEffectDamageBonus)
+	}
+
+	if skill.ChainEffect.Value != 50.0 {
+		t.Errorf("ChainEffect.Value = %f, want %f", skill.ChainEffect.Value, 50.0)
+	}
+}
+
+func TestAgentSlotManager_BuildAgentsForBattle_WithoutChainEffect(t *testing.T) {
+	// ChainEffectsを含むマネージャーを作成
+	coreInv := domain.NewCoreInventory()
+	skillInv := domain.NewSkillInventory()
+
+	coreTypes := map[string]domain.CoreType{
+		"core_001": {
+			ID:          "core_001",
+			Name:        "テストコア",
+			AllowedTags: []string{"physical"},
+		},
+	}
+
+	skillTypes := map[string]domain.SkillType{
+		"skill_001": {
+			ID:   "skill_001",
+			Name: "テストスキル",
+			Tags: []string{"physical"},
+		},
+	}
+
+	passiveSkills := map[string]domain.PassiveSkill{}
+	chainEffects := map[string]domain.ChainEffect{}
+
+	manager := NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, chainEffects)
+
+	// インベントリにコアとスキルを追加（ChainEffectなし）
+	coreInv.AddCore("core_001", 10)
+	skillInv.AddSkill("skill_001", "")
+
+	// スロットを設定（ChainEffectID空）
+	if err := manager.SetCore(0, "core_001", 5); err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+	if err := manager.SetSkill(0, 0, "skill_001", ""); err != nil {
+		t.Fatalf("SetSkillでエラー: %v", err)
+	}
+
+	// バトル用エージェントを構築
+	agents := manager.BuildAgentsForBattle()
+
+	if len(agents) != 1 {
+		t.Fatalf("エージェント数 = %d, want %d", len(agents), 1)
+	}
+
+	// スキルにChainEffectが適用されていないことを確認
+	agent := agents[0]
+	if len(agent.Modules) != 1 {
+		t.Fatalf("スキル数 = %d, want %d", len(agent.Modules), 1)
+	}
+
+	skill := agent.Modules[0]
+	if skill.HasChainEffect() {
+		t.Error("ChainEffectIDが空の場合はChainEffectが適用されないべき")
 	}
 }

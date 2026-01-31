@@ -281,6 +281,9 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		}
 	}
 
+	// ChainEffectsマップを作成（AgentSlotManager用）
+	chainEffectsMap := ConvertChainEffectsToMap(chainEffects)
+
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
 		invManager.Cores(),
@@ -288,6 +291,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		coreTypesMap,
 		skillTypesMap,
 		passiveSkills,
+		chainEffectsMap,
 	)
 
 	// v3.0.0: セーブデータからエージェントスロットを復元
@@ -366,7 +370,6 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	settingsScreen := screenFactory.CreateSettingsScreen()
 
 	// v3.0.0: エージェントカスタマイズ画面を初期化
-	chainEffectsMap := ConvertChainEffectsToMap(chainEffects)
 	agentCustomizationScreen := screenFactory.CreateAgentCustomizationScreen(
 		invManager,
 		slotManager,

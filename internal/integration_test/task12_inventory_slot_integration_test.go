@@ -101,6 +101,7 @@ func TestInventorySlot_AddCoreAndSetSlot(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// スロットにコアを設定
@@ -137,6 +138,7 @@ func TestInventorySlot_AddCoreAtLowerLevel(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// レベル5で設定（最大レベル以下）
@@ -184,6 +186,7 @@ func TestInventorySlot_CoreNotOwnedError(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// 保有していないコアを設定しようとする
@@ -211,6 +214,7 @@ func TestInventorySlot_LevelOutOfRangeError(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// 最大レベルを超えるレベルで設定しようとする
@@ -238,6 +242,7 @@ func TestInventorySlot_CoreUpdateReflectsOnNewSlotManager(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// レベル3で設定できる
@@ -278,6 +283,7 @@ func TestInventorySlot_AddSkillAndSetSlot(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// コアを設定
@@ -318,6 +324,7 @@ func TestInventorySlot_AddSkillWithChainEffect(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// コアを設定
@@ -357,6 +364,7 @@ func TestInventorySlot_SkillNotOwnedError(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// コアを設定
@@ -388,6 +396,7 @@ func TestInventorySlot_ChainVariationNotOwnedError(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// コアを設定
@@ -419,6 +428,7 @@ func TestInventorySlot_SkillIncompatibleError(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// ヒーラーコアを設定
@@ -454,6 +464,7 @@ func TestInventorySlot_CompatibleSkillsFilter(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// オールラウンダーコアを設定
@@ -496,6 +507,7 @@ func TestInventorySlot_SkillAutoRemoveOnCoreChange(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// オールラウンダーコアを設定
@@ -550,6 +562,7 @@ func TestInventorySlot_MultipleSlotsSameCore(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// 全スロットに同じコアを異なるレベルで設定
@@ -591,6 +604,7 @@ func TestInventorySlot_MultipleSlotsSameSkill_ShouldFail(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// 全スロットにコアを設定

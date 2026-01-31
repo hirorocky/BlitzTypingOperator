@@ -79,6 +79,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 			coreTypes,
 			skillTypes,
 			passiveSkills,
+			nil, // chainEffects
 		)
 
 		// コアを設定（旧システムの「合成」に相当）
@@ -116,6 +117,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 			coreTypes,
 			skillTypes,
 			passiveSkills,
+			nil, // chainEffects
 		)
 
 		// コアとスキルを設定
@@ -161,6 +163,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 			coreTypes,
 			skillTypes,
 			passiveSkills,
+			nil, // chainEffects
 		)
 
 		// スロット0にウォリアーを設定
@@ -201,6 +204,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 			coreTypes,
 			skillTypes,
 			passiveSkills,
+			nil, // chainEffects
 		)
 
 		// スロット1にのみ設定（スロット0は空）

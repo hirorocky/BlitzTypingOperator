@@ -116,7 +116,7 @@ func TestBattleEngine_InitializeBattleWithSlotManager(t *testing.T) {
 	coreTypes, skillTypes, passiveSkills := createTestMasterData()
 
 	// AgentSlotManagerを作成し、スロットを設定
-	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills)
+	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, nil)
 
 	// スロット0にコアとスキルを設定
 	if err := slotManager.SetCore(0, "all_rounder", 5); err != nil {
@@ -175,7 +175,7 @@ func TestBattleEngine_BuildAgentsForBattle_EmptySlotExclusion(t *testing.T) {
 	coreTypes, skillTypes, passiveSkills := createTestMasterData()
 
 	// AgentSlotManagerを作成
-	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills)
+	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, nil)
 
 	// スロット0と2のみ設定（スロット1は空）
 	if err := slotManager.SetCore(0, "all_rounder", 5); err != nil {
@@ -224,7 +224,7 @@ func TestBattleEngine_AllSlotsEmpty(t *testing.T) {
 	coreTypes, skillTypes, passiveSkills := createTestMasterData()
 
 	// AgentSlotManagerを作成（スロットは空のまま）
-	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills)
+	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, nil)
 
 	// BuildAgentsForBattleでエージェントを構築（空のリストが返る）
 	agents := slotManager.BuildAgentsForBattle()
@@ -260,7 +260,7 @@ func TestAgentSlotManager_LockDuringBattle(t *testing.T) {
 	coreTypes, skillTypes, passiveSkills := createTestMasterData()
 
 	// AgentSlotManagerを作成
-	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills)
+	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, nil)
 
 	// スロット0にコアを設定
 	if err := slotManager.SetCore(0, "all_rounder", 5); err != nil {
@@ -305,7 +305,7 @@ func TestAgentSlotManager_LockDuringBattle(t *testing.T) {
 func TestAgentSlotManager_IsLocked(t *testing.T) {
 	coreInv, skillInv := createTestInventories()
 	coreTypes, skillTypes, passiveSkills := createTestMasterData()
-	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills)
+	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, nil)
 
 	// 初期状態ではアンロック
 	if slotManager.IsLocked() {
@@ -334,7 +334,7 @@ func TestBattleIntegration_AgentModelConstruction(t *testing.T) {
 	coreTypes, skillTypes, passiveSkills := createTestMasterData()
 
 	// AgentSlotManagerを作成
-	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills)
+	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, nil)
 
 	// 3スロット全てにエージェントを設定
 	if err := slotManager.SetCore(0, "all_rounder", 10); err != nil {
@@ -399,7 +399,7 @@ func TestBattleIntegration_BattleWithSlotAgents(t *testing.T) {
 	coreTypes, skillTypes, passiveSkills := createTestMasterData()
 
 	// AgentSlotManagerを作成
-	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills)
+	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, nil)
 
 	// スロット0にエージェントを設定
 	if err := slotManager.SetCore(0, "all_rounder", 10); err != nil {

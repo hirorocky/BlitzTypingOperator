@@ -141,6 +141,7 @@ func TestSlotBattle_BuildAgentsForBattle_SingleAgent(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// スロット0にコアとスキルを設定
@@ -204,6 +205,7 @@ func TestSlotBattle_BuildAgentsForBattle_MultipleAgents(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// 全スロットにコアとスキルを設定
@@ -251,6 +253,7 @@ func TestSlotBattle_BuildAgentsForBattle_EmptySlotsExcluded(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// スロット1のみにコアを設定（スロット0,2は空）
@@ -280,6 +283,7 @@ func TestSlotBattle_BuildAgentsForBattle_NoAgents(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// バトル用エージェントを構築
@@ -309,6 +313,7 @@ func TestSlotBattle_BuildAgentsForBattle_CoreOnlyNoSkill(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// コアのみ設定（スキルなし）
@@ -351,6 +356,7 @@ func TestSlotBattle_SlotUpdateReflectsOnBattle(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// 初期設定：ウォーリアー
@@ -397,6 +403,7 @@ func TestSlotBattle_LevelChangeReflectsOnBattle(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// 初期設定：レベル10
@@ -440,6 +447,7 @@ func TestSlotBattle_SkillChangeReflectsOnBattle(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// 初期設定：slashのみ
@@ -482,6 +490,7 @@ func TestSlotBattle_ClearSlotReflectsOnBattle(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// 初期設定
@@ -529,6 +538,7 @@ func TestSlotBattle_LockDuringBattle(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// 初期設定
@@ -600,6 +610,7 @@ func TestSlotBattle_BuildAgentsForBattleWhileLocked(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// 初期設定

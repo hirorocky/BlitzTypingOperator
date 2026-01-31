@@ -163,6 +163,7 @@ func TestE2I_FullCustomizationFlow(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// ステップ1: スロット選択（スロット0）
@@ -266,6 +267,7 @@ func TestE2I_MultipleAgentCustomizationFlow(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// スロット0: バーサーカー（物理アタッカー）
@@ -349,6 +351,7 @@ func TestE2I_CompatibilityFiltering_AllTagsMatch(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// バランスコアを設定
@@ -387,6 +390,7 @@ func TestE2I_CompatibilityFiltering_NoTagsMatch(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// プリーストコアを設定
@@ -425,6 +429,7 @@ func TestE2I_CompatibilityFiltering_CoreChangeRemovesIncompatible(t *testing.T) 
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// バランスコアを設定
@@ -477,6 +482,7 @@ func TestE2I_CompatibilityFiltering_ValidateMethod(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// アークメイジコアを設定
@@ -519,6 +525,7 @@ func TestE2I_ChainEffectVariationSelection(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// コアを設定
@@ -573,6 +580,7 @@ func TestE2I_LevelSelectionRange(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// 最小レベル（1）で設定
@@ -636,6 +644,7 @@ func TestE2I_SlotClearAndReconfigure(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// 初期設定
@@ -690,6 +699,7 @@ func TestE2I_SameSkillMultipleTimes_ShouldFail(t *testing.T) {
 		coreTypes,
 		skillTypes,
 		passiveSkills,
+		nil, // chainEffects
 	)
 
 	// コアを設定
