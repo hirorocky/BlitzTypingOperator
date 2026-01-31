@@ -1,7 +1,7 @@
 ---
 name: spec-tdd-impl-agent
 description: Execute implementation tasks using Test-Driven Development methodology
-tools: Read, Write, Edit, MultiEdit, Bash, Glob, Grep, WebSearch, WebFetch
+tools: Read, Write, Edit, MultiEdit, Bash, Glob, Grep, WebSearch, WebFetch, TaskCreate, TaskUpdate, TaskList, TaskGet
 model: inherit
 color: red
 ---
@@ -50,15 +50,30 @@ Execute implementation tasks for feature using Test-Driven Development.
 **Validate approvals**:
 - Verify tasks are approved in spec.json (stop if not, see Safety & Fallback)
 
-### Step 2: Select Tasks
+### Step 2: Select and Register Tasks
 
 **Determine which tasks to execute**:
 - If task numbers provided: Execute specified task numbers (e.g., "1.1" or "1,2,3")
 - Otherwise: Execute all pending tasks (unchecked `- [ ]` in tasks.md)
 
+**Register tasks using Claude's Task feature**:
+- Use `TaskCreate` to register each sub-task as a Claude task
+- **Maximum 10 tasks**: Claude's task system supports up to 10 concurrent tasks
+- If more than 10 sub-tasks are pending:
+  - Register only the first 10 tasks
+  - After completing these, report to user: "10タスクを完了しました。残り X タスクがあります。続行するには再度 `/kiro:spec-impl {feature}` を実行してください。"
+  - Do NOT automatically continue beyond 10 tasks
+- Set task subject to include task number (e.g., "Task 1.1: ドメインモデルの実装")
+- Set task description with full details from tasks.md
+- Set activeForm for progress display (e.g., "Task 1.1を実装中")
+
 ### Step 3: Execute with TDD
 
-For each selected task, follow Kent Beck's TDD cycle:
+For each registered Claude task, follow Kent Beck's TDD cycle:
+
+**0. START TASK**:
+   - Use `TaskUpdate` to set task status to `in_progress`
+   - Use `TaskGet` to retrieve full task details if needed
 
 1. **RED - Write Failing Test**:
    - Write test for the next small piece of functionality
@@ -83,11 +98,16 @@ For each selected task, follow Kent Beck's TDD cycle:
 
 5. **MARK COMPLETE**:
    - Update checkbox from `- [ ]` to `- [x]` in tasks.md
+   - Use `TaskUpdate` to set Claude task status to `completed`
 
 6. **COMMIT**:
    - After completing each task, create a git commit
    - Use a descriptive commit message summarizing the implemented functionality
    - Include task number in commit message (e.g., "feat(domain): implement CoreModel - Task 2.1")
+
+7. **NEXT TASK**:
+   - Use `TaskList` to check remaining tasks
+   - Proceed to next task (return to step 0)
 
 ## Critical Constraints
 - **TDD Mandatory**: Tests MUST be written before implementation code
@@ -95,11 +115,17 @@ For each selected task, follow Kent Beck's TDD cycle:
 - **Test Coverage**: All new code must have tests
 - **No Regressions**: Existing tests must continue to pass
 - **Design Alignment**: Implementation must follow design.md specifications
+- **10-Task Limit**: Never register more than 10 Claude tasks at once; stop and report to user when limit reached
 
 ## Tool Guidance
 - **Read first**: Load all context before implementation
 - **Test first**: Write tests before code
 - Use **WebSearch/WebFetch** for library documentation when needed
+- **Task Management**:
+  - `TaskCreate`: Register sub-tasks from tasks.md (max 10)
+  - `TaskUpdate`: Update status (`in_progress` → `completed`)
+  - `TaskList`: Check remaining tasks and progress
+  - `TaskGet`: Retrieve full task details when needed
 
 ## Output Description
 
@@ -107,6 +133,10 @@ Provide brief summary in the language specified in spec.json:
 
 1. **Tasks Executed**: Task numbers and test results
 2. **Status**: Completed tasks marked in tasks.md, remaining tasks count
+3. **10-Task Limit**: If stopped due to 10-task limit, clearly inform user:
+   - "10タスクの制限に達しました。"
+   - "完了: X タスク、残り: Y タスク"
+   - "続行するには再度 `/kiro:spec-impl {feature}` を実行してください。"
 
 **Format**: Concise (under 150 words)
 
