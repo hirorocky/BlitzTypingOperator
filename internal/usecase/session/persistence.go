@@ -22,13 +22,13 @@ type DomainDataSources struct {
 }
 
 // ToSaveData はGameStateをセーブデータに変換します。
-// v3.0.0形式: ユニークインベントリ + エージェントスロットシステム
+// v4.0.0形式: EnemyProgress + ユニークインベントリ + エージェントスロットシステム
 // 注意: 旧形式(AgentInstances, CoreInstances, ModuleInstances)は後方互換性のため空で保存
 func (g *GameState) ToSaveData() *savedata.SaveData {
 	saveData := savedata.NewSaveData()
 
-	// 最高到達レベル
-	saveData.Statistics.MaxLevelReached = g.MaxLevelReached
+	// v4.0.0: 最高到達レベルはEnemyProgress経由で取得
+	saveData.Statistics.MaxLevelReached = g.GetMaxLevelReached()
 
 	// v3.0.0: 旧形式は空で保存（後方互換性）
 	saveData.Inventory.CoreInstances = []savedata.CoreInstanceSave{}
@@ -59,7 +59,7 @@ func (g *GameState) ToSaveData() *savedata.SaveData {
 	// 設定
 	saveData.Settings.KeyBindings = g.settings.Keybinds()
 
-	// 撃破済み敵情報を保存
+	// v4.0.0: 撃破済み敵情報はEnemyProgress経由で取得（後方互換用）
 	saveData.Statistics.DefeatedEnemies = g.GetDefeatedEnemies()
 
 	return saveData
@@ -133,18 +133,15 @@ func GameStateFromSaveData(data *savedata.SaveData, sources *DomainDataSources) 
 	// EnemyGeneratorを作成
 	enemyGen := spawning.NewEnemyGenerator(enemyTypes)
 
-	// 最高到達レベル、エンカウント敵リスト、撃破済み敵情報を取得
-	maxLevelReached := 0
+	// v4.0.0: エンカウント敵リスト、撃破済み敵情報を取得
 	var encounteredEnemies []string
 	var defeatedEnemies map[string]int
 	if data.Statistics != nil {
-		maxLevelReached = data.Statistics.MaxLevelReached
 		encounteredEnemies = data.Statistics.EncounteredEnemies
 		defeatedEnemies = data.Statistics.DefeatedEnemies
 	}
 
 	gs := &GameState{
-		MaxLevelReached:    maxLevelReached,
 		player:             player,
 		inventory:          invManager,
 		statistics:         statsMgr,
@@ -154,10 +151,10 @@ func GameStateFromSaveData(data *savedata.SaveData, sources *DomainDataSources) 
 		tempStorage:        &rewarding.TempStorage{},
 		enemyGenerator:     enemyGen,
 		encounteredEnemies: encounteredEnemies,
-		defeatedEnemies:    make(map[string]int),
+		enemyProgress:      domain.NewEnemyProgress(),
 	}
 
-	// 撃破済み敵情報を復元
+	// v4.0.0: 撃破済み敵情報をEnemyProgressに復元
 	if defeatedEnemies != nil {
 		gs.SetDefeatedEnemies(defeatedEnemies)
 	}

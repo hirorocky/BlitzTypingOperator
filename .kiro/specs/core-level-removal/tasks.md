@@ -97,7 +97,7 @@
 
 - [ ] 7. ゲーム状態管理を敵進行システムに対応させる
 
-- [ ] 7.1 GameStateから旧式の撃破記録を削除し、EnemyProgressを統合する
+- [x] 7.1 GameStateから旧式の撃破記録を削除し、EnemyProgressを統合する
   - defeatedEnemiesフィールドを削除する
   - MaxLevelReachedフィールドを削除する
   - EnemyProgressフィールドを追加する

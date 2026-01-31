@@ -353,7 +353,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	screenFactory := NewScreenFactory(gs)
 
 	// ホーム画面を初期化
-	homeScreen := screenFactory.CreateHomeScreen(gs.MaxLevelReached, invProvider)
+	homeScreen := screenFactory.CreateHomeScreen(gs.GetMaxLevelReached(), invProvider)
 	homeScreen.SetStatusMessage(statusMessage)
 	// v3.0.0: スロット準備状態プロバイダーを設定（バトル選択の有効/無効判定に使用）
 	homeScreen.SetSlotProvider(slotManager)
@@ -526,7 +526,7 @@ func (m *RootModel) handleBattleResult(result screens.BattleResultMsg) {
 		m.gameState.RecordBattleDefeat(result.Level)
 
 		// ホーム画面の最高到達レベルを更新してホームに戻る
-		m.homeScreen.SetMaxLevelReached(m.gameState.MaxLevelReached)
+		m.homeScreen.SetMaxLevelReached(m.gameState.GetMaxLevelReached())
 		m.currentScene = SceneHome
 	}
 
@@ -727,7 +727,7 @@ func (m *RootModel) prepareSceneTransition(sceneName string) {
 	switch sceneName {
 	case "home":
 		// ホーム画面の最高到達レベルを更新
-		m.homeScreen.SetMaxLevelReached(m.gameState.MaxLevelReached)
+		m.homeScreen.SetMaxLevelReached(m.gameState.GetMaxLevelReached())
 		// バトル選択メニューの有効/無効状態を更新
 		m.homeScreen.RefreshMenuState()
 	case "battle_select":

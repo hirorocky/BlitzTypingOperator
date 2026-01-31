@@ -35,7 +35,7 @@ func CreateStatsData(gs *session.GameState) *screens.StatsData {
 			TotalBattles:    stats.Battle().TotalBattles,
 			Wins:            stats.Battle().Wins,
 			Losses:          stats.Battle().Losses,
-			MaxLevelReached: gs.MaxLevelReached,
+			MaxLevelReached: gs.GetMaxLevelReached(),
 		},
 		Achievements: achievementData,
 	}
