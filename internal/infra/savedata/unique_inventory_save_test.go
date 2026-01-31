@@ -964,3 +964,103 @@ func TestSaveLoadIntegration_NilConversion(t *testing.T) {
 		t.Errorf("nil SkillInventorySave should return empty map, got %d", len(skills))
 	}
 }
+
+// ==================== v4.0.0: EnemyProgress 変換テスト ====================
+
+// TestConvertEnemyProgressToSave はEnemyProgressからセーブ形式への変換をテストします。
+func TestConvertEnemyProgressToSave(t *testing.T) {
+	// ドメインモデルのデータを作成
+	currentRank := 2
+	defeatRecords := map[string]struct {
+		Defeated         bool
+		MaxDefeatedLevel int
+	}{
+		"slime":  {Defeated: true, MaxDefeatedLevel: 10},
+		"bat":    {Defeated: true, MaxDefeatedLevel: 5},
+		"goblin": {Defeated: false, MaxDefeatedLevel: 0},
+	}
+
+	// セーブ形式に変換
+	save := ConvertEnemyProgressToSave(currentRank, defeatRecords)
+
+	// 検証
+	if save == nil {
+		t.Fatal("save should not be nil")
+	}
+	if save.CurrentRank != 2 {
+		t.Errorf("CurrentRank: got %d, want 2", save.CurrentRank)
+	}
+	if len(save.DefeatRecords) != 3 {
+		t.Errorf("DefeatRecords count: got %d, want 3", len(save.DefeatRecords))
+	}
+	slimeRecord := save.DefeatRecords["slime"]
+	if !slimeRecord.Defeated {
+		t.Error("slime should be defeated")
+	}
+	if slimeRecord.MaxDefeatedLevel != 10 {
+		t.Errorf("slime MaxDefeatedLevel: got %d, want 10", slimeRecord.MaxDefeatedLevel)
+	}
+}
+
+// TestConvertSaveToEnemyProgress はセーブ形式からEnemyProgressへの変換をテストします。
+func TestConvertSaveToEnemyProgress(t *testing.T) {
+	save := &EnemyProgressSave{
+		CurrentRank: 3,
+		DefeatRecords: map[string]DefeatRecordSave{
+			"slime": {Defeated: true, MaxDefeatedLevel: 15},
+			"bat":   {Defeated: true, MaxDefeatedLevel: 8},
+		},
+	}
+
+	// ドメイン形式に変換（DefeatRecordInput型で返される）
+	currentRank, defeatRecords := ConvertSaveToEnemyProgress(save)
+
+	// 検証
+	if currentRank != 3 {
+		t.Errorf("CurrentRank: got %d, want 3", currentRank)
+	}
+	if len(defeatRecords) != 2 {
+		t.Errorf("DefeatRecords count: got %d, want 2", len(defeatRecords))
+	}
+	slimeRecord, exists := defeatRecords["slime"]
+	if !exists {
+		t.Fatal("slime should exist")
+	}
+	if !slimeRecord.Defeated {
+		t.Error("slime should be defeated")
+	}
+	if slimeRecord.MaxDefeatedLevel != 15 {
+		t.Errorf("slime MaxDefeatedLevel: got %d, want 15", slimeRecord.MaxDefeatedLevel)
+	}
+}
+
+// TestConvertSaveToEnemyProgress_NilSave はnilセーブデータの変換をテストします。
+func TestConvertSaveToEnemyProgress_NilSave(t *testing.T) {
+	// nil EnemyProgressSave
+	currentRank, defeatRecords := ConvertSaveToEnemyProgress(nil)
+
+	// 検証：デフォルト値が返される
+	if currentRank != 1 {
+		t.Errorf("nil save should return rank 1, got %d", currentRank)
+	}
+	if len(defeatRecords) != 0 {
+		t.Errorf("nil save should return empty records, got %d", len(defeatRecords))
+	}
+}
+
+// TestConvertSaveToEnemyProgress_EmptyRecords は空の記録の変換をテストします。
+func TestConvertSaveToEnemyProgress_EmptyRecords(t *testing.T) {
+	save := &EnemyProgressSave{
+		CurrentRank:   2,
+		DefeatRecords: map[string]DefeatRecordSave{},
+	}
+
+	currentRank, defeatRecords := ConvertSaveToEnemyProgress(save)
+
+	if currentRank != 2 {
+		t.Errorf("CurrentRank: got %d, want 2", currentRank)
+	}
+	if len(defeatRecords) != 0 {
+		t.Errorf("DefeatRecords should be empty, got %d", len(defeatRecords))
+	}
+}

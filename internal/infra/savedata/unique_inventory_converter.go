@@ -133,3 +133,49 @@ func ConvertSaveToAgentSlot(
 
 	return coreTypeID, skills
 }
+
+// ==================== EnemyProgress 変換 ====================
+
+// DefeatRecordInput はドメインからセーブ形式への変換入力データです。
+type DefeatRecordInput struct {
+	Defeated         bool
+	MaxDefeatedLevel int
+}
+
+// ConvertEnemyProgressToSave はドメインのEnemyProgress形式からセーブ形式に変換します。
+// v4.0.0: 敵進行データのセーブ形式への変換。
+func ConvertEnemyProgressToSave(currentRank int, defeatRecords map[string]struct {
+	Defeated         bool
+	MaxDefeatedLevel int
+}) *EnemyProgressSave {
+	result := &EnemyProgressSave{
+		CurrentRank:   currentRank,
+		DefeatRecords: make(map[string]DefeatRecordSave, len(defeatRecords)),
+	}
+
+	for typeID, record := range defeatRecords {
+		result.DefeatRecords[typeID] = DefeatRecordSave{
+			Defeated:         record.Defeated,
+			MaxDefeatedLevel: record.MaxDefeatedLevel,
+		}
+	}
+
+	return result
+}
+
+// ConvertSaveToEnemyProgress はセーブ形式からドメインのEnemyProgress形式に変換します。
+// v4.0.0: 敵進行データのドメイン形式への変換。
+// saveがnilの場合はデフォルト値（rank=1, 空のrecords）を返します。
+func ConvertSaveToEnemyProgress(save *EnemyProgressSave) (currentRank int, defeatRecords map[string]DefeatRecordInput) {
+	if save == nil {
+		return 1, make(map[string]DefeatRecordInput)
+	}
+
+	defeatRecords = make(map[string]DefeatRecordInput, len(save.DefeatRecords))
+
+	for typeID, recordSave := range save.DefeatRecords {
+		defeatRecords[typeID] = DefeatRecordInput(recordSave)
+	}
+
+	return save.CurrentRank, defeatRecords
+}
