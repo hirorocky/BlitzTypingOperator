@@ -178,6 +178,12 @@ type RewardResult struct {
 
 	// EnemyLevel は撃破した敵のレベルです。
 	EnemyLevel int
+
+	// HPGain は獲得最大HP（敵撃破によるHP成長）です。
+	HPGain int
+
+	// RankUnlocked は新ランク解放フラグです。
+	RankUnlocked bool
 }
 
 // InventoryWarning はインベントリ警告を表す構造体です。
@@ -544,6 +550,58 @@ func (c *RewardCalculator) generateLevelBasedChainEffect(enemyLevel int) *domain
 		selected.ShortDescription,
 	)
 	return &effect
+}
+
+// CalculateGuaranteedRewardWithProgress はHP成長報酬付きで確定ドロップを計算します。
+// 敵タイプのDropItemCategoryとDropItemTypeIDに基づいてアイテムを決定し、
+// EnemyProgressに撃破を記録し、PlayerModelにHP成長を適用します。
+func (c *RewardCalculator) CalculateGuaranteedRewardWithProgress(
+	stats *BattleStatistics,
+	enemyLevel int,
+	enemyType domain.EnemyType,
+	progress *domain.EnemyProgress,
+	player *domain.PlayerModel,
+	enemyTypes map[string]domain.EnemyType,
+) *RewardResult {
+	// 基本の報酬計算
+	result := c.CalculateGuaranteedReward(stats, enemyLevel, enemyType)
+
+	// HP成長を計算
+	hpGain, _ := progress.RecordDefeat(enemyType.ID, enemyLevel)
+
+	// HP成長をPlayerModelに適用
+	if hpGain > 0 {
+		player.IncreaseMaxHP(hpGain)
+	}
+
+	// ランク解放チェック
+	rankUnlocked := false
+	if checkRankComplete(progress, enemyTypes) {
+		progress.CurrentRank++
+		rankUnlocked = true
+	}
+
+	result.HPGain = hpGain
+	result.RankUnlocked = rankUnlocked
+
+	return result
+}
+
+// checkRankComplete はランク内全敵撃破チェックを行います。
+func checkRankComplete(progress *domain.EnemyProgress, enemyTypes map[string]domain.EnemyType) bool {
+	currentRank := progress.CurrentRank
+
+	hasEnemiesInRank := false
+	for _, et := range enemyTypes {
+		if et.Rank == currentRank {
+			hasEnemiesInRank = true
+			if !progress.IsDefeated(et.ID) {
+				return false
+			}
+		}
+	}
+
+	return hasEnemiesInRank
 }
 
 // AddRewardsToInventory はドロップしたアイテムをインベントリに追加します。

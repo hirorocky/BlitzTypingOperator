@@ -972,3 +972,142 @@ func TestRollModuleDropWithTypeID_NoChainEffectPool(t *testing.T) {
 		t.Error("チェイン効果プールがない場合はチェイン効果がnilであるべき")
 	}
 }
+
+// ==================== タスク5.2: HP成長報酬テスト ====================
+
+// TestRewardResult_HPGain はRewardResultにHP成長情報が含まれることをテストします。
+func TestRewardResult_HPGain(t *testing.T) {
+	result := &RewardResult{
+		IsVictory:        true,
+		ShowRewardScreen: true,
+		HPGain:           10,
+		RankUnlocked:     false,
+	}
+
+	if result.HPGain != 10 {
+		t.Errorf("HPGainが期待と異なる: got %d, want 10", result.HPGain)
+	}
+	if result.RankUnlocked {
+		t.Error("RankUnlockedがfalseであるべき")
+	}
+}
+
+// TestCalculateGuaranteedRewardWithProgress はHP成長報酬付きの報酬計算をテストします。
+func TestCalculateGuaranteedRewardWithProgress(t *testing.T) {
+	coreTypes := []domain.CoreType{
+		{
+			ID:           "attack_balance",
+			Name:         "攻撃バランス",
+			MinDropLevel: 1,
+			AllowedTags:  []string{"physical_low"},
+			StatWeights:  map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
+		},
+	}
+
+	calculator := NewRewardCalculator(coreTypes, nil, nil)
+
+	stats := &BattleStatistics{
+		TotalWPM:         80.0,
+		TotalAccuracy:    0.95,
+		TotalTypingCount: 10,
+	}
+
+	slimeType := domain.EnemyType{
+		ID:               "slime",
+		Name:             "スライム",
+		DropItemCategory: "core",
+		DropItemTypeID:   "attack_balance",
+		Rank:             1,
+	}
+
+	batType := domain.EnemyType{
+		ID:               "bat",
+		Name:             "コウモリ",
+		DropItemCategory: "core",
+		DropItemTypeID:   "attack_balance",
+		Rank:             1,
+	}
+
+	// EnemyProgressManagerを作成（ランク1に2体の敵）
+	progress := domain.NewEnemyProgress()
+	player := domain.NewPlayerWithMaxHP(domain.InitialMaxHP)
+	enemyTypes := map[string]domain.EnemyType{
+		"slime": slimeType,
+		"bat":   batType,
+	}
+
+	// HP成長報酬付きで報酬計算（1体目）
+	result := calculator.CalculateGuaranteedRewardWithProgress(stats, 1, slimeType, progress, player, enemyTypes)
+
+	if result == nil {
+		t.Fatal("報酬結果がnilであってはならない")
+	}
+	if result.HPGain != domain.HPGainPerFirstDefeat {
+		t.Errorf("HPGainが期待と異なる: got %d, want %d", result.HPGain, domain.HPGainPerFirstDefeat)
+	}
+	if result.RankUnlocked {
+		t.Error("1体目撃破でランク解放されるべきではない（ランク内に2体いる）")
+	}
+
+	// PlayerのMaxHPが増加していることを確認
+	expectedMaxHP := domain.InitialMaxHP + domain.HPGainPerFirstDefeat
+	if player.MaxHP != expectedMaxHP {
+		t.Errorf("PlayerのMaxHPが期待と異なる: got %d, want %d", player.MaxHP, expectedMaxHP)
+	}
+
+	// EnemyProgressに撃破が記録されていることを確認
+	if !progress.IsDefeated("slime") {
+		t.Error("敵が撃破済みとして記録されていない")
+	}
+}
+
+// TestCalculateGuaranteedRewardWithProgress_RankUnlock はランク解放をテストします。
+func TestCalculateGuaranteedRewardWithProgress_RankUnlock(t *testing.T) {
+	coreTypes := []domain.CoreType{
+		{
+			ID:           "attack_balance",
+			Name:         "攻撃バランス",
+			MinDropLevel: 1,
+			AllowedTags:  []string{"physical_low"},
+			StatWeights:  map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
+		},
+	}
+
+	calculator := NewRewardCalculator(coreTypes, nil, nil)
+
+	stats := &BattleStatistics{
+		TotalWPM:         80.0,
+		TotalAccuracy:    0.95,
+		TotalTypingCount: 10,
+	}
+
+	// ランク1に敵1体のみ
+	enemyType := domain.EnemyType{
+		ID:               "slime",
+		Name:             "スライム",
+		DropItemCategory: "core",
+		DropItemTypeID:   "attack_balance",
+		Rank:             1,
+	}
+
+	progress := domain.NewEnemyProgress()
+	player := domain.NewPlayerWithMaxHP(domain.InitialMaxHP)
+	enemyTypes := map[string]domain.EnemyType{
+		"slime": enemyType,
+	}
+
+	// 唯一の敵を撃破
+	result := calculator.CalculateGuaranteedRewardWithProgress(stats, 1, enemyType, progress, player, enemyTypes)
+
+	if result == nil {
+		t.Fatal("報酬結果がnilであってはならない")
+	}
+	if !result.RankUnlocked {
+		t.Error("唯一の敵撃破でランク解放されるべき")
+	}
+
+	// ランクが進行していることを確認
+	if progress.CurrentRank != 2 {
+		t.Errorf("ランクが進行していない: got %d, want 2", progress.CurrentRank)
+	}
+}
