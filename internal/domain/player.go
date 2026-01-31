@@ -3,12 +3,9 @@ package domain
 
 // HP計算に使用する定数
 // 新仕様: 初期最大HP = 1000、敵撃破による成長で増加
-// 旧仕様（互換性用）: MaxHP = 装備中エージェントのコアレベル平均 × HP係数 + 基礎HP
 
 const (
-	HPCoefficient = 10.0 // 旧仕様：レベル平均に掛ける係数
-	BaseHP        = 100  // 旧仕様：基礎HP値
-	InitialMaxHP  = 1000 // 新仕様：初期最大HP
+	InitialMaxHP = 1000 // 初期最大HP
 )
 
 // PlayerModel はゲーム内のプレイヤーエンティティを表す構造体です。
@@ -34,7 +31,8 @@ type PlayerModel struct {
 }
 
 // NewPlayer は新しいPlayerModelを作成します。
-// 初期状態ではHP/MaxHPは0で、エージェント装備後にRecalculateHPで計算されます。
+// 初期状態ではHP/MaxHPは0で、後方互換性のために残されています。
+// 新規ゲーム開始時はNewPlayerWithMaxHP(InitialMaxHP)を使用してください。
 func NewPlayer() *PlayerModel {
 	return &PlayerModel{
 		HP:          0,
@@ -43,22 +41,32 @@ func NewPlayer() *PlayerModel {
 	}
 }
 
-// CalculateMaxHP は最大HPを計算します。
-// 新仕様では初期最大HP（1000）を返し、成長はIncreaseMaxHPで管理します。
-// 注意: この関数はレガシーコードとの互換性のために残されています。
-func CalculateMaxHP(agents []*AgentModel) int {
-	if len(agents) == 0 {
-		return BaseHP
+// NewPlayerWithMaxHP は指定された最大HPでPlayerModelを作成します。
+// 新規ゲーム開始時はInitialMaxHP（1000）を渡してください。
+// セーブデータからの復元時は保存されたMaxHPを渡してください。
+func NewPlayerWithMaxHP(maxHP int) *PlayerModel {
+	return &PlayerModel{
+		HP:          maxHP,
+		MaxHP:       maxHP,
+		EffectTable: NewEffectTable(),
 	}
-	// 新仕様: エージェント装備時は初期最大HPを返す
-	return InitialMaxHP
 }
 
-// RecalculateHP は装備エージェントに基づいてMaxHPを再計算し、HPを全回復します。
+// IncreaseMaxHP は最大HPを増加させます。
+// 敵撃破による成長時に使用します。
+// 負の値やゼロは無視されます（MaxHPは減少しません）。
+func (p *PlayerModel) IncreaseMaxHP(amount int) {
+	if amount <= 0 {
+		return
+	}
+	p.MaxHP += amount
+}
 
-func (p *PlayerModel) RecalculateHP(agents []*AgentModel) {
-	p.MaxHP = CalculateMaxHP(agents)
-	p.HP = p.MaxHP
+// InitializeHP はプレイヤーのMaxHPを設定し、HPを全回復します。
+// エージェント装備後の初期化に使用します。
+func (p *PlayerModel) InitializeHP(maxHP int) {
+	p.MaxHP = maxHP
+	p.HP = maxHP
 }
 
 // FullHeal はHPを最大値まで回復します。

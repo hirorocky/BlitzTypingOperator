@@ -222,9 +222,8 @@ func (e *BattleEngine) InitializeBattle(level int, agents []*domain.AgentModel) 
 		return nil, fmt.Errorf("敵の生成に失敗しました")
 	}
 
-	// プレイヤーを初期化
-	player := domain.NewPlayer()
-	player.RecalculateHP(agents)
+	// プレイヤーを初期化（初期最大HPで作成）
+	player := domain.NewPlayerWithMaxHP(domain.InitialMaxHP)
 	player.PrepareForBattle() // HP全回復、EffectTableリセット
 
 	// バトル状態を作成

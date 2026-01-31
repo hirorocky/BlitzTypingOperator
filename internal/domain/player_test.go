@@ -36,58 +36,9 @@ func TestNewPlayer_プレイヤー作成(t *testing.T) {
 	}
 }
 
-// TestPlayerModel_最大HP計算 はエージェント装備時のMaxHPを確認します。
-// 新仕様: 初期最大HPは1000固定、成長は敵撃破で増加
-func TestPlayerModel_最大HP計算(t *testing.T) {
-	tests := []struct {
-		name          string
-		agentCount    int
-		expectedMaxHP int
-	}{
-		{
-			name:          "エージェント1体装備",
-			agentCount:    1,
-			expectedMaxHP: 1000, // 初期最大HP
-		},
-		{
-			name:          "エージェント3体装備",
-			agentCount:    3,
-			expectedMaxHP: 1000, // 初期最大HP
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// エージェント数分のダミーレベルリストを作成
-			levels := make([]int, tt.agentCount)
-			for i := range levels {
-				levels[i] = 1 // レベルはもはや使用されない
-			}
-			agents := createTestAgents(levels)
-			maxHP := CalculateMaxHP(agents)
-
-			if maxHP != tt.expectedMaxHP {
-				t.Errorf("MaxHPが期待値と異なります: got %d, want %d", maxHP, tt.expectedMaxHP)
-			}
-		})
-	}
-}
-
-// TestPlayerModel_エージェント未装備時のHP は装備エージェントがいない場合のMaxHP計算を確認します。
-func TestPlayerModel_エージェント未装備時のHP(t *testing.T) {
-	agents := []*AgentModel{}
-	maxHP := CalculateMaxHP(agents)
-
-	// エージェント未装備時は基礎HP(100)を返す
-	if maxHP != BaseHP {
-		t.Errorf("エージェント未装備時のMaxHPは基礎HP(%d)であるべきです: got %d", BaseHP, maxHP)
-	}
-}
-
-// TestPlayerModel_HP再計算 は装備変更時のHP再計算を確認します。
-// 新仕様: MaxHPは初期値1000固定
-
-func TestPlayerModel_HP再計算(t *testing.T) {
+// TestPlayerModel_InitializeHP はHP初期化を確認します。
+// 新仕様: MaxHPは初期値1000固定、エージェント装備後にInitializeHPで設定
+func TestPlayerModel_InitializeHP(t *testing.T) {
 	player := NewPlayer()
 
 	// 初期状態
@@ -95,9 +46,8 @@ func TestPlayerModel_HP再計算(t *testing.T) {
 		t.Errorf("初期MaxHPが期待値と異なります: got %d, want 0", player.MaxHP)
 	}
 
-	// エージェントを装備
-	agents1 := createTestAgents([]int{1})
-	player.RecalculateHP(agents1)
+	// HP初期化
+	player.InitializeHP(InitialMaxHP)
 
 	// 新仕様: 初期最大HP = 1000
 	if player.MaxHP != 1000 {
@@ -106,27 +56,12 @@ func TestPlayerModel_HP再計算(t *testing.T) {
 	if player.HP != 1000 {
 		t.Errorf("HPも最大値に設定されるべき: got %d, want 1000", player.HP)
 	}
-
-	// エージェントを追加装備
-	agents2 := createTestAgents([]int{1, 1})
-	player.RecalculateHP(agents2)
-
-	// 新仕様: MaxHPはエージェント数に関わらず初期最大HP = 1000
-	if player.MaxHP != 1000 {
-		t.Errorf("MaxHPが期待値と異なります: got %d, want 1000", player.MaxHP)
-	}
-	// HPは新しいMaxHPで初期化される
-	if player.HP != 1000 {
-		t.Errorf("HPが期待値と異なります: got %d, want 1000", player.HP)
-	}
 }
 
 // TestPlayerModel_バトル開始時全回復 はバトル開始時にHPが全回復することを確認します。
 
 func TestPlayerModel_バトル開始時全回復(t *testing.T) {
-	player := NewPlayer()
-	agents := createTestAgents([]int{1})
-	player.RecalculateHP(agents)
+	player := NewPlayerWithMaxHP(InitialMaxHP)
 
 	// ダメージを受けた状態にする
 	player.HP = 50
@@ -141,9 +76,7 @@ func TestPlayerModel_バトル開始時全回復(t *testing.T) {
 
 // TestPlayerModel_HP増減 はHPの増減処理を確認します。
 func TestPlayerModel_HP増減(t *testing.T) {
-	player := NewPlayer()
-	agents := createTestAgents([]int{1})
-	player.RecalculateHP(agents)
+	player := NewPlayerWithMaxHP(InitialMaxHP)
 
 	// 新仕様: MaxHP = 1000
 
@@ -174,9 +107,7 @@ func TestPlayerModel_HP増減(t *testing.T) {
 
 // TestPlayerModel_生存確認 はプレイヤーの生存確認を確認します。
 func TestPlayerModel_生存確認(t *testing.T) {
-	player := NewPlayer()
-	agents := createTestAgents([]int{1})
-	player.RecalculateHP(agents)
+	player := NewPlayerWithMaxHP(InitialMaxHP)
 
 	// 生存状態
 	if !player.IsAlive() {
@@ -193,9 +124,7 @@ func TestPlayerModel_生存確認(t *testing.T) {
 // TestPlayerModel_バトル持ち越しなし はHPがバトル間で持ち越されないことを確認します。
 
 func TestPlayerModel_バトル持ち越しなし(t *testing.T) {
-	player := NewPlayer()
-	agents := createTestAgents([]int{1})
-	player.RecalculateHP(agents)
+	player := NewPlayerWithMaxHP(InitialMaxHP)
 
 	// 前のバトルでダメージを受けた
 	player.HP = 30
@@ -209,58 +138,76 @@ func TestPlayerModel_バトル持ち越しなし(t *testing.T) {
 	}
 }
 
-// TestHPConstants はHP計算定数が正しい値であることを確認します。
-func TestHPConstants(t *testing.T) {
-	// 旧仕様の定数（互換性用）
-	if HPCoefficient != 10.0 {
-		t.Errorf("HPCoefficientが期待値と異なります: got %f, want 10.0", HPCoefficient)
-	}
-	if BaseHP != 100 {
-		t.Errorf("BaseHPが期待値と異なります: got %d, want 100", BaseHP)
-	}
+// TestInitialMaxHP は初期最大HP定数が正しい値であることを確認します。
+func TestInitialMaxHP(t *testing.T) {
 	// 新仕様の初期最大HP
 	if InitialMaxHP != 1000 {
 		t.Errorf("InitialMaxHPが期待値と異なります: got %d, want 1000", InitialMaxHP)
 	}
 }
 
-// createTestAgents はテスト用のエージェントを作成するヘルパー関数です。
-// 注意: 旧実装ではエージェントレベルがコアレベルから導出されていましたが、
-// 新実装ではエージェントにはレベル概念がありません。
-// このテストはレガシーコードとの互換性のために残されています。
-func createTestAgents(levels []int) []*AgentModel {
-	agents := make([]*AgentModel, len(levels))
+// TestNewPlayerWithMaxHP_新規プレイヤーのMaxHP はNewPlayerWithMaxHPで初期MaxHPが正しく設定されることを確認します。
+func TestNewPlayerWithMaxHP_新規プレイヤーのMaxHP(t *testing.T) {
+	// 新規プレイヤーは初期最大HP（1000）で作成される
+	player := NewPlayerWithMaxHP(InitialMaxHP)
 
-	coreType := CoreType{
-		ID:          "test",
-		Name:        "テスト",
-		StatWeights: map[string]float64{"STR": 1.0, "MAG": 1.0, "SPD": 1.0, "LUK": 1.0},
-		AllowedTags: []string{"physical_low"},
+	if player.MaxHP != 1000 {
+		t.Errorf("初期MaxHPが期待値と異なります: got %d, want 1000", player.MaxHP)
 	}
-	passiveSkill := PassiveSkill{ID: "test_skill"}
-
-	modules := make([]*ModuleModel, 4)
-	for i := 0; i < 4; i++ {
-		modules[i] = NewModuleFromType(ModuleType{
-			ID:          "mod",
-			Name:        "テスト",
-			Icon:        "⚔️",
-			Tags:        []string{"physical_low"},
-			Description: "テスト",
-			Effects: []ModuleEffect{
-				{
-					Target:      TargetEnemy,
-					HPFormula:   &HPFormula{Base: 0, StatCoef: 1.0, StatRef: "STR"},
-					Probability: 1.0,
-				},
-			},
-		}, nil)
+	if player.HP != 1000 {
+		t.Errorf("初期HPが期待値と異なります: got %d, want 1000", player.HP)
 	}
+}
 
-	for i := range levels {
-		core := NewCoreWithTypeID("test", coreType, passiveSkill)
-		agents[i] = NewAgent("agent_test", core, modules)
+// TestPlayerModel_IncreaseMaxHP は敵撃破による最大HP増加を確認します。
+func TestPlayerModel_IncreaseMaxHP(t *testing.T) {
+	player := NewPlayerWithMaxHP(1000)
+
+	// 最大HPを10増加
+	player.IncreaseMaxHP(10)
+
+	if player.MaxHP != 1010 {
+		t.Errorf("IncreaseMaxHP後のMaxHPが期待値と異なります: got %d, want 1010", player.MaxHP)
 	}
+	// 現在HPは変更されない
+	if player.HP != 1000 {
+		t.Errorf("IncreaseMaxHP後のHPが変更されています: got %d, want 1000", player.HP)
+	}
+}
 
-	return agents
+// TestPlayerModel_IncreaseMaxHP_複数回増加 は複数回の最大HP増加を確認します。
+func TestPlayerModel_IncreaseMaxHP_複数回増加(t *testing.T) {
+	player := NewPlayerWithMaxHP(1000)
+
+	// 初撃破報酬: +10
+	player.IncreaseMaxHP(10)
+	// 高レベル撃破報酬: (5-1) x 10 = +40
+	player.IncreaseMaxHP(40)
+
+	if player.MaxHP != 1050 {
+		t.Errorf("複数回IncreaseMaxHP後のMaxHPが期待値と異なります: got %d, want 1050", player.MaxHP)
+	}
+}
+
+// TestPlayerModel_IncreaseMaxHP_負の値は無視 は負の値がIncreaseMaxHPに渡されても無視されることを確認します。
+func TestPlayerModel_IncreaseMaxHP_負の値は無視(t *testing.T) {
+	player := NewPlayerWithMaxHP(1000)
+
+	player.IncreaseMaxHP(-50)
+
+	// MaxHPは減少しない
+	if player.MaxHP != 1000 {
+		t.Errorf("負の値でMaxHPが変更されています: got %d, want 1000", player.MaxHP)
+	}
+}
+
+// TestPlayerModel_IncreaseMaxHP_ゼロは無視 はゼロがIncreaseMaxHPに渡されても何も変わらないことを確認します。
+func TestPlayerModel_IncreaseMaxHP_ゼロは無視(t *testing.T) {
+	player := NewPlayerWithMaxHP(1000)
+
+	player.IncreaseMaxHP(0)
+
+	if player.MaxHP != 1000 {
+		t.Errorf("ゼロでMaxHPが変更されています: got %d, want 1000", player.MaxHP)
+	}
 }

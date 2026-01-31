@@ -135,13 +135,15 @@ func TestAddEncounteredEnemy(t *testing.T) {
 func TestPreparePlayerForBattle(t *testing.T) {
 	gs := NewGameStateForTest()
 
-	// v3.0.0: 空のエージェントリストでバトル準備
+	// 新仕様: MaxHPが設定されているプレイヤーでバトル準備
+	// MaxHPが0で空のエージェントリストの場合、MaxHPは変更されない
+	gs.Player().InitializeHP(domain.InitialMaxHP)
 	gs.PreparePlayerForBattle([]*domain.AgentModel{})
 
 	player := gs.Player()
-	// HPが設定されていることを確認（最小でもBaseHP）
-	if player.MaxHP < domain.BaseHP {
-		t.Errorf("MaxHP should be at least BaseHP (%d), got %d", domain.BaseHP, player.MaxHP)
+	// HPが初期最大HP（1000）であることを確認
+	if player.MaxHP != domain.InitialMaxHP {
+		t.Errorf("MaxHP should be %d, got %d", domain.InitialMaxHP, player.MaxHP)
 	}
 	if player.HP != player.MaxHP {
 		t.Errorf("HP should equal MaxHP after preparation")

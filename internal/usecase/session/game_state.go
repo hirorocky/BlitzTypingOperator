@@ -224,8 +224,12 @@ func (g *GameState) GetEncounteredEnemies() []string {
 
 // PreparePlayerForBattle はプレイヤーをバトル用に準備します。
 // agents: バトルに参加するエージェントのリスト（AgentSlotManager.BuildAgentsForBattle()から取得）
+// 注意: MaxHPは事前に設定されている必要があります（セーブデータロード時 or NewPlayerWithMaxHP）
 func (g *GameState) PreparePlayerForBattle(agents []*domain.AgentModel) {
-	g.player.RecalculateHP(agents)
+	// MaxHPが未設定の場合は初期値を設定（後方互換性のため）
+	if g.player.MaxHP == 0 && len(agents) > 0 {
+		g.player.InitializeHP(domain.InitialMaxHP)
+	}
 	g.player.PrepareForBattle()
 }
 
