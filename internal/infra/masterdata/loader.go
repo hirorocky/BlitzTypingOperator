@@ -687,6 +687,7 @@ func (s *ChainEffectData) ToDomainCategory() domain.ChainEffectCategory {
 // 効果値はMinValueを使用します（表示用のデフォルト値として）。
 func (s *ChainEffectData) ToDomainChainEffect() domain.ChainEffect {
 	return domain.NewChainEffectWithTemplate(
+		s.ID,
 		convertChainEffectType(s.EffectType),
 		s.MinValue,
 		s.Description,

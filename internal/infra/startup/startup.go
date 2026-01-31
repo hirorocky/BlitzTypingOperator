@@ -97,6 +97,7 @@ func (i *NewGameInitializer) CreateInitialAgents() []*domain.AgentModel {
 				}
 				if chainEffectDef != nil {
 					ce := domain.NewChainEffectWithTemplate(
+						chainEffectDef.ID,
 						convertChainEffectType(modData.ChainEffectType),
 						modData.ChainEffectValue,
 						chainEffectDef.Description,

@@ -1221,6 +1221,7 @@ func TestAgentSlotManager_BuildAgentsForBattle_WithChainEffect(t *testing.T) {
 	// ChainEffectsマップを作成
 	chainEffects := map[string]domain.ChainEffect{
 		"chain_damage_bonus": domain.NewChainEffectWithTemplate(
+			"chain_damage_bonus",
 			domain.ChainEffectDamageBonus,
 			50.0,
 			"次の攻撃のダメージ+%.0f",

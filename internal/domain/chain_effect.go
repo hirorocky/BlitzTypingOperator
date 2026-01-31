@@ -128,6 +128,10 @@ const (
 // ChainEffect はモジュールインスタンスに紐づくチェイン効果を表す値オブジェクトです。
 // モジュール取得時にランダム決定され、変更不可のイミュータブルな構造体です。
 type ChainEffect struct {
+	// ID はチェイン効果の一意識別子です（マスタデータ参照用）。
+	// セーブデータにはこのIDが保存されます。
+	ID string
+
 	// Type はチェイン効果の種別です。
 	Type ChainEffectType
 
@@ -144,8 +148,9 @@ type ChainEffect struct {
 // NewChainEffectWithTemplate は説明文テンプレートから新しいChainEffectを作成します。
 // テンプレート内の%.0fなどのプレースホルダに効果値を埋め込みます。
 // プレースホルダがない場合はテンプレートをそのまま使用します。
-func NewChainEffectWithTemplate(effectType ChainEffectType, value float64, descTemplate, shortDescTemplate string) ChainEffect {
+func NewChainEffectWithTemplate(id string, effectType ChainEffectType, value float64, descTemplate, shortDescTemplate string) ChainEffect {
 	return ChainEffect{
+		ID:               id,
 		Type:             effectType,
 		Value:            value,
 		Description:      formatIfHasPlaceholder(descTemplate, value),
@@ -166,8 +171,9 @@ func formatIfHasPlaceholder(template string, value float64) string {
 
 // NewChainEffect は説明文なしでChainEffectを作成する簡易コンストラクタです。
 // テスト用途または説明文が不要な場合に使用します。
-func NewChainEffect(effectType ChainEffectType, value float64) ChainEffect {
+func NewChainEffect(id string, effectType ChainEffectType, value float64) ChainEffect {
 	return ChainEffect{
+		ID:    id,
 		Type:  effectType,
 		Value: value,
 	}

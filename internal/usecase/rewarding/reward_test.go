@@ -307,7 +307,7 @@ func TestModuleDropInfo_ToDomainWithRandomChainEffect(t *testing.T) {
 		},
 	}
 
-	effect := domain.NewChainEffect(domain.ChainEffectDamageAmp, 20)
+	effect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageAmp, 20)
 
 	module := dropInfo.ToDomainWithChainEffect(&effect)
 
@@ -330,7 +330,7 @@ func TestModuleDropInfo_ToDomainWithRandomChainEffect(t *testing.T) {
 // TestAddRewardsToInventory_WithChainEffect はチェイン効果付きモジュールがインベントリに追加されることをテストします。
 func TestAddRewardsToInventory_WithChainEffect(t *testing.T) {
 	// チェイン効果付きモジュールを作成
-	effect := domain.NewChainEffect(domain.ChainEffectDamageAmp, 25)
+	effect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageAmp, 25)
 	module := newTestModuleWithChainEffect(
 		"physical_lv1",
 		"物理攻撃Lv1",
@@ -369,16 +369,16 @@ func TestAddRewardsToInventory_WithChainEffect(t *testing.T) {
 		t.Errorf("チェイン効果バリエーション数が期待と異なる: got %d, want 1", len(chainVariations))
 	}
 
-	// チェイン効果タイプが保存されていることを確認
+	// チェイン効果IDが保存されていることを確認
 	hasExpectedChainEffect := false
 	for _, variation := range chainVariations {
-		if variation == string(domain.ChainEffectDamageAmp) {
+		if variation == "test_effect" {
 			hasExpectedChainEffect = true
 			break
 		}
 	}
 	if !hasExpectedChainEffect {
-		t.Errorf("期待するチェイン効果タイプが保存されていない: want %s", domain.ChainEffectDamageAmp)
+		t.Errorf("期待するチェイン効果IDが保存されていない: want test_effect, got %v", chainVariations)
 	}
 }
 

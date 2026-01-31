@@ -176,8 +176,9 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	var loadedSaveData *savedata.SaveData
 
 	if saveDataIO.Exists() {
-		loadedSaveData, err := saveDataIO.LoadGame()
-		if err == nil {
+		var loadErr error
+		loadedSaveData, loadErr = saveDataIO.LoadGame()
+		if loadErr == nil {
 			gs = gamestate.GameStateFromSaveData(loadedSaveData, domainSources)
 			statusMessage = "セーブデータをロードしました"
 		} else {
@@ -506,8 +507,14 @@ func (m *RootModel) handleBattleResult(result screens.BattleResultMsg) {
 			*result.EnemyType,
 		)
 
-		// 報酬をインベントリに追加
-		m.gameState.AddRewardsToInventory(rewardResult)
+		// 報酬をインベントリに追加（RootModelのinvManagerに直接追加）
+		if m.invManager != nil {
+			rewarding.AddRewardsToInventory(
+				rewardResult,
+				m.invManager.Cores(),
+				m.invManager.Skills(),
+			)
+		}
 
 		// 報酬画面を作成
 		m.rewardScreen = screens.NewRewardScreen(rewardResult)
@@ -738,6 +745,9 @@ func (m *RootModel) prepareSceneTransition(sceneName string) {
 	case "stats_achievements":
 		// 最新の統計データで画面を再初期化
 		m.statsAchievementsScreen = m.screenFactory.CreateStatsAchievementsScreen()
+	case "inventory":
+		// インベントリデータを最新状態に更新
+		m.inventoryScreen.RefreshData()
 	}
 }
 

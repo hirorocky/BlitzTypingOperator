@@ -104,6 +104,7 @@ func (p *ChainEffectPool) GenerateRandomEffect() *domain.ChainEffect {
 	}
 
 	effect := domain.NewChainEffectWithTemplate(
+		selected.ID,
 		selected.EffectType,
 		value,
 		selected.Description,
@@ -540,6 +541,7 @@ func (c *RewardCalculator) generateLevelBasedChainEffect(enemyLevel int) *domain
 	}
 
 	effect := domain.NewChainEffectWithTemplate(
+		selected.ID,
 		selected.EffectType,
 		value,
 		selected.Description,
@@ -568,16 +570,16 @@ func AddRewardsToInventory(
 		}
 	}
 
-	// モジュール（スキル）をインベントリに追加（TypeID + ChainEffectType）
+	// モジュール（スキル）をインベントリに追加（TypeID + ChainEffectID）
 	for _, module := range result.DroppedModules {
-		chainEffectType := ""
+		chainEffectID := ""
 		if module.HasChainEffect() {
-			chainEffectType = string(module.ChainEffect.Type)
+			chainEffectID = module.ChainEffect.ID
 		}
-		skillInv.AddSkill(module.TypeID, chainEffectType)
+		skillInv.AddSkill(module.TypeID, chainEffectID)
 		slog.Info("スキルをインベントリに追加",
 			slog.String("skill_type_id", module.TypeID),
-			slog.String("chain_effect_type", chainEffectType),
+			slog.String("chain_effect_id", chainEffectID),
 		)
 	}
 
