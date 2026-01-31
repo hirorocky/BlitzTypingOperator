@@ -2,6 +2,7 @@
 package screens
 
 import (
+	"strings"
 	"testing"
 
 	"hirorocky/type-battle/internal/domain"
@@ -170,6 +171,50 @@ func TestEncyclopediaRender(t *testing.T) {
 
 	if rendered == "" {
 		t.Error("レンダリング結果が空です")
+	}
+}
+
+// TestEncyclopediaCoreNoLevelDisplay はコア図鑑にレベル表示がないことを確認します。
+func TestEncyclopediaCoreNoLevelDisplay(t *testing.T) {
+	data := createTestEncyclopediaData()
+	screen := NewEncyclopediaScreen(data)
+	screen.width = 120
+	screen.height = 40
+
+	// コア図鑑タブを選択
+	screen.currentCategory = CategoryCore
+	screen.selectedIndex = 0
+
+	rendered := screen.View()
+
+	// レベル関連の表示がないことを確認
+	levelStrings := []string{"Lv.", "レベル", "Level", "最大Lv", "MaxLv"}
+	for _, levelStr := range levelStrings {
+		if strings.Contains(rendered, levelStr) {
+			t.Errorf("コア図鑑にレベル表示があります: %s", levelStr)
+		}
+	}
+}
+
+// TestEncyclopediaCoreOwnershipStatusDisplay はコア保有状態の表示を確認します。
+func TestEncyclopediaCoreOwnershipStatusDisplay(t *testing.T) {
+	data := createTestEncyclopediaData()
+	// 獲得済みコアを設定
+	data.AcquiredCoreTypes = []string{"all_rounder"}
+
+	screen := NewEncyclopediaScreen(data)
+	screen.width = 120
+	screen.height = 40
+
+	// コア図鑑タブを選択
+	screen.currentCategory = CategoryCore
+	screen.selectedIndex = 0
+
+	rendered := screen.View()
+
+	// 保有状態の表示があることを確認
+	if !strings.Contains(rendered, "獲得済み") {
+		t.Error("コア図鑑に保有状態表示がありません")
 	}
 }
 
