@@ -113,12 +113,6 @@ func (p *ChainEffectPool) GenerateRandomEffect() *domain.ChainEffect {
 	return &effect
 }
 
-// ドロップ関連の定数
-const (
-	// CoreLevelRange はコアレベルの敵レベルからの変動範囲です。
-	CoreLevelRange = 2
-)
-
 // BattleStatistics はバトル統計を表す構造体です。
 type BattleStatistics struct {
 	// TotalWPM はWPMの合計値です。
@@ -339,11 +333,6 @@ func (c *RewardCalculator) SetChainEffectPool(pool *ChainEffectPool) {
 // GetChainEffectPool はチェイン効果プールを取得します。
 func (c *RewardCalculator) GetChainEffectPool() *ChainEffectPool {
 	return c.chainEffectPool
-}
-
-// GetCoreLevelRange はコアレベルの変動範囲を返します。
-func (c *RewardCalculator) GetCoreLevelRange() int {
-	return CoreLevelRange
 }
 
 // CreateRewardResult は報酬結果を作成します。
