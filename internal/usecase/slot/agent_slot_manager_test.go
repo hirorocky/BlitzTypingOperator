@@ -192,26 +192,7 @@ func TestAgentSlotManager_SetCore_Success(t *testing.T) {
 	}
 }
 
-func TestAgentSlotManager_SetCore_MaxLevel(t *testing.T) {
-	manager, coreInv, _ := createTestManager()
-
-	// コアをインベントリに追加
-	coreInv.AddCore("core_001")
-
-	// コアを設定
-	err := manager.SetCore(0, "core_001")
-
-	if err != nil {
-		t.Fatalf("SetCoreはエラーを返すべきではない: %v", err)
-	}
-
-	slot := manager.GetSlot(0)
-	if slot.CoreTypeID != "core_001" {
-		t.Errorf("CoreTypeID = %q, want %q", slot.CoreTypeID, "core_001")
-	}
-}
-
-func TestAgentSlotManager_SetCore_LevelOne(t *testing.T) {
+func TestAgentSlotManager_SetCore_OwnedCore(t *testing.T) {
 	manager, coreInv, _ := createTestManager()
 
 	// コアをインベントリに追加
