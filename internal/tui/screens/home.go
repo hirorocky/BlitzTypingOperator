@@ -44,6 +44,21 @@ type DefeatedEnemyProvider interface {
 	GetMaxLevelReached() int
 }
 
+// EnemyProgressProvider はランクベースの敵進行情報を提供するインターフェースです。
+// BattleSelectScreenRankBasedが敵表示とレベル選択の制約を判断するために使用します。
+type EnemyProgressProvider interface {
+	// GetCurrentRank は現在解放済みランクを返します。
+	GetCurrentRank() int
+	// GetCurrentRankEnemies は現在ランクの敵リストを返します。
+	GetCurrentRankEnemies() []domain.EnemyType
+	// IsDefeated は指定した敵が撃破済みかどうかを返します。
+	IsDefeated(enemyTypeID string) bool
+	// GetMaxDefeatedLevel は指定した敵の撃破済み最大レベルを返します。
+	GetMaxDefeatedLevel(enemyTypeID string) int
+	// GetSelectableLevelRange は敵の選択可能レベル範囲を取得します。
+	GetSelectableLevelRange(enemyTypeID string) (min, max int)
+}
+
 // HomeScreen はホーム画面を表します。
 
 // UI-Improvement Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6

@@ -744,3 +744,235 @@ func TestBattleSelectCarouselStartBattleWithEnemyTypeID(t *testing.T) {
 		t.Errorf("レベル: got %d, want 3", startBattleMsg.Level)
 	}
 }
+
+// ==================== ランクベースの敵表示テスト ====================
+
+// mockEnemyProgressProvider はテスト用のEnemyProgressProvider実装です。
+type mockEnemyProgressProvider struct {
+	currentRank     int
+	defeatRecords   map[string]defeatRecord
+	enemyTypesCache map[string]domain.EnemyType
+}
+
+type defeatRecord struct {
+	defeated         bool
+	maxDefeatedLevel int
+}
+
+func (m *mockEnemyProgressProvider) GetCurrentRank() int {
+	return m.currentRank
+}
+
+func (m *mockEnemyProgressProvider) IsDefeated(enemyTypeID string) bool {
+	record, exists := m.defeatRecords[enemyTypeID]
+	return exists && record.defeated
+}
+
+func (m *mockEnemyProgressProvider) GetMaxDefeatedLevel(enemyTypeID string) int {
+	record, exists := m.defeatRecords[enemyTypeID]
+	if !exists {
+		return 0
+	}
+	return record.maxDefeatedLevel
+}
+
+func (m *mockEnemyProgressProvider) GetSelectableLevelRange(enemyTypeID string) (min, max int) {
+	if !m.IsDefeated(enemyTypeID) {
+		// 未撃破: デフォルトレベルのみ
+		if et, exists := m.enemyTypesCache[enemyTypeID]; exists {
+			defaultLevel := et.DefaultLevel
+			if defaultLevel < 1 {
+				defaultLevel = 1
+			}
+			return defaultLevel, defaultLevel
+		}
+		return 1, 1
+	}
+	// 撃破済み: 1 から (最大撃破レベル + 5) まで
+	maxDefeatedLevel := m.GetMaxDefeatedLevel(enemyTypeID)
+	return 1, maxDefeatedLevel + 5
+}
+
+func (m *mockEnemyProgressProvider) GetCurrentRankEnemies() []domain.EnemyType {
+	enemies := make([]domain.EnemyType, 0)
+	for _, et := range m.enemyTypesCache {
+		if et.Rank == m.currentRank {
+			enemies = append(enemies, et)
+		}
+	}
+	return enemies
+}
+
+// createTestEnemyTypesWithRank はランク付きのテスト用敵タイプリストを作成します。
+func createTestEnemyTypesWithRank() []domain.EnemyType {
+	return []domain.EnemyType{
+		{ID: "slime", Name: "スライム", DefaultLevel: 1, BaseHP: 50, AttackType: "physical", Rank: 1},
+		{ID: "goblin", Name: "ゴブリン", DefaultLevel: 2, BaseHP: 80, AttackType: "physical", Rank: 1},
+		{ID: "orc", Name: "オーク", DefaultLevel: 5, BaseHP: 200, AttackType: "physical", Rank: 2},
+		{ID: "dragon", Name: "ドラゴン", DefaultLevel: 10, BaseHP: 500, AttackType: "magic", Rank: 3},
+	}
+}
+
+func createEnemyTypeMap(enemyTypes []domain.EnemyType) map[string]domain.EnemyType {
+	m := make(map[string]domain.EnemyType)
+	for _, et := range enemyTypes {
+		m[et.ID] = et
+	}
+	return m
+}
+
+// TestBattleSelectRankBasedFiltering はランクベースの敵フィルタリングをテストします。
+func TestBattleSelectRankBasedFiltering(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+
+	// ランク1のみ解放済み
+	provider := &mockEnemyProgressProvider{
+		currentRank:     1,
+		defeatRecords:   map[string]defeatRecord{},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{},
+		provider,
+	)
+
+	// ランク1の敵のみ表示される（slime, goblin）
+	if len(screen.enemyTypes) != 2 {
+		t.Errorf("ランク1の敵数: got %d, want 2", len(screen.enemyTypes))
+	}
+
+	// 表示される敵がランク1のものであることを確認
+	for _, et := range screen.enemyTypes {
+		if et.Rank != 1 {
+			t.Errorf("ランク1以外の敵が表示されています: %s (rank=%d)", et.ID, et.Rank)
+		}
+	}
+}
+
+// TestBattleSelectRankProgressDisplay は現在ランクと進行状況の表示をテストします。
+func TestBattleSelectRankProgressDisplay(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+
+	// ランク1でslimeのみ撃破済み
+	provider := &mockEnemyProgressProvider{
+		currentRank: 1,
+		defeatRecords: map[string]defeatRecord{
+			"slime": {defeated: true, maxDefeatedLevel: 3},
+		},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{},
+		provider,
+	)
+
+	screen.width = 120
+	screen.height = 40
+
+	view := screen.View()
+
+	// ランク表示があること
+	if !containsString(view, "Rank 1") {
+		t.Error("ランク表示がありません")
+	}
+
+	// 進行状況表示があること（1/2撃破）
+	if !containsString(view, "1/2") {
+		t.Error("進行状況表示がありません")
+	}
+}
+
+// TestBattleSelectDefeatedStatusPerEnemy は敵ごとの撃破状況表示をテストします。
+func TestBattleSelectDefeatedStatusPerEnemy(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+
+	// ランク1でslimeのみ撃破済み
+	provider := &mockEnemyProgressProvider{
+		currentRank: 1,
+		defeatRecords: map[string]defeatRecord{
+			"slime": {defeated: true, maxDefeatedLevel: 5},
+		},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{},
+		provider,
+	)
+
+	screen.width = 120
+	screen.height = 40
+
+	// slime（撃破済み）を選択した状態で描画
+	view := screen.View()
+
+	// 撃破済み敵の最大撃破レベル表示があること
+	if !containsString(view, "最高Lv.5") {
+		t.Error("最大撃破レベル表示がありません")
+	}
+}
+
+// TestBattleSelectLevelSelectionForDefeatedEnemy は撃破済み敵のレベル選択をテストします。
+func TestBattleSelectLevelSelectionForDefeatedEnemy(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+
+	// slimeをレベル5で撃破済み
+	provider := &mockEnemyProgressProvider{
+		currentRank: 1,
+		defeatRecords: map[string]defeatRecord{
+			"slime": {defeated: true, maxDefeatedLevel: 5},
+		},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{},
+		provider,
+	)
+
+	// slimeが選択されている状態（インデックス0）
+	// 撃破済みなので、レベル1〜10（5+5）まで選択可能
+	if screen.minSelectableLevel != 1 {
+		t.Errorf("最小選択可能レベル: got %d, want 1", screen.minSelectableLevel)
+	}
+
+	if screen.maxSelectableLevel != 10 {
+		t.Errorf("最大選択可能レベル: got %d, want 10 (5+5)", screen.maxSelectableLevel)
+	}
+}
+
+// TestBattleSelectLevelFixedForUndefeatedEnemy は未撃破敵のレベル固定をテストします。
+func TestBattleSelectLevelFixedForUndefeatedEnemy(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+
+	// 未撃破状態
+	provider := &mockEnemyProgressProvider{
+		currentRank:     1,
+		defeatRecords:   map[string]defeatRecord{},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{},
+		provider,
+	)
+
+	// slime（デフォルトレベル1）が選択されている状態
+	// 未撃破なのでデフォルトレベルのみ選択可能
+	if screen.selectedLevel != 1 {
+		t.Errorf("選択レベル: got %d, want 1", screen.selectedLevel)
+	}
+
+	// min == max であること（固定）
+	if screen.minSelectableLevel != screen.maxSelectableLevel {
+		t.Errorf("未撃破敵のレベル範囲が固定でありません: min=%d, max=%d",
+			screen.minSelectableLevel, screen.maxSelectableLevel)
+	}
+}

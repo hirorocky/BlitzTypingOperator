@@ -683,3 +683,337 @@ func (s *BattleSelectScreenCarousel) renderLevelSelector(builder *strings.Builde
 	builder.WriteString(levelStyle.Render(levelDisplay))
 	builder.WriteString("\n\n")
 }
+
+// ==================== ランクベースのバトル選択画面 ====================
+
+// BattleSelectScreenRankBased はランクベースのバトル選択画面を表します。
+// 現在のランクに属する敵のみを表示し、撃破状況に応じてレベル選択を制限します。
+type BattleSelectScreenRankBased struct {
+	agentProvider    AgentProvider
+	progressProvider EnemyProgressProvider
+	enemyTypes       []domain.EnemyType
+
+	// 敵種類選択用
+	selectedTypeIdx int
+
+	// レベル選択用
+	selectedLevel      int
+	minSelectableLevel int
+	maxSelectableLevel int
+
+	error  string
+	styles *styles.GameStyles
+	width  int
+	height int
+}
+
+// NewBattleSelectScreenRankBased は新しいランクベースのBattleSelectScreenを作成します。
+func NewBattleSelectScreenRankBased(
+	agentProvider AgentProvider,
+	progressProvider EnemyProgressProvider,
+) *BattleSelectScreenRankBased {
+	// 現在ランクの敵を取得
+	currentRankEnemies := progressProvider.GetCurrentRankEnemies()
+
+	s := &BattleSelectScreenRankBased{
+		agentProvider:    agentProvider,
+		progressProvider: progressProvider,
+		enemyTypes:       currentRankEnemies,
+		selectedTypeIdx:  0,
+		styles:           styles.NewGameStyles(),
+		width:            140,
+		height:           40,
+	}
+
+	// 初期選択敵タイプのレベル範囲を設定
+	if len(currentRankEnemies) > 0 {
+		s.updateLevelRange()
+	}
+
+	return s
+}
+
+// updateLevelRange は現在選択中の敵タイプに応じてレベル範囲を更新します。
+func (s *BattleSelectScreenRankBased) updateLevelRange() {
+	if len(s.enemyTypes) == 0 {
+		return
+	}
+
+	enemyType := s.enemyTypes[s.selectedTypeIdx]
+	defaultLevel := enemyType.DefaultLevel
+	if defaultLevel < 1 {
+		defaultLevel = 1
+	}
+
+	min, max := s.progressProvider.GetSelectableLevelRange(enemyType.ID)
+	s.minSelectableLevel = min
+	s.maxSelectableLevel = max
+
+	// 選択レベルをデフォルトレベルにリセット（min以上max以下に収める）
+	s.selectedLevel = defaultLevel
+	if s.selectedLevel < s.minSelectableLevel {
+		s.selectedLevel = s.minSelectableLevel
+	}
+	if s.selectedLevel > s.maxSelectableLevel {
+		s.selectedLevel = s.maxSelectableLevel
+	}
+}
+
+// Init は画面の初期化を行います。
+func (s *BattleSelectScreenRankBased) Init() tea.Cmd {
+	return nil
+}
+
+// Update はメッセージを処理します。
+func (s *BattleSelectScreenRankBased) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		s.width = msg.Width
+		s.height = msg.Height
+		return s, nil
+
+	case tea.KeyMsg:
+		return s.handleKeyMsg(msg)
+	}
+
+	return s, nil
+}
+
+// handleKeyMsg はキーボード入力を処理します。
+func (s *BattleSelectScreenRankBased) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.Type {
+	case tea.KeyEsc:
+		return s, func() tea.Msg {
+			return ChangeSceneMsg{Scene: "home"}
+		}
+
+	case tea.KeyLeft:
+		// 左キーで前の敵タイプへ（ループ）
+		if len(s.enemyTypes) > 0 {
+			s.selectedTypeIdx--
+			if s.selectedTypeIdx < 0 {
+				s.selectedTypeIdx = len(s.enemyTypes) - 1
+			}
+			s.updateLevelRange()
+		}
+		return s, nil
+
+	case tea.KeyRight:
+		// 右キーで次の敵タイプへ（ループ）
+		if len(s.enemyTypes) > 0 {
+			s.selectedTypeIdx++
+			if s.selectedTypeIdx >= len(s.enemyTypes) {
+				s.selectedTypeIdx = 0
+			}
+			s.updateLevelRange()
+		}
+		return s, nil
+
+	case tea.KeyUp:
+		// 上キーでレベル上昇（撃破済みの場合のみ有効）
+		if s.selectedLevel < s.maxSelectableLevel {
+			s.selectedLevel++
+		}
+		return s, nil
+
+	case tea.KeyDown:
+		// 下キーでレベル下降
+		if s.selectedLevel > s.minSelectableLevel {
+			s.selectedLevel--
+		}
+		return s, nil
+
+	case tea.KeyEnter:
+		// バトル開始
+		equippedAgents := s.agentProvider.GetEquippedAgents()
+		if len(equippedAgents) == 0 {
+			s.error = "エージェントが装備されていません。\nエージェント管理でエージェントを装備してください。"
+			return s, nil
+		}
+
+		if len(s.enemyTypes) == 0 {
+			s.error = "敵タイプが読み込まれていません。"
+			return s, nil
+		}
+
+		selectedEnemy := s.enemyTypes[s.selectedTypeIdx]
+		return s, func() tea.Msg {
+			return StartBattleMsg{
+				Level:       s.selectedLevel,
+				EnemyTypeID: selectedEnemy.ID,
+			}
+		}
+	}
+
+	return s, nil
+}
+
+// View は画面をレンダリングします。
+func (s *BattleSelectScreenRankBased) View() string {
+	var builder strings.Builder
+
+	// タイトル
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorPrimary).
+		Align(lipgloss.Center).
+		Width(s.width)
+
+	builder.WriteString(titleStyle.Render("バトル選択"))
+	builder.WriteString("\n\n")
+
+	if len(s.enemyTypes) == 0 {
+		builder.WriteString("敵タイプが読み込まれていません")
+		return builder.String()
+	}
+
+	// ランクと進行状況
+	s.renderRankProgress(&builder)
+
+	// 敵選択カルーセル
+	s.renderEnemyCarousel(&builder)
+
+	// 敵情報パネル
+	s.renderEnemyInfoPanel(&builder)
+
+	// レベル選択
+	s.renderLevelSelector(&builder)
+
+	// エラーメッセージ
+	if s.error != "" {
+		errorStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorDamage).
+			Align(lipgloss.Center).
+			Width(s.width)
+		builder.WriteString(errorStyle.Render(s.error))
+		builder.WriteString("\n\n")
+	}
+
+	// ヒント
+	hintStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorSubtle).
+		Align(lipgloss.Center).
+		Width(s.width)
+
+	builder.WriteString(hintStyle.Render("←→: 敵選択  ↑↓: レベル選択  Enter: バトル開始  Esc: 戻る"))
+
+	return builder.String()
+}
+
+// renderRankProgress はランクと進行状況をレンダリングします。
+func (s *BattleSelectScreenRankBased) renderRankProgress(builder *strings.Builder) {
+	currentRank := s.progressProvider.GetCurrentRank()
+
+	// 現在ランクの撃破数を計算
+	defeatedCount := 0
+	for _, et := range s.enemyTypes {
+		if s.progressProvider.IsDefeated(et.ID) {
+			defeatedCount++
+		}
+	}
+	totalCount := len(s.enemyTypes)
+
+	rankStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorSecondary).
+		Align(lipgloss.Center).
+		Width(s.width)
+
+	rankInfo := fmt.Sprintf("Rank %d  |  撃破: %d/%d", currentRank, defeatedCount, totalCount)
+	builder.WriteString(rankStyle.Render(rankInfo))
+	builder.WriteString("\n\n")
+}
+
+// renderEnemyCarousel は敵選択カルーセルをレンダリングします。
+func (s *BattleSelectScreenRankBased) renderEnemyCarousel(builder *strings.Builder) {
+	// カルーセル表示：< [敵名] >
+	selectedEnemy := s.enemyTypes[s.selectedTypeIdx]
+
+	carouselStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorPrimary).
+		Align(lipgloss.Center).
+		Width(s.width)
+
+	carousel := fmt.Sprintf("◀  %s  ▶", selectedEnemy.Name)
+	builder.WriteString(carouselStyle.Render(carousel))
+	builder.WriteString("\n")
+
+	// 敵インデックス表示
+	indexStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorSubtle).
+		Align(lipgloss.Center).
+		Width(s.width)
+
+	indexInfo := fmt.Sprintf("(%d / %d)", s.selectedTypeIdx+1, len(s.enemyTypes))
+	builder.WriteString(indexStyle.Render(indexInfo))
+	builder.WriteString("\n\n")
+}
+
+// renderEnemyInfoPanel は敵情報パネルをレンダリングします。
+func (s *BattleSelectScreenRankBased) renderEnemyInfoPanel(builder *strings.Builder) {
+	selectedEnemy := s.enemyTypes[s.selectedTypeIdx]
+
+	infoPanel := components.NewInfoPanel("敵情報")
+	infoPanel.AddItem("名前", selectedEnemy.Name)
+	infoPanel.AddItem("攻撃属性", s.formatAttackType(selectedEnemy.AttackType))
+	infoPanel.AddItem("基礎HP", fmt.Sprintf("%d", selectedEnemy.BaseHP))
+	infoPanel.AddItem("デフォルトLv", fmt.Sprintf("%d", selectedEnemy.DefaultLevel))
+
+	// パッシブスキル情報（descriptionを表示）
+	if selectedEnemy.NormalPassive != nil {
+		infoPanel.AddItem("通常パッシブ", "★"+selectedEnemy.NormalPassive.Description)
+	}
+	if selectedEnemy.EnhancedPassive != nil {
+		infoPanel.AddItem("強化パッシブ", "★"+selectedEnemy.EnhancedPassive.Description)
+	}
+
+	// 撃破状態
+	if s.progressProvider.IsDefeated(selectedEnemy.ID) {
+		defeatedLevel := s.progressProvider.GetMaxDefeatedLevel(selectedEnemy.ID)
+		infoPanel.AddItem("撃破済み", fmt.Sprintf("最高Lv.%d", defeatedLevel))
+	} else {
+		infoPanel.AddItem("撃破状態", "未撃破")
+	}
+
+	infoPanelRendered := infoPanel.Render(50)
+	centeredInfo := lipgloss.NewStyle().
+		Width(s.width).
+		Align(lipgloss.Center).
+		Render(infoPanelRendered)
+	builder.WriteString(centeredInfo)
+	builder.WriteString("\n\n")
+}
+
+// formatAttackType は攻撃タイプを日本語に変換します。
+func (s *BattleSelectScreenRankBased) formatAttackType(attackType string) string {
+	switch attackType {
+	case "physical":
+		return "物理"
+	case "magic":
+		return "魔法"
+	default:
+		return attackType
+	}
+}
+
+// renderLevelSelector はレベル選択をレンダリングします。
+func (s *BattleSelectScreenRankBased) renderLevelSelector(builder *strings.Builder) {
+	levelStyle := lipgloss.NewStyle().
+		Bold(true).
+		Align(lipgloss.Center).
+		Width(s.width)
+
+	var levelDisplay string
+	if s.minSelectableLevel == s.maxSelectableLevel {
+		// 未撃破：レベル固定
+		levelDisplay = fmt.Sprintf("挑戦レベル: Lv.%d (固定)", s.selectedLevel)
+	} else {
+		// 撃破済み：レベル選択可能
+		levelDisplay = fmt.Sprintf("挑戦レベル: ▲ Lv.%d ▼ (Lv.%d 〜 Lv.%d)",
+			s.selectedLevel, s.minSelectableLevel, s.maxSelectableLevel)
+	}
+
+	builder.WriteString(levelStyle.Render(levelDisplay))
+	builder.WriteString("\n\n")
+}
