@@ -244,8 +244,7 @@ func (g *GameState) AddRewardsToInventory(result *rewarding.RewardResult) *rewar
 	return rewarding.AddRewardsToInventory(
 		result,
 		g.inventory.Cores(),
-		g.inventory.Modules(),
-		g.tempStorage,
+		g.inventory.Skills(),
 	)
 }
 

@@ -572,8 +572,8 @@ func TestInventorySlot_MultipleSlotsSameCore(t *testing.T) {
 	}
 }
 
-// TestInventorySlot_MultipleSlotsSameSkill は同じスキルを複数スロットに設定できることをテストします。
-func TestInventorySlot_MultipleSlotsSameSkill(t *testing.T) {
+// TestInventorySlot_MultipleSlotsSameSkill_ShouldFail は同じスキルを複数スロットに設定できないことをテストします。
+func TestInventorySlot_MultipleSlotsSameSkill_ShouldFail(t *testing.T) {
 	// テスト環境のセットアップ
 	invManager := inventory.NewInventoryManager()
 	coreTypes := createTestCoreTypes()
@@ -598,18 +598,26 @@ func TestInventorySlot_MultipleSlotsSameSkill(t *testing.T) {
 		slotManager.SetCore(i, "all_rounder", 5)
 	}
 
-	// 全スロットに同じスキルを設定
-	for i := range 3 {
-		err := slotManager.SetSkill(i, 0, "physical_strike", "")
-		if err != nil {
-			t.Errorf("スロット%dへのスキル設定に失敗: %v", i, err)
-		}
+	// 最初のスロットにスキルを設定
+	err := slotManager.SetSkill(0, 0, "physical_strike", "")
+	if err != nil {
+		t.Fatalf("スロット0へのスキル設定に失敗: %v", err)
 	}
 
-	// 全スロットにスキルが設定されていることを確認
-	for i := range 3 {
-		if slotManager.GetSlot(i).GetSkillCount() != 1 {
-			t.Errorf("スロット%dのスキル数が不正: got %d, want 1", i, slotManager.GetSlot(i).GetSkillCount())
-		}
+	// 同じスキルを他のスロットに設定しようとするとエラーになるはず
+	err = slotManager.SetSkill(1, 0, "physical_strike", "")
+	if err == nil {
+		t.Error("同じスキルを別スロットに設定できてしまった")
+	}
+	if err != slot.ErrSkillAlreadyEquipped {
+		t.Errorf("期待するエラー: %v, 実際: %v", slot.ErrSkillAlreadyEquipped, err)
+	}
+
+	// スロット0のみにスキルが設定されていることを確認
+	if slotManager.GetSlot(0).GetSkillCount() != 1 {
+		t.Errorf("スロット0のスキル数が不正: got %d, want 1", slotManager.GetSlot(0).GetSkillCount())
+	}
+	if slotManager.GetSlot(1).GetSkillCount() != 0 {
+		t.Errorf("スロット1のスキル数が不正: got %d, want 0", slotManager.GetSlot(1).GetSkillCount())
 	}
 }

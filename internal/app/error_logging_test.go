@@ -134,7 +134,8 @@ func TestGameStateFromSaveDataLogsAgentErrors(t *testing.T) {
 	}
 }
 
-// TestInventoryManagerLogsErrors は InventoryManager のエラーがログ出力されることをテストします。
+// TestInventoryManagerLogsErrors は InventoryManager のコア追加が正常に動作することをテストします。
+// 新システム（v3.0.0）ではTypeIDベースのユニーク管理のため、容量制限はありません。
 
 func TestInventoryManagerLogsErrors(t *testing.T) {
 	// slogのログ出力をキャプチャ
@@ -144,23 +145,10 @@ func TestInventoryManagerLogsErrors(t *testing.T) {
 	// InventoryManagerを初期化
 	invManager := gamestate.NewInventoryManager()
 
-	// 手動でコアを追加
-	coreType := domain.CoreType{
-		ID:             "all_rounder",
-		Name:           "オールラウンダー",
-		StatWeights:    map[string]float64{"STR": 1.0, "MAG": 1.0, "SPD": 1.0, "LUK": 1.0},
-		PassiveSkillID: "balance_mastery",
-		AllowedTags:    []string{"physical_low"},
-		MinDropLevel:   1,
-	}
-	passiveSkill := domain.PassiveSkill{
-		ID:          "balance_mastery",
-		Name:        "バランスマスタリー",
-		Description: "全ステータスにバランスボーナスを得る",
-	}
-	core := domain.NewCore("core_001", "初期コア", 1, coreType, passiveSkill)
-	if err := invManager.AddCore(core); err != nil {
-		t.Errorf("コア追加に失敗: %v", err)
+	// コアを追加（新システムではTypeIDとLevelで追加）
+	updated := invManager.AddCore("all_rounder", 1)
+	if !updated {
+		t.Error("コア追加で更新が期待されます")
 	}
 
 	// ログ出力の検証（正常時はエラーログは出力されない）
@@ -168,8 +156,8 @@ func TestInventoryManagerLogsErrors(t *testing.T) {
 	_ = logOutput
 
 	// コアが追加されていることを確認
-	cores := invManager.GetCores()
-	if len(cores) == 0 {
+	ownedCores := invManager.GetOwnedCores()
+	if len(ownedCores) == 0 {
 		t.Error("コアが追加されていません")
 	}
 }
@@ -197,57 +185,25 @@ func TestSlogLoggingFunctionality(t *testing.T) {
 	}
 }
 
-// TestLoggedAddCoreError は AddCore エラー時に適切なログが出力されることをテストします。
-// このテストでは実際にエラーを発生させてログ出力を検証します。
+// TestLoggedAddCoreError は構造化ログが正しく出力されることをテストします。
+// 新システム（v3.0.0）では容量制限がないため、手動でエラーログを出力してテストします。
 
 func TestLoggedAddCoreError(t *testing.T) {
 	buf, cleanup := setupTestLogger()
 	defer cleanup()
 
-	// 満杯のインベントリを作成してエラーを発生させる
-	// 最大スロット数を1に設定
+	// 新システムでは容量制限がないため、エラーを直接シミュレート
 	invManager := gamestate.NewInventoryManager()
-	invManager.SetMaxCoreSlots(1)
-	invManager.SetMaxModuleSlots(1)
 
-	// 1つ目のコアは追加できる
-	coreType := domain.CoreType{
-		ID:             "all_rounder",
-		Name:           "オールラウンダー",
-		StatWeights:    map[string]float64{"STR": 1.0, "MAG": 1.0, "SPD": 1.0, "LUK": 1.0},
-		PassiveSkillID: "balance_mastery",
-		AllowedTags:    []string{"physical_low"},
-		MinDropLevel:   1,
-	}
-	passiveSkill := domain.PassiveSkill{
-		ID:          "balance_mastery",
-		Name:        "バランスマスタリー",
-		Description: "全ステータスにバランスボーナスを得る",
-	}
+	// コアを追加
+	invManager.AddCore("all_rounder", 1)
 
-	core1 := domain.NewCore("core_001", "初期コア", 1, coreType, passiveSkill)
-	err := invManager.AddCore(core1)
-	if err != nil {
-		t.Errorf("最初のコア追加でエラーが発生しました: %v", err)
-	}
-
-	// 2つ目のコアは追加できない（満杯）
-	core2 := domain.NewCore("core_002", "2番目のコア", 1, coreType, passiveSkill)
-	err = invManager.AddCore(core2)
-
-	// エラーが発生することを確認
-	if err == nil {
-		t.Error("インベントリ満杯時にエラーが発生するべきです")
-	}
-
-	// 構造化ログを使用してエラーを記録（実際の実装で行うべき処理）
-	if err != nil {
-		slog.Error("コア追加に失敗",
-			slog.String("core_id", core2.ID),
-			slog.String("core_type", core2.Type.ID),
-			slog.Any("error", err),
-		)
-	}
+	// エラーログのフォーマットをテスト（実際のエラーケースをシミュレート）
+	slog.Error("コア追加に失敗",
+		slog.String("core_id", "core_002"),
+		slog.String("core_type", "all_rounder"),
+		slog.String("error", "シミュレートされたエラー"),
+	)
 
 	// ログ出力を検証
 	logOutput := buf.String()

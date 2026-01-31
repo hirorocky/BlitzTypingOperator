@@ -86,7 +86,8 @@ func TestMessageHandlers_HandleCtrlC(t *testing.T) {
 	}
 }
 
-// TestMessageHandlers_HandleEscKey はEscキーでホーム以外からホームに戻ることを検証します
+// TestMessageHandlers_HandleEscKey はEscキーで画面がChangeSceneMsgを返すことを検証します
+// 新設計では、Escキーは各画面に転送され、画面がChangeSceneMsgを返す
 func TestMessageHandlers_HandleEscKey(t *testing.T) {
 	model := NewRootModel("", masterdata.EmbeddedData, false)
 	handlers := NewMessageHandlers(model)
@@ -100,12 +101,27 @@ func TestMessageHandlers_HandleEscKey(t *testing.T) {
 		t.Fatal("Should be on BattleSelect screen")
 	}
 
-	// Escキーを押してホームに戻る
+	// Escキーを押す → 画面がChangeSceneMsgを返すcmdを返す
 	msg := tea.KeyMsg{Type: tea.KeyEsc}
-	_, _ = handlers.Handle(msg)
+	_, cmd := handlers.Handle(msg)
+
+	// 画面からのコマンドが返されることを確認
+	if cmd == nil {
+		t.Fatal("Esc should return a command from screen")
+	}
+
+	// cmdを実行してChangeSceneMsgを取得
+	resultMsg := cmd()
+	changeSceneMsg, ok := resultMsg.(screens.ChangeSceneMsg)
+	if !ok {
+		t.Fatalf("Command should return ChangeSceneMsg, got %T", resultMsg)
+	}
+
+	// ChangeSceneMsgをhandlersに送信してシーン遷移
+	_, _ = handlers.Handle(changeSceneMsg)
 
 	if model.CurrentScene() != SceneHome {
-		t.Errorf("Esc should return to SceneHome, got %v", model.CurrentScene())
+		t.Errorf("After processing ChangeSceneMsg, scene should be SceneHome, got %v", model.CurrentScene())
 	}
 }
 
@@ -192,7 +208,7 @@ func TestScreenMap_GetScreen(t *testing.T) {
 	}{
 		{SceneHome, true},
 		{SceneBattleSelect, true},
-		{SceneAgentManagement, true},
+		{SceneAgentCustomization, true},
 		{SceneEncyclopedia, true},
 		{SceneAchievement, true},
 		{SceneSettings, true},

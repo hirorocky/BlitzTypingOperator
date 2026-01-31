@@ -16,7 +16,6 @@ func NewSceneRouter() *SceneRouter {
 			"home":                SceneHome,
 			"battle_select":       SceneBattleSelect,
 			"battle":              SceneBattle,
-			"agent_management":    SceneAgentManagement,
 			"encyclopedia":        SceneEncyclopedia,
 			"stats_achievements":  SceneAchievement,
 			"settings":            SceneSettings,

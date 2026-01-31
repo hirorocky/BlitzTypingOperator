@@ -197,27 +197,30 @@ func TestE2I_FullCustomizationFlow(t *testing.T) {
 		t.Fatalf("スキル設定(チェイン効果付き)に失敗: %v", err)
 	}
 
-	// ステップ6: スキル設定（同じスキル、別のチェイン効果）
+	// ステップ6: 同じスキルを別スロットに設定しようとするとエラーになることを確認
 	err = slotManager.SetSkill(slotIndex, 1, "basic_attack", "chain_crit")
-	if err != nil {
-		t.Fatalf("スキル設定(別チェイン)に失敗: %v", err)
+	if err == nil {
+		t.Error("同じスキルIDを複数スロットに設定できてしまった")
+	}
+	if err != slot.ErrSkillAlreadyEquipped {
+		t.Errorf("期待するエラー: %v, 実際: %v", slot.ErrSkillAlreadyEquipped, err)
 	}
 
 	// ステップ7: スキル設定（チェイン効果なし）
-	err = slotManager.SetSkill(slotIndex, 2, "power_attack", "")
+	err = slotManager.SetSkill(slotIndex, 1, "power_attack", "")
 	if err != nil {
 		t.Fatalf("スキル設定(チェインなし)に失敗: %v", err)
 	}
 
 	// ステップ8: スキル設定（最強スキル）
-	err = slotManager.SetSkill(slotIndex, 3, "berserk_strike", "chain_ultimate")
+	err = slotManager.SetSkill(slotIndex, 2, "berserk_strike", "chain_ultimate")
 	if err != nil {
 		t.Fatalf("スキル設定(最強)に失敗: %v", err)
 	}
 
-	// ステップ9: 最終確認
-	if slot0.GetSkillCount() != 4 {
-		t.Errorf("スキル数が不正: got %d, want 4", slot0.GetSkillCount())
+	// ステップ9: 最終確認（3つのスキルが設定されているはず）
+	if slot0.GetSkillCount() != 3 {
+		t.Errorf("スキル数が不正: got %d, want 3", slot0.GetSkillCount())
 	}
 
 	// ステップ10: バトル用エージェント構築
@@ -230,8 +233,8 @@ func TestE2I_FullCustomizationFlow(t *testing.T) {
 	if agent.Level != 10 {
 		t.Errorf("エージェントレベルが不正: got %d, want 10", agent.Level)
 	}
-	if len(agent.Modules) != 4 {
-		t.Errorf("エージェントスキル数が不正: got %d, want 4", len(agent.Modules))
+	if len(agent.Modules) != 3 {
+		t.Errorf("エージェントスキル数が不正: got %d, want 3", len(agent.Modules))
 	}
 }
 
@@ -527,24 +530,26 @@ func TestE2I_ChainEffectVariationSelection(t *testing.T) {
 		t.Errorf("チェイン効果バリエーション数が不正: got %d, want 3", len(chainVariations))
 	}
 
-	// 各チェイン効果を選択して設定できる
+	// 最初にchain_fireで設定
 	err := slotManager.SetSkill(0, 0, "basic_attack", "chain_fire")
 	if err != nil {
 		t.Errorf("chain_fireでの設定に失敗: %v", err)
 	}
 
-	err = slotManager.SetSkill(0, 1, "basic_attack", "chain_ice")
+	// 同じスロット位置でチェイン効果を上書きできることを確認
+	err = slotManager.SetSkill(0, 0, "basic_attack", "chain_ice")
 	if err != nil {
-		t.Errorf("chain_iceでの設定に失敗: %v", err)
+		t.Errorf("chain_iceでの上書きに失敗: %v", err)
 	}
 
-	err = slotManager.SetSkill(0, 2, "basic_attack", "chain_lightning")
-	if err != nil {
-		t.Errorf("chain_lightningでの設定に失敗: %v", err)
+	// チェイン効果がchain_iceに変更されていることを確認
+	skillConfig := slotManager.GetSlot(0).GetSkill(0)
+	if skillConfig.ChainEffectID != "chain_ice" {
+		t.Errorf("チェイン効果が更新されていない: got %s, want chain_ice", skillConfig.ChainEffectID)
 	}
 
 	// 保有していないチェイン効果は設定できない
-	err = slotManager.SetSkill(0, 3, "basic_attack", "chain_not_owned")
+	err = slotManager.SetSkill(0, 0, "basic_attack", "chain_not_owned")
 	if err != slot.ErrChainVariationNotOwned {
 		t.Errorf("未保有チェイン効果はErrChainVariationNotOwnedを返すべき: got %v", err)
 	}
@@ -666,8 +671,8 @@ func TestE2I_SlotClearAndReconfigure(t *testing.T) {
 	}
 }
 
-// TestE2I_SameSkillMultipleTimes は同じスキルを同一エージェント内で複数設定できることをテストします。
-func TestE2I_SameSkillMultipleTimes(t *testing.T) {
+// TestE2I_SameSkillMultipleTimes_ShouldFail は同じスキルを同一エージェント内で複数設定できないことをテストします。
+func TestE2I_SameSkillMultipleTimes_ShouldFail(t *testing.T) {
 	// テスト環境のセットアップ
 	invManager := inventory.NewInventoryManager()
 	coreTypes := createE2ITestCoreTypes()
@@ -690,22 +695,29 @@ func TestE2I_SameSkillMultipleTimes(t *testing.T) {
 	// コアを設定
 	slotManager.SetCore(0, "berserker", 10)
 
-	// 同じスキルを4つのスロットすべてに設定
-	for i := range 4 {
-		err := slotManager.SetSkill(0, i, "basic_attack", "")
-		if err != nil {
-			t.Errorf("スロット%dへのbasic_attack設定に失敗: %v", i, err)
-		}
+	// 最初のスロットにスキルを設定
+	err := slotManager.SetSkill(0, 0, "basic_attack", "")
+	if err != nil {
+		t.Fatalf("スロット0へのbasic_attack設定に失敗: %v", err)
 	}
 
-	// 4つすべてが設定されていることを確認
-	if slotManager.GetSlot(0).GetSkillCount() != 4 {
-		t.Errorf("スキル数が不正: got %d, want 4", slotManager.GetSlot(0).GetSkillCount())
+	// 同じスキルを別のスロットに設定しようとするとエラーになるべき
+	err = slotManager.SetSkill(0, 1, "basic_attack", "")
+	if err == nil {
+		t.Error("同じスキルを別スロットに設定できてしまった")
+	}
+	if err != slot.ErrSkillAlreadyEquipped {
+		t.Errorf("期待するエラー: %v, 実際: %v", slot.ErrSkillAlreadyEquipped, err)
+	}
+
+	// 1つだけが設定されていることを確認
+	if slotManager.GetSlot(0).GetSkillCount() != 1 {
+		t.Errorf("スキル数が不正: got %d, want 1", slotManager.GetSlot(0).GetSkillCount())
 	}
 
 	// バトル用エージェント構築
 	agents := slotManager.BuildAgentsForBattle()
-	if len(agents[0].Modules) != 4 {
-		t.Errorf("エージェントスキル数が不正: got %d, want 4", len(agents[0].Modules))
+	if len(agents[0].Modules) != 1 {
+		t.Errorf("エージェントスキル数が不正: got %d, want 1", len(agents[0].Modules))
 	}
 }

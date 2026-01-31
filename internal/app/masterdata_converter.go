@@ -163,3 +163,13 @@ func ConvertPassiveSkills(skills []masterdata.PassiveSkillData) map[string]domai
 	}
 	return result
 }
+
+// ConvertChainEffectsToMap はmasterdata.ChainEffectDataのスライスをdomain.ChainEffectのマップに変換します。
+// キーはチェイン効果のIDです。画面表示用に使用します。
+func ConvertChainEffectsToMap(effects []masterdata.ChainEffectData) map[string]domain.ChainEffect {
+	result := make(map[string]domain.ChainEffect, len(effects))
+	for _, e := range effects {
+		result[e.ID] = e.ToDomainChainEffect()
+	}
+	return result
+}

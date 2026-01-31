@@ -184,15 +184,35 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 	saveData.Inventory.UniqueSkills.Skills["str_buff_lv1"] = []string{}
 
 	// v3.0.0: 初期エージェントスロット構成
-	// スロット0にオールラウンダーLv1 + 3つのスキルを設定
+	// 3スロットにオールラウンダーLv1 + 1スキルずつ分散
 	saveData.Player.AgentSlots[0] = savedata.AgentSlotSave{
 		CoreTypeID: "all_rounder",
 		CoreLevel:  1,
 		Skills: [4]savedata.SkillSlotSaveCfg{
 			{TypeID: "physical_strike_lv1"},
+			{},
+			{},
+			{},
+		},
+	}
+	saveData.Player.AgentSlots[1] = savedata.AgentSlotSave{
+		CoreTypeID: "all_rounder",
+		CoreLevel:  1,
+		Skills: [4]savedata.SkillSlotSaveCfg{
 			{TypeID: "heal_lv1"},
+			{},
+			{},
+			{},
+		},
+	}
+	saveData.Player.AgentSlots[2] = savedata.AgentSlotSave{
+		CoreTypeID: "all_rounder",
+		CoreLevel:  1,
+		Skills: [4]savedata.SkillSlotSaveCfg{
 			{TypeID: "str_buff_lv1"},
-			{}, // スキルスロット4は空
+			{},
+			{},
+			{},
 		},
 	}
 

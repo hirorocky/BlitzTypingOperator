@@ -683,6 +683,17 @@ func (s *ChainEffectData) ToDomainCategory() domain.ChainEffectCategory {
 	return convertChainEffectCategory(s.Category)
 }
 
+// ToDomainChainEffect はChainEffectDataをドメインモデルのChainEffectに変換します。
+// 効果値はMinValueを使用します（表示用のデフォルト値として）。
+func (s *ChainEffectData) ToDomainChainEffect() domain.ChainEffect {
+	return domain.NewChainEffectWithTemplate(
+		convertChainEffectType(s.EffectType),
+		s.MinValue,
+		s.Description,
+		s.ShortDescription,
+	)
+}
+
 // ToChainEffectDefinition はChainEffectDataをChainEffectDefinitionに変換します。
 // rewardingパッケージのChainEffectPoolで使用されます。
 func (s *ChainEffectData) ToChainEffectDefinition() ChainEffectDefinitionData {

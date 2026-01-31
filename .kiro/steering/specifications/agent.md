@@ -3,9 +3,9 @@
 ## 概要
 
 エージェントシステムはプレイヤーの戦闘ユニットを管理するドメインです。
-コアとモジュールの組み合わせによるエージェント合成、装備管理、ステータス計算を担当します。
+3つの固定エージェントスロットに対してコアとスキルを自由に付け替え、バトル用エージェントを構築します。
 
-**実装**: `/internal/domain/agent.go`, `/internal/agent/agent.go`
+**実装**: `/internal/domain/agent.go`, `/internal/domain/agent_slot.go`, `/internal/usecase/slot/agent_slot_manager.go`
 
 ## 要件
 
@@ -14,124 +14,123 @@
 
 The agent system shall construct agents from:
 - 1つのコア（Core）
-- 4つのモジュール（Module）
+- 最大4つのスキル（Skill）
 
 **受け入れ基準**:
-1. エージェントレベル = コアレベル（固定、成長なし）
+1. エージェントレベル = 選択されたコアレベル
 2. 基礎ステータス = コアステータス
-3. モジュールスロット数 = 4（固定）
+3. スキルスロット数 = 4（固定）
 
 ### REQ-AGENT-2: コアシステム
 **種別**: Ubiquitous
 
 The agent system shall manage cores with:
 - 特性（CoreType）: ステータス重み、許可タグ、パッシブスキル
-- レベル: ドロップ時に固定、変更不可
+- レベル: 1から取得済み最大レベルまで任意選択可能
 - ステータス計算: 基礎値(10) x レベル x 重み
 
 **受け入れ基準**:
 1. STR/INT/WIL/LUKの4ステータス
 2. 特性ごとに異なるステータス重み
-3. 許可タグでモジュール互換性を制限
+3. 許可タグでスキル互換性を制限
 4. LUKはレベルに依存せず、基礎値10 × 重みで計算
 
-### REQ-AGENT-3: モジュールシステム
+### REQ-AGENT-3: スキルシステム
 **種別**: Ubiquitous
 
-The agent system shall manage modules with:
-- Effects配列: 複数の効果を持つ（カテゴリ廃止）
+The agent system shall manage skills with:
+- Effects配列: 複数の効果を持つ
 - hp_formula: base + stat_coef × STAT でHP変化量を計算
 - タグ: コア特性との互換性判定に使用
+- チェイン効果バリエーション: スキルごとに複数のチェイン効果を取得可能
 
 **受け入れ基準**:
 1. 各Effectはtarget（enemy/self）で対象を指定
 2. タグでコア特性との互換性を判定
 3. LUKとluk_factorで確率補正
+4. 同一スキルは全エージェント通じて1つのみ装備可能
 
-### REQ-AGENT-4: 装備管理
+### REQ-AGENT-4: スロット管理
 **種別**: Event-Driven
 
-When プレイヤーがエージェントを装備する, the agent system shall:
-- 最大3スロットまで装備可能
-- 装備順序を維持
-- プレイヤーHPを再計算
+When プレイヤーがエージェントスロットを設定する, the agent system shall:
+- 3つの固定スロットで管理
+- コア変更時に互換性のないスキルを自動削除
+- バトル中はスロット変更をロック
 
 **受け入れ基準**:
-1. 同一エージェントの重複装備不可
-2. 装備解除でスロットを空ける
-3. バトル時に装備エージェントを参照
+1. 空スロットはバトルに参加しない
+2. コアが設定されていないスロットにはスキルを設定不可
+3. バトル開始でロック、終了でアンロック
 
 ### REQ-AGENT-5: 互換性チェック
 **種別**: Ubiquitous
 
-The agent system shall validate module-core compatibility:
-- モジュールのタグがコアの許可タグに含まれるか判定
+The agent system shall validate skill-core compatibility:
+- スキルのタグがコアの許可タグに含まれるか判定
 
 **受け入れ基準**:
 1. 1つでも許可タグに一致すれば装備可能
-2. 非互換モジュールは装備不可
+2. 非互換スキルは装備不可
 3. UI上で互換性を視覚的に表示
 
 ## 仕様
 
-### AgentModel
+### AgentSlot
 
-**責務**: 合成されたエージェントエンティティを表現
+**責務**: 1つのエージェントスロット構成を表現する値オブジェクト
 
 **インターフェース**:
-- 入力: Core, Modules (4個)
-- 出力: Level, BaseStats, ModuleList
+- 入力: CoreTypeID, CoreLevel, Skills[4]
+- 出力: IsEmpty, GetSkillCount
 
 **ルール**:
-1. IDはUUIDで自動生成
-2. モジュールリストはコピーして保持
-3. コアからレベルとステータスを導出
+1. コア未設定で空とみなす
+2. スキルスロットは0-3の固定インデックス
+3. 検証ロジックはAgentSlotManagerに委譲
 
-### CoreModel
+### AgentSlotManager
 
-**責務**: エージェントの核となるコアエンティティを表現
+**責務**: 3つのエージェントスロットを管理するユースケース
 
-**ルール**:
-1. ステータス計算式: BaseStatValue(10) x Level x StatWeight
-2. AllowedTagsはCoreTypeからコピー
-3. PassiveSkillは特性ごとに1つ
-
-### ModuleModel
-
-**責務**: エージェントに装備可能なスキルエンティティを表現
-
-**Effectsベースシステム**:
-| stat_ref | 用途 | 例 |
-|----------|------|-----|
-| STR | 物理攻撃ダメージ | 軽斬撃、強斬撃 |
-| INT | 魔法攻撃/デバフ | ファイアボール、毒デバフ |
-| WIL | 回復/バフ | ヒール、攻撃バフ |
-
-**Effect構造**:
-- target: enemy（敵対象）/ self（自分対象）
-- hp_formula: `{base, stat_coef, stat_ref}`
-- effect_column: バフ/デバフ効果
-- probability: 発動確率（0.0-1.0）
-- luk_factor: LUKによる確率補正係数
-
-### AgentManager
-
-**責務**: エージェントの作成、装備管理を担当
+**機能**:
+1. SetCore: スロットにコアを設定（レベル選択可能）
+2. SetSkill: スロットにスキルを設定（互換性・重複チェック）
+3. ClearCore/ClearSkill: 設定のクリア
+4. BuildAgentsForBattle: バトル用AgentModel構築
+5. Lock/Unlock: バトル中の変更禁止制御
 
 **状態遷移**:
 ```mermaid
 stateDiagram-v2
-    [*] --> Unequipped: 合成
-    Unequipped --> Equipped: 装備
-    Equipped --> Unequipped: 解除
-    Unequipped --> [*]: 破棄
+    [*] --> Unlocked: 初期化
+    Unlocked --> Locked: バトル開始
+    Locked --> Unlocked: バトル終了
 ```
+
+### CoreInventory
+
+**責務**: コアの保有状態をTypeIDごとにユニーク管理
+
+**ルール**:
+1. TypeIDと取得済み最大レベルを保持
+2. 新規取得時は最大レベルを更新
+3. 低レベル取得は無視
+
+### SkillInventory
+
+**責務**: スキルの保有状態をTypeIDごとにユニーク管理
+
+**ルール**:
+1. TypeIDと保有フラグを保持
+2. チェイン効果バリエーションを分離管理
+3. 同一TypeIDの重複取得は既存に統合
 
 ## 関連ドメイン
 
-- **Battle**: 装備エージェントのモジュールでスキル発動
-- **Game Loop**: 装備状態の永続化
-- **Collection**: 合成時の図鑑更新
+- **Battle**: 装備エージェントのスキルで攻撃発動
+- **Game Loop**: スロット構成の永続化
+- **Rewarding**: バトル報酬でコア・スキル取得
 
 ---
-_updated_at: 2026-01-01_
+_updated_at: 2026-01-31_

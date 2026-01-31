@@ -2,12 +2,102 @@
 package screens
 
 import (
+	"strings"
 	"testing"
 
 	"hirorocky/type-battle/internal/domain"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+// newTestDamageModule はテスト用のダメージモジュールを作成するヘルパー関数です。
+func newTestDamageModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
+	return domain.NewModuleFromType(domain.ModuleType{
+		ID:              id,
+		Name:            name,
+		Icon:            "⚔️",
+		Tags:            tags,
+		Description:     description,
+		CooldownSeconds: 3.0, // リキャストテスト用に設定
+		Effects: []domain.ModuleEffect{
+			{
+				Target:      domain.TargetEnemy,
+				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
+				Probability: 1.0,
+				Icon:        "⚔️",
+			},
+		},
+	}, nil)
+}
+
+// containsString は文字列に部分文字列が含まれているか確認します。
+func containsString(s, substr string) bool {
+	return strings.Contains(s, substr)
+}
+
+// newTestHealModule はテスト用の回復モジュールを作成するヘルパー関数です。
+func newTestHealModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
+	return domain.NewModuleFromType(domain.ModuleType{
+		ID:              id,
+		Name:            name,
+		Icon:            "💚",
+		Tags:            tags,
+		Description:     description,
+		CooldownSeconds: 3.0, // リキャストテスト用に設定
+		Effects: []domain.ModuleEffect{
+			{
+				Target:      domain.TargetSelf,
+				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
+				Probability: 1.0,
+				Icon:        "💚",
+			},
+		},
+	}, nil)
+}
+
+// newTestBuffModule はテスト用のバフモジュールを作成するヘルパー関数です。
+func newTestBuffModule(id, name string, tags []string, description string) *domain.ModuleModel {
+	return domain.NewModuleFromType(domain.ModuleType{
+		ID:              id,
+		Name:            name,
+		Icon:            "⬆️",
+		Tags:            tags,
+		Description:     description,
+		CooldownSeconds: 3.0, // リキャストテスト用に設定
+		Effects: []domain.ModuleEffect{
+			{
+				Target: domain.TargetSelf,
+				ColumnSpec: &domain.EffectColumnSpec{
+					Column:   domain.ColDamageBonus,
+					Value:    10,
+					Duration: 10.0,
+				},
+				Probability: 1.0,
+				Icon:        "⬆️",
+			},
+		},
+	}, nil)
+}
+
+// newTestModuleWithChainEffect はチェイン効果付きモジュールを作成するヘルパー関数です。
+func newTestModuleWithChainEffect(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.ModuleModel {
+	return domain.NewModuleFromType(domain.ModuleType{
+		ID:              id,
+		Name:            name,
+		Icon:            "⚔️",
+		Tags:            tags,
+		Description:     description,
+		CooldownSeconds: 3.0, // リキャストテスト用に設定
+		Effects: []domain.ModuleEffect{
+			{
+				Target:      domain.TargetEnemy,
+				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
+				Probability: 1.0,
+				Icon:        "⚔️",
+			},
+		},
+	}, chainEffect)
+}
 
 // mockAgentProvider はテスト用のAgentProvider実装です。
 type mockAgentProvider struct {

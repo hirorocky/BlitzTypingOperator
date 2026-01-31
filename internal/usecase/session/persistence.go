@@ -35,9 +35,9 @@ func (g *GameState) ToSaveData() *savedata.SaveData {
 	saveData.Inventory.ModuleInstances = []savedata.ModuleInstanceSave{}
 	saveData.Inventory.AgentInstances = []savedata.AgentInstanceSave{}
 
-	// v3.0.0: 旧インベントリスロット設定は維持
-	saveData.Inventory.MaxCoreSlots = g.inventory.Cores().MaxSlots()
-	saveData.Inventory.MaxModuleSlots = g.inventory.Modules().MaxSlots()
+	// v3.0.0: 新システムでは容量制限なし（後方互換性のため固定値を設定）
+	saveData.Inventory.MaxCoreSlots = 100
+	saveData.Inventory.MaxModuleSlots = 200
 
 	// v3.0.0: EquippedAgentIDsは空（AgentSlotsを使用）
 	saveData.Player.EquippedAgentIDs = [3]string{}

@@ -40,15 +40,6 @@ func TestSceneRouter_RouteToBattle(t *testing.T) {
 	}
 }
 
-// TestSceneRouter_RouteToAgentManagement はエージェント管理シーンへのルーティングを検証します
-func TestSceneRouter_RouteToAgentManagement(t *testing.T) {
-	router := NewSceneRouter()
-	scene := router.Route("agent_management")
-	if scene != SceneAgentManagement {
-		t.Errorf("Route(\"agent_management\") should return SceneAgentManagement, got %v", scene)
-	}
-}
-
 // TestSceneRouter_RouteToEncyclopedia は図鑑シーンへのルーティングを検証します
 func TestSceneRouter_RouteToEncyclopedia(t *testing.T) {
 	router := NewSceneRouter()
@@ -115,7 +106,6 @@ func TestSceneRouter_AllRoutes(t *testing.T) {
 		{"home", "home", SceneHome},
 		{"battle_select", "battle_select", SceneBattleSelect},
 		{"battle", "battle", SceneBattle},
-		{"agent_management", "agent_management", SceneAgentManagement},
 		{"encyclopedia", "encyclopedia", SceneEncyclopedia},
 		{"stats_achievements", "stats_achievements", SceneAchievement},
 		{"settings", "settings", SceneSettings},

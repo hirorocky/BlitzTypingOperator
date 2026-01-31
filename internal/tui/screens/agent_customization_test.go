@@ -63,6 +63,7 @@ func setupTestCustomizationScreen() (*AgentCustomizationScreen, *domain.CoreInve
 	}
 
 	passiveSkills := map[string]domain.PassiveSkill{}
+	chainEffects := map[string]domain.ChainEffect{}
 
 	// スロットマネージャーを作成
 	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills)
@@ -71,7 +72,7 @@ func setupTestCustomizationScreen() (*AgentCustomizationScreen, *domain.CoreInve
 	invManager := inventory.NewInventoryManagerWithInventories(coreInv, skillInv)
 
 	// カスタマイズ画面を作成
-	screen := NewAgentCustomizationScreen(invManager, slotManager, coreTypes, skillTypes)
+	screen := NewAgentCustomizationScreen(invManager, slotManager, coreTypes, skillTypes, passiveSkills, chainEffects)
 
 	return screen, coreInv, skillInv, slotManager
 }
@@ -100,35 +101,35 @@ func TestAgentCustomizationScreen_View_ShowsThreeSlots(t *testing.T) {
 
 	view := screen.View()
 
-	// 3つのスロットが表示されていることを確認
-	if !strings.Contains(view, "スロット1") && !strings.Contains(view, "スロット 1") {
-		t.Error("スロット1が表示されていません")
+	// 新UI: 3つのカードが表示されていることを確認
+	// 空スロットは "(空)" と表示される
+	if !strings.Contains(view, "(空)") {
+		t.Error("空スロットが表示されていません")
 	}
-	if !strings.Contains(view, "スロット2") && !strings.Contains(view, "スロット 2") {
-		t.Error("スロット2が表示されていません")
-	}
-	if !strings.Contains(view, "スロット3") && !strings.Contains(view, "スロット 3") {
-		t.Error("スロット3が表示されていません")
+	// タイトルが表示されていることを確認
+	if !strings.Contains(view, "エージェントカスタマイズ") {
+		t.Error("タイトルが表示されていません")
 	}
 }
 
 func TestAgentCustomizationScreen_Update_SlotNavigation(t *testing.T) {
 	screen, _, _, _ := setupTestCustomizationScreen()
 
-	// 下キーでスロット2に移動
-	screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+	// 新UI: 左右キーでスロット切替、上下キーでカード内フォーカス移動
+	// 右キーでスロット2に移動
+	screen.Update(tea.KeyMsg{Type: tea.KeyRight})
 	if screen.selectedSlotIndex != 1 {
-		t.Errorf("下キーでスロットが移動していません: got %v, want 1", screen.selectedSlotIndex)
+		t.Errorf("右キーでスロットが移動していません: got %v, want 1", screen.selectedSlotIndex)
 	}
 
-	// 上キーでスロット1に戻る
-	screen.Update(tea.KeyMsg{Type: tea.KeyUp})
+	// 左キーでスロット1に戻る
+	screen.Update(tea.KeyMsg{Type: tea.KeyLeft})
 	if screen.selectedSlotIndex != 0 {
-		t.Errorf("上キーでスロットが移動していません: got %v, want 0", screen.selectedSlotIndex)
+		t.Errorf("左キーでスロットが移動していません: got %v, want 0", screen.selectedSlotIndex)
 	}
 
-	// スロット1で上キーを押しても0より下にならない
-	screen.Update(tea.KeyMsg{Type: tea.KeyUp})
+	// スロット1で左キーを押しても0より下にならない
+	screen.Update(tea.KeyMsg{Type: tea.KeyLeft})
 	if screen.selectedSlotIndex != 0 {
 		t.Errorf("スロットインデックスが0未満になりました: got %v", screen.selectedSlotIndex)
 	}
@@ -231,7 +232,8 @@ func TestAgentCustomizationScreen_SkillSelectMode_ShowsCompatibleSkills(t *testi
 	skillInv.AddSkill("fireball", "") // magic タグ
 
 	// スキル選択モードに移行
-	screen.enterSkillSelectMode()
+	screen.focusPosition = 1 // スキルスロット1にフォーカス
+	screen.enterSkillSelectMode(0)
 
 	// 互換スキルリストを更新
 	screen.updateSkillList()
@@ -259,7 +261,8 @@ func TestAgentCustomizationScreen_SkillSelectMode_FiltersIncompatibleSkills(t *t
 	skillInv.AddSkill("fireball", "") // magic タグ - 非互換
 
 	// スキル選択モードに移行
-	screen.enterSkillSelectMode()
+	screen.focusPosition = 1
+	screen.enterSkillSelectMode(0)
 	screen.updateSkillList()
 
 	// 互換スキルのみがリストに含まれることを確認
@@ -294,8 +297,8 @@ func TestAgentCustomizationScreen_SkillSelectMode_SetsSkillToSlot(t *testing.T) 
 
 	// スキル選択モードに移行
 	screen.selectedSlotIndex = 0
-	screen.selectedSkillSlotIndex = 0
-	screen.enterSkillSelectMode()
+	screen.focusPosition = 1 // スキルスロット1にフォーカス
+	screen.enterSkillSelectMode(0)
 	screen.updateSkillList()
 
 	// スキルを選択
@@ -322,8 +325,8 @@ func TestAgentCustomizationScreen_SkillSelectMode_ChainEffectVariationSelection(
 
 	// スキル選択モードに移行
 	screen.selectedSlotIndex = 0
-	screen.selectedSkillSlotIndex = 0
-	screen.enterSkillSelectMode()
+	screen.focusPosition = 1 // スキルスロット1にフォーカス
+	screen.enterSkillSelectMode(0)
 	screen.updateSkillList()
 
 	// スキルを選択してチェイン効果選択モードに遷移
@@ -367,10 +370,9 @@ func TestAgentCustomizationScreen_ClearSkill(t *testing.T) {
 	skillInv.AddSkill("strike", "")
 	slotManager.SetSkill(0, 0, "strike", "")
 
-	// スキル選択モードに移行
+	// スキルスロット1にフォーカス
 	screen.selectedSlotIndex = 0
-	screen.selectedSkillSlotIndex = 0
-	screen.enterSkillSlotSelectMode()
+	screen.focusPosition = 1 // スキルスロット1にフォーカス
 
 	// スキルクリア操作（Backspaceキー）
 	screen.Update(tea.KeyMsg{Type: tea.KeyBackspace})
@@ -415,7 +417,8 @@ func TestAgentCustomizationScreen_ShowsCompatibilityIndicator(t *testing.T) {
 	skillInv.AddSkill("fireball", "") // 非互換（magicタグ）
 
 	// スキル選択モードに移行
-	screen.enterSkillSelectMode()
+	screen.focusPosition = 1
+	screen.enterSkillSelectMode(0)
 	screen.updateSkillList()
 
 	view := screen.View()

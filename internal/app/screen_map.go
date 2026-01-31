@@ -40,9 +40,6 @@ func (sm *ScreenMap) registerScreens() {
 	sm.screens[SceneBattle] = func() ScreenGetter {
 		return sm.model.battleScreen
 	}
-	sm.screens[SceneAgentManagement] = func() ScreenGetter {
-		return sm.model.agentManagementScreen
-	}
 	sm.screens[SceneEncyclopedia] = func() ScreenGetter {
 		return sm.model.encyclopediaScreen
 	}

@@ -85,20 +85,14 @@ func (mh *MessageHandlers) handleKeyMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch keyMsg.String() {
 	case "ctrl+c":
 		return mh.model, tea.Quit
-	case "esc":
-		// ホーム画面以外ならホームに戻る
-		if mh.model.currentScene != SceneHome {
-			mh.model.homeScreen.RefreshMenuState()
-			mh.model.currentScene = SceneHome
-			return mh.model, nil
-		}
 	case "q":
 		// ホーム画面でのみ終了可能
 		if mh.model.currentScene == SceneHome {
 			return mh.model, tea.Quit
 		}
 	}
-	// 各画面に入力を転送
+	// 各画面に入力を転送（Escキーを含む）
+	// 各画面がEscを処理してChangeSceneMsgを返す設計
 	return mh.forwardToCurrentScene(msg)
 }
 

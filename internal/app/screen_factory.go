@@ -59,13 +59,6 @@ func (f *ScreenFactory) CreateBattleSelectScreenCarousel(
 	return screens.NewBattleSelectScreenCarousel(invProvider, defeatedProvider, f.enemyGenerator)
 }
 
-// CreateAgentManagementScreen はエージェント管理画面を作成します。
-// debugMode: デバッグモードを有効化
-// debugProvider: デバッグモード用のプロバイダー（nilの場合は通常モード）
-func (f *ScreenFactory) CreateAgentManagementScreen(invProvider InventoryProvider, debugMode bool, debugProvider screens.DebugInventoryProvider) *screens.AgentManagementScreen {
-	return screens.NewAgentManagementScreen(invProvider, debugMode, debugProvider)
-}
-
 // CreateEncyclopediaScreen は図鑑画面を作成します。
 func (f *ScreenFactory) CreateEncyclopediaScreen() *screens.EncyclopediaScreen {
 	encycData := presenter.CreateEncyclopediaData(f.gameState)
@@ -91,8 +84,10 @@ func (f *ScreenFactory) CreateAgentCustomizationScreen(
 	slotManager *slot.AgentSlotManager,
 	coreTypes map[string]domain.CoreType,
 	skillTypes map[string]domain.SkillType,
+	passiveSkills map[string]domain.PassiveSkill,
+	chainEffects map[string]domain.ChainEffect,
 ) *screens.AgentCustomizationScreen {
-	return screens.NewAgentCustomizationScreen(invManager, slotManager, coreTypes, skillTypes)
+	return screens.NewAgentCustomizationScreen(invManager, slotManager, coreTypes, skillTypes, passiveSkills, chainEffects)
 }
 
 // CreateInventoryScreen はインベントリ画面を作成します。

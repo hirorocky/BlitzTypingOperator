@@ -38,6 +38,9 @@ var (
 
 	// ErrSlotLocked はバトル中にスロット変更を試みた場合のエラー
 	ErrSlotLocked = errors.New("slot is locked during battle")
+
+	// ErrSkillAlreadyEquipped は既に他のスロットで装備済みのスキルを設定しようとした場合のエラー
+	ErrSkillAlreadyEquipped = errors.New("skill already equipped in another slot")
 )
 
 // MaxAgentSlotCount はエージェントスロットの最大数です。
@@ -211,6 +214,7 @@ func (m *AgentSlotManager) isSkillCompatibleWithCoreType(skillType domain.SkillT
 }
 
 // SetSkill はスロットのスキルを設定します。
+// 同じスキルIDは全エージェントを通じて1つしか装備できません。
 // ロック中はErrSlotLockedを返します。
 func (m *AgentSlotManager) SetSkill(slot int, skillSlot int, typeID string, chainEffectID string) error {
 	// ロックチェック
@@ -261,10 +265,39 @@ func (m *AgentSlotManager) SetSkill(slot int, skillSlot int, typeID string, chai
 		return ErrSkillIncompatible
 	}
 
+	// 全スロットでのスキル重複チェック（同じスロット位置への上書きは許可）
+	if m.isSkillEquippedElsewhere(slot, skillSlot, typeID) {
+		return ErrSkillAlreadyEquipped
+	}
+
 	// スキルを設定
 	targetSlot.SetSkill(skillSlot, typeID, chainEffectID)
 
 	return nil
+}
+
+// isSkillEquippedElsewhere は指定スキルが他のスロットで装備されているかをチェックします。
+// 同じ位置（slot, skillSlot）への上書きは重複とみなしません。
+func (m *AgentSlotManager) isSkillEquippedElsewhere(targetSlot int, targetSkillSlot int, typeID string) bool {
+	for slotIdx := range MaxAgentSlotCount {
+		agentSlot := m.slots[slotIdx]
+		if agentSlot == nil || agentSlot.IsEmpty() {
+			continue
+		}
+
+		for skillSlotIdx := range domain.MaxSkillSlotCount {
+			// 同じ位置への上書きはスキップ
+			if slotIdx == targetSlot && skillSlotIdx == targetSkillSlot {
+				continue
+			}
+
+			skillConfig := agentSlot.GetSkill(skillSlotIdx)
+			if skillConfig != nil && !skillConfig.IsEmpty() && skillConfig.TypeID == typeID {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // ClearSkill はスロットの指定スキルスロットをクリアします。

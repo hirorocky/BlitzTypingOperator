@@ -75,7 +75,6 @@ type RootModel struct {
 	homeScreen               *screens.HomeScreen
 	battleSelectScreen       *screens.BattleSelectScreenCarousel
 	battleScreen             *screens.BattleScreen
-	agentManagementScreen    *screens.AgentManagementScreen
 	agentCustomizationScreen *screens.AgentCustomizationScreen
 	inventoryScreen          *screens.InventoryScreen
 	encyclopediaScreen       *screens.EncyclopediaScreen
@@ -93,7 +92,7 @@ type RootModel struct {
 	debugMode bool
 
 	// インベントリプロバイダー（装備エージェント取得用）
-	invProvider screens.InventoryProvider
+	invProvider InventoryProvider
 
 	// 外部データ（デバッグモードで使用）
 	externalData *masterdata.ExternalData
@@ -277,6 +276,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 				CooldownSeconds: mt.CooldownSeconds,
 				Difficulty:      mt.Difficulty,
 				MinDropLevel:    mt.MinDropLevel,
+				Effects:         mt.Effects,
 			}
 		}
 	}
@@ -323,7 +323,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	}
 
 	// インベントリプロバイダーを作成（デバッグモードに応じて切り替え）
-	var invProvider screens.InventoryProvider
+	var invProvider InventoryProvider
 	var debugInvProvider *presenter.DebugInventoryProvider
 	if debugMode && externalData != nil {
 		// デバッグモード: 全CoreType/ModuleType/ChainEffectを選択可能
@@ -336,7 +336,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		)
 
 		// v3.0.0: デバッグモードでもAgentSlotManagerを使用
-		// エージェントの復元はAgentSlotManager経由で行う（将来実装）
+		debugInvProvider.SetSlotManager(slotManager)
 
 		invProvider = debugInvProvider
 	} else {
@@ -350,12 +350,11 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	// ホーム画面を初期化
 	homeScreen := screenFactory.CreateHomeScreen(gs.MaxLevelReached, invProvider)
 	homeScreen.SetStatusMessage(statusMessage)
+	// v3.0.0: スロット準備状態プロバイダーを設定（バトル選択の有効/無効判定に使用）
+	homeScreen.SetSlotProvider(slotManager)
 
 	// バトル選択画面を初期化（カルーセル方式）
 	battleSelectScreen := screenFactory.CreateBattleSelectScreenCarousel(invProvider, gs)
-
-	// エージェント管理画面を初期化
-	agentManagementScreen := screenFactory.CreateAgentManagementScreen(invProvider, debugMode, debugInvProvider)
 
 	// 図鑑画面を初期化
 	encyclopediaScreen := screenFactory.CreateEncyclopediaScreen()
@@ -367,11 +366,14 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	settingsScreen := screenFactory.CreateSettingsScreen()
 
 	// v3.0.0: エージェントカスタマイズ画面を初期化
+	chainEffectsMap := ConvertChainEffectsToMap(chainEffects)
 	agentCustomizationScreen := screenFactory.CreateAgentCustomizationScreen(
 		invManager,
 		slotManager,
 		coreTypesMap,
 		skillTypesMap,
+		passiveSkills,
+		chainEffectsMap,
 	)
 
 	// v3.0.0: インベントリ画面を初期化
@@ -393,7 +395,6 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		screenFactory:            screenFactory,
 		homeScreen:               homeScreen,
 		battleSelectScreen:       battleSelectScreen,
-		agentManagementScreen:    agentManagementScreen,
 		agentCustomizationScreen: agentCustomizationScreen,
 		inventoryScreen:          inventoryScreen,
 		encyclopediaScreen:       encyclopediaScreen,
@@ -720,6 +721,8 @@ func (m *RootModel) prepareSceneTransition(sceneName string) {
 	case "home":
 		// ホーム画面の最高到達レベルを更新
 		m.homeScreen.SetMaxLevelReached(m.gameState.MaxLevelReached)
+		// バトル選択メニューの有効/無効状態を更新
+		m.homeScreen.RefreshMenuState()
 	case "battle_select":
 		// バトル選択画面を再初期化してリセット（カルーセル方式）
 		m.battleSelectScreen = m.screenFactory.CreateBattleSelectScreenCarousel(

@@ -118,27 +118,23 @@ func TestBattleReward_Defeat_NoRewardScreen(t *testing.T) {
 	}
 }
 
-// TestInventoryFull_Warning はインベントリ満杯時に警告を表示することをテストします。
+// TestInventoryFull_Warning は新システムでは容量制限がないことを確認します。
 func TestInventoryFull_Warning(t *testing.T) {
-	coreInv := domain.NewCoreInventoryLegacy(2)
-	moduleInv := domain.NewModuleInventory(2)
+	coreInv := domain.NewCoreInventory()
+	skillInv := domain.NewSkillInventory()
 
-	// インベントリを満杯にする
-	core1 := domain.NewCore("core1", "コア1", 1, domain.CoreType{}, domain.PassiveSkill{})
-	core2 := domain.NewCore("core2", "コア2", 1, domain.CoreType{}, domain.PassiveSkill{})
-	coreInv.Add(core1)
-	coreInv.Add(core2)
+	// 新システムでは容量制限がないため、いくつ追加しても警告は出ない
+	coreInv.AddCore("core_type_1", 1)
+	coreInv.AddCore("core_type_2", 1)
+	coreInv.AddCore("core_type_3", 1)
 
 	calculator := NewRewardCalculator(nil, nil, nil)
 
-	// 満杯チェック
-	warning := calculator.CheckInventoryFull(coreInv, moduleInv)
+	// 新システムでは常に空の警告を返す
+	warning := calculator.CheckInventoryFull(coreInv, skillInv)
 
-	if warning.CoreInventoryFull != true {
-		t.Error("コアインベントリが満杯の場合、警告が出るべき")
-	}
-	if warning.WarningMessage == "" {
-		t.Error("警告メッセージが設定されるべき")
+	if warning.WarningMessage != "" {
+		t.Error("新システムでは警告メッセージは空であるべき")
 	}
 }
 
@@ -171,22 +167,22 @@ func TestInventoryFull_TempStorage(t *testing.T) {
 	}
 }
 
-// TestInventoryFull_PromptDiscard は不要アイテム破棄促進をテストします。
+// TestInventoryFull_PromptDiscard は新システムでは破棄促進が不要であることを確認します。
 func TestInventoryFull_PromptDiscard(t *testing.T) {
 	calculator := NewRewardCalculator(nil, nil, nil)
 
-	coreInv := domain.NewCoreInventoryLegacy(2)
-	core1 := domain.NewCore("core1", "コア1", 1, domain.CoreType{}, domain.PassiveSkill{})
-	core2 := domain.NewCore("core2", "コア2", 1, domain.CoreType{}, domain.PassiveSkill{})
-	coreInv.Add(core1)
-	coreInv.Add(core2)
+	coreInv := domain.NewCoreInventory()
+	skillInv := domain.NewSkillInventory()
 
-	moduleInv := domain.NewModuleInventory(10)
+	// いくつ追加してもユニーク管理なので容量制限なし
+	coreInv.AddCore("core_type_1", 1)
+	coreInv.AddCore("core_type_2", 1)
 
-	warning := calculator.CheckInventoryFull(coreInv, moduleInv)
+	warning := calculator.CheckInventoryFull(coreInv, skillInv)
 
-	if !warning.SuggestDiscard {
-		t.Error("満杯時は破棄を促すべき")
+	// 新システムでは破棄を促す必要がない
+	if warning.SuggestDiscard {
+		t.Error("新システムでは破棄促進は不要")
 	}
 }
 
@@ -351,38 +347,38 @@ func TestAddRewardsToInventory_WithChainEffect(t *testing.T) {
 		DroppedModules: []*domain.ModuleModel{module},
 	}
 
-	// インベントリを作成
-	moduleInv := domain.NewModuleInventory(10)
-	coreInv := domain.NewCoreInventoryLegacy(10)
-	tempStorage := &TempStorage{}
+	// インベントリを作成（新システム）
+	coreInv := domain.NewCoreInventory()
+	skillInv := domain.NewSkillInventory()
 
 	// インベントリに追加
-	warning := AddRewardsToInventory(result, coreInv, moduleInv, tempStorage)
+	warning := AddRewardsToInventory(result, coreInv, skillInv)
 
-	if warning.ModuleInventoryFull {
-		t.Error("インベントリは満杯でないはず")
-	}
-
-	// インベントリにモジュールが追加されたことを確認
-	if moduleInv.Count() != 1 {
-		t.Errorf("モジュール数が期待と異なる: got %d, want 1", moduleInv.Count())
+	if warning.WarningMessage != "" {
+		t.Error("新システムでは警告メッセージは空であるべき")
 	}
 
-	// 追加されたモジュールのチェイン効果を確認
-	modules := moduleInv.List()
-	if len(modules) != 1 {
-		t.Fatal("モジュールがインベントリに追加されるべき")
+	// スキルインベントリにスキルが追加されたことを確認
+	if !skillInv.HasSkill("physical_lv1") {
+		t.Error("スキルがインベントリに追加されるべき")
 	}
 
-	addedModule := modules[0]
-	if !addedModule.HasChainEffect() {
-		t.Error("追加されたモジュールにチェイン効果が保持されるべき")
+	// チェイン効果バリエーションが追加されたことを確認
+	chainVariations := skillInv.GetChainVariations("physical_lv1")
+	if len(chainVariations) != 1 {
+		t.Errorf("チェイン効果バリエーション数が期待と異なる: got %d, want 1", len(chainVariations))
 	}
-	if addedModule.ChainEffect.Type != domain.ChainEffectDamageAmp {
-		t.Errorf("チェイン効果タイプが期待と異なる: got %s, want %s", addedModule.ChainEffect.Type, domain.ChainEffectDamageAmp)
+
+	// チェイン効果タイプが保存されていることを確認
+	hasExpectedChainEffect := false
+	for _, variation := range chainVariations {
+		if variation == string(domain.ChainEffectDamageAmp) {
+			hasExpectedChainEffect = true
+			break
+		}
 	}
-	if addedModule.ChainEffect.Value != 25 {
-		t.Errorf("チェイン効果値が期待と異なる: got %.0f, want 25", addedModule.ChainEffect.Value)
+	if !hasExpectedChainEffect {
+		t.Errorf("期待するチェイン効果タイプが保存されていない: want %s", domain.ChainEffectDamageAmp)
 	}
 }
 

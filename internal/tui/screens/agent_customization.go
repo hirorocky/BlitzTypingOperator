@@ -23,18 +23,26 @@ import (
 type CustomizationMode int
 
 const (
-	// CustomizationModeSlotSelect はスロット選択モードです。
-	CustomizationModeSlotSelect CustomizationMode = iota
-	// CustomizationModeCoreSelect はコア選択モードです。
-	CustomizationModeCoreSelect
-	// CustomizationModeLevelSelect はレベル選択モードです。
-	CustomizationModeLevelSelect
-	// CustomizationModeSkillSlotSelect はスキルスロット選択モードです。
-	CustomizationModeSkillSlotSelect
-	// CustomizationModeSkillSelect はスキル選択モードです。
-	CustomizationModeSkillSelect
-	// CustomizationModeChainSelect はチェイン効果選択モードです。
-	CustomizationModeChainSelect
+	// ModeCardSelect はカード選択モード（メイン画面）です。
+	ModeCardSelect CustomizationMode = iota
+	// ModeCoreSelect はモーダル: コア選択モードです。
+	ModeCoreSelect
+	// ModeLevelSelect はモーダル: レベル選択モードです。
+	ModeLevelSelect
+	// ModeSkillSelect はモーダル: スキル選択モードです。
+	ModeSkillSelect
+	// ModeChainSelect はモーダル: チェイン効果選択モードです。
+	ModeChainSelect
+)
+
+// 旧モード定義のエイリアス（後方互換性のため）
+const (
+	CustomizationModeSlotSelect      = ModeCardSelect
+	CustomizationModeCoreSelect      = ModeCoreSelect
+	CustomizationModeLevelSelect     = ModeLevelSelect
+	CustomizationModeSkillSlotSelect = ModeCardSelect // スキルスロット選択はカード選択に統合
+	CustomizationModeSkillSelect     = ModeSkillSelect
+	CustomizationModeChainSelect     = ModeChainSelect
 )
 
 // ==================== 表示用アイテム定義 ====================
@@ -68,8 +76,10 @@ type AgentCustomizationScreen struct {
 	slotManager *slot.AgentSlotManager
 
 	// マスタデータ
-	coreTypes  map[string]domain.CoreType
-	skillTypes map[string]domain.SkillType
+	coreTypes     map[string]domain.CoreType
+	skillTypes    map[string]domain.SkillType
+	passiveSkills map[string]domain.PassiveSkill
+	chainEffects  map[string]domain.ChainEffect
 
 	// 現在のモード
 	currentMode CustomizationMode
@@ -77,8 +87,8 @@ type AgentCustomizationScreen struct {
 	// スロット選択
 	selectedSlotIndex int
 
-	// スキルスロット選択
-	selectedSkillSlotIndex int
+	// カード内フォーカス位置（0=コア、1-4=スキルスロット）
+	focusPosition int
 
 	// コア選択
 	coreList           []CoreSelectItem
@@ -114,16 +124,20 @@ func NewAgentCustomizationScreen(
 	slotManager *slot.AgentSlotManager,
 	coreTypes map[string]domain.CoreType,
 	skillTypes map[string]domain.SkillType,
+	passiveSkills map[string]domain.PassiveSkill,
+	chainEffects map[string]domain.ChainEffect,
 ) *AgentCustomizationScreen {
 	screen := &AgentCustomizationScreen{
-		invManager:  invManager,
-		slotManager: slotManager,
-		coreTypes:   coreTypes,
-		skillTypes:  skillTypes,
-		currentMode: CustomizationModeSlotSelect,
-		styles:      styles.NewGameStyles(),
-		width:       140,
-		height:      40,
+		invManager:    invManager,
+		slotManager:   slotManager,
+		coreTypes:     coreTypes,
+		skillTypes:    skillTypes,
+		passiveSkills: passiveSkills,
+		chainEffects:  chainEffects,
+		currentMode:   ModeCardSelect,
+		styles:        styles.NewGameStyles(),
+		width:         140,
+		height:        40,
 	}
 
 	return screen
@@ -152,51 +166,79 @@ func (s *AgentCustomizationScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // handleKeyMsg はキーボード入力を処理します。
 func (s *AgentCustomizationScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch s.currentMode {
-	case CustomizationModeSlotSelect:
-		return s.handleSlotSelectKey(msg)
-	case CustomizationModeCoreSelect:
+	case ModeCardSelect:
+		return s.handleCardSelectKey(msg)
+	case ModeCoreSelect:
 		return s.handleCoreSelectKey(msg)
-	case CustomizationModeLevelSelect:
+	case ModeLevelSelect:
 		return s.handleLevelSelectKey(msg)
-	case CustomizationModeSkillSlotSelect:
-		return s.handleSkillSlotSelectKey(msg)
-	case CustomizationModeSkillSelect:
+	case ModeSkillSelect:
 		return s.handleSkillSelectKey(msg)
-	case CustomizationModeChainSelect:
+	case ModeChainSelect:
 		return s.handleChainSelectKey(msg)
 	}
 
 	return s, nil
 }
 
-// ==================== スロット選択モード ====================
+// ==================== カード選択モード ====================
 
-func (s *AgentCustomizationScreen) handleSlotSelectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (s *AgentCustomizationScreen) handleCardSelectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		return s, func() tea.Msg {
 			return ChangeSceneMsg{Scene: "home"}
 		}
-	case "up", "k":
+	case "left", "h":
+		// スロット切替（左）
 		if s.selectedSlotIndex > 0 {
 			s.selectedSlotIndex--
+			s.focusPosition = 0 // スロット変更時はコアにフォーカス
 		}
-	case "down", "j":
+	case "right", "l":
+		// スロット切替（右）
 		if s.selectedSlotIndex < slot.MaxAgentSlotCount-1 {
 			s.selectedSlotIndex++
+			s.focusPosition = 0 // スロット変更時はコアにフォーカス
+		}
+	case "up", "k":
+		// カード内フォーカス移動（上）
+		if s.focusPosition > 0 {
+			s.focusPosition--
+		}
+	case "down", "j":
+		// カード内フォーカス移動（下）
+		// コアが設定されていない場合はコア位置から動かさない
+		currentSlot := s.slotManager.GetSlot(s.selectedSlotIndex)
+		if currentSlot != nil && !currentSlot.IsEmpty() {
+			if s.focusPosition < domain.MaxSkillSlotCount {
+				s.focusPosition++
+			}
 		}
 	case "enter":
-		s.enterCoreSelectMode()
-	case "s":
-		// スキル設定モードへ（コアが設定されている場合のみ）
-		if s.slotManager.IsSlotReady(s.selectedSlotIndex) {
-			s.enterSkillSlotSelectMode()
+		// モーダルを開く
+		if s.focusPosition == 0 {
+			// コア選択
+			s.enterCoreSelectMode()
 		} else {
-			s.errorMessage = "先にコアを設定してください"
+			// スキル選択
+			currentSlot := s.slotManager.GetSlot(s.selectedSlotIndex)
+			if currentSlot != nil && !currentSlot.IsEmpty() {
+				s.enterSkillSelectMode(s.focusPosition - 1)
+			} else {
+				s.errorMessage = "先にコアを設定してください"
+			}
 		}
-	case "delete", "d":
-		// スロットのコアをクリア
-		s.clearCurrentSlotCore()
+	case "delete", "backspace", "d":
+		// 選択中のコア/スキルを外す
+		if s.focusPosition == 0 {
+			s.clearCurrentSlotCore()
+		} else {
+			currentSlot := s.slotManager.GetSlot(s.selectedSlotIndex)
+			if currentSlot != nil && !currentSlot.IsEmpty() {
+				s.clearSkillSlot(s.focusPosition - 1)
+			}
+		}
 	}
 
 	return s, nil
@@ -204,7 +246,7 @@ func (s *AgentCustomizationScreen) handleSlotSelectKey(msg tea.KeyMsg) (tea.Mode
 
 // enterCoreSelectMode はコア選択モードに遷移します。
 func (s *AgentCustomizationScreen) enterCoreSelectMode() {
-	s.currentMode = CustomizationModeCoreSelect
+	s.currentMode = ModeCoreSelect
 	s.selectedCoreIndex = 0
 	s.updateCoreList()
 	s.errorMessage = ""
@@ -255,6 +297,17 @@ func (s *AgentCustomizationScreen) clearCurrentSlotCore() {
 	} else {
 		s.statusMessage = fmt.Sprintf("スロット%dをクリアしました", s.selectedSlotIndex+1)
 		s.errorMessage = ""
+		s.focusPosition = 0 // コア位置に戻す
+	}
+}
+
+// clearSkillSlot は指定スキルスロットをクリアします。
+func (s *AgentCustomizationScreen) clearSkillSlot(skillSlotIndex int) {
+	if err := s.slotManager.ClearSkill(s.selectedSlotIndex, skillSlotIndex); err != nil {
+		s.errorMessage = fmt.Sprintf("スキルクリアに失敗: %v", err)
+	} else {
+		s.statusMessage = fmt.Sprintf("スキルスロット%dをクリアしました", skillSlotIndex+1)
+		s.errorMessage = ""
 	}
 }
 
@@ -263,7 +316,7 @@ func (s *AgentCustomizationScreen) clearCurrentSlotCore() {
 func (s *AgentCustomizationScreen) handleCoreSelectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
-		s.currentMode = CustomizationModeSlotSelect
+		s.currentMode = ModeCardSelect
 	case "up", "k":
 		if s.selectedCoreIndex > 0 {
 			s.selectedCoreIndex--
@@ -277,7 +330,7 @@ func (s *AgentCustomizationScreen) handleCoreSelectKey(msg tea.KeyMsg) (tea.Mode
 			s.selectedCoreTypeID = s.coreList[s.selectedCoreIndex].TypeID
 			s.maxSelectableLevel = s.coreList[s.selectedCoreIndex].MaxLevel
 			s.selectedLevelIndex = s.maxSelectableLevel - 1 // デフォルトで最大レベルを選択
-			s.currentMode = CustomizationModeLevelSelect
+			s.currentMode = ModeLevelSelect
 		}
 	}
 
@@ -289,7 +342,7 @@ func (s *AgentCustomizationScreen) handleCoreSelectKey(msg tea.KeyMsg) (tea.Mode
 func (s *AgentCustomizationScreen) handleLevelSelectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
-		s.currentMode = CustomizationModeCoreSelect
+		s.currentMode = ModeCoreSelect
 	case "up", "k":
 		if s.selectedLevelIndex < s.maxSelectableLevel-1 {
 			s.selectedLevelIndex++
@@ -306,59 +359,20 @@ func (s *AgentCustomizationScreen) handleLevelSelectKey(msg tea.KeyMsg) (tea.Mod
 		} else {
 			s.statusMessage = fmt.Sprintf("スロット%dにコアを設定しました", s.selectedSlotIndex+1)
 			s.errorMessage = ""
-			s.currentMode = CustomizationModeSlotSelect
+			s.currentMode = ModeCardSelect
 		}
 	}
 
 	return s, nil
-}
-
-// ==================== スキルスロット選択モード ====================
-
-func (s *AgentCustomizationScreen) enterSkillSlotSelectMode() {
-	s.currentMode = CustomizationModeSkillSlotSelect
-	s.selectedSkillSlotIndex = 0
-	s.errorMessage = ""
-	s.statusMessage = ""
-}
-
-func (s *AgentCustomizationScreen) handleSkillSlotSelectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "esc":
-		s.currentMode = CustomizationModeSlotSelect
-	case "up", "k":
-		if s.selectedSkillSlotIndex > 0 {
-			s.selectedSkillSlotIndex--
-		}
-	case "down", "j":
-		if s.selectedSkillSlotIndex < domain.MaxSkillSlotCount-1 {
-			s.selectedSkillSlotIndex++
-		}
-	case "enter":
-		s.enterSkillSelectMode()
-	case "backspace", "delete", "d":
-		// スキルスロットをクリア
-		s.clearCurrentSkillSlot()
-	}
-
-	return s, nil
-}
-
-// clearCurrentSkillSlot は現在選択中のスキルスロットをクリアします。
-func (s *AgentCustomizationScreen) clearCurrentSkillSlot() {
-	if err := s.slotManager.ClearSkill(s.selectedSlotIndex, s.selectedSkillSlotIndex); err != nil {
-		s.errorMessage = fmt.Sprintf("スキルクリアに失敗: %v", err)
-	} else {
-		s.statusMessage = fmt.Sprintf("スキルスロット%dをクリアしました", s.selectedSkillSlotIndex+1)
-		s.errorMessage = ""
-	}
 }
 
 // ==================== スキル選択モード ====================
 
-func (s *AgentCustomizationScreen) enterSkillSelectMode() {
-	s.currentMode = CustomizationModeSkillSelect
+// enterSkillSelectMode はスキル選択モードに遷移します。
+func (s *AgentCustomizationScreen) enterSkillSelectMode(skillSlotIndex int) {
+	s.currentMode = ModeSkillSelect
 	s.selectedSkillIndex = 0
+	// focusPosition - 1 がスキルスロットインデックス
 	s.updateSkillList()
 	s.errorMessage = ""
 	s.statusMessage = ""
@@ -414,7 +428,7 @@ func (s *AgentCustomizationScreen) updateSkillList() {
 func (s *AgentCustomizationScreen) handleSkillSelectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
-		s.currentMode = CustomizationModeSkillSlotSelect
+		s.currentMode = ModeCardSelect
 	case "up", "k":
 		if s.selectedSkillIndex > 0 {
 			s.selectedSkillIndex--
@@ -432,7 +446,7 @@ func (s *AgentCustomizationScreen) handleSkillSelectKey(msg tea.KeyMsg) (tea.Mod
 			if len(skill.ChainVariations) > 0 {
 				s.chainVariationList = skill.ChainVariations
 				s.selectedChainIndex = 0
-				s.currentMode = CustomizationModeChainSelect
+				s.currentMode = ModeChainSelect
 			} else {
 				// チェイン効果なしで直接設定
 				s.setSkillToSlot("")
@@ -443,12 +457,27 @@ func (s *AgentCustomizationScreen) handleSkillSelectKey(msg tea.KeyMsg) (tea.Mod
 	return s, nil
 }
 
+// getSelectedSkillSlotIndex は現在選択中のスキルスロットインデックスを返します。
+func (s *AgentCustomizationScreen) getSelectedSkillSlotIndex() int {
+	if s.focusPosition > 0 {
+		return s.focusPosition - 1
+	}
+	return 0
+}
+
+// 後方互換性のため
+var _ = (*AgentCustomizationScreen).selectedSkillSlotIndex
+
+func (s *AgentCustomizationScreen) selectedSkillSlotIndex() int {
+	return s.getSelectedSkillSlotIndex()
+}
+
 // ==================== チェイン効果選択モード ====================
 
 func (s *AgentCustomizationScreen) handleChainSelectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
-		s.currentMode = CustomizationModeSkillSelect
+		s.currentMode = ModeSkillSelect
 	case "up", "k":
 		if s.selectedChainIndex > 0 {
 			s.selectedChainIndex--
@@ -473,12 +502,13 @@ func (s *AgentCustomizationScreen) handleChainSelectKey(msg tea.KeyMsg) (tea.Mod
 
 // setSkillToSlot はスキルをスロットに設定します。
 func (s *AgentCustomizationScreen) setSkillToSlot(chainEffectID string) {
-	if err := s.slotManager.SetSkill(s.selectedSlotIndex, s.selectedSkillSlotIndex, s.selectedSkillTypeID, chainEffectID); err != nil {
+	skillSlotIndex := s.getSelectedSkillSlotIndex()
+	if err := s.slotManager.SetSkill(s.selectedSlotIndex, skillSlotIndex, s.selectedSkillTypeID, chainEffectID); err != nil {
 		s.errorMessage = fmt.Sprintf("スキル設定に失敗: %v", err)
 	} else {
 		s.statusMessage = "スキルを設定しました"
 		s.errorMessage = ""
-		s.currentMode = CustomizationModeSkillSlotSelect
+		s.currentMode = ModeCardSelect
 	}
 }
 
@@ -498,9 +528,15 @@ func (s *AgentCustomizationScreen) View() string {
 	builder.WriteString(titleStyle.Render("エージェントカスタマイズ"))
 	builder.WriteString("\n\n")
 
-	// メインコンテンツ
-	builder.WriteString(s.renderMainContent())
+	// 3カード横並びエリア
+	builder.WriteString(s.renderCardArea())
 	builder.WriteString("\n\n")
+
+	// モーダル（ModeCardSelect以外の場合に表示）
+	if s.currentMode != ModeCardSelect {
+		builder.WriteString(s.renderModal())
+		builder.WriteString("\n")
+	}
 
 	// ステータス/エラーメッセージ
 	if s.errorMessage != "" {
@@ -525,211 +561,284 @@ func (s *AgentCustomizationScreen) View() string {
 	return builder.String()
 }
 
-// renderMainContent はメインコンテンツをレンダリングします。
-func (s *AgentCustomizationScreen) renderMainContent() string {
-	// 左側: スロット一覧
-	leftContent := s.renderSlotList()
+// renderCardArea は3カード横並びエリアをレンダリングします。
+func (s *AgentCustomizationScreen) renderCardArea() string {
+	// カード幅を計算（battle_view.goと同じ計算式）
+	cardWidth := (s.width - 18) / 3
+	if cardWidth < 30 {
+		cardWidth = 30
+	}
 
-	// 右側: 選択パネル（モードによって変化）
-	rightContent := s.renderSelectionPanel()
+	var cards []string
 
-	leftBox := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorPrimary).
-		Padding(1).
-		Width(50).
-		Render(leftContent)
+	for i := 0; i < slot.MaxAgentSlotCount; i++ {
+		isSelected := i == s.selectedSlotIndex
+		card := s.renderAgentCard(i, isSelected, cardWidth)
+		cards = append(cards, card)
+	}
 
-	rightBox := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorSubtle).
-		Padding(1).
-		Width(55).
-		Render(rightContent)
+	// カードを横に並べる
+	agentCards := lipgloss.JoinHorizontal(lipgloss.Top, cards[0], " ", cards[1], " ", cards[2])
 
-	content := lipgloss.JoinHorizontal(lipgloss.Top, leftBox, "  ", rightBox)
+	// 中央揃え
 	return lipgloss.NewStyle().
 		Width(s.width).
 		Align(lipgloss.Center).
-		Render(content)
+		Render(agentCards)
 }
 
-// renderSlotList はスロット一覧をレンダリングします。
-func (s *AgentCustomizationScreen) renderSlotList() string {
-	var builder strings.Builder
+// renderAgentCard は1つのエージェントカードをレンダリングします。
+func (s *AgentCustomizationScreen) renderAgentCard(slotIndex int, isSelected bool, cardWidth int) string {
+	var cardContent strings.Builder
 
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
-	builder.WriteString(titleStyle.Render("エージェントスロット"))
-	builder.WriteString("\n\n")
+	agentSlot := s.slotManager.GetSlot(slotIndex)
 
-	slots := s.slotManager.GetSlots()
+	if agentSlot == nil || agentSlot.IsEmpty() {
+		// 空スロット
+		emptyStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
+		cardContent.WriteString(emptyStyle.Render("(空)"))
+		cardContent.WriteString("\n\n")
+		cardContent.WriteString(emptyStyle.Render("Enterでコアを選択"))
+	} else {
+		// コア名とレベル
+		coreName := agentSlot.CoreTypeID
+		if coreType, ok := s.coreTypes[agentSlot.CoreTypeID]; ok {
+			coreName = coreType.Name
+		}
 
-	for i := range slot.MaxAgentSlotCount {
-		agentSlot := slots[i]
-
-		style := lipgloss.NewStyle()
-		prefix := "  "
-
-		// スロット選択モードで選択中の場合
-		if s.currentMode == CustomizationModeSlotSelect && i == s.selectedSlotIndex {
-			style = style.Bold(true).
+		// コア行のスタイル
+		coreStyle := lipgloss.NewStyle()
+		corePrefix := "  "
+		if isSelected && s.focusPosition == 0 {
+			coreStyle = coreStyle.Bold(true).
 				Foreground(styles.ColorSelectedFg).
 				Background(styles.ColorSelectedBg)
-			prefix = "> "
-		}
-
-		// スロット内容を表示
-		var slotContent string
-		if agentSlot == nil || agentSlot.IsEmpty() {
-			slotContent = fmt.Sprintf("スロット %d: (空)", i+1)
+			corePrefix = "> "
 		} else {
-			// コア名を取得
-			coreName := agentSlot.CoreTypeID
-			if coreType, ok := s.coreTypes[agentSlot.CoreTypeID]; ok {
-				coreName = coreType.Name
-			}
-			skillCount := agentSlot.GetSkillCount()
-			slotContent = fmt.Sprintf("スロット %d: %s Lv.%d (%d/%dスキル)",
-				i+1, coreName, agentSlot.CoreLevel, skillCount, domain.MaxSkillSlotCount)
+			coreStyle = coreStyle.Bold(true)
 		}
+		cardContent.WriteString(coreStyle.Render(fmt.Sprintf("%s%s Lv.%d", corePrefix, coreName, agentSlot.CoreLevel)))
+		cardContent.WriteString("\n")
 
-		builder.WriteString(style.Render(prefix + slotContent))
-		builder.WriteString("\n")
+		// パッシブスキル表示（PassiveSkillIDがある場合のみ）
+		if coreType, ok := s.coreTypes[agentSlot.CoreTypeID]; ok {
+			if coreType.PassiveSkillID != "" {
+				passiveStyle := lipgloss.NewStyle().
+					Foreground(styles.ColorBuff).
+					Bold(true)
+				// パッシブスキルの短い説明を表示
+				passiveText := coreType.PassiveSkillID
+				if ps, ok := s.passiveSkills[coreType.PassiveSkillID]; ok {
+					passiveText = ps.ShortDescription
+				}
+				cardContent.WriteString(passiveStyle.Render(fmt.Sprintf("  ★%s", passiveText)))
+				cardContent.WriteString("\n")
+			}
+		}
+		cardContent.WriteString("\n")
 
-		// スキルスロット選択モードでこのスロットが選択されている場合、スキル詳細を表示
-		if s.currentMode != CustomizationModeSlotSelect && i == s.selectedSlotIndex && agentSlot != nil && !agentSlot.IsEmpty() {
-			builder.WriteString(s.renderSkillSlots(agentSlot))
+		// スキルスロット表示
+		for j := 0; j < domain.MaxSkillSlotCount; j++ {
+			skillConfig := agentSlot.GetSkill(j)
+
+			skillStyle := lipgloss.NewStyle()
+			prefix := "  "
+
+			// フォーカス位置判定（j+1 がfocusPosition）
+			if isSelected && s.focusPosition == j+1 {
+				skillStyle = skillStyle.Bold(true).
+					Foreground(styles.ColorSelectedFg).
+					Background(styles.ColorSelectedBg)
+				prefix = "> "
+			}
+
+			var skillContent string
+			if skillConfig == nil || skillConfig.IsEmpty() {
+				skillContent = fmt.Sprintf("スキル%d: (空)", j+1)
+				if !isSelected || s.focusPosition != j+1 {
+					skillStyle = skillStyle.Foreground(styles.ColorSubtle)
+				}
+			} else {
+				skillName := skillConfig.TypeID
+				icon := "?"
+				if skillType, ok := s.skillTypes[skillConfig.TypeID]; ok {
+					skillName = skillType.Name
+					icon = skillType.Icon
+				}
+				skillContent = fmt.Sprintf("%s %s", icon, skillName)
+			}
+
+			cardContent.WriteString(skillStyle.Render(prefix + skillContent))
+			cardContent.WriteString("\n")
+
+			// チェイン効果表示（2行目）
+			if skillConfig != nil && !skillConfig.IsEmpty() && skillConfig.ChainEffectID != "" {
+				// チェイン効果の短い説明を表示
+				chainStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff)
+				chainText := skillConfig.ChainEffectID
+				if ce, ok := s.chainEffects[skillConfig.ChainEffectID]; ok {
+					chainText = ce.ShortDescription
+				}
+				cardContent.WriteString("    ")
+				cardContent.WriteString(chainStyle.Render(fmt.Sprintf("[%s]", chainText)))
+				cardContent.WriteString("\n")
+			} else {
+				// チェイン効果がない場合は空行
+				cardContent.WriteString("\n")
+			}
 		}
 	}
 
-	return builder.String()
-}
-
-// renderSkillSlots はスキルスロットをレンダリングします。
-func (s *AgentCustomizationScreen) renderSkillSlots(agentSlot *domain.AgentSlot) string {
-	var builder strings.Builder
-
-	for j := range domain.MaxSkillSlotCount {
-		skillConfig := agentSlot.GetSkill(j)
-
-		style := lipgloss.NewStyle().Padding(0, 0, 0, 4)
-		prefix := "  "
-
-		// スキルスロット選択モードで選択中の場合
-		if s.currentMode == CustomizationModeSkillSlotSelect && j == s.selectedSkillSlotIndex {
-			style = style.Bold(true).Foreground(styles.ColorPrimary)
-			prefix = "> "
-		}
-
-		var skillContent string
-		if skillConfig == nil || skillConfig.IsEmpty() {
-			skillContent = fmt.Sprintf("スキル%d: (空)", j+1)
-		} else {
-			skillName := skillConfig.TypeID
-			icon := "?"
-			if skillType, ok := s.skillTypes[skillConfig.TypeID]; ok {
-				skillName = skillType.Name
-				icon = skillType.Icon
-			}
-			skillContent = fmt.Sprintf("スキル%d: %s %s", j+1, icon, skillName)
-			if skillConfig.ChainEffectID != "" {
-				skillContent += fmt.Sprintf(" [%s]", skillConfig.ChainEffectID)
-			}
-		}
-
-		builder.WriteString(style.Render(prefix + skillContent))
-		builder.WriteString("\n")
+	// カードボックス
+	borderColor := styles.ColorSubtle
+	if isSelected {
+		borderColor = styles.ColorPrimary
 	}
 
-	return builder.String()
+	cardStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(borderColor).
+		Padding(0, 1).
+		Width(cardWidth).
+		Height(14) // 固定高さ
+
+	return cardStyle.Render(cardContent.String())
 }
 
-// renderSelectionPanel は右側の選択パネルをレンダリングします。
-func (s *AgentCustomizationScreen) renderSelectionPanel() string {
+// renderModal はモーダルをレンダリングします。
+func (s *AgentCustomizationScreen) renderModal() string {
+	// モーダルコンテンツ
+	var content string
+	var title string
+
 	switch s.currentMode {
-	case CustomizationModeSlotSelect:
-		return s.renderSlotDetail()
-	case CustomizationModeCoreSelect:
-		return s.renderCoreSelectList()
-	case CustomizationModeLevelSelect:
-		return s.renderLevelSelectList()
-	case CustomizationModeSkillSlotSelect:
-		return s.renderSkillSlotDetail()
-	case CustomizationModeSkillSelect:
-		return s.renderSkillSelectList()
-	case CustomizationModeChainSelect:
-		return s.renderChainSelectList()
+	case ModeCoreSelect:
+		title = "コア選択"
+		content = s.renderModalCoreSelect()
+	case ModeLevelSelect:
+		title = "レベル選択"
+		content = s.renderModalLevelSelect()
+	case ModeSkillSelect:
+		title = "スキル選択"
+		content = s.renderModalSkillSelect()
+	case ModeChainSelect:
+		title = "チェイン効果選択"
+		content = s.renderModalChainSelect()
 	}
-	return ""
+
+	// タイトル行
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorSecondary).
+		Align(lipgloss.Center).
+		Width(80)
+	titleRendered := titleStyle.Render(title)
+
+	// モーダルボックス（二重線枠）
+	modalStyle := lipgloss.NewStyle().
+		Border(lipgloss.DoubleBorder()).
+		BorderForeground(styles.ColorPrimary).
+		Padding(1, 2).
+		Width(84)
+
+	modalContent := titleRendered + "\n\n" + content
+
+	// ヒント行
+	var hintText string
+	switch s.currentMode {
+	case ModeCoreSelect, ModeSkillSelect:
+		hintText = "↑/↓: 選択  Enter: 決定  Esc: キャンセル"
+	case ModeLevelSelect:
+		hintText = "↑/↓: レベル選択  Enter: 決定  Esc: 戻る"
+	case ModeChainSelect:
+		hintText = "↑/↓: 効果選択  Enter: 決定  Esc: 戻る"
+	}
+	hintStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorSubtle).
+		Align(lipgloss.Center).
+		Width(80)
+	modalContent += "\n" + hintStyle.Render(hintText)
+
+	modal := modalStyle.Render(modalContent)
+
+	// 中央揃え
+	return lipgloss.NewStyle().
+		Width(s.width).
+		Align(lipgloss.Center).
+		Render(modal)
 }
 
-// renderSlotDetail はスロットの詳細をレンダリングします。
-func (s *AgentCustomizationScreen) renderSlotDetail() string {
-	var builder strings.Builder
+// truncateLines はコンテンツの行数を制限します。
+func truncateLines(content string, maxLines int) string {
+	// 末尾の改行を削除
+	content = strings.TrimSuffix(content, "\n")
+	lines := strings.Split(content, "\n")
 
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
-	builder.WriteString(titleStyle.Render("スロット詳細"))
-	builder.WriteString("\n\n")
-
-	slot := s.slotManager.GetSlot(s.selectedSlotIndex)
-	if slot == nil || slot.IsEmpty() {
-		builder.WriteString(lipgloss.NewStyle().Foreground(styles.ColorSubtle).Render("スロットが空です"))
-		builder.WriteString("\n\n")
-		builder.WriteString("Enterでコアを選択してください")
-		return builder.String()
+	// 行数を制限
+	if len(lines) > maxLines {
+		lines = lines[:maxLines]
 	}
-
-	labelStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
-	valueStyle := lipgloss.NewStyle().Foreground(styles.ColorPrimary)
-
-	// コア情報
-	coreName := slot.CoreTypeID
-	if coreType, ok := s.coreTypes[slot.CoreTypeID]; ok {
-		coreName = coreType.Name
+	// 足りない行を埋める
+	for len(lines) < maxLines {
+		lines = append(lines, "")
 	}
-
-	builder.WriteString(labelStyle.Render("コア: "))
-	builder.WriteString(valueStyle.Render(fmt.Sprintf("%s Lv.%d", coreName, slot.CoreLevel)))
-	builder.WriteString("\n\n")
-
-	// スキル情報
-	builder.WriteString(labelStyle.Render("スキル:"))
-	builder.WriteString("\n")
-	for j := range domain.MaxSkillSlotCount {
-		skillConfig := slot.GetSkill(j)
-		if skillConfig == nil || skillConfig.IsEmpty() {
-			fmt.Fprintf(&builder, "  %d: (空)\n", j+1)
-		} else {
-			skillName := skillConfig.TypeID
-			icon := "?"
-			if skillType, ok := s.skillTypes[skillConfig.TypeID]; ok {
-				skillName = skillType.Name
-				icon = skillType.Icon
-			}
-			fmt.Fprintf(&builder, "  %d: %s %s\n", j+1, icon, skillName)
-		}
-	}
-
-	builder.WriteString("\n")
-	builder.WriteString(labelStyle.Render("Sキーでスキルを設定"))
-
-	return builder.String()
+	return strings.Join(lines, "\n")
 }
 
-// renderCoreSelectList はコア選択リストをレンダリングします。
-func (s *AgentCustomizationScreen) renderCoreSelectList() string {
-	var builder strings.Builder
+// renderTwoPanelLayout は左右2パネルのレイアウトをレンダリングします。
+// 枠線問題を避けるため、内容のみを横に並べてから外枠を付けます。
+func renderTwoPanelLayout(leftContent, rightContent string, panelWidth int) string {
+	// 各パネルを固定幅でスタイル設定
+	leftStyle := lipgloss.NewStyle().
+		Width(panelWidth).
+		Padding(0, 1)
+	rightStyle := lipgloss.NewStyle().
+		Width(panelWidth).
+		Padding(0, 1).
+		BorderLeft(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(styles.ColorSubtle)
 
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
-	builder.WriteString(titleStyle.Render("コア選択"))
-	builder.WriteString("\n\n")
+	// コンテンツをレンダリング
+	left := leftStyle.Render(leftContent)
+	right := rightStyle.Render(rightContent)
+
+	// 横に並べる
+	return lipgloss.JoinHorizontal(lipgloss.Top, left, right)
+}
+
+// renderModalCoreSelect はモーダル内のコア選択をレンダリングします。
+func (s *AgentCustomizationScreen) renderModalCoreSelect() string {
+	leftContent := truncateLines(s.renderCoreList(), 10)
+	rightContent := truncateLines(s.renderCoreDetail(), 10)
+	return renderTwoPanelLayout(leftContent, rightContent, 38)
+}
+
+// renderCoreList はコアリストをレンダリングします。
+func (s *AgentCustomizationScreen) renderCoreList() string {
+	var builder strings.Builder
 
 	if len(s.coreList) == 0 {
 		builder.WriteString(lipgloss.NewStyle().Foreground(styles.ColorSubtle).Render("保有コアがありません"))
 		return builder.String()
 	}
 
-	for i, core := range s.coreList {
+	// 表示可能な行数（Height - パディング）
+	maxVisibleItems := 10
+
+	// スクロール位置を計算
+	startIdx := 0
+	if s.selectedCoreIndex >= maxVisibleItems {
+		startIdx = s.selectedCoreIndex - maxVisibleItems + 1
+	}
+
+	endIdx := startIdx + maxVisibleItems
+	if endIdx > len(s.coreList) {
+		endIdx = len(s.coreList)
+	}
+
+	for i := startIdx; i < endIdx; i++ {
+		core := s.coreList[i]
 		style := lipgloss.NewStyle()
 		prefix := "  "
 
@@ -740,7 +849,7 @@ func (s *AgentCustomizationScreen) renderCoreSelectList() string {
 			prefix = "> "
 		}
 
-		item := fmt.Sprintf("%s (最大Lv.%d)", core.TypeName, core.MaxLevel)
+		item := fmt.Sprintf("%s (Lv.%d)", core.TypeName, core.MaxLevel)
 		builder.WriteString(style.Render(prefix + item))
 		builder.WriteString("\n")
 	}
@@ -748,76 +857,152 @@ func (s *AgentCustomizationScreen) renderCoreSelectList() string {
 	return builder.String()
 }
 
-// renderLevelSelectList はレベル選択リストをレンダリングします。
-func (s *AgentCustomizationScreen) renderLevelSelectList() string {
+// renderCoreDetail は選択中コアの詳細をレンダリングします。
+func (s *AgentCustomizationScreen) renderCoreDetail() string {
 	var builder strings.Builder
 
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
-	builder.WriteString(titleStyle.Render("レベル選択"))
+	if len(s.coreList) == 0 || s.selectedCoreIndex >= len(s.coreList) {
+		return ""
+	}
+
+	core := s.coreList[s.selectedCoreIndex]
+
+	// コア名
+	nameStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary)
+	builder.WriteString(nameStyle.Render(core.TypeName))
 	builder.WriteString("\n\n")
 
-	// コア名を表示
+	// 最大レベル
+	labelStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
+	valueStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary)
+	builder.WriteString(labelStyle.Render("最大レベル: "))
+	builder.WriteString(valueStyle.Render(fmt.Sprintf("Lv.%d", core.MaxLevel)))
+	builder.WriteString("\n\n")
+
+	// パッシブスキル情報（PassiveSkillIDがある場合のみ）
+	if coreType, ok := s.coreTypes[core.TypeID]; ok {
+		if coreType.PassiveSkillID != "" {
+			passiveStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff).Bold(true)
+			// パッシブスキルの説明を表示
+			passiveText := coreType.PassiveSkillID
+			if ps, ok := s.passiveSkills[coreType.PassiveSkillID]; ok {
+				passiveText = ps.Description
+			}
+			builder.WriteString(passiveStyle.Render("★ " + passiveText))
+		}
+	}
+
+	return builder.String()
+}
+
+// renderModalLevelSelect はモーダル内のレベル選択をレンダリングします。
+func (s *AgentCustomizationScreen) renderModalLevelSelect() string {
+	leftContent := truncateLines(s.renderLevelList(), 10)
+	rightContent := truncateLines(s.renderLevelDetail(), 10)
+	return renderTwoPanelLayout(leftContent, rightContent, 38)
+}
+
+// renderLevelList はレベル選択UIをレンダリングします（数値増減方式）。
+func (s *AgentCustomizationScreen) renderLevelList() string {
+	var builder strings.Builder
+
+	// 現在選択中のレベル
+	selectedLevel := s.selectedLevelIndex + 1
+
+	// 数値増減UI
+	builder.WriteString("\n")
+
+	// 上矢印（増加可能な場合）
+	arrowStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
+	activeArrowStyle := lipgloss.NewStyle().Foreground(styles.ColorPrimary).Bold(true)
+
+	if selectedLevel < s.maxSelectableLevel {
+		builder.WriteString(activeArrowStyle.Render("        ▲"))
+	} else {
+		builder.WriteString(arrowStyle.Render("        ▲"))
+	}
+	builder.WriteString("\n\n")
+
+	// 現在のレベル（大きく表示）
+	levelStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorPrimary).
+		Background(styles.ColorSelectedBg).
+		Padding(0, 2)
+	builder.WriteString(levelStyle.Render(fmt.Sprintf("Lv.%d", selectedLevel)))
+	builder.WriteString("\n\n")
+
+	// 下矢印（減少可能な場合）
+	if selectedLevel > 1 {
+		builder.WriteString(activeArrowStyle.Render("        ▼"))
+	} else {
+		builder.WriteString(arrowStyle.Render("        ▼"))
+	}
+	builder.WriteString("\n\n")
+
+	// 範囲表示
+	rangeStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
+	builder.WriteString(rangeStyle.Render(fmt.Sprintf("  (1 〜 %d)", s.maxSelectableLevel)))
+
+	return builder.String()
+}
+
+// renderLevelDetail はレベル詳細をレンダリングします。
+func (s *AgentCustomizationScreen) renderLevelDetail() string {
+	var builder strings.Builder
+
+	// コア名
 	coreName := s.selectedCoreTypeID
 	if coreType, ok := s.coreTypes[s.selectedCoreTypeID]; ok {
 		coreName = coreType.Name
 	}
+
+	nameStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary)
+	builder.WriteString(nameStyle.Render(coreName))
+	builder.WriteString("\n\n")
+
+	// 選択中のレベル
 	labelStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
-	builder.WriteString(labelStyle.Render(fmt.Sprintf("コア: %s", coreName)))
-	builder.WriteString("\n\n")
-
-	// レベルリスト（高い順に表示）
-	for i := s.maxSelectableLevel; i >= 1; i-- {
-		idx := s.maxSelectableLevel - i
-		style := lipgloss.NewStyle()
-		prefix := "  "
-
-		if idx == s.selectedLevelIndex {
-			style = style.Bold(true).
-				Foreground(styles.ColorSelectedFg).
-				Background(styles.ColorSelectedBg)
-			prefix = "> "
-		}
-
-		item := fmt.Sprintf("Lv.%d", s.maxSelectableLevel-idx)
-		builder.WriteString(style.Render(prefix + item))
-		builder.WriteString("\n")
-	}
+	valueStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary).Bold(true)
+	selectedLevel := s.selectedLevelIndex + 1
+	builder.WriteString(labelStyle.Render("選択レベル: "))
+	builder.WriteString(valueStyle.Render(fmt.Sprintf("Lv.%d", selectedLevel)))
 
 	return builder.String()
 }
 
-// renderSkillSlotDetail はスキルスロットの詳細をレンダリングします。
-func (s *AgentCustomizationScreen) renderSkillSlotDetail() string {
-	var builder strings.Builder
-
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
-	builder.WriteString(titleStyle.Render("スキルスロット選択"))
-	builder.WriteString("\n\n")
-
-	slot := s.slotManager.GetSlot(s.selectedSlotIndex)
-	if slot == nil {
-		return "スロットが見つかりません"
-	}
-
-	builder.WriteString("Enterでスキルを選択、Backspaceでクリア")
-
-	return builder.String()
+// renderModalSkillSelect はモーダル内のスキル選択をレンダリングします。
+func (s *AgentCustomizationScreen) renderModalSkillSelect() string {
+	leftContent := truncateLines(s.renderSkillList(), 10)
+	rightContent := truncateLines(s.renderSkillDetail(), 10)
+	return renderTwoPanelLayout(leftContent, rightContent, 38)
 }
 
-// renderSkillSelectList はスキル選択リストをレンダリングします。
-func (s *AgentCustomizationScreen) renderSkillSelectList() string {
+// renderSkillList はスキルリストをレンダリングします。
+func (s *AgentCustomizationScreen) renderSkillList() string {
 	var builder strings.Builder
-
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
-	builder.WriteString(titleStyle.Render("スキル選択"))
-	builder.WriteString("\n\n")
 
 	if len(s.compatibleSkillList) == 0 {
 		builder.WriteString(lipgloss.NewStyle().Foreground(styles.ColorSubtle).Render("互換スキルがありません"))
 		return builder.String()
 	}
 
-	for i, skill := range s.compatibleSkillList {
+	// 表示可能な行数
+	maxVisibleItems := 10
+
+	// スクロール位置を計算
+	startIdx := 0
+	if s.selectedSkillIndex >= maxVisibleItems {
+		startIdx = s.selectedSkillIndex - maxVisibleItems + 1
+	}
+
+	endIdx := startIdx + maxVisibleItems
+	if endIdx > len(s.compatibleSkillList) {
+		endIdx = len(s.compatibleSkillList)
+	}
+
+	for i := startIdx; i < endIdx; i++ {
+		skill := s.compatibleSkillList[i]
 		style := lipgloss.NewStyle()
 		prefix := "  "
 
@@ -829,9 +1014,6 @@ func (s *AgentCustomizationScreen) renderSkillSelectList() string {
 		}
 
 		item := fmt.Sprintf("%s %s", skill.Icon, skill.TypeName)
-		if skill.ChainCount > 0 {
-			item += fmt.Sprintf(" (%d種のチェイン効果)", skill.ChainCount)
-		}
 		builder.WriteString(style.Render(prefix + item))
 		builder.WriteString("\n")
 	}
@@ -839,25 +1021,68 @@ func (s *AgentCustomizationScreen) renderSkillSelectList() string {
 	return builder.String()
 }
 
-// renderChainSelectList はチェイン効果選択リストをレンダリングします。
-func (s *AgentCustomizationScreen) renderChainSelectList() string {
+// renderSkillDetail は選択中スキルの詳細をレンダリングします。
+func (s *AgentCustomizationScreen) renderSkillDetail() string {
 	var builder strings.Builder
 
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
-	builder.WriteString(titleStyle.Render("チェイン効果選択"))
+	if len(s.compatibleSkillList) == 0 || s.selectedSkillIndex >= len(s.compatibleSkillList) {
+		return ""
+	}
+
+	skill := s.compatibleSkillList[s.selectedSkillIndex]
+
+	// スキル名
+	nameStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary)
+	builder.WriteString(nameStyle.Render(fmt.Sprintf("%s %s", skill.Icon, skill.TypeName)))
 	builder.WriteString("\n\n")
 
-	// スキル名を表示
-	skillName := s.selectedSkillTypeID
-	if skillType, ok := s.skillTypes[s.selectedSkillTypeID]; ok {
-		skillName = skillType.Name
+	// スキルタイプ情報
+	if skillType, ok := s.skillTypes[skill.TypeID]; ok {
+		labelStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
+		// 説明
+		builder.WriteString(labelStyle.Render(skillType.Description))
+		builder.WriteString("\n\n")
+
+		// チェイン効果情報
+		if len(skill.ChainVariations) > 0 {
+			chainStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff)
+			builder.WriteString(chainStyle.Render(fmt.Sprintf("🔗 %d種のチェイン効果あり", len(skill.ChainVariations))))
+		}
 	}
-	labelStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
-	builder.WriteString(labelStyle.Render(fmt.Sprintf("スキル: %s", skillName)))
-	builder.WriteString("\n\n")
+
+	return builder.String()
+}
+
+// renderModalChainSelect はモーダル内のチェイン効果選択をレンダリングします。
+func (s *AgentCustomizationScreen) renderModalChainSelect() string {
+	leftContent := truncateLines(s.renderChainList(), 10)
+	rightContent := truncateLines(s.renderChainDetail(), 10)
+	return renderTwoPanelLayout(leftContent, rightContent, 38)
+}
+
+// renderChainList はチェイン効果リストをレンダリングします（スクロール対応）。
+func (s *AgentCustomizationScreen) renderChainList() string {
+	var builder strings.Builder
+
+	// 全アイテム数（チェイン効果 + 「なし」オプション）
+	totalItems := len(s.chainVariationList) + 1
+
+	// 表示可能な行数（Height - パディング）
+	maxVisibleItems := 10
+
+	// スクロール位置を計算
+	startIdx := 0
+	if s.selectedChainIndex >= maxVisibleItems {
+		startIdx = s.selectedChainIndex - maxVisibleItems + 1
+	}
+
+	endIdx := startIdx + maxVisibleItems
+	if endIdx > totalItems {
+		endIdx = totalItems
+	}
 
 	// チェイン効果リスト
-	for i, chainID := range s.chainVariationList {
+	for i := startIdx; i < endIdx; i++ {
 		style := lipgloss.NewStyle()
 		prefix := "  "
 
@@ -868,21 +1093,63 @@ func (s *AgentCustomizationScreen) renderChainSelectList() string {
 			prefix = "> "
 		}
 
-		builder.WriteString(style.Render(prefix + chainID))
+		var itemText string
+		if i < len(s.chainVariationList) {
+			// チェイン効果の短い説明を表示
+			chainID := s.chainVariationList[i]
+			itemText = chainID
+			if ce, ok := s.chainEffects[chainID]; ok {
+				itemText = ce.ShortDescription
+			}
+		} else {
+			// 「なし」オプション
+			itemText = "(なし)"
+		}
+		builder.WriteString(style.Render(prefix + itemText))
 		builder.WriteString("\n")
 	}
 
-	// 「なし」オプション
-	style := lipgloss.NewStyle()
-	prefix := "  "
-	if s.selectedChainIndex == len(s.chainVariationList) {
-		style = style.Bold(true).
-			Foreground(styles.ColorSelectedFg).
-			Background(styles.ColorSelectedBg)
-		prefix = "> "
+	return builder.String()
+}
+
+// renderChainDetail は選択中チェイン効果の詳細をレンダリングします。
+func (s *AgentCustomizationScreen) renderChainDetail() string {
+	var builder strings.Builder
+
+	// スキル名
+	skillName := s.selectedSkillTypeID
+	if skillType, ok := s.skillTypes[s.selectedSkillTypeID]; ok {
+		skillName = skillType.Name
 	}
-	builder.WriteString(style.Render(prefix + "(なし)"))
-	builder.WriteString("\n")
+	nameStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary)
+	builder.WriteString(nameStyle.Render(skillName))
+	builder.WriteString("\n\n")
+
+	// 選択中のチェイン効果
+	if s.selectedChainIndex < len(s.chainVariationList) {
+		chainID := s.chainVariationList[s.selectedChainIndex]
+
+		// チェイン効果の説明を表示
+		chainStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff).Bold(true)
+		chainName := chainID
+		chainDesc := ""
+		if ce, ok := s.chainEffects[chainID]; ok {
+			chainName = ce.ShortDescription
+			chainDesc = ce.Description
+		}
+		builder.WriteString(chainStyle.Render(chainName))
+		builder.WriteString("\n\n")
+
+		// チェイン効果の長い説明
+		if chainDesc != "" {
+			descStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
+			builder.WriteString(descStyle.Render(chainDesc))
+		}
+	} else {
+		// 「なし」選択中
+		labelStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
+		builder.WriteString(labelStyle.Render("チェイン効果なしで装備します"))
+	}
 
 	return builder.String()
 }
@@ -896,17 +1163,15 @@ func (s *AgentCustomizationScreen) renderHints() string {
 
 	var hints string
 	switch s.currentMode {
-	case CustomizationModeSlotSelect:
-		hints = "↑/↓: スロット選択  Enter: コア設定  S: スキル設定  D: クリア  Esc: ホーム"
-	case CustomizationModeCoreSelect:
-		hints = "↑/↓: コア選択  Enter: 決定  Esc: 戻る"
-	case CustomizationModeLevelSelect:
+	case ModeCardSelect:
+		hints = "←/→: スロット切替  ↑/↓: 項目選択  Enter: 編集  Delete: 外す  Esc: 戻る"
+	case ModeCoreSelect:
+		hints = "↑/↓: コア選択  Enter: 決定  Esc: キャンセル"
+	case ModeLevelSelect:
 		hints = "↑/↓: レベル選択  Enter: 決定  Esc: 戻る"
-	case CustomizationModeSkillSlotSelect:
-		hints = "↑/↓: スキルスロット選択  Enter: スキル設定  Backspace: クリア  Esc: 戻る"
-	case CustomizationModeSkillSelect:
-		hints = "↑/↓: スキル選択  Enter: 決定  Esc: 戻る"
-	case CustomizationModeChainSelect:
+	case ModeSkillSelect:
+		hints = "↑/↓: スキル選択  Enter: 決定  Esc: キャンセル"
+	case ModeChainSelect:
 		hints = "↑/↓: チェイン効果選択  Enter: 決定  Esc: 戻る"
 	}
 

@@ -643,7 +643,7 @@ func TestAgentSlotManager_SetSkill_InvalidSkillSlotIndex(t *testing.T) {
 	}
 }
 
-func TestAgentSlotManager_SetSkill_SameSkillInDifferentAgents(t *testing.T) {
+func TestAgentSlotManager_SetSkill_SameSkillInDifferentAgents_ShouldFail(t *testing.T) {
 	manager, coreInv, skillInv := createTestManager()
 
 	// コアとスキルをインベントリに追加
@@ -660,26 +660,32 @@ func TestAgentSlotManager_SetSkill_SameSkillInDifferentAgents(t *testing.T) {
 		t.Fatalf("SetCore(1)でエラー: %v", err)
 	}
 
-	// 同じスキルを異なるエージェントに設定
+	// 最初のスロットにスキルを設定
 	err = manager.SetSkill(0, 0, "skill_001", "")
 	if err != nil {
 		t.Fatalf("スロット0へのSetSkillでエラー: %v", err)
 	}
+
+	// 同じスキルを別のエージェントに設定しようとするとエラーになるべき
 	err = manager.SetSkill(1, 0, "skill_001", "")
-	if err != nil {
-		t.Fatalf("スロット1へのSetSkillでエラー（同じスキルを異なるエージェントに設定可能であるべき）: %v", err)
+	if err == nil {
+		t.Fatal("同じスキルを異なるエージェントに設定するとエラーを返すべき")
+	}
+	if err != ErrSkillAlreadyEquipped {
+		t.Errorf("err = %v, want %v", err, ErrSkillAlreadyEquipped)
 	}
 
-	// 両方のスロットにスキルが設定されていることを確認
+	// 最初のスロットのスキルは設定されているまま
 	if manager.GetSlot(0).GetSkill(0).TypeID != "skill_001" {
 		t.Error("スロット0にskill_001が設定されているべき")
 	}
-	if manager.GetSlot(1).GetSkill(0).TypeID != "skill_001" {
-		t.Error("スロット1にskill_001が設定されているべき")
+	// 2番目のスロットにはスキルが設定されていない
+	if !manager.GetSlot(1).GetSkill(0).IsEmpty() {
+		t.Error("スロット1のスキルは空であるべき")
 	}
 }
 
-func TestAgentSlotManager_SetSkill_SameSkillInSameAgentMultipleSlots(t *testing.T) {
+func TestAgentSlotManager_SetSkill_SameSkillInSameAgentMultipleSlots_ShouldFail(t *testing.T) {
 	manager, coreInv, skillInv := createTestManager()
 
 	// コアとスキルをインベントリに追加
@@ -692,26 +698,106 @@ func TestAgentSlotManager_SetSkill_SameSkillInSameAgentMultipleSlots(t *testing.
 		t.Fatalf("SetCoreでエラー: %v", err)
 	}
 
-	// 同じスキルを同一エージェント内の複数スロットに設定
+	// 最初のスキルスロットにスキルを設定
 	err = manager.SetSkill(0, 0, "skill_001", "")
 	if err != nil {
 		t.Fatalf("スキルスロット0へのSetSkillでエラー: %v", err)
 	}
+
+	// 同じスキルを同一エージェント内の別スロットに設定しようとするとエラーになるべき
 	err = manager.SetSkill(0, 1, "skill_001", "")
-	if err != nil {
-		t.Fatalf("スキルスロット1へのSetSkillでエラー（同じスキルを同一エージェント内の複数スロットに設定可能であるべき）: %v", err)
+	if err == nil {
+		t.Fatal("同じスキルを同一エージェント内の複数スロットに設定するとエラーを返すべき")
+	}
+	if err != ErrSkillAlreadyEquipped {
+		t.Errorf("err = %v, want %v", err, ErrSkillAlreadyEquipped)
 	}
 
-	// 2つのスキルスロットに同じスキルが設定されていることを確認
+	// 最初のスキルスロットにはスキルが設定されている
 	slot := manager.GetSlot(0)
 	if slot.GetSkill(0).TypeID != "skill_001" {
 		t.Error("スキルスロット0にskill_001が設定されているべき")
 	}
-	if slot.GetSkill(1).TypeID != "skill_001" {
-		t.Error("スキルスロット1にskill_001が設定されているべき")
+	// 2番目のスキルスロットは空
+	if !slot.GetSkill(1).IsEmpty() {
+		t.Error("スキルスロット1は空であるべき")
 	}
-	if slot.GetSkillCount() != 2 {
-		t.Errorf("スキル数 = %d, want %d", slot.GetSkillCount(), 2)
+	if slot.GetSkillCount() != 1 {
+		t.Errorf("スキル数 = %d, want %d", slot.GetSkillCount(), 1)
+	}
+}
+
+func TestAgentSlotManager_SetSkill_ReplaceInSameSlot_Success(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	// コアとスキルをインベントリに追加
+	coreInv.AddCore("core_001", 10)
+	skillInv.AddSkill("skill_001", "") // physical
+	skillInv.AddSkill("skill_002", "") // magic
+
+	// コアを設定
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCoreでエラー: %v", err)
+	}
+
+	// 最初のスキルを設定
+	err = manager.SetSkill(0, 0, "skill_001", "")
+	if err != nil {
+		t.Fatalf("skill_001の設定でエラー: %v", err)
+	}
+
+	// 同じスロットに別のスキルを設定（上書き）
+	err = manager.SetSkill(0, 0, "skill_002", "")
+	if err != nil {
+		t.Fatalf("同じスロットへの別スキル設定でエラー: %v", err)
+	}
+
+	// skill_002が設定されていることを確認
+	slot := manager.GetSlot(0)
+	if slot.GetSkill(0).TypeID != "skill_002" {
+		t.Errorf("TypeID = %q, want %q", slot.GetSkill(0).TypeID, "skill_002")
+	}
+}
+
+func TestAgentSlotManager_SetSkill_AfterClearCanEquipToOtherSlot(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	// コアとスキルをインベントリに追加
+	coreInv.AddCore("core_001", 10)
+	skillInv.AddSkill("skill_001", "")
+
+	// 2つのスロットにコアを設定
+	err := manager.SetCore(0, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCore(0)でエラー: %v", err)
+	}
+	err = manager.SetCore(1, "core_001", 5)
+	if err != nil {
+		t.Fatalf("SetCore(1)でエラー: %v", err)
+	}
+
+	// スロット0にスキルを設定
+	err = manager.SetSkill(0, 0, "skill_001", "")
+	if err != nil {
+		t.Fatalf("スロット0へのSetSkillでエラー: %v", err)
+	}
+
+	// スロット0のスキルをクリア
+	err = manager.ClearSkill(0, 0)
+	if err != nil {
+		t.Fatalf("ClearSkillでエラー: %v", err)
+	}
+
+	// スロット1に同じスキルを設定できるはず
+	err = manager.SetSkill(1, 0, "skill_001", "")
+	if err != nil {
+		t.Fatalf("クリア後に別スロットへのSetSkillでエラー: %v", err)
+	}
+
+	// スロット1にスキルが設定されていることを確認
+	if manager.GetSlot(1).GetSkill(0).TypeID != "skill_001" {
+		t.Error("スロット1にskill_001が設定されているべき")
 	}
 }
 
@@ -1070,6 +1156,11 @@ func TestAgentSlotManager_BuildAgentsForBattle_AllFull(t *testing.T) {
 	// コアとスキルをインベントリに追加
 	coreInv.AddCore("core_001", 10)
 	skillInv.AddSkill("skill_001", "")
+	skillInv.AddSkill("skill_002", "") // magic
+	skillInv.AddSkill("skill_004", "") // physical, magic
+
+	// 各スロットには異なるスキルを設定
+	skills := []string{"skill_001", "skill_002", "skill_004"}
 
 	// 全スロットにコアを設定
 	for i := range 3 {
@@ -1077,7 +1168,7 @@ func TestAgentSlotManager_BuildAgentsForBattle_AllFull(t *testing.T) {
 		if err != nil {
 			t.Fatalf("SetCore(%d)でエラー: %v", i, err)
 		}
-		err = manager.SetSkill(i, 0, "skill_001", "")
+		err = manager.SetSkill(i, 0, skills[i], "")
 		if err != nil {
 			t.Fatalf("SetSkill(%d,0)でエラー: %v", i, err)
 		}

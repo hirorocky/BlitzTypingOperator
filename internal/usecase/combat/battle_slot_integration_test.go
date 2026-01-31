@@ -23,6 +23,7 @@ func createTestInventories() (*domain.CoreInventory, *domain.SkillInventory) {
 	skillInv.AddSkill("slash", "chain_fire")
 	skillInv.AddSkill("heal", "")
 	skillInv.AddSkill("fireball", "chain_burn")
+	skillInv.AddSkill("strike", "") // スロット1用の追加スキル
 
 	return coreInv, skillInv
 }
@@ -79,6 +80,18 @@ func createTestMasterData() (map[string]domain.CoreType, map[string]domain.Skill
 				{
 					Target:      domain.TargetEnemy,
 					HPFormula:   &domain.HPFormula{Base: 15, StatCoef: 1.5, StatRef: "INT"},
+					Probability: 1.0,
+				},
+			},
+		},
+		"strike": {
+			ID:   "strike",
+			Name: "ストライク",
+			Tags: []string{"physical"},
+			Effects: []domain.ModuleEffect{
+				{
+					Target:      domain.TargetEnemy,
+					HPFormula:   &domain.HPFormula{Base: 8, StatCoef: 0.8, StatRef: "STR"},
 					Probability: 1.0,
 				},
 			},
@@ -340,7 +353,7 @@ func TestBattleIntegration_AgentModelConstruction(t *testing.T) {
 	if err := slotManager.SetCore(1, "attacker", 5); err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
-	if err := slotManager.SetSkill(1, 0, "slash", ""); err != nil {
+	if err := slotManager.SetSkill(1, 0, "strike", ""); err != nil {
 		t.Fatalf("スキル設定に失敗: %v", err)
 	}
 

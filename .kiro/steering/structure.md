@@ -49,16 +49,20 @@ config       ← 横断的関心事（全層から参照可能）
 ### domain層 - ドメインモデル
 **場所**: `/internal/domain/`
 **目的**: VO、エンティティ。UIやインフラに依存しない純粋なドメイン層
-**例**: `core.go`（コア特性）、`module.go`（モジュールスキル）、`agent.go`（エージェント）、`enemy.go`（敵）
+**例**: `core.go`（コア特性）、`skill.go`（スキル）、`agent.go`（エージェント）、`enemy.go`（敵）
 
 **主要なサブシステム**:
-- **エンティティ**: core.go, module.go, agent.go, enemy.go, player.go
-- **インベントリ**: inventory.go（コア、モジュール、エージェントの所持管理）
+- **エンティティ**: core.go, skill.go, agent.go, enemy.go, player.go
+- **スロットシステム**: agent_slot.go（AgentSlot、SkillSlotConfig）- 3スロットのエージェント構成管理
+- **インベントリ**:
+  - core_inventory.go: コアのユニーク管理（TypeID + 最大レベル）
+  - skill_inventory.go: スキルのユニーク管理（TypeID + チェイン効果バリエーション）
+  - inventory.go: レガシー構造体（後方互換用）
 - **効果システム**: effect_table.go, effect_column.go, effect_context.go, effect_entry.go
   - EffectTableパターン: バフ、デバフ、パッシブ、チェイン効果を統一的に管理
   - 列指向設計: 効果種別を EffectColumn として定義
 - **効果説明**: effect_description.go（EffectColumn/効果値からUI向け説明テキストを生成）
-- **チェイン効果**: chain_effect.go（モジュール使用後のリキャスト中に発動する追加効果）
+- **チェイン効果**: chain_effect.go（スキル使用後のリキャスト中に発動する追加効果）
 - **パッシブスキル**: passive_evaluator.go, passive_skill_definition.go（条件付き自動発動効果）
 - **敵行動システム**: enemy.go 内に行動パターン（EnemyAction）、フェーズ遷移、チャージ/ディフェンス状態管理を含む
 
@@ -70,15 +74,16 @@ config       ← 横断的関心事（全層から参照可能）
 **場所**: `/internal/usecase/`
 **目的**: ドメインオブジェクト + ドメインサービスを組み合わせたアプリケーション固有の処理フロー
 **サブパッケージ**（動詞形でユースケースを表現）:
-- `combat`: バトル実行（旧battle）
+- `combat`: バトル実行
   - `combat/chain`: チェイン効果管理（ChainEffectManager）
   - `combat/recast`: リキャスト管理（RecastManager）
 - `typing`: タイピング評価
-- `synthesize`: エージェント合成・装備管理（旧agent）
-- `spawning`: 敵生成（旧enemy）
-- `rewarding`: 報酬計算・ドロップ（旧reward）
+- `slot`: エージェントスロット管理（AgentSlotManager）- 3スロットのコア・スキル付け替え
+- `inventory`: インベントリ管理（InventoryManager）- コア・スキル保有状態の統合管理
+- `spawning`: 敵生成
+- `rewarding`: 報酬計算・ドロップ
 - `achievement`: 実績解除
-- `session`: セッション管理（旧game_state、統計・設定含む）
+- `session`: セッション管理（統計・設定含む）
 
 ### infra層 - インフラストラクチャ
 **場所**: `/internal/infra/`
@@ -95,8 +100,10 @@ config       ← 横断的関心事（全層から参照可能）
 **目的**: 各シーンの画面実装、コンポーネント、スタイル、プレゼンター
 **サブディレクトリ**:
 - `screens/`: 各シーンの画面実装（Bubbleteaの`tea.Model`実装）
-  - 画面タイプ: home, battle_select, battle, agent_management, reward, encyclopedia, settings, stats_achievements
+  - 画面タイプ: home, battle_select, battle, agent_customization, inventory, reward, encyclopedia, settings, stats_achievements
   - 大きな画面は分割: battle.go（状態）、battle_view.go（描画）、battle_logic.go（ロジック）
+  - agent_customization: 3スロットエージェントのコア・スキル付け替えUI
+  - inventory: コア・スキルの所持一覧表示
 - `components/`: 再利用可能なUIコンポーネント
   - 基本コンポーネント: components.go
   - 専用コンポーネント: hp_display.go, recast_progress_bar.go, chain_effect_badge.go, passive_skill_notification.go
@@ -168,11 +175,11 @@ import (
 
 - `battle.md`: バトルシステム
 - `gameloop.md`: ゲームループ・状態遷移
-- `agent.md`: エージェント・合成システム
+- `agent.md`: エージェント・スロットシステム
 - `typing.md`: タイピング評価・入力処理
 - `enemy.md`: 敵・ステージシステム
 - `collection.md`: 図鑑・実績システム
 
 ---
 _パターンを記述。新規ファイルがパターンに従えばsteeringの更新は不要_
-_updated_at: 2026-01-04_
+_updated_at: 2026-01-31_

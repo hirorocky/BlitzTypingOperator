@@ -17,11 +17,12 @@ import (
 // newTestDamageModule はテスト用のダメージモジュールを作成するヘルパー関数です。
 func newTestDamageModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
 	return domain.NewModuleFromType(domain.ModuleType{
-		ID:          id,
-		Name:        name,
-		Icon:        "⚔️",
-		Tags:        tags,
-		Description: description,
+		ID:              id,
+		Name:            name,
+		Icon:            "⚔️",
+		Tags:            tags,
+		Description:     description,
+		CooldownSeconds: 3.0, // リキャストテスト用に設定
 		Effects: []domain.ModuleEffect{
 			{
 				Target:      domain.TargetEnemy,
@@ -36,11 +37,12 @@ func newTestDamageModule(id, name string, tags []string, statCoef float64, statR
 // newTestHealModule はテスト用の回復モジュールを作成するヘルパー関数です。
 func newTestHealModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
 	return domain.NewModuleFromType(domain.ModuleType{
-		ID:          id,
-		Name:        name,
-		Icon:        "💚",
-		Tags:        tags,
-		Description: description,
+		ID:              id,
+		Name:            name,
+		Icon:            "💚",
+		Tags:            tags,
+		Description:     description,
+		CooldownSeconds: 3.0, // リキャストテスト用に設定
 		Effects: []domain.ModuleEffect{
 			{
 				Target:      domain.TargetSelf,
@@ -55,11 +57,12 @@ func newTestHealModule(id, name string, tags []string, statCoef float64, statRef
 // newTestBuffModule はテスト用のバフモジュールを作成するヘルパー関数です。
 func newTestBuffModule(id, name string, tags []string, value float64, statRef, description string) *domain.ModuleModel {
 	return domain.NewModuleFromType(domain.ModuleType{
-		ID:          id,
-		Name:        name,
-		Icon:        "⬆️",
-		Tags:        tags,
-		Description: description,
+		ID:              id,
+		Name:            name,
+		Icon:            "⬆️",
+		Tags:            tags,
+		Description:     description,
+		CooldownSeconds: 3.0, // リキャストテスト用に設定
 		Effects: []domain.ModuleEffect{
 			{
 				Target: domain.TargetSelf,
@@ -70,29 +73,6 @@ func newTestBuffModule(id, name string, tags []string, value float64, statRef, d
 				},
 				Probability: 1.0,
 				Icon:        "⬆️",
-			},
-		},
-	}, nil)
-}
-
-// newTestDebuffModule はテスト用のデバフモジュールを作成するヘルパー関数です。
-func newTestDebuffModule(id, name string, tags []string, value float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
-		ID:          id,
-		Name:        name,
-		Icon:        "⬇️",
-		Tags:        tags,
-		Description: description,
-		Effects: []domain.ModuleEffect{
-			{
-				Target: domain.TargetEnemy,
-				ColumnSpec: &domain.EffectColumnSpec{
-					Column:   domain.ColDamageCut,
-					Value:    value,
-					Duration: 8.0,
-				},
-				Probability: 1.0,
-				Icon:        "⬇️",
 			},
 		},
 	}, nil)
@@ -142,29 +122,6 @@ func TestIntegrationHomeScreenWithoutAgents(t *testing.T) {
 	// 誘導メッセージまたはバトル無効化の視覚的表示を確認
 	if rendered == "" {
 		t.Error("レンダリング結果が空です")
-	}
-}
-
-// ==================== Task 9.2: エージェント管理画面の統合テスト ====================
-
-// TestIntegrationAgentManagement はエージェント管理画面の操作フローをテストします。
-
-func TestIntegrationAgentManagement(t *testing.T) {
-	inventory := createTestInventory()
-	screen := screens.NewAgentManagementScreen(inventory, false, nil)
-	screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-
-	// 全タブのレンダリングテスト
-	rendered := screen.View()
-	if rendered == "" {
-		t.Error("エージェント管理画面のレンダリング結果が空です")
-	}
-
-	// タブ切り替え（右キー）でエラーが発生しないこと
-	screen.Update(tea.KeyMsg{Type: tea.KeyRight})
-	rendered = screen.View()
-	if rendered == "" {
-		t.Error("タブ切り替え後のレンダリング結果が空です")
 	}
 }
 
@@ -309,97 +266,6 @@ func containsS(s, substr string) bool {
 		}
 	}
 	return false
-}
-
-// InventoryProviderの実装
-type testInventoryProvider struct {
-	cores    []*domain.CoreModel
-	modules  []*domain.ModuleModel
-	agents   []*domain.AgentModel
-	equipped []*domain.AgentModel
-}
-
-func (i *testInventoryProvider) GetCores() []*domain.CoreModel {
-	return i.cores
-}
-
-func (i *testInventoryProvider) GetModules() []*domain.ModuleModel {
-	return i.modules
-}
-
-func (i *testInventoryProvider) GetAgents() []*domain.AgentModel {
-	return i.agents
-}
-
-func (i *testInventoryProvider) GetEquippedAgents() []*domain.AgentModel {
-	return i.equipped
-}
-
-func (i *testInventoryProvider) AddAgent(agent *domain.AgentModel) error {
-	i.agents = append(i.agents, agent)
-	return nil
-}
-
-func (i *testInventoryProvider) RemoveCore(id string) error {
-	for idx, c := range i.cores {
-		if c.ID == id {
-			i.cores = append(i.cores[:idx], i.cores[idx+1:]...)
-			return nil
-		}
-	}
-	return nil
-}
-
-func (i *testInventoryProvider) RemoveModule(typeID string) error {
-	for idx, m := range i.modules {
-		if m.TypeID == typeID {
-			i.modules = append(i.modules[:idx], i.modules[idx+1:]...)
-			return nil
-		}
-	}
-	return nil
-}
-
-func (i *testInventoryProvider) EquipAgent(slot int, agent *domain.AgentModel) error {
-	for len(i.equipped) <= slot {
-		i.equipped = append(i.equipped, nil)
-	}
-	i.equipped[slot] = agent
-	return nil
-}
-
-func (i *testInventoryProvider) UnequipAgent(slot int) error {
-	if slot < len(i.equipped) {
-		i.equipped[slot] = nil
-	}
-	return nil
-}
-
-func createTestInventory() screens.InventoryProvider {
-	coreType := domain.CoreType{
-		ID:          "all_rounder",
-		Name:        "オールラウンダー",
-		StatWeights: map[string]float64{"STR": 1.0, "MAG": 1.0, "SPD": 1.0, "LUK": 1.0},
-		AllowedTags: []string{"physical_low", "magic_low", "heal_low", "buff_low", "debuff_low"},
-	}
-
-	core1 := domain.NewCore("core1", "コア1", 5, coreType, domain.PassiveSkill{})
-	core2 := domain.NewCore("core2", "コア2", 10, coreType, domain.PassiveSkill{})
-
-	modules := []*domain.ModuleModel{
-		newTestDamageModule("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ"),
-		newTestDamageModule("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "MAG", "魔法ダメージ"),
-		newTestHealModule("m3", "回復", []string{"heal_low"}, 1.0, "MAG", "HP回復"),
-		newTestBuffModule("m4", "バフ", []string{"buff_low"}, 10, "SPD", "攻撃力UP"),
-		newTestDebuffModule("m5", "デバフ", []string{"debuff_low"}, 10, "SPD", "攻撃力DOWN"),
-	}
-
-	return &testInventoryProvider{
-		cores:    []*domain.CoreModel{core1, core2},
-		modules:  modules,
-		agents:   []*domain.AgentModel{},
-		equipped: []*domain.AgentModel{nil, nil, nil},
-	}
 }
 
 func createTestEnemy() *domain.EnemyModel {
