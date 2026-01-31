@@ -145,8 +145,8 @@ func TestInventoryManagerLogsErrors(t *testing.T) {
 	// InventoryManagerを初期化
 	invManager := gamestate.NewInventoryManager()
 
-	// コアを追加（新システムではTypeIDとLevelで追加）
-	updated := invManager.AddCore("all_rounder", 1)
+	// コアを追加
+	updated := invManager.AddCore("all_rounder")
 	if !updated {
 		t.Error("コア追加で更新が期待されます")
 	}
@@ -196,7 +196,7 @@ func TestLoggedAddCoreError(t *testing.T) {
 	invManager := gamestate.NewInventoryManager()
 
 	// コアを追加
-	invManager.AddCore("all_rounder", 1)
+	invManager.AddCore("all_rounder")
 
 	// エラーログのフォーマットをテスト（実際のエラーケースをシミュレート）
 	slog.Error("コア追加に失敗",

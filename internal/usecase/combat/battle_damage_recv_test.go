@@ -38,7 +38,7 @@ func TestBattleEngine_DamageRecv_LastStand(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_last_stand", Name: "ラストスタンド"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_attack",
@@ -116,7 +116,7 @@ func TestBattleEngine_DamageRecv_LastStand_HPAbove25(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_last_stand", Name: "ラストスタンド"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_attack",
@@ -154,8 +154,8 @@ func TestBattleEngine_DamageRecv_LastStand_HPAbove25(t *testing.T) {
 	engine.RegisterPassiveSkills(state, agents)
 
 	// プレイヤーHPを50%に設定（25%以上）
-	// MaxHP = 200 (コアレベル10: 10*10+100)
-	state.Player.HP = 100 // 100/200 = 50%
+	// MaxHP = 1000 (新仕様の初期最大HP)
+	state.Player.HP = 500 // 500/1000 = 50%
 
 	// Act
 	damage := engine.ProcessEnemyAttackDamage(state, "physical")
@@ -193,7 +193,7 @@ func TestBattleEngine_DamageRecv_CounterCharge(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_counter_charge", Name: "カウンターチャージ"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_attack",

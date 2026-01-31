@@ -36,7 +36,7 @@ func TestBattleEngine_BattleStart_FirstStrike(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_first_strike", Name: "ファーストストライク"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_attack",
@@ -93,7 +93,7 @@ func TestBattleEngine_BattleStart_FirstStrike_NotEquipped(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_other", Name: "その他"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_attack",
@@ -164,7 +164,7 @@ func TestBattleEngine_TypoRecovery(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_typo_recovery", Name: "タイポリカバリー"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_attack",
@@ -237,7 +237,7 @@ func TestBattleEngine_SecondChance(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_second_chance", Name: "セカンドチャンス"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_attack",

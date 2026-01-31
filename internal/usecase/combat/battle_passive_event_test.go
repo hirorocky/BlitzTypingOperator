@@ -38,7 +38,7 @@ func TestBattleEngine_TypingDone_PerfectRhythm(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_perfect_rhythm", Name: "パーフェクトリズム"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_attack",
@@ -141,7 +141,7 @@ func TestBattleEngine_TypingDone_PerfectRhythm_NotTriggered(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_perfect_rhythm", Name: "パーフェクトリズム"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_attack",
@@ -226,7 +226,7 @@ func TestBattleEngine_TypingDone_SpeedBreak(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_speed_break", Name: "スピードブレイク"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_attack",
@@ -322,7 +322,7 @@ func TestBattleEngine_TypingDone_SpeedBreak_NotTriggered(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_speed_break", Name: "スピードブレイク"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_attack",
@@ -422,10 +422,10 @@ func TestBattleEngine_TypingDone_Combined(t *testing.T) {
 	}
 
 	passiveSkill1 := domain.PassiveSkill{ID: "ps_perfect_rhythm", Name: "パーフェクトリズム"}
-	core1 := domain.NewCore("core_001", "テストコア1", 10, coreType, passiveSkill1)
+	core1 := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill1)
 
 	passiveSkill2 := domain.PassiveSkill{ID: "ps_speed_break", Name: "スピードブレイク"}
-	core2 := domain.NewCore("core_002", "テストコア2", 10, coreType, passiveSkill2)
+	core2 := domain.NewCoreWithTypeID("core_002", coreType, passiveSkill2)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_attack",

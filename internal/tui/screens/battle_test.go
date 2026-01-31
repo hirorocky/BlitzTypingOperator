@@ -481,7 +481,7 @@ func createTestAgents() []*domain.AgentModel {
 		AllowedTags: []string{"physical_low", "magic_low", "heal_low", "buff_low"},
 	}
 
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 
 	modules := []*domain.ModuleModel{
 		newTestDamageModule("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ"),
@@ -1223,7 +1223,7 @@ func createTestAgentsWithChainEffect() []*domain.AgentModel {
 		AllowedTags: []string{"physical_low", "magic_low", "heal_low", "buff_low"},
 	}
 
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 
 	// チェイン効果付きモジュール
 	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25)
@@ -1552,7 +1552,7 @@ func createTestAgentsWithHealModule() []*domain.AgentModel {
 		AllowedTags: []string{"physical_low", "heal_low", "magic_low", "buff_low"},
 	}
 
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 
 	modules := []*domain.ModuleModel{
 		newTestDamageModule("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ"),
@@ -1613,7 +1613,7 @@ func createTestAgentsWithChainEffectMultiple() []*domain.AgentModel {
 	}
 
 	// エージェント1
-	core1 := domain.NewCore("core1", "テストコア1", 5, coreType, domain.PassiveSkill{})
+	core1 := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 	chainEffect1 := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25)
 	modules1 := []*domain.ModuleModel{
 		newTestModuleWithChainEffect("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect1),
@@ -1624,7 +1624,7 @@ func createTestAgentsWithChainEffectMultiple() []*domain.AgentModel {
 	agent1 := domain.NewAgent("agent1", core1, modules1)
 
 	// エージェント2
-	core2 := domain.NewCore("core2", "テストコア2", 5, coreType, domain.PassiveSkill{})
+	core2 := domain.NewCoreWithTypeID("core2", coreType, domain.PassiveSkill{})
 	chainEffect2 := domain.NewChainEffect("test_effect", domain.ChainEffectHealBonus, 30)
 	modules2 := []*domain.ModuleModel{
 		newTestModuleWithChainEffect("m5", "物理攻撃2", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect2),

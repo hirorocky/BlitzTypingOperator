@@ -115,10 +115,10 @@ func TestCoreModel_フィールドの確認(t *testing.T) {
 
 	core := CoreModel{
 		ID:           "core_001",
-		Name:         "バランスコア",
-		Level:        10,
+		TypeID:       "attack_balance",
+		Name:         "攻撃バランス",
 		Type:         coreType,
-		Stats:        Stats{STR: 12, INT: 10, WIL: 8, LUK: 10},
+		Stats:        Stats{STR: 120, INT: 100, WIL: 80, LUK: 100},
 		PassiveSkill: passiveSkill,
 		AllowedTags:  []string{"physical_low", "magic_low"},
 	}
@@ -126,17 +126,17 @@ func TestCoreModel_フィールドの確認(t *testing.T) {
 	if core.ID != "core_001" {
 		t.Errorf("IDが期待値と異なります: got %s, want core_001", core.ID)
 	}
-	if core.Name != "バランスコア" {
-		t.Errorf("Nameが期待値と異なります: got %s, want バランスコア", core.Name)
+	if core.TypeID != "attack_balance" {
+		t.Errorf("TypeIDが期待値と異なります: got %s, want attack_balance", core.TypeID)
 	}
-	if core.Level != 10 {
-		t.Errorf("Levelが期待値と異なります: got %d, want 10", core.Level)
+	if core.Name != "攻撃バランス" {
+		t.Errorf("Nameが期待値と異なります: got %s, want 攻撃バランス", core.Name)
 	}
 	if core.Type.ID != "attack_balance" {
 		t.Errorf("Type.IDが期待値と異なります: got %s, want attack_balance", core.Type.ID)
 	}
-	if core.Stats.STR != 12 {
-		t.Errorf("Stats.STRが期待値と異なります: got %d, want 12", core.Stats.STR)
+	if core.Stats.STR != 120 {
+		t.Errorf("Stats.STRが期待値と異なります: got %d, want 120", core.Stats.STR)
 	}
 	if core.PassiveSkill.ID != "balanced_stance" {
 		t.Errorf("PassiveSkill.IDが期待値と異なります: got %s, want balanced_stance", core.PassiveSkill.ID)
@@ -146,9 +146,9 @@ func TestCoreModel_フィールドの確認(t *testing.T) {
 	}
 }
 
-// TestCalculateStats_レベル1での計算 はレベル1のコアでステータスが正しく計算されることを確認します。
-// ステータス計算式: 基礎値(10) × レベル × ステータス重み
-func TestCalculateStats_レベル1での計算(t *testing.T) {
+// TestCalculateStats_重みベース計算 は重みベースでステータスが正しく計算されることを確認します。
+// ステータス計算式: 100 × コアの重み
+func TestCalculateStats_重みベース計算(t *testing.T) {
 	coreType := CoreType{
 		ID:             "attack_balance",
 		Name:           "攻撃バランス",
@@ -158,45 +158,13 @@ func TestCalculateStats_レベル1での計算(t *testing.T) {
 		MinDropLevel:   1,
 	}
 
-	stats := CalculateStats(1, coreType)
+	stats := CalculateStats(coreType)
 
-	// 基礎値10 × レベル1 × 重み = 期待値
-	// STR: 10 × 1 × 1.2 = 12
-	// INT: 10 × 1 × 1.0 = 10
-	// WIL: 10 × 1 × 0.8 = 8
-	// LUK: 10 × 1.0 = 10（レベルに依存しない）
-	if stats.STR != 12 {
-		t.Errorf("STRが期待値と異なります: got %d, want 12", stats.STR)
-	}
-	if stats.INT != 10 {
-		t.Errorf("INTが期待値と異なります: got %d, want 10", stats.INT)
-	}
-	if stats.WIL != 8 {
-		t.Errorf("WILが期待値と異なります: got %d, want 8", stats.WIL)
-	}
-	if stats.LUK != 10 {
-		t.Errorf("LUKが期待値と異なります: got %d, want 10", stats.LUK)
-	}
-}
-
-// TestCalculateStats_レベル10での計算 はレベル10のコアでステータスが正しく計算されることを確認します。
-func TestCalculateStats_レベル10での計算(t *testing.T) {
-	coreType := CoreType{
-		ID:             "attack_balance",
-		Name:           "攻撃バランス",
-		StatWeights:    map[string]float64{"STR": 1.2, "INT": 1.0, "WIL": 0.8, "LUK": 1.0},
-		PassiveSkillID: "balanced_stance",
-		AllowedTags:    []string{"physical_low", "magic_low"},
-		MinDropLevel:   1,
-	}
-
-	stats := CalculateStats(10, coreType)
-
-	// 基礎値10 × レベル10 × 重み = 期待値
-	// STR: 10 × 10 × 1.2 = 120
-	// INT: 10 × 10 × 1.0 = 100
-	// WIL: 10 × 10 × 0.8 = 80
-	// LUK: 10 × 1.0 = 10（レベルに依存しない）
+	// 100 × 重み = 期待値
+	// STR: 100 × 1.2 = 120
+	// INT: 100 × 1.0 = 100
+	// WIL: 100 × 0.8 = 80
+	// LUK: 100 × 1.0 = 100
 	if stats.STR != 120 {
 		t.Errorf("STRが期待値と異なります: got %d, want 120", stats.STR)
 	}
@@ -206,13 +174,13 @@ func TestCalculateStats_レベル10での計算(t *testing.T) {
 	if stats.WIL != 80 {
 		t.Errorf("WILが期待値と異なります: got %d, want 80", stats.WIL)
 	}
-	if stats.LUK != 10 {
-		t.Errorf("LUKが期待値と異なります: got %d, want 10", stats.LUK)
+	if stats.LUK != 100 {
+		t.Errorf("LUKが期待値と異なります: got %d, want 100", stats.LUK)
 	}
 }
 
-// TestCalculateStats_ヒーラー特性 はヒーラー特性（INT特化）でステータスが正しく計算されることを確認します。
-func TestCalculateStats_ヒーラー特性(t *testing.T) {
+// TestCalculateStats_ヒーラー特性_重みベース はヒーラー特性でステータスが正しく計算されることを確認します。
+func TestCalculateStats_ヒーラー特性_重みベース(t *testing.T) {
 	coreType := CoreType{
 		ID:             "healer",
 		Name:           "ヒーラー",
@@ -222,29 +190,29 @@ func TestCalculateStats_ヒーラー特性(t *testing.T) {
 		MinDropLevel:   3,
 	}
 
-	stats := CalculateStats(5, coreType)
+	stats := CalculateStats(coreType)
 
-	// 基礎値10 × レベル5 × 重み = 期待値
-	// STR: 10 × 5 × 0.5 = 25
-	// INT: 10 × 5 × 1.5 = 75
-	// WIL: 10 × 5 × 0.8 = 40
-	// LUK: 10 × 1.2 = 12（レベルに依存しない）
-	if stats.STR != 25 {
-		t.Errorf("STRが期待値と異なります: got %d, want 25", stats.STR)
+	// 100 × 重み = 期待値
+	// STR: 100 × 0.5 = 50
+	// INT: 100 × 1.5 = 150
+	// WIL: 100 × 0.8 = 80
+	// LUK: 100 × 1.2 = 120
+	if stats.STR != 50 {
+		t.Errorf("STRが期待値と異なります: got %d, want 50", stats.STR)
 	}
-	if stats.INT != 75 {
-		t.Errorf("INTが期待値と異なります: got %d, want 75", stats.INT)
+	if stats.INT != 150 {
+		t.Errorf("INTが期待値と異なります: got %d, want 150", stats.INT)
 	}
-	if stats.WIL != 40 {
-		t.Errorf("WILが期待値と異なります: got %d, want 40", stats.WIL)
+	if stats.WIL != 80 {
+		t.Errorf("WILが期待値と異なります: got %d, want 80", stats.WIL)
 	}
-	if stats.LUK != 12 {
-		t.Errorf("LUKが期待値と異なります: got %d, want 12", stats.LUK)
+	if stats.LUK != 120 {
+		t.Errorf("LUKが期待値と異なります: got %d, want 120", stats.LUK)
 	}
 }
 
-// TestCalculateStats_オールラウンダー特性 はオールラウンダー特性（均等）でステータスが正しく計算されることを確認します。
-func TestCalculateStats_オールラウンダー特性(t *testing.T) {
+// TestCalculateStats_オールラウンダー特性_重みベース はオールラウンダー特性でステータスが正しく計算されることを確認します。
+func TestCalculateStats_オールラウンダー特性_重みベース(t *testing.T) {
 	coreType := CoreType{
 		ID:             "all_rounder",
 		Name:           "オールラウンダー",
@@ -254,11 +222,10 @@ func TestCalculateStats_オールラウンダー特性(t *testing.T) {
 		MinDropLevel:   1,
 	}
 
-	stats := CalculateStats(10, coreType)
+	stats := CalculateStats(coreType)
 
-	// 基礎値10 × レベル10 × 重み = 期待値
-	// STR, INT, WIL: 100
-	// LUK: 10 × 1.0 = 10（レベルに依存しない）
+	// 100 × 重み = 期待値
+	// STR, INT, WIL, LUK: 100 × 1.0 = 100
 	if stats.STR != 100 {
 		t.Errorf("STRが期待値と異なります: got %d, want 100", stats.STR)
 	}
@@ -268,13 +235,13 @@ func TestCalculateStats_オールラウンダー特性(t *testing.T) {
 	if stats.WIL != 100 {
 		t.Errorf("WILが期待値と異なります: got %d, want 100", stats.WIL)
 	}
-	if stats.LUK != 10 {
-		t.Errorf("LUKが期待値と異なります: got %d, want 10", stats.LUK)
+	if stats.LUK != 100 {
+		t.Errorf("LUKが期待値と異なります: got %d, want 100", stats.LUK)
 	}
 }
 
-// TestCalculateStats_パラディン特性 はパラディン特性でステータスが正しく計算されることを確認します。
-func TestCalculateStats_パラディン特性(t *testing.T) {
+// TestCalculateStats_パラディン特性_重みベース はパラディン特性でステータスが正しく計算されることを確認します。
+func TestCalculateStats_パラディン特性_重みベース(t *testing.T) {
 	coreType := CoreType{
 		ID:             "paladin",
 		Name:           "パラディン",
@@ -284,13 +251,13 @@ func TestCalculateStats_パラディン特性(t *testing.T) {
 		MinDropLevel:   5,
 	}
 
-	stats := CalculateStats(10, coreType)
+	stats := CalculateStats(coreType)
 
-	// 基礎値10 × レベル10 × 重み = 期待値
-	// STR: 10 × 10 × 1.0 = 100
-	// INT: 10 × 10 × 1.1 = 110
-	// WIL: 10 × 10 × 0.7 = 70
-	// LUK: 10 × 1.2 = 12（レベルに依存しない）
+	// 100 × 重み = 期待値
+	// STR: 100 × 1.0 = 100
+	// INT: 100 × 1.1 = 110
+	// WIL: 100 × 0.7 = 70
+	// LUK: 100 × 1.2 = 120
 	if stats.STR != 100 {
 		t.Errorf("STRが期待値と異なります: got %d, want 100", stats.STR)
 	}
@@ -300,13 +267,38 @@ func TestCalculateStats_パラディン特性(t *testing.T) {
 	if stats.WIL != 70 {
 		t.Errorf("WILが期待値と異なります: got %d, want 70", stats.WIL)
 	}
-	if stats.LUK != 12 {
-		t.Errorf("LUKが期待値と異なります: got %d, want 12", stats.LUK)
+	if stats.LUK != 120 {
+		t.Errorf("LUKが期待値と異なります: got %d, want 120", stats.LUK)
 	}
 }
 
-// TestNewCore_コア作成 はNewCore関数でコアが正しく作成されることを確認します。
-func TestNewCore_コア作成(t *testing.T) {
+// TestCalculateStats_重み未設定_重みベース は重みが設定されていないステータスが0になることを確認します。
+func TestCalculateStats_重み未設定_重みベース(t *testing.T) {
+	coreType := CoreType{
+		ID:          "test",
+		StatWeights: map[string]float64{"STR": 1.0}, // INT, WIL, LUK は未設定
+	}
+
+	stats := CalculateStats(coreType)
+
+	// STRは設定あり: 100 × 1.0 = 100
+	if stats.STR != 100 {
+		t.Errorf("STRが期待値と異なります: got %d, want 100", stats.STR)
+	}
+	// INT, WIL, LUKは未設定のため0（重み0.0扱い）
+	if stats.INT != 0 {
+		t.Errorf("INTは未設定のため0になるべきです: got %d", stats.INT)
+	}
+	if stats.WIL != 0 {
+		t.Errorf("WILは未設定のため0になるべきです: got %d", stats.WIL)
+	}
+	if stats.LUK != 0 {
+		t.Errorf("LUKは未設定のため0になるべきです: got %d", stats.LUK)
+	}
+}
+
+// TestNewCoreWithTypeID_コア作成 はNewCoreWithTypeID関数でコアが正しく作成されることを確認します。
+func TestNewCoreWithTypeID_コア作成(t *testing.T) {
 	coreType := CoreType{
 		ID:             "attack_balance",
 		Name:           "攻撃バランス",
@@ -322,22 +314,25 @@ func TestNewCore_コア作成(t *testing.T) {
 		Description: "物理と魔法のダメージをバランスよく強化する",
 	}
 
-	core := NewCore("core_001", "バランスコア", 10, coreType, passiveSkill)
+	core := NewCoreWithTypeID("attack_balance", coreType, passiveSkill)
 
-	if core.ID != "core_001" {
-		t.Errorf("IDが期待値と異なります: got %s, want core_001", core.ID)
+	if core.TypeID != "attack_balance" {
+		t.Errorf("TypeIDが期待値と異なります: got %s, want attack_balance", core.TypeID)
 	}
-	if core.Name != "バランスコア" {
-		t.Errorf("Nameが期待値と異なります: got %s, want バランスコア", core.Name)
-	}
-	if core.Level != 10 {
-		t.Errorf("Levelが期待値と異なります: got %d, want 10", core.Level)
+	// Nameはコア特性名のみ（レベル表記なし）
+	expectedName := "攻撃バランス"
+	if core.Name != expectedName {
+		t.Errorf("Nameが期待値と異なります: got %s, want %s", core.Name, expectedName)
 	}
 
-	// ステータスが自動計算されていることを確認
-	// STR: 10 × 10 × 1.2 = 120
+	// ステータスが重みベースで自動計算されていることを確認
+	// STR: 100 × 1.2 = 120
 	if core.Stats.STR != 120 {
 		t.Errorf("Stats.STRが期待値と異なります: got %d, want 120", core.Stats.STR)
+	}
+	// INT: 100 × 1.0 = 100
+	if core.Stats.INT != 100 {
+		t.Errorf("Stats.INTが期待値と異なります: got %d, want 100", core.Stats.INT)
 	}
 
 	// AllowedTagsがCoreTypeからコピーされていることを確認
@@ -393,71 +388,6 @@ func TestStats_Total(t *testing.T) {
 	}
 }
 
-// TestCalculateStats_レベル0 はレベル0の場合にSTR/INT/WILが0になることを確認します。
-// LUKはレベルに依存しないため、0ではありません。
-func TestCalculateStats_レベル0(t *testing.T) {
-	coreType := CoreType{
-		ID:          "test",
-		StatWeights: map[string]float64{"STR": 1.5, "INT": 1.5, "WIL": 1.5, "LUK": 1.5},
-	}
-
-	stats := CalculateStats(0, coreType)
-
-	// STR, INT, WILはレベル依存なので0
-	if stats.STR != 0 || stats.INT != 0 || stats.WIL != 0 {
-		t.Errorf("レベル0の場合、STR/INT/WILは0になるべきです: got STR=%d, INT=%d, WIL=%d",
-			stats.STR, stats.INT, stats.WIL)
-	}
-	// LUKはレベルに依存しないので10 × 1.5 = 15
-	if stats.LUK != 15 {
-		t.Errorf("LUKはレベルに依存しません: got %d, want 15", stats.LUK)
-	}
-}
-
-// TestCalculateStats_最大レベル はレベル100のコアでステータスが正しく計算されることを確認します。
-func TestCalculateStats_最大レベル(t *testing.T) {
-	coreType := CoreType{
-		ID:          "test",
-		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
-	}
-
-	stats := CalculateStats(100, coreType)
-
-	// 基礎値10 × レベル100 × 重み1.0 = 1000
-	if stats.STR != 1000 {
-		t.Errorf("STRが期待値と異なります: got %d, want 1000", stats.STR)
-	}
-	// LUKはレベルに依存しないので10 × 1.0 = 10
-	if stats.LUK != 10 {
-		t.Errorf("LUKはレベルに依存しません: got %d, want 10", stats.LUK)
-	}
-}
-
-// TestCalculateStats_重み未設定 は重みが設定されていないステータスが0になることを確認します。
-func TestCalculateStats_重み未設定(t *testing.T) {
-	coreType := CoreType{
-		ID:          "test",
-		StatWeights: map[string]float64{"STR": 1.0}, // INT, WIL, LUK は未設定
-	}
-
-	stats := CalculateStats(10, coreType)
-
-	// STRは設定あり: 10 × 10 × 1.0 = 100
-	if stats.STR != 100 {
-		t.Errorf("STRが期待値と異なります: got %d, want 100", stats.STR)
-	}
-	// INT, WIL, LUKは未設定のため0（重み0.0扱い）
-	if stats.INT != 0 {
-		t.Errorf("INTは未設定のため0になるべきです: got %d", stats.INT)
-	}
-	if stats.WIL != 0 {
-		t.Errorf("WILは未設定のため0になるべきです: got %d", stats.WIL)
-	}
-	if stats.LUK != 0 {
-		t.Errorf("LUKは未設定のため0になるべきです: got %d", stats.LUK)
-	}
-}
-
 // TestCoreModel_IsTagAllowed_空リスト はAllowedTagsが空の場合に常にfalseを返すことを確認します。
 func TestCoreModel_IsTagAllowed_空リスト(t *testing.T) {
 	core := CoreModel{
@@ -492,8 +422,8 @@ func TestCoreModel_IsTagAllowed_空文字タグ(t *testing.T) {
 	}
 }
 
-// TestNewCore_AllowedTagsの独立性 はNewCoreで作成したコアのAllowedTagsが元のCoreTypeと独立していることを確認します。
-func TestNewCore_AllowedTagsの独立性(t *testing.T) {
+// TestNewCoreWithTypeID_AllowedTagsの独立性 はNewCoreWithTypeIDで作成したコアのAllowedTagsが元のCoreTypeと独立していることを確認します。
+func TestNewCoreWithTypeID_AllowedTagsの独立性(t *testing.T) {
 	coreType := CoreType{
 		ID:          "test",
 		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
@@ -502,7 +432,7 @@ func TestNewCore_AllowedTagsの独立性(t *testing.T) {
 
 	passiveSkill := PassiveSkill{ID: "test_skill"}
 
-	core := NewCore("core_001", "テストコア", 1, coreType, passiveSkill)
+	core := NewCoreWithTypeID("test", coreType, passiveSkill)
 
 	// 元のAllowedTagsを変更
 	coreType.AllowedTags[0] = "modified_tag"
@@ -515,8 +445,9 @@ func TestNewCore_AllowedTagsの独立性(t *testing.T) {
 
 // TestBaseStatValue はBaseStatValue定数が正しい値であることを確認します。
 func TestBaseStatValue(t *testing.T) {
-	if BaseStatValue != 10 {
-		t.Errorf("BaseStatValueが期待値と異なります: got %d, want 10", BaseStatValue)
+	// 新仕様: 基礎値は100
+	if BaseStatValue != 100 {
+		t.Errorf("BaseStatValueが期待値と異なります: got %d, want 100", BaseStatValue)
 	}
 }
 
@@ -539,22 +470,19 @@ func TestCoreModel_TypeIDフィールドの確認(t *testing.T) {
 		Description: "物理と魔法のダメージをバランスよく強化する",
 	}
 
-	core := NewCoreWithTypeID("attack_balance", 10, coreType, passiveSkill)
+	core := NewCoreWithTypeID("attack_balance", coreType, passiveSkill)
 
 	if core.TypeID != "attack_balance" {
 		t.Errorf("TypeIDが期待値と異なります: got %s, want attack_balance", core.TypeID)
 	}
-	if core.Level != 10 {
-		t.Errorf("Levelが期待値と異なります: got %d, want 10", core.Level)
-	}
-	// Nameはデフォルトで "Type.Name Lv.Level" 形式
-	expectedName := "攻撃バランス Lv.10"
+	// Nameはコア特性名のみ（レベル表記なし）
+	expectedName := "攻撃バランス"
 	if core.Name != expectedName {
 		t.Errorf("Nameが期待値と異なります: got %s, want %s", core.Name, expectedName)
 	}
 }
 
-// TestCoreModel_Equals_同一性判定 はEqualsメソッドがTypeIDとLevelで同一性を判定することを確認します。
+// TestCoreModel_Equals_同一性判定 はEqualsメソッドがTypeIDのみで同一性を判定することを確認します。
 func TestCoreModel_Equals_同一性判定(t *testing.T) {
 	coreType := CoreType{
 		ID:             "attack_balance",
@@ -565,20 +493,23 @@ func TestCoreModel_Equals_同一性判定(t *testing.T) {
 	}
 	passiveSkill := PassiveSkill{ID: "balanced_stance"}
 
-	core1 := NewCoreWithTypeID("attack_balance", 10, coreType, passiveSkill)
-	core2 := NewCoreWithTypeID("attack_balance", 10, coreType, passiveSkill)
-	core3 := NewCoreWithTypeID("attack_balance", 5, coreType, passiveSkill)
-	core4 := NewCoreWithTypeID("healer", 10, coreType, passiveSkill)
+	healerType := CoreType{
+		ID:             "healer",
+		Name:           "ヒーラー",
+		StatWeights:    map[string]float64{"STR": 0.5, "INT": 1.5, "WIL": 0.8, "LUK": 1.2},
+		PassiveSkillID: "healing_aura",
+		AllowedTags:    []string{"heal_mid", "heal_high"},
+	}
+
+	core1 := NewCoreWithTypeID("attack_balance", coreType, passiveSkill)
+	core2 := NewCoreWithTypeID("attack_balance", coreType, passiveSkill)
+	core3 := NewCoreWithTypeID("healer", healerType, passiveSkill)
 
 	if !core1.Equals(core2) {
-		t.Error("同じTypeIDとLevelのコアは等価であるべきです")
+		t.Error("同じTypeIDのコアは等価であるべきです")
 	}
 
 	if core1.Equals(core3) {
-		t.Error("異なるLevelのコアは等価でないべきです")
-	}
-
-	if core1.Equals(core4) {
 		t.Error("異なるTypeIDのコアは等価でないべきです")
 	}
 }
@@ -590,15 +521,15 @@ func TestCoreModel_Equals_nilチェック(t *testing.T) {
 		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
 	}
 	passiveSkill := PassiveSkill{ID: "test"}
-	core := NewCoreWithTypeID("attack_balance", 10, coreType, passiveSkill)
+	core := NewCoreWithTypeID("attack_balance", coreType, passiveSkill)
 
 	if core.Equals(nil) {
 		t.Error("nilとの比較はfalseを返すべきです")
 	}
 }
 
-// TestCoreModel_ステータス再計算 はNewCoreWithTypeIDでステータスが正しく計算されることを確認します。
-func TestCoreModel_ステータス再計算(t *testing.T) {
+// TestCoreModel_ステータス重みベース計算 はNewCoreWithTypeIDでステータスが重みベースで正しく計算されることを確認します。
+func TestCoreModel_ステータス重みベース計算(t *testing.T) {
 	coreType := CoreType{
 		ID:             "attack_balance",
 		Name:           "攻撃バランス",
@@ -608,11 +539,23 @@ func TestCoreModel_ステータス再計算(t *testing.T) {
 	}
 	passiveSkill := PassiveSkill{ID: "balanced_stance"}
 
-	core := NewCoreWithTypeID("attack_balance", 10, coreType, passiveSkill)
+	core := NewCoreWithTypeID("attack_balance", coreType, passiveSkill)
 
-	// ステータスがTypeIDとLevelから正しく計算されていることを確認
-	// STR: 10 × 10 × 1.2 = 120
+	// ステータスが重みベースで正しく計算されていることを確認
+	// STR: 100 × 1.2 = 120
 	if core.Stats.STR != 120 {
 		t.Errorf("Stats.STRが期待値と異なります: got %d, want 120", core.Stats.STR)
+	}
+	// INT: 100 × 1.0 = 100
+	if core.Stats.INT != 100 {
+		t.Errorf("Stats.INTが期待値と異なります: got %d, want 100", core.Stats.INT)
+	}
+	// WIL: 100 × 0.8 = 80
+	if core.Stats.WIL != 80 {
+		t.Errorf("Stats.WILが期待値と異なります: got %d, want 80", core.Stats.WIL)
+	}
+	// LUK: 100 × 1.0 = 100
+	if core.Stats.LUK != 100 {
+		t.Errorf("Stats.LUKが期待値と異なります: got %d, want 100", core.Stats.LUK)
 	}
 }

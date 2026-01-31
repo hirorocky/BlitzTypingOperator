@@ -526,15 +526,16 @@ func TestConvertAgentSlotsToSave(t *testing.T) {
 	// セーブ形式に変換
 	var saves [3]AgentSlotSave
 	for i, slot := range slots {
-		saves[i] = ConvertAgentSlotToSave(slot.CoreTypeID, slot.CoreLevel, slot.Skills)
+		saves[i] = ConvertAgentSlotToSave(slot.CoreTypeID, 1, slot.Skills)
 	}
 
 	// 検証
 	if saves[0].CoreTypeID != "all_rounder" {
 		t.Errorf("Slot 0 CoreTypeID: got %s, want all_rounder", saves[0].CoreTypeID)
 	}
-	if saves[0].CoreLevel != 5 {
-		t.Errorf("Slot 0 CoreLevel: got %d, want 5", saves[0].CoreLevel)
+	// CoreLevelは現在1に固定（レベル概念削除のため）
+	if saves[0].CoreLevel != 1 {
+		t.Errorf("Slot 0 CoreLevel: got %d, want 1", saves[0].CoreLevel)
 	}
 	if saves[0].Skills[0].TypeID != "physical_lv1" {
 		t.Errorf("Slot 0 Skills[0].TypeID: got %s, want physical_lv1", saves[0].Skills[0].TypeID)

@@ -87,7 +87,7 @@ func createTestAgents() []*domain.AgentModel {
 		AllowedTags: []string{"physical_low", "magic_low", "heal_low", "buff_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "test", Name: "テスト", Description: ""}
-	core := domain.NewCore("core_1", "テストコア", 5, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_1", coreType, passiveSkill)
 
 	modules := []*domain.ModuleModel{
 		newTestDamageModuleBattle("m1", "物理打撃Lv1", []string{"physical_low"}, 1.0, "STR", ""),

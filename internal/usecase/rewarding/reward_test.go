@@ -124,9 +124,9 @@ func TestInventoryFull_Warning(t *testing.T) {
 	skillInv := domain.NewSkillInventory()
 
 	// 新システムでは容量制限がないため、いくつ追加しても警告は出ない
-	coreInv.AddCore("core_type_1", 1)
-	coreInv.AddCore("core_type_2", 1)
-	coreInv.AddCore("core_type_3", 1)
+	coreInv.AddCore("core_type_1")
+	coreInv.AddCore("core_type_2")
+	coreInv.AddCore("core_type_3")
 
 	calculator := NewRewardCalculator(nil, nil, nil)
 
@@ -143,7 +143,7 @@ func TestInventoryFull_TempStorage(t *testing.T) {
 	calculator := NewRewardCalculator(nil, nil, nil)
 
 	// ドロップしたアイテムを一時保管
-	droppedCore := domain.NewCore("temp_core", "一時コア", 10, domain.CoreType{}, domain.PassiveSkill{})
+	droppedCore := domain.NewCoreWithTypeID("temp_core", domain.CoreType{}, domain.PassiveSkill{})
 	droppedModule := newTestModule("temp_module", "一時モジュール", []string{}, 10.0, "STR", "テスト")
 
 	storage := calculator.CreateTempStorage()
@@ -175,8 +175,8 @@ func TestInventoryFull_PromptDiscard(t *testing.T) {
 	skillInv := domain.NewSkillInventory()
 
 	// いくつ追加してもユニーク管理なので容量制限なし
-	coreInv.AddCore("core_type_1", 1)
-	coreInv.AddCore("core_type_2", 1)
+	coreInv.AddCore("core_type_1")
+	coreInv.AddCore("core_type_2")
 
 	warning := calculator.CheckInventoryFull(coreInv, skillInv)
 
@@ -656,37 +656,10 @@ func TestRollCoreDropWithTypeID_GeneratesCorrectType(t *testing.T) {
 	if core.Type.Name != "攻撃バランス" {
 		t.Errorf("コアType.Nameが期待と異なる: got %s, want 攻撃バランス", core.Type.Name)
 	}
-	// core.Nameはレベルを含む表示用名前
-	expectedName := "攻撃バランス Lv.10"
+	// core.Name はType名
+	expectedName := "攻撃バランス"
 	if core.Name != expectedName {
 		t.Errorf("コア名が期待と異なる: got %s, want %s", core.Name, expectedName)
-	}
-}
-
-// TestRollCoreDropWithTypeID_LevelEqualsEnemyLevel はコアレベルが敵レベルと同じであることをテストします。
-func TestRollCoreDropWithTypeID_LevelEqualsEnemyLevel(t *testing.T) {
-	coreTypes := []domain.CoreType{
-		{
-			ID:           "attack_balance",
-			Name:         "攻撃バランス",
-			MinDropLevel: 1,
-			StatWeights:  map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
-		},
-	}
-
-	calculator := NewRewardCalculator(coreTypes, nil, nil)
-
-	// 様々なレベルでテスト
-	testLevels := []int{1, 5, 10, 20, 50, 100}
-	for _, enemyLevel := range testLevels {
-		core := calculator.RollCoreDropWithTypeID("attack_balance", enemyLevel)
-		if core == nil {
-			t.Fatal("コアがnilであってはならない")
-		}
-
-		if core.Level != enemyLevel {
-			t.Errorf("コアレベルは敵レベルと同じであるべき: got %d, expected %d", core.Level, enemyLevel)
-		}
 	}
 }
 
@@ -707,31 +680,6 @@ func TestRollCoreDropWithTypeID_InvalidTypeID(t *testing.T) {
 
 	if core != nil {
 		t.Error("存在しないTypeIDの場合はnilを返すべき")
-	}
-}
-
-// TestRollCoreDropWithTypeID_LevelOne は敵レベル1の場合にレベル1のコアが生成されることをテストします。
-func TestRollCoreDropWithTypeID_LevelOne(t *testing.T) {
-	coreTypes := []domain.CoreType{
-		{
-			ID:           "attack_balance",
-			Name:         "攻撃バランス",
-			MinDropLevel: 1,
-			StatWeights:  map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
-		},
-	}
-
-	calculator := NewRewardCalculator(coreTypes, nil, nil)
-
-	// 敵レベル1の場合
-	for i := 0; i < 10; i++ {
-		core := calculator.RollCoreDropWithTypeID("attack_balance", 1)
-		if core == nil {
-			t.Fatal("コアがnilであってはならない")
-		}
-		if core.Level != 1 {
-			t.Errorf("敵レベル1の場合はコアレベルも1であるべき: got %d", core.Level)
-		}
 	}
 }
 

@@ -155,11 +155,6 @@ func TestNewGameInitializer_CreateInitialAgents(t *testing.T) {
 			t.Errorf("初期エージェント%dは1つのモジュールを持つべきです: got %d", i+1, len(agent.Modules))
 		}
 
-		// エージェントレベルがコアレベルと一致すること
-		if agent.Level != agent.Core.Level {
-			t.Errorf("エージェント%dのレベルはコアレベルと一致するべきです", i+1)
-		}
-
 		// オールラウンダー特性であること
 		if agent.Core.Type.ID != "all_rounder" {
 			t.Errorf("初期エージェント%dのコアはオールラウンダー特性であるべきです: got %s", i+1, agent.Core.Type.ID)

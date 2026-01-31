@@ -289,8 +289,7 @@ func (s *BattleSelectScreen) renderConfirmState() string {
 		agentPanel.AddItem("状態", "未装備")
 	} else {
 		for i, agent := range equippedAgents {
-			agentPanel.AddItem(fmt.Sprintf("スロット%d", i+1),
-				fmt.Sprintf("%s (Lv.%d)", agent.GetCoreTypeName(), agent.Level))
+			agentPanel.AddItem(fmt.Sprintf("スロット%d", i+1), agent.GetCoreTypeName())
 		}
 	}
 

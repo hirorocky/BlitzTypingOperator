@@ -16,17 +16,14 @@ import (
 // コンパクトな形式または詳細な形式で表示します。
 type PassiveSkillNotification struct {
 	skill      *domain.PassiveSkill
-	coreLevel  int
 	gameStyles *styles.GameStyles
 }
 
 // NewPassiveSkillNotification は新しいPassiveSkillNotificationを作成します。
 // skillがnilの場合でも有効な通知を作成します（表示は空になります）。
-// coreLevelは効果量のスケーリングに使用されます。
-func NewPassiveSkillNotification(skill *domain.PassiveSkill, coreLevel int) *PassiveSkillNotification {
+func NewPassiveSkillNotification(skill *domain.PassiveSkill) *PassiveSkillNotification {
 	return &PassiveSkillNotification{
 		skill:      skill,
-		coreLevel:  coreLevel,
 		gameStyles: styles.NewGameStyles(),
 	}
 }
@@ -119,7 +116,7 @@ func (n *PassiveSkillNotification) RenderDetail(width int) string {
 	if len(effects) > 0 {
 		builder.WriteString("\n")
 		labelStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary)
-		builder.WriteString(labelStyle.Render("効果 (Lv." + fmt.Sprintf("%d", n.coreLevel) + "):"))
+		builder.WriteString(labelStyle.Render("効果:"))
 		builder.WriteString("\n")
 		for _, effect := range effects {
 			builder.WriteString("  " + effect + "\n")

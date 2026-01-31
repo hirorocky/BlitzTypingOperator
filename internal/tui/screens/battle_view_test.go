@@ -22,7 +22,7 @@ func createTestAgentWithPassive(passiveSkill domain.PassiveSkill, modules []*dom
 		AllowedTags: []string{"physical_low"},
 	}
 
-	core := domain.NewCore("test_core", "テストコア", 5, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("test_core", coreType, passiveSkill)
 	return domain.NewAgent("test_agent", core, modules)
 }
 

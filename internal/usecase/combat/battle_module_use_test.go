@@ -37,7 +37,7 @@ func TestBattleEngine_ModuleUse_EchoSkill(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_echo_skill", Name: "エコースキル"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_attack",
@@ -134,7 +134,7 @@ func TestBattleEngine_ModuleUse_MiracleHeal(t *testing.T) {
 		AllowedTags: []string{"heal"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_miracle_heal", Name: "ミラクルヒール"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:          "test_heal",
@@ -219,7 +219,7 @@ func TestBattleEngine_ModuleUse_MiracleHeal_NotHealSkill(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_miracle_heal", Name: "ミラクルヒール"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	// 攻撃スキル（回復ではない）
 	moduleType := domain.ModuleType{

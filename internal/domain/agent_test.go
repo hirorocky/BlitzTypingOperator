@@ -41,7 +41,7 @@ func TestAgentModel_フィールドの確認(t *testing.T) {
 		Description: "物理と魔法のダメージをバランスよく強化する",
 	}
 
-	core := NewCore("core_001", "バランスコア", 10, coreType, passiveSkill)
+	core := NewCoreWithTypeID("attack_balance", coreType, passiveSkill)
 
 	modules := []*ModuleModel{
 		newTestDamageModule("mod_001", "物理打撃Lv1", []string{"physical_low"}, 1.0, "STR", "物理攻撃"),
@@ -54,63 +54,49 @@ func TestAgentModel_フィールドの確認(t *testing.T) {
 		ID:        "agent_001",
 		Core:      core,
 		Modules:   modules,
-		Level:     core.Level, // エージェントレベル = コアレベル
 		BaseStats: core.Stats, // 基礎ステータス = コアのステータス
 	}
 
 	if agent.ID != "agent_001" {
 		t.Errorf("IDが期待値と異なります: got %s, want agent_001", agent.ID)
 	}
-	if agent.Core.ID != "core_001" {
-		t.Errorf("Core.IDが期待値と異なります: got %s, want core_001", agent.Core.ID)
+	if agent.Core.TypeID != "attack_balance" {
+		t.Errorf("Core.TypeIDが期待値と異なります: got %s, want attack_balance", agent.Core.TypeID)
 	}
 	if len(agent.Modules) != 4 {
 		t.Errorf("Modulesの長さが期待値と異なります: got %d, want 4", len(agent.Modules))
 	}
-	if agent.Level != 10 {
-		t.Errorf("Levelが期待値と異なります: got %d, want 10", agent.Level)
-	}
+	// STR: 100 × 1.2 = 120
 	if agent.BaseStats.STR != 120 {
 		t.Errorf("BaseStats.STRが期待値と異なります: got %d, want 120", agent.BaseStats.STR)
 	}
 }
 
-// TestAgentModel_レベル等価制約 はエージェントのレベルがコアのレベルと一致することを確認します。
+// TestAgentModel_ステータス導出 はエージェントのステータスがコアから正しく導出されることを確認します。
 
-func TestAgentModel_レベル等価制約(t *testing.T) {
-	tests := []struct {
-		name      string
-		coreLevel int
-	}{
-		{"レベル1のコア", 1},
-		{"レベル10のコア", 10},
-		{"レベル50のコア", 50},
-		{"レベル100のコア", 100},
+func TestAgentModel_ステータス導出(t *testing.T) {
+	coreType := CoreType{
+		ID:          "test",
+		Name:        "テスト",
+		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
+		AllowedTags: []string{"physical_low"},
+	}
+	passiveSkill := PassiveSkill{ID: "test_skill"}
+	core := NewCoreWithTypeID("test", coreType, passiveSkill)
+
+	modules := []*ModuleModel{
+		newTestDamageModule("mod_001", "テストモジュール1", []string{"physical_low"}, 1.0, "STR", "テスト"),
+		newTestDamageModule("mod_002", "テストモジュール2", []string{"physical_low"}, 1.0, "STR", "テスト"),
+		newTestDamageModule("mod_003", "テストモジュール3", []string{"physical_low"}, 1.0, "STR", "テスト"),
+		newTestDamageModule("mod_004", "テストモジュール4", []string{"physical_low"}, 1.0, "STR", "テスト"),
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			coreType := CoreType{
-				ID:          "test",
-				StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
-				AllowedTags: []string{"physical_low"},
-			}
-			passiveSkill := PassiveSkill{ID: "test_skill"}
-			core := NewCore("core_test", "テストコア", tt.coreLevel, coreType, passiveSkill)
+	agent := NewAgent("agent_test", core, modules)
 
-			modules := []*ModuleModel{
-				newTestDamageModule("mod_001", "テストモジュール1", []string{"physical_low"}, 1.0, "STR", "テスト"),
-				newTestDamageModule("mod_002", "テストモジュール2", []string{"physical_low"}, 1.0, "STR", "テスト"),
-				newTestDamageModule("mod_003", "テストモジュール3", []string{"physical_low"}, 1.0, "STR", "テスト"),
-				newTestDamageModule("mod_004", "テストモジュール4", []string{"physical_low"}, 1.0, "STR", "テスト"),
-			}
-
-			agent := NewAgent("agent_test", core, modules)
-
-			if agent.Level != tt.coreLevel {
-				t.Errorf("エージェントのレベルがコアのレベルと一致しません: got %d, want %d", agent.Level, tt.coreLevel)
-			}
-		})
+	// ステータスがコアから導出されていることを確認
+	// STR: 100 × 1.0 = 100
+	if agent.BaseStats.STR != 100 {
+		t.Errorf("BaseStats.STRがコアのステータスと一致しません: got %d, want %d", agent.BaseStats.STR, core.Stats.STR)
 	}
 }
 
@@ -131,7 +117,7 @@ func TestNewAgent_エージェント作成(t *testing.T) {
 		Description: "物理と魔法のダメージをバランスよく強化する",
 	}
 
-	core := NewCore("core_001", "バランスコア", 10, coreType, passiveSkill)
+	core := NewCoreWithTypeID("attack_balance", coreType, passiveSkill)
 
 	modules := []*ModuleModel{
 		newTestDamageModule("mod_001", "物理打撃Lv1", []string{"physical_low"}, 1.0, "STR", "物理攻撃"),
@@ -145,11 +131,8 @@ func TestNewAgent_エージェント作成(t *testing.T) {
 	if agent.ID != "agent_001" {
 		t.Errorf("IDが期待値と異なります: got %s, want agent_001", agent.ID)
 	}
-	if agent.Level != 10 {
-		t.Errorf("Levelが期待値と異なります（コアレベルと同じはず）: got %d, want 10", agent.Level)
-	}
 	// 基礎ステータスはコアから導出される
-	// STR: 10 × 10 × 1.2 = 120
+	// STR: 100 × 1.2 = 120
 	if agent.BaseStats.STR != 120 {
 		t.Errorf("BaseStats.STRが期待値と異なります: got %d, want 120", agent.BaseStats.STR)
 	}
@@ -160,11 +143,12 @@ func TestNewAgent_エージェント作成(t *testing.T) {
 func TestNewAgent_モジュール数確認(t *testing.T) {
 	coreType := CoreType{
 		ID:          "test",
+		Name:        "テスト",
 		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := PassiveSkill{ID: "test_skill"}
-	core := NewCore("core_test", "テストコア", 5, coreType, passiveSkill)
+	core := NewCoreWithTypeID("test", coreType, passiveSkill)
 
 	modules := []*ModuleModel{
 		newTestDamageModule("mod_001", "テストモジュール1", []string{"physical_low"}, 1.0, "STR", "テスト"),
@@ -187,7 +171,6 @@ func TestAgentModel_基礎ステータス算出(t *testing.T) {
 	tests := []struct {
 		name        string
 		coreType    CoreType
-		coreLevel   int
 		expectedSTR int
 		expectedINT int
 		expectedWIL int
@@ -197,47 +180,47 @@ func TestAgentModel_基礎ステータス算出(t *testing.T) {
 			name: "攻撃バランス型",
 			coreType: CoreType{
 				ID:          "attack_balance",
+				Name:        "攻撃バランス",
 				StatWeights: map[string]float64{"STR": 1.2, "INT": 1.0, "WIL": 0.8, "LUK": 1.0},
 				AllowedTags: []string{"physical_low"},
 			},
-			coreLevel:   10,
-			expectedSTR: 120, // 10 × 10 × 1.2
-			expectedINT: 100, // 10 × 10 × 1.0
-			expectedWIL: 80,  // 10 × 10 × 0.8
-			expectedLUK: 10,  // 10 × 1.0 (LUKはレベルに依存しない)
+			expectedSTR: 120, // 100 × 1.2
+			expectedINT: 100, // 100 × 1.0
+			expectedWIL: 80,  // 100 × 0.8
+			expectedLUK: 100, // 100 × 1.0
 		},
 		{
 			name: "ヒーラー型",
 			coreType: CoreType{
 				ID:          "healer",
+				Name:        "ヒーラー",
 				StatWeights: map[string]float64{"STR": 0.5, "INT": 1.5, "WIL": 0.8, "LUK": 1.2},
 				AllowedTags: []string{"heal_low"},
 			},
-			coreLevel:   10,
-			expectedSTR: 50,  // 10 × 10 × 0.5
-			expectedINT: 150, // 10 × 10 × 1.5
-			expectedWIL: 80,  // 10 × 10 × 0.8
-			expectedLUK: 12,  // 10 × 1.2 (LUKはレベルに依存しない)
+			expectedSTR: 50,  // 100 × 0.5
+			expectedINT: 150, // 100 × 1.5
+			expectedWIL: 80,  // 100 × 0.8
+			expectedLUK: 120, // 100 × 1.2
 		},
 		{
 			name: "オールラウンダー型",
 			coreType: CoreType{
 				ID:          "all_rounder",
+				Name:        "オールラウンダー",
 				StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
 				AllowedTags: []string{"physical_low"},
 			},
-			coreLevel:   5,
-			expectedSTR: 50, // 10 × 5 × 1.0
-			expectedINT: 50, // 10 × 5 × 1.0
-			expectedWIL: 50, // 10 × 5 × 1.0
-			expectedLUK: 10, // 10 × 1.0 (LUKはレベルに依存しない)
+			expectedSTR: 100, // 100 × 1.0
+			expectedINT: 100, // 100 × 1.0
+			expectedWIL: 100, // 100 × 1.0
+			expectedLUK: 100, // 100 × 1.0
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			passiveSkill := PassiveSkill{ID: "test_skill"}
-			core := NewCore("core_test", "テストコア", tt.coreLevel, tt.coreType, passiveSkill)
+			core := NewCoreWithTypeID(tt.coreType.ID, tt.coreType, passiveSkill)
 
 			modules := make([]*ModuleModel, 4)
 			for i := 0; i < 4; i++ {
@@ -266,11 +249,12 @@ func TestAgentModel_基礎ステータス算出(t *testing.T) {
 func TestAgentModel_Modules(t *testing.T) {
 	coreType := CoreType{
 		ID:          "test",
+		Name:        "テスト",
 		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := PassiveSkill{ID: "test_skill"}
-	core := NewCore("core_test", "テストコア", 5, coreType, passiveSkill)
+	core := NewCoreWithTypeID("test", coreType, passiveSkill)
 
 	modules := []*ModuleModel{
 		newTestDamageModule("mod_001", "モジュール1", []string{"physical_low"}, 1.0, "STR", "テスト"),
@@ -303,11 +287,12 @@ func TestAgentModel_Modules(t *testing.T) {
 func TestAgentModel_モジュールの独立性(t *testing.T) {
 	coreType := CoreType{
 		ID:          "test",
+		Name:        "テスト",
 		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := PassiveSkill{ID: "test_skill"}
-	core := NewCore("core_test", "テストコア", 5, coreType, passiveSkill)
+	core := NewCoreWithTypeID("test", coreType, passiveSkill)
 
 	originalModules := []*ModuleModel{
 		newTestDamageModule("mod_001", "モジュール1", []string{"physical_low"}, 1.0, "STR", "テスト"),

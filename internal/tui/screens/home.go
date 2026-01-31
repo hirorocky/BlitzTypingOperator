@@ -341,7 +341,7 @@ func (s *HomeScreen) renderStatusPanel() string {
 		for i, agent := range equippedAgents {
 			slotLabel := fmt.Sprintf("スロット%d: ", i+1)
 			builder.WriteString(labelStyle.Render(slotLabel))
-			agentInfo := fmt.Sprintf("%s (Lv.%d)", agent.GetCoreTypeName(), agent.Level)
+			agentInfo := agent.GetCoreTypeName()
 			builder.WriteString(valueStyle.Render(agentInfo))
 			builder.WriteString("\n")
 		}

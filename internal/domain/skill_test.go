@@ -79,9 +79,11 @@ func TestSkillType_HasTag_空タグリスト(t *testing.T) {
 func TestSkillType_IsCompatibleWithCore(t *testing.T) {
 	coreType := CoreType{
 		ID:          "test",
+		Name:        "テスト",
 		AllowedTags: []string{"physical_low", "magic_low"},
+		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
 	}
-	core := NewCore("core_001", "テストコア", 1, coreType, PassiveSkill{})
+	core := NewCoreWithTypeID("test", coreType, PassiveSkill{})
 
 	// 互換性のあるスキル
 	compatibleSkill := SkillType{

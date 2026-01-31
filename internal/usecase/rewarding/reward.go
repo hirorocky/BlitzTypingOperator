@@ -460,9 +460,6 @@ func (c *RewardCalculator) RollCoreDropWithTypeID(typeID string, enemyLevel int)
 		return nil
 	}
 
-	// コアレベルは敵レベルと同じ
-	coreLevel := enemyLevel
-
 	// パッシブスキルを取得
 	passiveSkill := domain.PassiveSkill{}
 	if c.passiveSkills != nil {
@@ -471,10 +468,9 @@ func (c *RewardCalculator) RollCoreDropWithTypeID(typeID string, enemyLevel int)
 		}
 	}
 
-	// コアをインスタンス化（TypeIDベース）
+	// コアをインスタンス化（TypeIDベース、レベルなし）
 	return domain.NewCoreWithTypeID(
 		selectedType.ID,
-		coreLevel,
 		*selectedType,
 		passiveSkill,
 	)
@@ -559,13 +555,12 @@ func AddRewardsToInventory(
 	coreInv *domain.CoreInventory,
 	skillInv *domain.SkillInventory,
 ) *InventoryWarning {
-	// コアをインベントリに追加（TypeID + Level）
+	// コアをインベントリに追加（TypeIDのみ）
 	for _, core := range result.DroppedCores {
-		updated := coreInv.AddCore(core.Type.ID, core.Level)
+		updated := coreInv.AddCore(core.Type.ID)
 		if updated {
 			slog.Info("コアをインベントリに追加",
 				slog.String("core_type_id", core.Type.ID),
-				slog.Int("level", core.Level),
 			)
 		}
 	}

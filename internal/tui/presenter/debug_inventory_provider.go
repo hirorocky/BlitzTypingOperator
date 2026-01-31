@@ -135,13 +135,13 @@ func (p *DebugInventoryProvider) GetChainEffects() []masterdata.ChainEffectData 
 	return p.chainEffects
 }
 
-// CreateCoreFromType はCoreTypeとレベルからCoreModelを作成します。
-func (p *DebugInventoryProvider) CreateCoreFromType(typeID string, level int) *domain.CoreModel {
+// CreateCoreFromType はCoreTypeからCoreModelを作成します。
+func (p *DebugInventoryProvider) CreateCoreFromType(typeID string) *domain.CoreModel {
 	for _, ct := range p.coreTypes {
 		if ct.ID == typeID {
 			coreType := ct.ToDomain()
 			passiveSkill := p.passiveSkills[ct.PassiveSkillID]
-			return domain.NewCoreWithTypeID(typeID, level, coreType, passiveSkill)
+			return domain.NewCoreWithTypeID(typeID, coreType, passiveSkill)
 		}
 	}
 	return nil

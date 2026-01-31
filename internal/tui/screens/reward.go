@@ -173,7 +173,7 @@ func (s *RewardScreen) renderDrops() string {
 		items = append(items, coreStyle.Render("【コア】"))
 
 		for _, core := range s.result.DroppedCores {
-			coreInfo := fmt.Sprintf("  %s (Lv.%d)", core.Name, core.Level)
+			coreInfo := fmt.Sprintf("  %s", core.Name)
 			items = append(items, lipgloss.NewStyle().
 				Foreground(styles.ColorSecondary).
 				Render(coreInfo))

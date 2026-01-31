@@ -128,9 +128,11 @@ func TestModuleModel_IsCompatibleWithCore(t *testing.T) {
 	// 物理攻撃と魔法攻撃の低レベルモジュールを許可するコア
 	coreType := CoreType{
 		ID:          "test",
+		Name:        "テスト",
 		AllowedTags: []string{"physical_low", "magic_low"},
+		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
 	}
-	core := NewCore("core_001", "テストコア", 1, coreType, PassiveSkill{})
+	core := NewCoreWithTypeID("test", coreType, PassiveSkill{})
 
 	// 互換性のあるモジュール
 	compatibleModule := NewModuleFromType(ModuleType{
@@ -157,9 +159,11 @@ func TestModuleModel_IsCompatibleWithCore(t *testing.T) {
 func TestModuleModel_IsCompatibleWithCore_複数タグ(t *testing.T) {
 	coreType := CoreType{
 		ID:          "test",
+		Name:        "テスト",
 		AllowedTags: []string{"physical_low", "magic_low"},
+		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
 	}
-	core := NewCore("core_001", "テストコア", 1, coreType, PassiveSkill{})
+	core := NewCoreWithTypeID("test", coreType, PassiveSkill{})
 
 	// 複数タグのうち1つがコアの許可タグに含まれる場合
 	moduleWithMultipleTags := NewModuleFromType(ModuleType{

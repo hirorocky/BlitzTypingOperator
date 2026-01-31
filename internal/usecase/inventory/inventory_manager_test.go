@@ -29,7 +29,7 @@ func TestInventoryManager_AddCore_NewCore(t *testing.T) {
 	manager := NewInventoryManager()
 
 	// 新規コア追加
-	updated := manager.AddCore("core_balance", 5)
+	updated := manager.AddCore("core_balance")
 
 	if !updated {
 		t.Error("AddCore() should return true for new core")
@@ -39,51 +39,25 @@ func TestInventoryManager_AddCore_NewCore(t *testing.T) {
 	if !manager.Cores().HasCore("core_balance") {
 		t.Error("Core should exist after AddCore")
 	}
-
-	maxLevel := manager.Cores().GetMaxLevel("core_balance")
-	if maxLevel != 5 {
-		t.Errorf("GetMaxLevel() = %d, want 5", maxLevel)
-	}
 }
 
-// TestInventoryManager_AddCore_HigherLevel はより高いレベルでの更新をテストします。
-func TestInventoryManager_AddCore_HigherLevel(t *testing.T) {
+// TestInventoryManager_AddCore_Duplicate は重複追加のテストです。
+func TestInventoryManager_AddCore_Duplicate(t *testing.T) {
 	manager := NewInventoryManager()
 
 	// 最初のコア追加
-	manager.AddCore("core_balance", 3)
+	manager.AddCore("core_balance")
 
-	// より高いレベルで更新
-	updated := manager.AddCore("core_balance", 7)
-
-	if !updated {
-		t.Error("AddCore() should return true for higher level")
-	}
-
-	maxLevel := manager.Cores().GetMaxLevel("core_balance")
-	if maxLevel != 7 {
-		t.Errorf("GetMaxLevel() = %d, want 7", maxLevel)
-	}
-}
-
-// TestInventoryManager_AddCore_LowerLevel は既存最大レベル以下での追加をテストします。
-func TestInventoryManager_AddCore_LowerLevel(t *testing.T) {
-	manager := NewInventoryManager()
-
-	// 最初のコア追加
-	manager.AddCore("core_balance", 5)
-
-	// より低いレベルで追加（更新されないはず）
-	updated := manager.AddCore("core_balance", 3)
+	// 同じコアを再度追加（更新されないはず）
+	updated := manager.AddCore("core_balance")
 
 	if updated {
-		t.Error("AddCore() should return false for lower level")
+		t.Error("AddCore() should return false for duplicate core")
 	}
 
-	// 最大レベルが維持されていることを確認
-	maxLevel := manager.Cores().GetMaxLevel("core_balance")
-	if maxLevel != 5 {
-		t.Errorf("GetMaxLevel() = %d, want 5 (should not be updated)", maxLevel)
+	// 保有していることを確認
+	if !manager.Cores().HasCore("core_balance") {
+		t.Error("Core should still exist after duplicate AddCore")
 	}
 }
 
@@ -149,9 +123,9 @@ func TestInventoryManager_GetOwnedCoreTypes(t *testing.T) {
 	manager := NewInventoryManager()
 
 	// 複数のコアを追加
-	manager.AddCore("core_balance", 3)
-	manager.AddCore("core_attack", 5)
-	manager.AddCore("core_defense", 2)
+	manager.AddCore("core_balance")
+	manager.AddCore("core_attack")
+	manager.AddCore("core_defense")
 
 	// TypeID一覧を取得
 	typeIDs := manager.GetOwnedCoreTypes()

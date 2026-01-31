@@ -86,8 +86,8 @@ func TestIntegrationHomeScreen(t *testing.T) {
 	// テスト用のAgentProvider
 	provider := &testAgentProvider{
 		agents: []*domain.AgentModel{
-			{Level: 5},
-			{Level: 10},
+			{},
+			{},
 		},
 	}
 
@@ -302,7 +302,7 @@ func createTestAgents() []*domain.AgentModel {
 		AllowedTags: []string{"physical_low"},
 	}
 
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 
 	modules := []*domain.ModuleModel{
 		newTestDamageModule("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ"),

@@ -57,7 +57,7 @@ func TestHomeScreenMenuItems(t *testing.T) {
 
 func TestHomeScreenNavigation(t *testing.T) {
 	// モックAgentProviderを使用してバトル選択を有効化
-	screen := NewHomeScreen(0, &mockAgentProvider{agents: []*domain.AgentModel{{Level: 1}}})
+	screen := NewHomeScreen(0, &mockAgentProvider{agents: []*domain.AgentModel{{}}})
 
 	// 下キーで移動
 	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyDown})
@@ -251,11 +251,10 @@ func TestHomeScreenShowsEquippedAgentsWithCard(t *testing.T) {
 		StatWeights: map[string]float64{"STR": 1.0, "MAG": 1.0, "SPD": 1.0, "LUK": 1.0},
 		AllowedTags: []string{"physical_low"},
 	}
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 	agent := &domain.AgentModel{
-		ID:    "agent1",
-		Level: 5,
-		Core:  core,
+		ID:   "agent1",
+		Core: core,
 	}
 	provider := &mockAgentProvider{agents: []*domain.AgentModel{agent}}
 	screen := NewHomeScreen(10, provider)
@@ -299,11 +298,10 @@ func TestHomeScreenEmptySlots(t *testing.T) {
 		StatWeights: map[string]float64{"STR": 1.0, "MAG": 1.0, "SPD": 1.0, "LUK": 1.0},
 		AllowedTags: []string{"physical_low"},
 	}
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 	agent := &domain.AgentModel{
-		ID:    "agent1",
-		Level: 5,
-		Core:  core,
+		ID:   "agent1",
+		Core: core,
 	}
 	provider := &mockAgentProvider{agents: []*domain.AgentModel{agent}}
 	screen := NewHomeScreen(5, provider)

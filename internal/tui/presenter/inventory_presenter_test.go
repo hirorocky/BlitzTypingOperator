@@ -54,7 +54,7 @@ func TestInventoryProviderAdapter_WithData(t *testing.T) {
 	skillInv := domain.NewSkillInventory()
 
 	// コアを追加
-	coreInv.AddCore("warrior", 5)
+	coreInv.AddCore("warrior")
 
 	// スキルを追加
 	skillInv.AddSkill("slash", "")
@@ -86,7 +86,7 @@ func TestInventoryProviderAdapter_WithData(t *testing.T) {
 	)
 
 	// スロットにコアを設定
-	_ = slotMgr.SetCore(0, "warrior", 5)
+	_ = slotMgr.SetCore(0, "warrior")
 	_ = slotMgr.SetSkill(0, 0, "slash", "")
 
 	adapter := NewInventoryProviderAdapter(slotMgr)
@@ -134,7 +134,7 @@ func TestInventoryProviderAdapter_AddAgent(t *testing.T) {
 		Name:        "テスト",
 		StatWeights: map[string]float64{"STR": 1.0, "MAG": 1.0, "SPD": 1.0, "LUK": 1.0},
 	}
-	core := domain.NewCore("test_core", "テストコア", 1, coreType, domain.PassiveSkill{})
+	core := domain.NewCoreWithTypeID("test_core", coreType, domain.PassiveSkill{})
 	agent := domain.NewAgent("test_agent", core, nil)
 
 	err := adapter.AddAgent(agent)

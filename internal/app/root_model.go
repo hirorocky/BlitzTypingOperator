@@ -215,8 +215,8 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	if loadedSaveData != nil && loadedSaveData.Inventory != nil {
 		// UniqueCoresを復元
 		if loadedSaveData.Inventory.UniqueCores != nil && loadedSaveData.Inventory.UniqueCores.Cores != nil {
-			for typeID, level := range loadedSaveData.Inventory.UniqueCores.Cores {
-				invManager.AddCore(typeID, level)
+			for typeID := range loadedSaveData.Inventory.UniqueCores.Cores {
+				invManager.AddCore(typeID)
 			}
 		}
 
@@ -236,11 +236,11 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		}
 	}
 
-	// デバッグモード: 全コアと全スキルを最大レベルで所持
+	// デバッグモード: 全コアと全スキルを所持
 	if debugMode && externalData != nil {
-		// 全コアを最大レベル(100)で追加
+		// 全コアを追加
 		for _, ct := range externalData.CoreTypes {
-			invManager.AddCore(ct.ID, 100)
+			invManager.AddCore(ct.ID)
 		}
 		// 全スキルを追加
 		for _, mt := range externalData.ModuleDefinitions {
@@ -302,7 +302,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 				continue
 			}
 			// コアを設定
-			if err := slotManager.SetCore(i, agentSlotSave.CoreTypeID, agentSlotSave.CoreLevel); err != nil {
+			if err := slotManager.SetCore(i, agentSlotSave.CoreTypeID); err != nil {
 				slog.Warn("スロット復元時にコア設定に失敗",
 					slog.Int("slot", i),
 					slog.String("coreTypeID", agentSlotSave.CoreTypeID),
@@ -562,15 +562,16 @@ func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 		return
 	}
 
-	// UniqueCoresを追加（CoreTypeID → 最大レベル）
+	// UniqueCoresを追加（CoreTypeID → レベル固定値1）
+	// レベル概念は削除されたが、セーブデータの後方互換性のためにLevel: 1を保存
 	if saveData.Inventory.UniqueCores == nil {
 		saveData.Inventory.UniqueCores = &savedata.CoreInventorySave{
 			Cores: make(map[string]int),
 		}
 	}
 	ownedCores := m.invManager.Cores().GetOwnedCores()
-	for typeID, level := range ownedCores {
-		saveData.Inventory.UniqueCores.Cores[typeID] = level
+	for _, typeID := range ownedCores {
+		saveData.Inventory.UniqueCores.Cores[typeID] = 1
 	}
 
 	// UniqueSkillsを追加（SkillTypeID → チェイン効果IDリスト）
@@ -594,7 +595,7 @@ func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 
 		slotSave := savedata.AgentSlotSave{
 			CoreTypeID: agentSlot.CoreTypeID,
-			CoreLevel:  agentSlot.CoreLevel,
+			CoreLevel:  1, // レベル概念は削除されたが、セーブデータの後方互換性のため固定値1を保存
 		}
 
 		// スキルスロット構成を保存
@@ -651,7 +652,7 @@ func (m *RootModel) handleSaveRequest() {
 				ID: ag.ID,
 				Core: savedata.CoreInstanceSave{
 					CoreTypeID: ag.Core.TypeID,
-					Level:      ag.Core.Level,
+					Level:      1, // レベル概念は削除されたが、セーブデータの後方互換性のため固定値1を保存
 				},
 				Skills: skills,
 			})

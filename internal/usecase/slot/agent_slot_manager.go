@@ -24,9 +24,6 @@ var (
 	// ErrSkillIncompatible はコアと互換性のないスキルを設定しようとした場合のエラー
 	ErrSkillIncompatible = errors.New("skill incompatible with core")
 
-	// ErrLevelOutOfRange は取得済み最大レベルを超えるレベルを選択しようとした場合のエラー
-	ErrLevelOutOfRange = errors.New("level out of range")
-
 	// ErrSlotIndexOutOfRange は無効なスロットインデックスの場合のエラー
 	ErrSlotIndexOutOfRange = errors.New("slot index out of range")
 
@@ -115,10 +112,9 @@ func (m *AgentSlotManager) GetSlot(slot int) *domain.AgentSlot {
 }
 
 // SetCore はスロットにコアを設定します。
-// levelは1から取得済み最大レベルまでの任意のレベルを指定できます。
 // コア変更時に互換性のないスキルは自動削除されます。
 // ロック中はErrSlotLockedを返します。
-func (m *AgentSlotManager) SetCore(slot int, typeID string, level int) error {
+func (m *AgentSlotManager) SetCore(slot int, typeID string) error {
 	// ロックチェック
 	if m.locked {
 		return ErrSlotLocked
@@ -134,15 +130,9 @@ func (m *AgentSlotManager) SetCore(slot int, typeID string, level int) error {
 		return ErrCoreNotOwned
 	}
 
-	// レベル範囲確認（1〜最大レベル）
-	maxLevel := m.coreInv.GetMaxLevel(typeID)
-	if level < 1 || level > maxLevel {
-		return ErrLevelOutOfRange
-	}
-
 	// スロットにコアを設定
 	targetSlot := m.slots[slot]
-	targetSlot.SetCore(typeID, level)
+	targetSlot.SetCore(typeID)
 
 	// 互換性チェックを実行し、互換性のないスキルを自動削除
 	m.removeIncompatibleSkills(slot)
@@ -452,10 +442,9 @@ func (m *AgentSlotManager) buildAgentFromSlot(slot int) *domain.AgentModel {
 	// PassiveSkillを取得
 	passiveSkill := m.passiveSkills[coreType.PassiveSkillID]
 
-	// CoreModelを作成
+	// CoreModelを作成（レベルなし）
 	core := domain.NewCoreWithTypeID(
 		targetSlot.CoreTypeID,
-		targetSlot.CoreLevel,
 		coreType,
 		passiveSkill,
 	)

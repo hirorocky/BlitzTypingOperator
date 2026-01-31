@@ -58,10 +58,9 @@ func (i *NewGameInitializer) CreateInitialAgents() []*domain.AgentModel {
 			}
 		}
 
-		// コアを作成
+		// コアを作成（レベルなし）
 		core := domain.NewCoreWithTypeID(
 			firstAgentData.CoreTypeID,
-			firstAgentData.CoreLevel,
 			coreType,
 			passiveSkill,
 		)
@@ -241,7 +240,7 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 			ID: agent.ID,
 			Core: savedata.CoreInstanceSave{
 				CoreTypeID: agent.Core.TypeID,
-				Level:      agent.Core.Level,
+				Level:      1, // レベル廃止後の一時的な固定値（タスク6.1でセーブデータ構造変更時に削除予定）
 			},
 			Skills: skills,
 		})
@@ -276,7 +275,7 @@ func (i *NewGameInitializer) CreateNewGameWithExtraItems() *savedata.SaveData {
 	// 追加のコアをインベントリに追加
 	saveData.Inventory.CoreInstances = append(saveData.Inventory.CoreInstances, savedata.CoreInstanceSave{
 		CoreTypeID: extraAgent.Core.TypeID,
-		Level:      extraAgent.Core.Level,
+		Level:      1, // レベル廃止後の一時的な固定値（タスク6.1でセーブデータ構造変更時に削除予定）
 	})
 
 	// 追加のスキルをインベントリにModuleInstancesとして追加

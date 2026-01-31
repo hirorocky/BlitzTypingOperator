@@ -9,17 +9,12 @@ type AgentModel struct {
 	ID string
 
 	// Core はエージェントの核となるコアです。
-	// エージェントのレベルとステータスはこのコアから導出されます。
+	// エージェントのステータスはこのコアから導出されます。
 	Core *CoreModel
 
 	// Modules はエージェントに装備されているモジュール（スキル）のリストです。
 	// エージェントは1〜4つのモジュールを装備できます。
 	Modules []*ModuleModel
-
-	// Level はエージェントのレベルです。
-
-	// エージェント自体の成長/レベリングはありません。
-	Level int
 
 	// BaseStats はエージェントの基礎ステータス値です。
 	// コアのステータスから導出され、モジュール効果計算の基準となります。
@@ -34,7 +29,6 @@ const MinModuleSlotCount = 1
 const MaxModuleSlotCount = 4
 
 // NewAgent は新しいAgentModelを作成します。
-// エージェントのレベルはコアのレベルから自動的に導出されます。
 // 基礎ステータスはコアのステータスからコピーされます。
 // modulesはコピーされ、元のスライスとの参照共有を避けます。
 func NewAgent(id string, core *CoreModel, modules []*ModuleModel) *AgentModel {
@@ -46,7 +40,6 @@ func NewAgent(id string, core *CoreModel, modules []*ModuleModel) *AgentModel {
 		ID:        id,
 		Core:      core,
 		Modules:   modulesCopy,
-		Level:     core.Level,
 		BaseStats: core.Stats, // 基礎ステータスはコアから導出
 	}
 }

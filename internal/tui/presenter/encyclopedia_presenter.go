@@ -71,11 +71,7 @@ func CreateEncyclopediaData(gs *session.GameState) *screens.EncyclopediaData {
 	baseData := CreateDefaultEncyclopediaData()
 
 	// 所持コアタイプを取得（新システム: TypeIDベースのユニーク管理）
-	ownedCores := gs.Inventory().GetOwnedCores()
-	acquiredCoreTypes := make([]string, 0, len(ownedCores))
-	for typeID := range ownedCores {
-		acquiredCoreTypes = append(acquiredCoreTypes, typeID)
-	}
+	acquiredCoreTypes := gs.Inventory().GetOwnedCores()
 
 	// 所持スキルタイプを取得（新システム: TypeIDベースのユニーク管理）
 	ownedSkills := gs.Inventory().GetOwnedSkills()

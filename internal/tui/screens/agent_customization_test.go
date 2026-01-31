@@ -139,7 +139,7 @@ func TestAgentCustomizationScreen_Update_EnterTransitionsToCoreSelectMode(t *tes
 	screen, coreInv, _, _ := setupTestCustomizationScreen()
 
 	// コアをインベントリに追加
-	coreInv.AddCore("balance", 5)
+	coreInv.AddCore("balance")
 
 	// Enterを押してコア選択モードに遷移
 	screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -155,8 +155,8 @@ func TestAgentCustomizationScreen_CoreSelectMode_ShowsOwnedCores(t *testing.T) {
 	screen, coreInv, _, _ := setupTestCustomizationScreen()
 
 	// コアをインベントリに追加
-	coreInv.AddCore("balance", 5)
-	coreInv.AddCore("attacker", 3)
+	coreInv.AddCore("balance")
+	coreInv.AddCore("attacker")
 
 	// コア選択モードに移行
 	screen.enterCoreSelectMode()
@@ -173,48 +173,22 @@ func TestAgentCustomizationScreen_CoreSelectMode_ShowsOwnedCores(t *testing.T) {
 }
 
 func TestAgentCustomizationScreen_CoreSelectMode_CoreSelection(t *testing.T) {
-	screen, coreInv, _, _ := setupTestCustomizationScreen()
-
-	// コアをインベントリに追加
-	coreInv.AddCore("balance", 5)
-
-	// コア選択モードに移行
-	screen.enterCoreSelectMode()
-	screen.updateCoreList()
-
-	// コアを選択（Enter）
-	screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
-
-	// レベル選択モードに遷移していることを確認
-	if screen.currentMode != CustomizationModeLevelSelect {
-		t.Errorf("レベル選択モードに遷移していません: got %v, want %v", screen.currentMode, CustomizationModeLevelSelect)
-	}
-}
-
-func TestAgentCustomizationScreen_LevelSelect_SetsCoreToSlot(t *testing.T) {
 	screen, coreInv, _, slotManager := setupTestCustomizationScreen()
 
 	// コアをインベントリに追加
-	coreInv.AddCore("balance", 5)
+	coreInv.AddCore("balance")
 
 	// コア選択モードに移行
 	screen.enterCoreSelectMode()
 	screen.updateCoreList()
 
-	// コアを選択
-	screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
-
-	// レベル選択モードでレベル3を選択
-	screen.selectedLevelIndex = 2 // レベル3
+	// コアを選択（Enter）- 直接コアがスロットに設定される
 	screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 	// スロットにコアが設定されていることを確認
 	slot := slotManager.GetSlot(0)
 	if slot.CoreTypeID != "balance" {
 		t.Errorf("スロットにコアが設定されていません: got %v, want balance", slot.CoreTypeID)
-	}
-	if slot.CoreLevel != 3 {
-		t.Errorf("スロットのレベルが不正です: got %v, want 3", slot.CoreLevel)
 	}
 }
 
@@ -224,8 +198,8 @@ func TestAgentCustomizationScreen_SkillSelectMode_ShowsCompatibleSkills(t *testi
 	screen, coreInv, skillInv, slotManager := setupTestCustomizationScreen()
 
 	// コアをインベントリに追加して設定
-	coreInv.AddCore("balance", 5)
-	slotManager.SetCore(0, "balance", 5)
+	coreInv.AddCore("balance")
+	slotManager.SetCore(0, "balance")
 
 	// スキルをインベントリに追加
 	skillInv.AddSkill("strike", "")   // physical タグ
@@ -253,8 +227,8 @@ func TestAgentCustomizationScreen_SkillSelectMode_FiltersIncompatibleSkills(t *t
 	screen, coreInv, skillInv, slotManager := setupTestCustomizationScreen()
 
 	// アタッカーコアを設定（physicalのみ許可）
-	coreInv.AddCore("attacker", 5)
-	slotManager.SetCore(0, "attacker", 5)
+	coreInv.AddCore("attacker")
+	slotManager.SetCore(0, "attacker")
 
 	// スキルをインベントリに追加
 	skillInv.AddSkill("strike", "")   // physical タグ - 互換
@@ -289,8 +263,8 @@ func TestAgentCustomizationScreen_SkillSelectMode_SetsSkillToSlot(t *testing.T) 
 	screen, coreInv, skillInv, slotManager := setupTestCustomizationScreen()
 
 	// コアを設定
-	coreInv.AddCore("balance", 5)
-	slotManager.SetCore(0, "balance", 5)
+	coreInv.AddCore("balance")
+	slotManager.SetCore(0, "balance")
 
 	// スキルを追加
 	skillInv.AddSkill("strike", "")
@@ -316,8 +290,8 @@ func TestAgentCustomizationScreen_SkillSelectMode_ChainEffectVariationSelection(
 	screen, coreInv, skillInv, slotManager := setupTestCustomizationScreen()
 
 	// コアを設定
-	coreInv.AddCore("balance", 5)
-	slotManager.SetCore(0, "balance", 5)
+	coreInv.AddCore("balance")
+	slotManager.SetCore(0, "balance")
 
 	// チェイン効果付きスキルを追加
 	skillInv.AddSkill("strike", "chain_damage_boost")
@@ -346,8 +320,8 @@ func TestAgentCustomizationScreen_ClearCore(t *testing.T) {
 	screen, coreInv, _, slotManager := setupTestCustomizationScreen()
 
 	// コアを設定
-	coreInv.AddCore("balance", 5)
-	slotManager.SetCore(0, "balance", 5)
+	coreInv.AddCore("balance")
+	slotManager.SetCore(0, "balance")
 
 	screen.selectedSlotIndex = 0
 
@@ -365,8 +339,8 @@ func TestAgentCustomizationScreen_ClearSkill(t *testing.T) {
 	screen, coreInv, skillInv, slotManager := setupTestCustomizationScreen()
 
 	// コアとスキルを設定
-	coreInv.AddCore("balance", 5)
-	slotManager.SetCore(0, "balance", 5)
+	coreInv.AddCore("balance")
+	slotManager.SetCore(0, "balance")
 	skillInv.AddSkill("strike", "")
 	slotManager.SetSkill(0, 0, "strike", "")
 
@@ -388,7 +362,7 @@ func TestAgentCustomizationScreen_ClearSkill(t *testing.T) {
 func TestAgentCustomizationScreen_EscReturnsToPreviousMode(t *testing.T) {
 	screen, coreInv, _, _ := setupTestCustomizationScreen()
 
-	coreInv.AddCore("balance", 5)
+	coreInv.AddCore("balance")
 
 	// スロット選択からコア選択へ
 	screen.enterCoreSelectMode()
@@ -409,8 +383,8 @@ func TestAgentCustomizationScreen_ShowsCompatibilityIndicator(t *testing.T) {
 	screen, coreInv, skillInv, slotManager := setupTestCustomizationScreen()
 
 	// アタッカーコアを設定（physicalのみ許可）
-	coreInv.AddCore("attacker", 5)
-	slotManager.SetCore(0, "attacker", 5)
+	coreInv.AddCore("attacker")
+	slotManager.SetCore(0, "attacker")
 
 	// スキルを追加
 	skillInv.AddSkill("strike", "")   // 互換

@@ -278,7 +278,7 @@ func TestSaveLoad_PassiveSkillDataIntegrity(t *testing.T) {
 		t.Fatal("エージェントインスタンスが復元されていません")
 	}
 	agentCore := loadedData.Inventory.AgentInstances[0].Core
-	if agentCore.CoreTypeID != "attack_balance" || agentCore.Level != 10 {
+	if agentCore.CoreTypeID != "attack_balance" {
 		t.Errorf("エージェントのコアが正しく復元されていません: %+v", agentCore)
 	}
 }

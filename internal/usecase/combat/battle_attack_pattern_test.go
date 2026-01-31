@@ -20,7 +20,7 @@ func TestBattleState_SameAttackCount_Track(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_adaptive_shield", Name: "アダプティブシールド"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:   "test_attack",
@@ -79,7 +79,7 @@ func TestBattleState_SameAttackCount_Reset(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_adaptive_shield", Name: "アダプティブシールド"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:   "test_attack",
@@ -155,7 +155,7 @@ func TestBattleEngine_AdaptiveShield(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_adaptive_shield", Name: "アダプティブシールド"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	moduleType := domain.ModuleType{
 		ID:   "test_attack",

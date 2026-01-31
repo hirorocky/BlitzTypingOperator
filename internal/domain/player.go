@@ -2,11 +2,13 @@
 package domain
 
 // HP計算に使用する定数
-// MaxHP = 装備中エージェントのコアレベル平均 × HP係数 + 基礎HP
+// 新仕様: 初期最大HP = 1000、敵撃破による成長で増加
+// 旧仕様（互換性用）: MaxHP = 装備中エージェントのコアレベル平均 × HP係数 + 基礎HP
 
 const (
-	HPCoefficient = 10.0 // レベル平均に掛ける係数
-	BaseHP        = 100  // 基礎HP値
+	HPCoefficient = 10.0 // 旧仕様：レベル平均に掛ける係数
+	BaseHP        = 100  // 旧仕様：基礎HP値
+	InitialMaxHP  = 1000 // 新仕様：初期最大HP
 )
 
 // PlayerModel はゲーム内のプレイヤーエンティティを表す構造体です。
@@ -41,22 +43,15 @@ func NewPlayer() *PlayerModel {
 	}
 }
 
-// CalculateMaxHP は装備中エージェントのコアレベル平均からMaxHPを計算します。
-
-// エージェントが装備されていない場合は基礎HPを返します。
+// CalculateMaxHP は最大HPを計算します。
+// 新仕様では初期最大HP（1000）を返し、成長はIncreaseMaxHPで管理します。
+// 注意: この関数はレガシーコードとの互換性のために残されています。
 func CalculateMaxHP(agents []*AgentModel) int {
 	if len(agents) == 0 {
 		return BaseHP
 	}
-
-	totalLevel := 0
-	for _, agent := range agents {
-		totalLevel += agent.Level
-	}
-
-	// 平均レベル × HP係数 + 基礎HP
-	avgLevel := float64(totalLevel) / float64(len(agents))
-	return int(avgLevel*HPCoefficient) + BaseHP
+	// 新仕様: エージェント装備時は初期最大HPを返す
+	return InitialMaxHP
 }
 
 // RecalculateHP は装備エージェントに基づいてMaxHPを再計算し、HPを全回復します。

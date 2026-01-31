@@ -130,7 +130,7 @@ func TestSlotBattle_BuildAgentsForBattle_SingleAgent(t *testing.T) {
 	passiveSkills := createBattleTestPassiveSkills()
 
 	// コアとスキルを追加
-	invManager.AddCore("warrior", 5)
+	invManager.AddCore("warrior")
 	invManager.AddSkill("slash", "")
 	invManager.AddSkill("heavy_strike", "")
 
@@ -145,7 +145,7 @@ func TestSlotBattle_BuildAgentsForBattle_SingleAgent(t *testing.T) {
 	)
 
 	// スロット0にコアとスキルを設定
-	slotManager.SetCore(0, "warrior", 5)
+	slotManager.SetCore(0, "warrior")
 	slotManager.SetSkill(0, 0, "slash", "")
 	slotManager.SetSkill(0, 1, "heavy_strike", "")
 
@@ -161,11 +161,6 @@ func TestSlotBattle_BuildAgentsForBattle_SingleAgent(t *testing.T) {
 	agent := agents[0]
 	if agent == nil {
 		t.Fatal("エージェントがnilです")
-	}
-
-	// レベルがコアレベルと一致
-	if agent.Level != 5 {
-		t.Errorf("エージェントレベルが不正: got %d, want 5", agent.Level)
 	}
 
 	// コアTypeIDが設定されている
@@ -191,9 +186,9 @@ func TestSlotBattle_BuildAgentsForBattle_MultipleAgents(t *testing.T) {
 	passiveSkills := createBattleTestPassiveSkills()
 
 	// 複数のコアとスキルを追加
-	invManager.AddCore("warrior", 10)
-	invManager.AddCore("mage", 8)
-	invManager.AddCore("support", 6)
+	invManager.AddCore("warrior")
+	invManager.AddCore("mage")
+	invManager.AddCore("support")
 	invManager.AddSkill("slash", "")
 	invManager.AddSkill("fire", "")
 	invManager.AddSkill("cure", "")
@@ -209,13 +204,13 @@ func TestSlotBattle_BuildAgentsForBattle_MultipleAgents(t *testing.T) {
 	)
 
 	// 全スロットにコアとスキルを設定
-	slotManager.SetCore(0, "warrior", 10)
+	slotManager.SetCore(0, "warrior")
 	slotManager.SetSkill(0, 0, "slash", "")
 
-	slotManager.SetCore(1, "mage", 8)
+	slotManager.SetCore(1, "mage")
 	slotManager.SetSkill(1, 0, "fire", "")
 
-	slotManager.SetCore(2, "support", 6)
+	slotManager.SetCore(2, "support")
 	slotManager.SetSkill(2, 0, "cure", "")
 
 	// バトル用エージェントを構築
@@ -226,11 +221,11 @@ func TestSlotBattle_BuildAgentsForBattle_MultipleAgents(t *testing.T) {
 		t.Fatalf("エージェント数が不正: got %d, want 3", len(agents))
 	}
 
-	// 各エージェントのレベルを確認
-	expectedLevels := []int{10, 8, 6}
+	// 各エージェントのコアTypeIDを確認
+	expectedCoreTypeIDs := []string{"warrior", "mage", "support"}
 	for i, agent := range agents {
-		if agent.Level != expectedLevels[i] {
-			t.Errorf("エージェント%dのレベルが不正: got %d, want %d", i, agent.Level, expectedLevels[i])
+		if agent.Core.TypeID != expectedCoreTypeIDs[i] {
+			t.Errorf("エージェント%dのコアTypeIDが不正: got %s, want %s", i, agent.Core.TypeID, expectedCoreTypeIDs[i])
 		}
 	}
 }
@@ -244,7 +239,7 @@ func TestSlotBattle_BuildAgentsForBattle_EmptySlotsExcluded(t *testing.T) {
 	passiveSkills := createBattleTestPassiveSkills()
 
 	// コアを追加
-	invManager.AddCore("warrior", 5)
+	invManager.AddCore("warrior")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -257,7 +252,7 @@ func TestSlotBattle_BuildAgentsForBattle_EmptySlotsExcluded(t *testing.T) {
 	)
 
 	// スロット1のみにコアを設定（スロット0,2は空）
-	slotManager.SetCore(1, "warrior", 5)
+	slotManager.SetCore(1, "warrior")
 
 	// バトル用エージェントを構築
 	agents := slotManager.BuildAgentsForBattle()
@@ -304,7 +299,7 @@ func TestSlotBattle_BuildAgentsForBattle_CoreOnlyNoSkill(t *testing.T) {
 	passiveSkills := createBattleTestPassiveSkills()
 
 	// コアのみ追加
-	invManager.AddCore("warrior", 5)
+	invManager.AddCore("warrior")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -317,7 +312,7 @@ func TestSlotBattle_BuildAgentsForBattle_CoreOnlyNoSkill(t *testing.T) {
 	)
 
 	// コアのみ設定（スキルなし）
-	slotManager.SetCore(0, "warrior", 5)
+	slotManager.SetCore(0, "warrior")
 
 	// バトル用エージェントを構築
 	agents := slotManager.BuildAgentsForBattle()
@@ -344,8 +339,8 @@ func TestSlotBattle_SlotUpdateReflectsOnBattle(t *testing.T) {
 	passiveSkills := createBattleTestPassiveSkills()
 
 	// コアとスキルを追加
-	invManager.AddCore("warrior", 10)
-	invManager.AddCore("mage", 10)
+	invManager.AddCore("warrior")
+	invManager.AddCore("mage")
 	invManager.AddSkill("slash", "")
 	invManager.AddSkill("fire", "")
 
@@ -360,7 +355,7 @@ func TestSlotBattle_SlotUpdateReflectsOnBattle(t *testing.T) {
 	)
 
 	// 初期設定：ウォーリアー
-	slotManager.SetCore(0, "warrior", 10)
+	slotManager.SetCore(0, "warrior")
 	slotManager.SetSkill(0, 0, "slash", "")
 
 	// バトル用エージェントを構築（初回）
@@ -370,7 +365,7 @@ func TestSlotBattle_SlotUpdateReflectsOnBattle(t *testing.T) {
 	}
 
 	// スロット設定を変更：メイジに
-	slotManager.SetCore(0, "mage", 8)
+	slotManager.SetCore(0, "mage")
 	slotManager.SetSkill(0, 0, "fire", "")
 
 	// バトル用エージェントを再構築
@@ -380,13 +375,10 @@ func TestSlotBattle_SlotUpdateReflectsOnBattle(t *testing.T) {
 	if agents2[0].Core.TypeID != "mage" {
 		t.Errorf("変更後コアTypeIDが不正: got %s, want mage", agents2[0].Core.TypeID)
 	}
-	if agents2[0].Level != 8 {
-		t.Errorf("変更後レベルが不正: got %d, want 8", agents2[0].Level)
-	}
 }
 
-// TestSlotBattle_LevelChangeReflectsOnBattle はレベル変更がバトルに反映されることをテストします。
-func TestSlotBattle_LevelChangeReflectsOnBattle(t *testing.T) {
+// TestSlotBattle_CoreReplacementReflectsOnBattle はコア再設定がバトルに反映されることをテストします。
+func TestSlotBattle_CoreReplacementReflectsOnBattle(t *testing.T) {
 	// テスト環境のセットアップ
 	invManager := inventory.NewInventoryManager()
 	coreTypes := createBattleTestCoreTypes()
@@ -394,7 +386,8 @@ func TestSlotBattle_LevelChangeReflectsOnBattle(t *testing.T) {
 	passiveSkills := createBattleTestPassiveSkills()
 
 	// コアを追加
-	invManager.AddCore("warrior", 10)
+	invManager.AddCore("warrior")
+	invManager.AddCore("mage")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -406,24 +399,24 @@ func TestSlotBattle_LevelChangeReflectsOnBattle(t *testing.T) {
 		nil, // chainEffects
 	)
 
-	// 初期設定：レベル10
-	slotManager.SetCore(0, "warrior", 10)
+	// 初期設定
+	slotManager.SetCore(0, "warrior")
 
 	// バトル用エージェントを構築
 	agents1 := slotManager.BuildAgentsForBattle()
-	if agents1[0].Level != 10 {
-		t.Errorf("初期レベルが不正: got %d, want 10", agents1[0].Level)
+	if agents1[0].Core.TypeID != "warrior" {
+		t.Errorf("初期コアTypeIDが不正: got %s, want warrior", agents1[0].Core.TypeID)
 	}
 
-	// レベルを5に変更
-	slotManager.SetCore(0, "warrior", 5)
+	// コアを変更
+	slotManager.SetCore(0, "mage")
 
 	// バトル用エージェントを再構築
 	agents2 := slotManager.BuildAgentsForBattle()
 
-	// レベルが変更されている
-	if agents2[0].Level != 5 {
-		t.Errorf("変更後レベルが不正: got %d, want 5", agents2[0].Level)
+	// コアが変更されている
+	if agents2[0].Core.TypeID != "mage" {
+		t.Errorf("変更後コアTypeIDが不正: got %s, want mage", agents2[0].Core.TypeID)
 	}
 }
 
@@ -436,7 +429,7 @@ func TestSlotBattle_SkillChangeReflectsOnBattle(t *testing.T) {
 	passiveSkills := createBattleTestPassiveSkills()
 
 	// コアとスキルを追加
-	invManager.AddCore("warrior", 5)
+	invManager.AddCore("warrior")
 	invManager.AddSkill("slash", "")
 	invManager.AddSkill("heavy_strike", "")
 
@@ -451,7 +444,7 @@ func TestSlotBattle_SkillChangeReflectsOnBattle(t *testing.T) {
 	)
 
 	// 初期設定：slashのみ
-	slotManager.SetCore(0, "warrior", 5)
+	slotManager.SetCore(0, "warrior")
 	slotManager.SetSkill(0, 0, "slash", "")
 
 	// バトル用エージェントを構築
@@ -481,7 +474,7 @@ func TestSlotBattle_ClearSlotReflectsOnBattle(t *testing.T) {
 	passiveSkills := createBattleTestPassiveSkills()
 
 	// コアを追加
-	invManager.AddCore("warrior", 5)
+	invManager.AddCore("warrior")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -494,8 +487,8 @@ func TestSlotBattle_ClearSlotReflectsOnBattle(t *testing.T) {
 	)
 
 	// 初期設定
-	slotManager.SetCore(0, "warrior", 5)
-	slotManager.SetCore(1, "warrior", 3)
+	slotManager.SetCore(0, "warrior")
+	slotManager.SetCore(1, "warrior")
 
 	// バトル用エージェントを構築
 	agents1 := slotManager.BuildAgentsForBattle()
@@ -526,8 +519,8 @@ func TestSlotBattle_LockDuringBattle(t *testing.T) {
 	passiveSkills := createBattleTestPassiveSkills()
 
 	// コアとスキルを追加
-	invManager.AddCore("warrior", 5)
-	invManager.AddCore("mage", 5)
+	invManager.AddCore("warrior")
+	invManager.AddCore("mage")
 	invManager.AddSkill("slash", "")
 	invManager.AddSkill("fire", "")
 
@@ -542,7 +535,7 @@ func TestSlotBattle_LockDuringBattle(t *testing.T) {
 	)
 
 	// 初期設定
-	slotManager.SetCore(0, "warrior", 5)
+	slotManager.SetCore(0, "warrior")
 	slotManager.SetSkill(0, 0, "slash", "")
 
 	// バトル開始：ロック
@@ -554,7 +547,7 @@ func TestSlotBattle_LockDuringBattle(t *testing.T) {
 	}
 
 	// ロック中のコア設定はエラー
-	err := slotManager.SetCore(1, "mage", 5)
+	err := slotManager.SetCore(1, "mage")
 	if err != slot.ErrSlotLocked {
 		t.Errorf("ロック中のSetCoreはErrSlotLockedを返すべき: got %v", err)
 	}
@@ -586,7 +579,7 @@ func TestSlotBattle_LockDuringBattle(t *testing.T) {
 	}
 
 	// アンロック後はコア設定可能
-	err = slotManager.SetCore(1, "mage", 5)
+	err = slotManager.SetCore(1, "mage")
 	if err != nil {
 		t.Errorf("アンロック後のSetCoreは成功すべき: %v", err)
 	}
@@ -601,7 +594,7 @@ func TestSlotBattle_BuildAgentsForBattleWhileLocked(t *testing.T) {
 	passiveSkills := createBattleTestPassiveSkills()
 
 	// コアを追加
-	invManager.AddCore("warrior", 5)
+	invManager.AddCore("warrior")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -614,7 +607,7 @@ func TestSlotBattle_BuildAgentsForBattleWhileLocked(t *testing.T) {
 	)
 
 	// 初期設定
-	slotManager.SetCore(0, "warrior", 5)
+	slotManager.SetCore(0, "warrior")
 
 	// バトル開始：ロック
 	slotManager.Lock()

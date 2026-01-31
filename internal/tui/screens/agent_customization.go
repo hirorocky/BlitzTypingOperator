@@ -27,8 +27,6 @@ const (
 	ModeCardSelect CustomizationMode = iota
 	// ModeCoreSelect はモーダル: コア選択モードです。
 	ModeCoreSelect
-	// ModeLevelSelect はモーダル: レベル選択モードです。
-	ModeLevelSelect
 	// ModeSkillSelect はモーダル: スキル選択モードです。
 	ModeSkillSelect
 	// ModeChainSelect はモーダル: チェイン効果選択モードです。
@@ -39,7 +37,6 @@ const (
 const (
 	CustomizationModeSlotSelect      = ModeCardSelect
 	CustomizationModeCoreSelect      = ModeCoreSelect
-	CustomizationModeLevelSelect     = ModeLevelSelect
 	CustomizationModeSkillSlotSelect = ModeCardSelect // スキルスロット選択はカード選択に統合
 	CustomizationModeSkillSelect     = ModeSkillSelect
 	CustomizationModeChainSelect     = ModeChainSelect
@@ -51,7 +48,6 @@ const (
 type CoreSelectItem struct {
 	TypeID   string
 	TypeName string
-	MaxLevel int
 }
 
 // SkillSelectItem はスキル選択リストの表示アイテムです。
@@ -91,13 +87,8 @@ type AgentCustomizationScreen struct {
 	focusPosition int
 
 	// コア選択
-	coreList           []CoreSelectItem
-	selectedCoreIndex  int
-	selectedCoreTypeID string
-
-	// レベル選択
-	selectedLevelIndex int
-	maxSelectableLevel int
+	coreList          []CoreSelectItem
+	selectedCoreIndex int
 
 	// スキル選択
 	compatibleSkillList []SkillSelectItem
@@ -170,8 +161,6 @@ func (s *AgentCustomizationScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.
 		return s.handleCardSelectKey(msg)
 	case ModeCoreSelect:
 		return s.handleCoreSelectKey(msg)
-	case ModeLevelSelect:
-		return s.handleLevelSelectKey(msg)
 	case ModeSkillSelect:
 		return s.handleSkillSelectKey(msg)
 	case ModeChainSelect:
@@ -265,16 +254,10 @@ func (s *AgentCustomizationScreen) updateCoreList() {
 	ownedCores := s.invManager.Cores().GetOwnedCores()
 
 	// TypeIDでソート
-	typeIDs := make([]string, 0, len(ownedCores))
-	for typeID := range ownedCores {
-		typeIDs = append(typeIDs, typeID)
-	}
-	sort.Strings(typeIDs)
+	sort.Strings(ownedCores)
 
 	// リストを構築
-	for _, typeID := range typeIDs {
-		maxLevel := ownedCores[typeID]
-
+	for _, typeID := range ownedCores {
 		// コアタイプ名を取得
 		typeName := typeID
 		if coreType, ok := s.coreTypes[typeID]; ok {
@@ -284,7 +267,6 @@ func (s *AgentCustomizationScreen) updateCoreList() {
 		item := CoreSelectItem{
 			TypeID:   typeID,
 			TypeName: typeName,
-			MaxLevel: maxLevel,
 		}
 		s.coreList = append(s.coreList, item)
 	}
@@ -327,39 +309,15 @@ func (s *AgentCustomizationScreen) handleCoreSelectKey(msg tea.KeyMsg) (tea.Mode
 		}
 	case "enter":
 		if s.selectedCoreIndex < len(s.coreList) {
-			s.selectedCoreTypeID = s.coreList[s.selectedCoreIndex].TypeID
-			s.maxSelectableLevel = s.coreList[s.selectedCoreIndex].MaxLevel
-			s.selectedLevelIndex = s.maxSelectableLevel - 1 // デフォルトで最大レベルを選択
-			s.currentMode = ModeLevelSelect
-		}
-	}
-
-	return s, nil
-}
-
-// ==================== レベル選択モード ====================
-
-func (s *AgentCustomizationScreen) handleLevelSelectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "esc":
-		s.currentMode = ModeCoreSelect
-	case "up", "k":
-		if s.selectedLevelIndex < s.maxSelectableLevel-1 {
-			s.selectedLevelIndex++
-		}
-	case "down", "j":
-		if s.selectedLevelIndex > 0 {
-			s.selectedLevelIndex--
-		}
-	case "enter":
-		// コアをスロットに設定
-		level := s.selectedLevelIndex + 1
-		if err := s.slotManager.SetCore(s.selectedSlotIndex, s.selectedCoreTypeID, level); err != nil {
-			s.errorMessage = fmt.Sprintf("コア設定に失敗: %v", err)
-		} else {
-			s.statusMessage = fmt.Sprintf("スロット%dにコアを設定しました", s.selectedSlotIndex+1)
-			s.errorMessage = ""
-			s.currentMode = ModeCardSelect
+			// コアを直接スロットに設定
+			typeID := s.coreList[s.selectedCoreIndex].TypeID
+			if err := s.slotManager.SetCore(s.selectedSlotIndex, typeID); err != nil {
+				s.errorMessage = fmt.Sprintf("コア設定に失敗: %v", err)
+			} else {
+				s.statusMessage = fmt.Sprintf("スロット%dにコアを設定しました", s.selectedSlotIndex+1)
+				s.errorMessage = ""
+				s.currentMode = ModeCardSelect
+			}
 		}
 	}
 
@@ -617,7 +575,7 @@ func (s *AgentCustomizationScreen) renderAgentCard(slotIndex int, isSelected boo
 		} else {
 			coreStyle = coreStyle.Bold(true)
 		}
-		cardContent.WriteString(coreStyle.Render(fmt.Sprintf("%s%s Lv.%d", corePrefix, coreName, agentSlot.CoreLevel)))
+		cardContent.WriteString(coreStyle.Render(fmt.Sprintf("%s%s", corePrefix, coreName)))
 		cardContent.WriteString("\n")
 
 		// パッシブスキル表示（PassiveSkillIDがある場合のみ）
@@ -715,9 +673,6 @@ func (s *AgentCustomizationScreen) renderModal() string {
 	case ModeCoreSelect:
 		title = "コア選択"
 		content = s.renderModalCoreSelect()
-	case ModeLevelSelect:
-		title = "レベル選択"
-		content = s.renderModalLevelSelect()
 	case ModeSkillSelect:
 		title = "スキル選択"
 		content = s.renderModalSkillSelect()
@@ -748,8 +703,6 @@ func (s *AgentCustomizationScreen) renderModal() string {
 	switch s.currentMode {
 	case ModeCoreSelect, ModeSkillSelect:
 		hintText = "↑/↓: 選択  Enter: 決定  Esc: キャンセル"
-	case ModeLevelSelect:
-		hintText = "↑/↓: レベル選択  Enter: 決定  Esc: 戻る"
 	case ModeChainSelect:
 		hintText = "↑/↓: 効果選択  Enter: 決定  Esc: 戻る"
 	}
@@ -849,8 +802,7 @@ func (s *AgentCustomizationScreen) renderCoreList() string {
 			prefix = "> "
 		}
 
-		item := fmt.Sprintf("%s (Lv.%d)", core.TypeName, core.MaxLevel)
-		builder.WriteString(style.Render(prefix + item))
+		builder.WriteString(style.Render(prefix + core.TypeName))
 		builder.WriteString("\n")
 	}
 
@@ -872,13 +824,6 @@ func (s *AgentCustomizationScreen) renderCoreDetail() string {
 	builder.WriteString(nameStyle.Render(core.TypeName))
 	builder.WriteString("\n\n")
 
-	// 最大レベル
-	labelStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
-	valueStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary)
-	builder.WriteString(labelStyle.Render("最大レベル: "))
-	builder.WriteString(valueStyle.Render(fmt.Sprintf("Lv.%d", core.MaxLevel)))
-	builder.WriteString("\n\n")
-
 	// パッシブスキル情報（PassiveSkillIDがある場合のみ）
 	if coreType, ok := s.coreTypes[core.TypeID]; ok {
 		if coreType.PassiveSkillID != "" {
@@ -891,82 +836,6 @@ func (s *AgentCustomizationScreen) renderCoreDetail() string {
 			builder.WriteString(passiveStyle.Render("★ " + passiveText))
 		}
 	}
-
-	return builder.String()
-}
-
-// renderModalLevelSelect はモーダル内のレベル選択をレンダリングします。
-func (s *AgentCustomizationScreen) renderModalLevelSelect() string {
-	leftContent := truncateLines(s.renderLevelList(), 10)
-	rightContent := truncateLines(s.renderLevelDetail(), 10)
-	return renderTwoPanelLayout(leftContent, rightContent, 38)
-}
-
-// renderLevelList はレベル選択UIをレンダリングします（数値増減方式）。
-func (s *AgentCustomizationScreen) renderLevelList() string {
-	var builder strings.Builder
-
-	// 現在選択中のレベル
-	selectedLevel := s.selectedLevelIndex + 1
-
-	// 数値増減UI
-	builder.WriteString("\n")
-
-	// 上矢印（増加可能な場合）
-	arrowStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
-	activeArrowStyle := lipgloss.NewStyle().Foreground(styles.ColorPrimary).Bold(true)
-
-	if selectedLevel < s.maxSelectableLevel {
-		builder.WriteString(activeArrowStyle.Render("        ▲"))
-	} else {
-		builder.WriteString(arrowStyle.Render("        ▲"))
-	}
-	builder.WriteString("\n\n")
-
-	// 現在のレベル（大きく表示）
-	levelStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(styles.ColorPrimary).
-		Background(styles.ColorSelectedBg).
-		Padding(0, 2)
-	builder.WriteString(levelStyle.Render(fmt.Sprintf("Lv.%d", selectedLevel)))
-	builder.WriteString("\n\n")
-
-	// 下矢印（減少可能な場合）
-	if selectedLevel > 1 {
-		builder.WriteString(activeArrowStyle.Render("        ▼"))
-	} else {
-		builder.WriteString(arrowStyle.Render("        ▼"))
-	}
-	builder.WriteString("\n\n")
-
-	// 範囲表示
-	rangeStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
-	builder.WriteString(rangeStyle.Render(fmt.Sprintf("  (1 〜 %d)", s.maxSelectableLevel)))
-
-	return builder.String()
-}
-
-// renderLevelDetail はレベル詳細をレンダリングします。
-func (s *AgentCustomizationScreen) renderLevelDetail() string {
-	var builder strings.Builder
-
-	// コア名
-	coreName := s.selectedCoreTypeID
-	if coreType, ok := s.coreTypes[s.selectedCoreTypeID]; ok {
-		coreName = coreType.Name
-	}
-
-	nameStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary)
-	builder.WriteString(nameStyle.Render(coreName))
-	builder.WriteString("\n\n")
-
-	// 選択中のレベル
-	labelStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
-	valueStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary).Bold(true)
-	selectedLevel := s.selectedLevelIndex + 1
-	builder.WriteString(labelStyle.Render("選択レベル: "))
-	builder.WriteString(valueStyle.Render(fmt.Sprintf("Lv.%d", selectedLevel)))
 
 	return builder.String()
 }
@@ -1167,8 +1036,6 @@ func (s *AgentCustomizationScreen) renderHints() string {
 		hints = "←/→: スロット切替  ↑/↓: 項目選択  Enter: 編集  Delete: 外す  Esc: 戻る"
 	case ModeCoreSelect:
 		hints = "↑/↓: コア選択  Enter: 決定  Esc: キャンセル"
-	case ModeLevelSelect:
-		hints = "↑/↓: レベル選択  Enter: 決定  Esc: 戻る"
 	case ModeSkillSelect:
 		hints = "↑/↓: スキル選択  Enter: 決定  Esc: キャンセル"
 	case ModeChainSelect:

@@ -314,7 +314,7 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 	for _, c := range rewards.DroppedCores {
 		saveData.Inventory.CoreInstances = append(saveData.Inventory.CoreInstances, savedata.CoreInstanceSave{
 			CoreTypeID: c.TypeID,
-			Level:      c.Level,
+			Level:      1, // 後方互換性のため固定レベル
 		})
 	}
 	for _, m := range rewards.DroppedModules {
@@ -391,9 +391,6 @@ func TestE2E_AgentSynthesisFlow(t *testing.T) {
 	newAgent := domain.NewAgent("new_agent_1", core, selectedModules)
 
 	// 合成後の状態確認
-	if newAgent.Level != core.Level {
-		t.Error("エージェントレベルはコアレベルと一致するべきです")
-	}
 	if len(newAgent.Modules) != len(selectedModules) {
 		t.Errorf("エージェントは%d個のモジュールを持つべきです", len(selectedModules))
 	}
@@ -415,7 +412,7 @@ func TestE2E_AgentSynthesisFlow(t *testing.T) {
 		ID: newAgent.ID,
 		Core: savedata.CoreInstanceSave{
 			CoreTypeID: newAgent.Core.TypeID,
-			Level:      newAgent.Core.Level,
+			Level:      1, // 後方互換性のため固定レベル
 		},
 		Skills: skills,
 	})

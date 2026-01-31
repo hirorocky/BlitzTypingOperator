@@ -241,19 +241,19 @@ func (s *BattleScreen) renderAgentArea() string {
 		if i < len(s.equippedAgents) {
 			agent := s.equippedAgents[i]
 
-			// エージェント名とレベル
+			// エージェント名
 			nameStyle := lipgloss.NewStyle().Bold(true)
 			if isSelected {
 				nameStyle = nameStyle.
 					Foreground(styles.ColorSelectedFg).
 					Background(styles.ColorSelectedBg)
 			}
-			cardContent.WriteString(nameStyle.Render(fmt.Sprintf("%s Lv.%d", agent.GetCoreTypeName(), agent.Level)))
+			cardContent.WriteString(nameStyle.Render(agent.GetCoreTypeName()))
 			cardContent.WriteString("\n")
 
 			// パッシブスキル表示（コア特性から）- ShortDescriptionを使用
 			if agent.Core != nil && agent.Core.PassiveSkill.ID != "" {
-				passiveNotification := components.NewPassiveSkillNotification(&agent.Core.PassiveSkill, agent.Level)
+				passiveNotification := components.NewPassiveSkillNotification(&agent.Core.PassiveSkill)
 				shortDesc := passiveNotification.GetShortDescription()
 				passiveStyle := lipgloss.NewStyle().
 					Foreground(styles.ColorBuff).
