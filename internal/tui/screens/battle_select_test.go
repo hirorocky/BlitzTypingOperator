@@ -964,10 +964,17 @@ func TestBattleSelectLevelFixedForUndefeatedEnemy(t *testing.T) {
 		provider,
 	)
 
-	// slime（デフォルトレベル1）が選択されている状態
+	// 選択されている敵のデフォルトレベルと一致すること
+	// （mapの順序は不定なので、slimeかgoblinのどちらかが選択される）
+	selectedEnemy := screen.enemyTypes[screen.selectedTypeIdx]
+	expectedLevel := selectedEnemy.DefaultLevel
+	if expectedLevel < 1 {
+		expectedLevel = 1
+	}
+
 	// 未撃破なのでデフォルトレベルのみ選択可能
-	if screen.selectedLevel != 1 {
-		t.Errorf("選択レベル: got %d, want 1", screen.selectedLevel)
+	if screen.selectedLevel != expectedLevel {
+		t.Errorf("選択レベル: got %d, want %d (デフォルトレベル)", screen.selectedLevel, expectedLevel)
 	}
 
 	// min == max であること（固定）
