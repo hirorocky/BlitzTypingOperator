@@ -608,3 +608,173 @@ func TestModuleInstancesReplacesModuleCounts(t *testing.T) {
 		t.Errorf("physical_lv1 count: got %d, want 2", physicalCount)
 	}
 }
+
+// ==================== v4.0.0: 敵進行システム対応テスト ====================
+
+// TestSaveDataVersionV4 はv4.0.0形式のセーブデータをテストします。
+func TestSaveDataVersionV4(t *testing.T) {
+	saveData := NewSaveData()
+
+	// バージョンが4.0.0であることを確認
+	if saveData.Version != "4.0.0" {
+		t.Errorf("Version: got %s, want 4.0.0", saveData.Version)
+	}
+}
+
+// TestPlayerSaveData_MaxHP はPlayerSaveDataにMaxHPフィールドがあることをテストします。
+func TestPlayerSaveData_MaxHP(t *testing.T) {
+	tmpDir := t.TempDir()
+	io := NewSaveDataIO(tmpDir, false)
+
+	saveData := NewSaveData()
+	saveData.Player.MaxHP = 1500
+
+	// セーブ
+	if err := io.SaveGame(saveData); err != nil {
+		t.Fatalf("セーブに失敗: %v", err)
+	}
+
+	// ロード
+	loadedData, err := io.LoadGame()
+	if err != nil {
+		t.Fatalf("ロードに失敗: %v", err)
+	}
+
+	// MaxHPが正しく保存・読み込みされることを確認
+	if loadedData.Player.MaxHP != 1500 {
+		t.Errorf("MaxHP: got %d, want 1500", loadedData.Player.MaxHP)
+	}
+}
+
+// TestEnemyProgressSave は敵進行データの保存と読み込みをテストします。
+func TestEnemyProgressSave(t *testing.T) {
+	tmpDir := t.TempDir()
+	io := NewSaveDataIO(tmpDir, false)
+
+	saveData := NewSaveData()
+	saveData.EnemyProgress = &EnemyProgressSave{
+		CurrentRank: 2,
+		DefeatRecords: map[string]DefeatRecordSave{
+			"slime": {Defeated: true, MaxDefeatedLevel: 10},
+			"bat":   {Defeated: true, MaxDefeatedLevel: 5},
+		},
+	}
+
+	// セーブ
+	if err := io.SaveGame(saveData); err != nil {
+		t.Fatalf("セーブに失敗: %v", err)
+	}
+
+	// ロード
+	loadedData, err := io.LoadGame()
+	if err != nil {
+		t.Fatalf("ロードに失敗: %v", err)
+	}
+
+	// EnemyProgressが正しく保存・読み込みされることを確認
+	if loadedData.EnemyProgress == nil {
+		t.Fatal("EnemyProgressがnilです")
+	}
+	if loadedData.EnemyProgress.CurrentRank != 2 {
+		t.Errorf("CurrentRank: got %d, want 2", loadedData.EnemyProgress.CurrentRank)
+	}
+	if len(loadedData.EnemyProgress.DefeatRecords) != 2 {
+		t.Errorf("DefeatRecords count: got %d, want 2", len(loadedData.EnemyProgress.DefeatRecords))
+	}
+	slimeRecord, exists := loadedData.EnemyProgress.DefeatRecords["slime"]
+	if !exists {
+		t.Fatal("slimeの記録が存在しません")
+	}
+	if !slimeRecord.Defeated {
+		t.Error("slimeが撃破済みでない")
+	}
+	if slimeRecord.MaxDefeatedLevel != 10 {
+		t.Errorf("slime MaxDefeatedLevel: got %d, want 10", slimeRecord.MaxDefeatedLevel)
+	}
+}
+
+// TestAgentSlotSave_NoLevel はAgentSlotSaveからCoreLevelフィールドが削除されていることをテストします。
+func TestAgentSlotSave_NoLevel(t *testing.T) {
+	tmpDir := t.TempDir()
+	io := NewSaveDataIO(tmpDir, false)
+
+	saveData := NewSaveData()
+	saveData.Player.AgentSlots[0] = AgentSlotSave{
+		CoreTypeID: "all_rounder",
+		Skills: [4]SkillSlotSaveCfg{
+			{TypeID: "skill1"},
+			{TypeID: "skill2"},
+			{},
+			{},
+		},
+	}
+
+	// セーブ
+	if err := io.SaveGame(saveData); err != nil {
+		t.Fatalf("セーブに失敗: %v", err)
+	}
+
+	// ロード
+	loadedData, err := io.LoadGame()
+	if err != nil {
+		t.Fatalf("ロードに失敗: %v", err)
+	}
+
+	// CoreTypeIDが保存されていることを確認
+	if loadedData.Player.AgentSlots[0].CoreTypeID != "all_rounder" {
+		t.Errorf("CoreTypeID: got %s, want all_rounder", loadedData.Player.AgentSlots[0].CoreTypeID)
+	}
+}
+
+// TestCoreInventorySave_TypeIDOnly はCoreInventorySaveがTypeIDリスト形式であることをテストします。
+func TestCoreInventorySave_TypeIDOnly(t *testing.T) {
+	tmpDir := t.TempDir()
+	io := NewSaveDataIO(tmpDir, false)
+
+	saveData := NewSaveData()
+	saveData.Inventory.UniqueCores = &CoreInventorySave{
+		Cores: []string{"all_rounder", "paladin", "healer"},
+	}
+
+	// セーブ
+	if err := io.SaveGame(saveData); err != nil {
+		t.Fatalf("セーブに失敗: %v", err)
+	}
+
+	// ロード
+	loadedData, err := io.LoadGame()
+	if err != nil {
+		t.Fatalf("ロードに失敗: %v", err)
+	}
+
+	// UniqueCoresが正しく保存・読み込みされることを確認
+	if loadedData.Inventory.UniqueCores == nil {
+		t.Fatal("UniqueCoresがnilです")
+	}
+	if len(loadedData.Inventory.UniqueCores.Cores) != 3 {
+		t.Errorf("Cores count: got %d, want 3", len(loadedData.Inventory.UniqueCores.Cores))
+	}
+}
+
+// TestNewSaveData_V4Defaults はNewSaveDataがv4.0.0の正しいデフォルト値を設定することをテストします。
+func TestNewSaveData_V4Defaults(t *testing.T) {
+	saveData := NewSaveData()
+
+	// バージョン確認
+	if saveData.Version != "4.0.0" {
+		t.Errorf("Version: got %s, want 4.0.0", saveData.Version)
+	}
+
+	// PlayerのMaxHPデフォルト確認
+	if saveData.Player.MaxHP != 1000 {
+		t.Errorf("Player.MaxHP: got %d, want 1000", saveData.Player.MaxHP)
+	}
+
+	// EnemyProgressデフォルト確認
+	if saveData.EnemyProgress == nil {
+		t.Fatal("EnemyProgressがnilです")
+	}
+	if saveData.EnemyProgress.CurrentRank != 1 {
+		t.Errorf("EnemyProgress.CurrentRank: got %d, want 1", saveData.EnemyProgress.CurrentRank)
+	}
+}

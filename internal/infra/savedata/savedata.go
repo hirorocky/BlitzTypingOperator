@@ -15,7 +15,8 @@ import (
 // セーブデータの形式が変更された場合にインクリメントします。
 // v2.0.0: ID化最適化（フルオブジェクト → ID参照）
 // v3.0.0: ユニークインベントリ管理 + エージェントスロットシステム
-const CurrentSaveDataVersion = "3.0.0"
+// v4.0.0: コアレベル廃止 + 敵進行システム（EnemyProgress）
+const CurrentSaveDataVersion = "4.0.0"
 
 // SaveFileName はセーブファイル名です。
 const SaveFileName = "save.json"
@@ -51,6 +52,10 @@ type SaveData struct {
 
 	Inventory *InventorySaveData `json:"inventory"`
 
+	// EnemyProgress は敵進行データです（v4.0.0で追加）。
+
+	EnemyProgress *EnemyProgressSave `json:"enemy_progress"`
+
 	// Statistics は統計データです。
 
 	Statistics *StatisticsSaveData `json:"statistics"`
@@ -66,6 +71,10 @@ type SaveData struct {
 
 // PlayerSaveData はプレイヤーのセーブデータです。
 type PlayerSaveData struct {
+	// MaxHP はプレイヤーの最大HPです（v4.0.0で追加）。
+	// 新規ゲーム開始時は1000、敵撃破による成長で増加します。
+	MaxHP int `json:"max_hp"`
+
 	// EquippedAgentIDs は装備中のエージェントIDリストです（スロット番号順）。
 	// 空きスロットは空文字列で表現されます。
 	// 注意: v3.0.0以降はAgentSlotsを使用。後方互換性のため残存。
@@ -134,10 +143,10 @@ type AgentInstanceSave struct {
 // ==================== v3.0.0 新構造体 ====================
 
 // CoreInventorySave はユニークコアインベントリのセーブデータです。
-// TypeID→最大レベルのマップ形式で管理します。
+// v4.0.0: TypeIDリスト形式に変更（レベル概念を廃止）。
 type CoreInventorySave struct {
-	// Cores はCoreTypeID → 最大レベルのマップです。
-	Cores map[string]int `json:"cores"`
+	// Cores は保有CoreTypeIDリストです。
+	Cores []string `json:"cores"`
 }
 
 // SkillInventorySave はユニークスキルインベントリのセーブデータです。
@@ -158,13 +167,10 @@ type SkillSlotSaveCfg struct {
 }
 
 // AgentSlotSave はエージェントスロットのセーブデータです。
-// コアTypeID、レベル、4つのスキルスロット構成を保持します。
+// v4.0.0: CoreLevelフィールドを削除。コアはTypeIDのみで管理。
 type AgentSlotSave struct {
 	// CoreTypeID はコアTypeID（空の場合はスロット空）です。
 	CoreTypeID string `json:"core_type_id,omitempty"`
-
-	// CoreLevel は選択されたコアレベルです。
-	CoreLevel int `json:"core_level,omitempty"`
 
 	// Skills はスキルスロット構成（4つ）です。
 	Skills [4]SkillSlotSaveCfg `json:"skills"`
@@ -260,22 +266,44 @@ type SettingsSaveData struct {
 	KeyBindings map[string]string `json:"key_bindings"`
 }
 
+// ==================== v4.0.0: 敵進行システム ====================
+
+// EnemyProgressSave は敵進行データのセーブデータです（v4.0.0で追加）。
+type EnemyProgressSave struct {
+	// CurrentRank は現在解放済みランクです（1から開始）。
+	CurrentRank int `json:"current_rank"`
+
+	// DefeatRecords は敵タイプIDごとの撃破記録です。
+	DefeatRecords map[string]DefeatRecordSave `json:"defeat_records"`
+}
+
+// DefeatRecordSave は敵1体の撃破記録のセーブデータです。
+type DefeatRecordSave struct {
+	// Defeated は撃破済みフラグです。
+	Defeated bool `json:"defeated"`
+
+	// MaxDefeatedLevel は撃破済み最大レベルです（未撃破なら0）。
+	MaxDefeatedLevel int `json:"max_defeated_level"`
+}
+
 // NewSaveData は新しいセーブデータを作成します。
-// v3.0.0形式で初期化されます。
+// v4.0.0形式で初期化されます。
 func NewSaveData() *SaveData {
 	return &SaveData{
 		Version:   CurrentSaveDataVersion,
 		Timestamp: time.Now(),
 		Player: &PlayerSaveData{
+			// v4.0.0: 初期最大HP
+			MaxHP: 1000,
 			// レガシーフィールド（後方互換性のため）
 			EquippedAgentIDs: [3]string{},
 			// v3.0.0: エージェントスロット
 			AgentSlots: [3]AgentSlotSave{},
 		},
 		Inventory: &InventorySaveData{
-			// v3.0.0: ユニークインベントリ
+			// v4.0.0: TypeIDリスト形式
 			UniqueCores: &CoreInventorySave{
-				Cores: make(map[string]int),
+				Cores: make([]string, 0),
 			},
 			UniqueSkills: &SkillInventorySave{
 				Skills: make(map[string][]string),
@@ -288,6 +316,11 @@ func NewSaveData() *SaveData {
 			MaxCoreSlots:    100,
 			MaxModuleSlots:  200,
 			MaxAgentSlots:   20,
+		},
+		// v4.0.0: 敵進行データ
+		EnemyProgress: &EnemyProgressSave{
+			CurrentRank:   1,
+			DefeatRecords: make(map[string]DefeatRecordSave),
 		},
 		Statistics: &StatisticsSaveData{
 			TotalBattles:         0,

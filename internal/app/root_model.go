@@ -211,11 +211,11 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	// v3.0.0: 新システムのマネージャーを作成
 	invManager := inventory.NewInventoryManager()
 
-	// v3.0.0: セーブデータからユニークインベントリを復元
+	// v4.0.0: セーブデータからユニークインベントリを復元
 	if loadedSaveData != nil && loadedSaveData.Inventory != nil {
-		// UniqueCoresを復元
+		// UniqueCoresを復元（v4.0.0: TypeIDリスト形式）
 		if loadedSaveData.Inventory.UniqueCores != nil && loadedSaveData.Inventory.UniqueCores.Cores != nil {
-			for typeID := range loadedSaveData.Inventory.UniqueCores.Cores {
+			for _, typeID := range loadedSaveData.Inventory.UniqueCores.Cores {
 				invManager.AddCore(typeID)
 			}
 		}
@@ -562,17 +562,14 @@ func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 		return
 	}
 
-	// UniqueCoresを追加（CoreTypeID → レベル固定値1）
-	// レベル概念は削除されたが、セーブデータの後方互換性のためにLevel: 1を保存
+	// UniqueCoresを追加（v4.0.0: TypeIDリスト形式）
 	if saveData.Inventory.UniqueCores == nil {
 		saveData.Inventory.UniqueCores = &savedata.CoreInventorySave{
-			Cores: make(map[string]int),
+			Cores: make([]string, 0),
 		}
 	}
 	ownedCores := m.invManager.Cores().GetOwnedCores()
-	for _, typeID := range ownedCores {
-		saveData.Inventory.UniqueCores.Cores[typeID] = 1
-	}
+	saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores, ownedCores...)
 
 	// UniqueSkillsを追加（SkillTypeID → チェイン効果IDリスト）
 	if saveData.Inventory.UniqueSkills == nil {
@@ -595,7 +592,6 @@ func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 
 		slotSave := savedata.AgentSlotSave{
 			CoreTypeID: agentSlot.CoreTypeID,
-			CoreLevel:  1, // レベル概念は削除されたが、セーブデータの後方互換性のため固定値1を保存
 		}
 
 		// スキルスロット構成を保存
