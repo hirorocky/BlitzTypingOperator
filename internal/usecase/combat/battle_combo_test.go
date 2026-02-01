@@ -63,11 +63,10 @@ func TestBattleEngine_ComboMaster_StackedDamage(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          50000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 50000,
+			Rank:   1,
 		},
 	}
 
@@ -151,11 +150,10 @@ func TestBattleEngine_ComboMaster_MaxStacks(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          50000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 50000,
+			Rank:   1,
 		},
 	}
 
@@ -247,11 +245,10 @@ func TestBattleEngine_ComboMaster_ZeroCombo(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          50000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 50000,
+			Rank:   1,
 		},
 	}
 

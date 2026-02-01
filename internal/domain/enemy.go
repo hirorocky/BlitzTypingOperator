@@ -72,20 +72,6 @@ type EnemyType struct {
 	// BaseHP は敵の基礎HP値です。
 	BaseHP int
 
-	// BaseAttackPower は敵の基礎攻撃力です。
-	BaseAttackPower int
-
-	// AttackType は攻撃属性（physical / magic）です。
-	AttackType string
-
-	// ASCIIArt は敵の外観（ASCIIアート）です。
-	ASCIIArt string
-
-	// ========== 拡張フィールド ==========
-
-	// DefaultLevel はデフォルトレベル（1〜100）です。未撃破時はこのレベルのみ選択可能。
-	DefaultLevel int
-
 	// NormalActionPatternIDs は通常状態での行動パターンIDの配列です。
 	NormalActionPatternIDs []string
 
@@ -121,11 +107,6 @@ type EnemyType struct {
 	// Rank は敵のランクです（1から開始）。
 	// 同じランクの敵を全て撃破すると次のランクが解放されます。
 	Rank int
-}
-
-// IsValidDefaultLevel はデフォルトレベルが有効範囲（1〜100）かどうかを判定します。
-func (e EnemyType) IsValidDefaultLevel() bool {
-	return e.DefaultLevel >= 1 && e.DefaultLevel <= 100
 }
 
 // HasValidNormalActionPattern は通常行動パターンが有効（最低1つの行動を持つ）かどうかを判定します。
@@ -331,10 +312,10 @@ func (e *EnemyModel) GetCurrentPattern() []EnemyAction {
 func (e *EnemyModel) GetCurrentAction() EnemyAction {
 	pattern := e.GetCurrentPattern()
 	if len(pattern) == 0 {
-		// 行動パターンが空の場合はデフォルトの攻撃行動
+		// 行動パターンが空の場合はデフォルトの物理攻撃行動
 		return EnemyAction{
 			ActionType: EnemyActionAttack,
-			AttackType: e.Type.AttackType,
+			AttackType: "physical",
 		}
 	}
 	return pattern[e.ActionIndex]

@@ -150,15 +150,16 @@ func TestHomeScreenHasASCIILogo(t *testing.T) {
 
 func TestHomeScreenHasLevelASCII(t *testing.T) {
 	screen := NewHomeScreen(15, nil)
+	screen.SetCurrentRank(3) // ランクを設定して影付き数字を表示
 	screen.width = 120
 	screen.height = 40
 
 	rendered := screen.View()
 
-	// ASCII数字の特徴的な文字が含まれることを確認
-	// 数字は「█」を使用
-	if !containsAny(rendered, "█") {
-		t.Error("ASCII数字が表示されていません")
+	// 影付きASCII数字の特徴的な文字が含まれることを確認
+	// 数字は「█」と影「░」を使用
+	if !containsAny(rendered, "█", "░") {
+		t.Error("影付きASCII数字が表示されていません")
 	}
 }
 
@@ -283,9 +284,9 @@ func TestHomeScreenShowsMaxLevel(t *testing.T) {
 
 	rendered := screen.View()
 
-	// 到達最高レベルセクションが含まれることを確認
-	if !containsAny(rendered, "到達最高レベル") {
-		t.Error("到達最高レベルセクションが表示されていません")
+	// 到達ランクセクションが含まれることを確認
+	if !containsAny(rendered, "到達ランク") {
+		t.Error("到達ランクセクションが表示されていません")
 	}
 }
 
@@ -311,7 +312,7 @@ func TestHomeScreenEmptySlots(t *testing.T) {
 	rendered := screen.View()
 
 	// 空きスロット表示が含まれることを確認
-	if !containsAny(rendered, "(空)", "(未装備)") {
+	if !containsAny(rendered, "スロット空き") {
 		t.Error("空スロット表示がありません")
 	}
 }

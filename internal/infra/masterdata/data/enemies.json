@@ -3,11 +3,8 @@
     {
       "id": "slime",
       "name": "スライム",
+      "rank": 1,
       "base_hp": 50,
-      "base_attack_power": 5,
-      "attack_type": "physical",
-      "ascii_art": "   ___\n  /   \\\n |     |\n  \\___/",
-      "default_level": 1,
       "normal_action_pattern": ["act_slime_attack_phys"],
       "enhanced_action_pattern": [
         "act_slime_attack_phys",
@@ -22,11 +19,8 @@
     {
       "id": "bat",
       "name": "コウモリ",
+      "rank": 1,
       "base_hp": 40,
-      "base_attack_power": 6,
-      "attack_type": "physical",
-      "ascii_art": " /V   V\\\n(  ' '  )\n  \\   /",
-      "default_level": 2,
       "normal_action_pattern": ["act_bat_attack_phys", "act_bat_attack_phys"],
       "enhanced_action_pattern": [
         "act_bat_attack_phys",
@@ -41,11 +35,8 @@
     {
       "id": "goblin",
       "name": "ゴブリン",
+      "rank": 1,
       "base_hp": 80,
-      "base_attack_power": 8,
-      "attack_type": "physical",
-      "ascii_art": "  /\\_/\\\n ( o.o )\n  > ^ <",
-      "default_level": 3,
       "normal_action_pattern": [
         "act_goblin_attack_phys",
         "act_goblin_attack_phys"
@@ -63,11 +54,8 @@
     {
       "id": "skeleton",
       "name": "スケルトン",
+      "rank": 2,
       "base_hp": 70,
-      "base_attack_power": 10,
-      "attack_type": "physical",
-      "ascii_art": "  _____\n /     \\\n | x x |\n |  ^  |\n  \\___/",
-      "default_level": 10,
       "normal_action_pattern": ["act_skeleton_attack_phys"],
       "enhanced_action_pattern": [
         "act_skeleton_attack_phys",

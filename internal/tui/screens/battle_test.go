@@ -449,11 +449,9 @@ func TestBattleScreenResultDisplaysMessage(t *testing.T) {
 
 func createTestEnemy() *domain.EnemyModel {
 	enemyType := domain.EnemyType{
-		ID:              "test_enemy",
-		Name:            "テストエネミー",
-		BaseHP:          100,
-		BaseAttackPower: 10,
-		AttackType:      "physical",
+		ID:     "test_enemy",
+		Name:   "テストエネミー",
+		BaseHP: 100,
 	}
 
 	return domain.NewEnemy(
@@ -571,7 +569,6 @@ func TestBattleScreenEnemyAttackTimerDisplay(t *testing.T) {
 	action := domain.EnemyAction{
 		ID:         "attack",
 		ActionType: domain.EnemyActionAttack,
-		AttackType: "physical",
 		ChargeTime: 2 * time.Second,
 	}
 	enemy.SetNextAction(&action)

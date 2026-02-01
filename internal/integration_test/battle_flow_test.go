@@ -106,11 +106,10 @@ func createTestAgents() []*domain.AgentModel {
 func createTestEnemyTypes() []domain.EnemyType {
 	return []domain.EnemyType{
 		{
-			ID:              "goblin",
-			Name:            "ゴブリン",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "goblin",
+			Name:   "ゴブリン",
+			BaseHP: 50,
+			Rank:   1,
 		},
 	}
 }
@@ -121,7 +120,7 @@ func initBattleForTest(engine *combat.BattleEngine, level int, agents []*domain.
 	// 敵を生成
 	enemyType := enemyTypes[0]
 	hp := enemyType.BaseHP * level
-	attackPower := enemyType.BaseAttackPower + (level * 2)
+	attackPower := 5 + (level * 2) // 固定のベース攻撃力を使用
 	enemy := domain.NewEnemy(
 		"test-enemy-id",
 		enemyType.Name+" Lv."+fmt.Sprintf("%d", level),
@@ -509,9 +508,7 @@ func createTestEnemyTypesWithPatterns() []domain.EnemyType {
 			ID:                      "boss_goblin",
 			Name:                    "ゴブリンリーダー",
 			BaseHP:                  100,
-			BaseAttackPower:         10,
-			AttackType:              "physical",
-			DefaultLevel:            5,
+			Rank:                    1,
 			ResolvedNormalActions:   normalActions,
 			ResolvedEnhancedActions: enhancedActions,
 			NormalPassive:           normalPassive,
@@ -744,11 +741,10 @@ func TestBattleFlow_ChargingAndDefenseIntegration(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "defender_goblin",
-			Name:            "ディフェンダーゴブリン",
-			BaseHP:          80,
-			BaseAttackPower: 8,
-			AttackType:      "physical",
+			ID:     "defender_goblin",
+			Name:   "ディフェンダーゴブリン",
+			BaseHP: 80,
+			Rank:   1,
 			ResolvedNormalActions: []domain.EnemyAction{
 				{
 					ID:             "attack",
@@ -827,11 +823,10 @@ func TestBattleFlow_ChargingAndDefenseIntegration(t *testing.T) {
 func TestBattleFlow_BuffDebuffPattern(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "buff_goblin",
-			Name:            "バフゴブリン",
-			BaseHP:          60,
-			BaseAttackPower: 6,
-			AttackType:      "physical",
+			ID:     "buff_goblin",
+			Name:   "バフゴブリン",
+			BaseHP: 60,
+			Rank:   1,
 			ResolvedNormalActions: []domain.EnemyAction{
 				{
 					ID:          "self_buff",

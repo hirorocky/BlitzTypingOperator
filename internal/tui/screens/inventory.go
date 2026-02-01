@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"hirorocky/type-battle/internal/domain"
+	"hirorocky/type-battle/internal/tui/components"
 	"hirorocky/type-battle/internal/tui/styles"
 	"hirorocky/type-battle/internal/usecase/inventory"
 	"hirorocky/type-battle/internal/usecase/slot"
@@ -526,12 +527,11 @@ func (s *InventoryScreen) renderCorePreviewContent() string {
 		builder.WriteString(valueStyle.Render(strings.Join(coreType.AllowedTags, ", ")))
 		builder.WriteString("\n")
 
-		// ステータス重み
-		builder.WriteString(labelStyle.Render("ステータス重み:"))
+		// ステータス（計算後の値を固定順で表示）
+		builder.WriteString(labelStyle.Render("ステータス:"))
 		builder.WriteString("\n")
-		for stat, weight := range coreType.StatWeights {
-			fmt.Fprintf(&builder, "  %s: %.1f\n", stat, weight)
-		}
+		builder.WriteString(valueStyle.Render("  " + components.FormatStats(coreType)))
+		builder.WriteString("\n")
 	}
 
 	// 装備状況

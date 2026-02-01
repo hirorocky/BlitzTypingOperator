@@ -82,7 +82,7 @@ func convertExternalDataToDomainSources(ext *masterdata.ExternalData) *gamestate
 func initBattleForTestVerify(_ *combat.BattleEngine, level int, agents []*domain.AgentModel, enemyTypes []domain.EnemyType) *combat.BattleState {
 	enemyType := enemyTypes[0]
 	hp := enemyType.BaseHP * level
-	attackPower := enemyType.BaseAttackPower + (level * 2)
+	attackPower := 5 + (level * 2) // 固定のベース攻撃力を使用
 	enemy := domain.NewEnemy(
 		"test-enemy-id",
 		enemyType.Name,
@@ -187,11 +187,9 @@ func TestRefactoring_DataConversionIntegration(t *testing.T) {
 func TestRefactoring_BattleFlowUnchanged(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "goblin",
-			Name:            "ゴブリン",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "goblin",
+			Name:   "ゴブリン",
+			BaseHP: 50,
 		},
 	}
 	engine := combat.NewBattleEngine(enemyTypes)
@@ -455,11 +453,9 @@ func TestRefactoring_AllComponentsIntegrated(t *testing.T) {
 	// 5. バトルエンジンの動作確認
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 	engine := combat.NewBattleEngine(enemyTypes)

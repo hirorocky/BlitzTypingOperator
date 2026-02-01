@@ -138,11 +138,9 @@ func TestBattleEngine_InitializeBattleWithSlotManager(t *testing.T) {
 	// バトルエンジンを作成
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 	engine := NewBattleEngine(enemyTypes)
@@ -193,11 +191,9 @@ func TestBattleEngine_BuildAgentsForBattle_EmptySlotExclusion(t *testing.T) {
 	// 敵タイプを準備
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 	engine := NewBattleEngine(enemyTypes)
@@ -232,11 +228,9 @@ func TestBattleEngine_AllSlotsEmpty(t *testing.T) {
 	// バトルエンジンを作成
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 	engine := NewBattleEngine(enemyTypes)
@@ -410,16 +404,13 @@ func TestBattleIntegration_BattleWithSlotAgents(t *testing.T) {
 	// 敵タイプを準備
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          100,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 100,
 			ResolvedNormalActions: []domain.EnemyAction{
 				{
 					Name:           "通常攻撃",
 					ActionType:     domain.EnemyActionAttack,
-					AttackType:     "physical",
 					DamageBase:     10,
 					DamagePerLevel: 1,
 					ChargeTime:     2 * time.Second,

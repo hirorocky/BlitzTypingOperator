@@ -61,11 +61,9 @@ func TestBattleEngine_DamageRecv_LastStand(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          1000,
-			BaseAttackPower: 50, // 大きなダメージ
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 1000,
 		},
 	}
 
@@ -139,11 +137,9 @@ func TestBattleEngine_DamageRecv_LastStand_HPAbove25(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          1000,
-			BaseAttackPower: 50,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 1000,
 		},
 	}
 
@@ -215,11 +211,9 @@ func TestBattleEngine_DamageRecv_CounterCharge(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
 		},
 	}
 

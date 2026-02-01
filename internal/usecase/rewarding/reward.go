@@ -178,6 +178,18 @@ type RewardResult struct {
 
 	// RankUnlocked は新ランク解放フラグです。
 	RankUnlocked bool
+
+	// PreviousMaxHP はHP増加前の最大HP値です（表示用）。
+	PreviousMaxHP int
+
+	// NewMaxHP はHP増加後の最大HP値です（表示用）。
+	NewMaxHP int
+
+	// PreviousRank はランク増加前のランク値です（表示用）。
+	PreviousRank int
+
+	// NewRank はランク増加後のランク値です（表示用）。
+	NewRank int
 }
 
 // InventoryWarning はインベントリ警告を表す構造体です。
@@ -555,6 +567,10 @@ func (c *RewardCalculator) CalculateGuaranteedRewardWithProgress(
 	// 基本の報酬計算
 	result := c.CalculateGuaranteedReward(stats, enemyLevel, enemyType)
 
+	// 変更前の値を記録
+	previousMaxHP := player.MaxHP
+	previousRank := progress.CurrentRank
+
 	// HP成長を計算
 	hpGain, _ := progress.RecordDefeat(enemyType.ID, enemyLevel)
 
@@ -572,6 +588,10 @@ func (c *RewardCalculator) CalculateGuaranteedRewardWithProgress(
 
 	result.HPGain = hpGain
 	result.RankUnlocked = rankUnlocked
+	result.PreviousMaxHP = previousMaxHP
+	result.NewMaxHP = player.MaxHP
+	result.PreviousRank = previousRank
+	result.NewRank = progress.CurrentRank
 
 	return result
 }

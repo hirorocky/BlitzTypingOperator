@@ -221,7 +221,8 @@ func (e *BattleEngine) generateEnemy(level int) *domain.EnemyModel {
 	// レベルに応じてステータスを計算
 
 	hp := enemyType.BaseHP * level
-	attackPower := enemyType.BaseAttackPower + (level * 2)
+	// 攻撃力は行動パターンから計算（最初の攻撃行動のDamageBaseを基準）
+	attackPower := e.calculateAttackPowerFromActions(enemyType, level)
 
 	return domain.NewEnemy(
 		uuid.New().String(),
@@ -231,6 +232,20 @@ func (e *BattleEngine) generateEnemy(level int) *domain.EnemyModel {
 		attackPower,
 		enemyType,
 	)
+}
+
+// calculateAttackPowerFromActions は行動パターンから攻撃力を計算します。
+// 最初の攻撃行動のDamageBase + Level * DamagePerLevelを返します。
+func (e *BattleEngine) calculateAttackPowerFromActions(enemyType domain.EnemyType, level int) int {
+	// 解決済み行動パターンから最初の攻撃行動を取得
+	for _, action := range enemyType.ResolvedNormalActions {
+		if action.ActionType == domain.EnemyActionAttack {
+			damage := action.DamageBase + float64(level)*action.DamagePerLevel
+			return int(damage)
+		}
+	}
+	// 攻撃行動がない場合はデフォルト値
+	return 5 + (level * 2)
 }
 
 // ==================== 敵攻撃システム ====================
@@ -464,7 +479,12 @@ func (e *BattleEngine) GetExpectedDamage(state *BattleState) int {
 // GetAttackType は敵の攻撃タイプを返します。
 
 func (e *BattleEngine) GetAttackType(state *BattleState) string {
-	return state.Enemy.Type.AttackType
+	// 現在の行動から攻撃タイプを取得
+	action := state.Enemy.GetCurrentAction()
+	if action.AttackType != "" {
+		return action.AttackType
+	}
+	return "physical"
 }
 
 // DetermineNextAction は敵の次回行動を決定します。

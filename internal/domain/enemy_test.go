@@ -30,12 +30,10 @@ func TestEnemyPhase_String(t *testing.T) {
 // TestEnemyType_フィールドの確認 はEnemyType構造体のフィールドが正しく設定されることを確認します。
 func TestEnemyType_フィールドの確認(t *testing.T) {
 	enemyType := EnemyType{
-		ID:              "goblin",
-		Name:            "ゴブリン",
-		BaseHP:          100,
-		BaseAttackPower: 10,
-		AttackType:      "physical",
-		Rank:            1,
+		ID:     "goblin",
+		Name:   "ゴブリン",
+		BaseHP: 100,
+		Rank:   1,
 	}
 
 	if enemyType.ID != "goblin" {
@@ -46,12 +44,6 @@ func TestEnemyType_フィールドの確認(t *testing.T) {
 	}
 	if enemyType.BaseHP != 100 {
 		t.Errorf("BaseHPが期待値と異なります: got %d, want 100", enemyType.BaseHP)
-	}
-	if enemyType.BaseAttackPower != 10 {
-		t.Errorf("BaseAttackPowerが期待値と異なります: got %d, want 10", enemyType.BaseAttackPower)
-	}
-	if enemyType.AttackType != "physical" {
-		t.Errorf("AttackTypeが期待値と異なります: got %s, want physical", enemyType.AttackType)
 	}
 	if enemyType.Rank != 1 {
 		t.Errorf("Rankが期待値と異なります: got %d, want 1", enemyType.Rank)
@@ -106,10 +98,9 @@ func TestEnemyType_ランクシステム(t *testing.T) {
 
 func TestEnemyModel_フィールドの確認(t *testing.T) {
 	enemyType := EnemyType{
-		ID:              "goblin",
-		Name:            "ゴブリン",
-		BaseHP:          100,
-		BaseAttackPower: 10,
+		ID:     "goblin",
+		Name:   "ゴブリン",
+		BaseHP: 100,
 	}
 
 	enemy := EnemyModel{
@@ -153,10 +144,9 @@ func TestEnemyModel_フィールドの確認(t *testing.T) {
 // TestNewEnemy_敵作成 はNewEnemy関数で敵が正しく作成されることを確認します。
 func TestNewEnemy_敵作成(t *testing.T) {
 	enemyType := EnemyType{
-		ID:              "goblin",
-		Name:            "ゴブリン",
-		BaseHP:          100,
-		BaseAttackPower: 10,
+		ID:     "goblin",
+		Name:   "ゴブリン",
+		BaseHP: 100,
 	}
 
 	enemy := NewEnemy("enemy_001", "ゴブリン兵士", 5, 150, 15, enemyType)
@@ -710,20 +700,12 @@ func TestEnemyType_拡張フィールドの確認(t *testing.T) {
 		ID:                      "slime",
 		Name:                    "スライム",
 		BaseHP:                  50,
-		BaseAttackPower:         5,
-		AttackType:              "physical",
-		DefaultLevel:            1,
 		ResolvedNormalActions:   []EnemyAction{normalAction},
 		ResolvedEnhancedActions: []EnemyAction{normalAction, enhancedAction},
 		NormalPassive:           normalPassive,
 		EnhancedPassive:         enhancedPassive,
 		DropItemCategory:        "core",
 		DropItemTypeID:          "fire",
-	}
-
-	// デフォルトレベル
-	if enemyType.DefaultLevel != 1 {
-		t.Errorf("DefaultLevelが期待値と異なります: got %d, want 1", enemyType.DefaultLevel)
 	}
 
 	// 通常行動パターン
@@ -764,26 +746,25 @@ func TestEnemyType_拡張フィールドの確認(t *testing.T) {
 	}
 }
 
-// TestEnemyType_デフォルトレベル範囲 はデフォルトレベルの範囲を確認します。
-func TestEnemyType_デフォルトレベル範囲(t *testing.T) {
+// TestEnemyType_ランク範囲 はランクの有効範囲を確認します。
+func TestEnemyType_ランク範囲(t *testing.T) {
 	tests := []struct {
 		name     string
-		level    int
+		rank     int
 		expected bool // true = 有効、false = 無効
 	}{
-		{"レベル0（無効）", 0, false},
-		{"レベル1（最小有効値）", 1, true},
-		{"レベル50（中間値）", 50, true},
-		{"レベル100（最大有効値）", 100, true},
-		{"レベル101（無効）", 101, false},
+		{"ランク0（無効）", 0, false},
+		{"ランク1（最小有効値）", 1, true},
+		{"ランク5（中間値）", 5, true},
+		{"負のランク（無効）", -1, false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			enemyType := EnemyType{DefaultLevel: tt.level}
-			result := enemyType.IsValidDefaultLevel()
+			enemyType := EnemyType{Rank: tt.rank}
+			result := enemyType.IsValidRank()
 			if result != tt.expected {
-				t.Errorf("IsValidDefaultLevel()が期待値と異なります: got %v, want %v", result, tt.expected)
+				t.Errorf("IsValidRank()が期待値と異なります: got %v, want %v", result, tt.expected)
 			}
 		})
 	}
@@ -1083,12 +1064,10 @@ func TestEnemyPassiveSkill_JSONシリアライズ(t *testing.T) {
 // TestEnemyType拡張フィールド_JSONシリアライズ はEnemyType拡張フィールドのJSONシリアライズを確認します。
 func TestEnemyType拡張フィールド_JSONシリアライズ(t *testing.T) {
 	enemyType := EnemyType{
-		ID:              "slime",
-		Name:            "スライム",
-		BaseHP:          50,
-		BaseAttackPower: 5,
-		AttackType:      "physical",
-		DefaultLevel:    1,
+		ID:     "slime",
+		Name:   "スライム",
+		BaseHP: 50,
+		Rank:   1,
 		ResolvedNormalActions: []EnemyAction{
 			{ActionType: EnemyActionAttack, AttackType: "physical"},
 		},
@@ -1127,8 +1106,8 @@ func TestEnemyType拡張フィールド_JSONシリアライズ(t *testing.T) {
 	}
 
 	// 検証
-	if restored.DefaultLevel != enemyType.DefaultLevel {
-		t.Errorf("DefaultLevelが一致しません: got %d, want %d", restored.DefaultLevel, enemyType.DefaultLevel)
+	if restored.Rank != enemyType.Rank {
+		t.Errorf("Rankが一致しません: got %d, want %d", restored.Rank, enemyType.Rank)
 	}
 	if len(restored.ResolvedNormalActions) != len(enemyType.ResolvedNormalActions) {
 		t.Errorf("ResolvedNormalActionsの長さが一致しません: got %d, want %d", len(restored.ResolvedNormalActions), len(enemyType.ResolvedNormalActions))

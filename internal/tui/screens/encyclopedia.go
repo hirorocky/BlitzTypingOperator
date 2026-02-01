@@ -532,7 +532,6 @@ func (s *EncyclopediaScreen) renderEnemyPreview() string {
 	panel := components.NewInfoPanel(et.Name)
 	panel.AddItem("ID", et.ID)
 	panel.AddItem("基礎HP", fmt.Sprintf("%d", et.BaseHP))
-	panel.AddItem("基礎攻撃力", fmt.Sprintf("%d", et.BaseAttackPower))
 
 	return panel.Render(45)
 }

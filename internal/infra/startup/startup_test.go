@@ -85,10 +85,9 @@ func createTestExternalData() *masterdata.ExternalData {
 		},
 		EnemyTypes: []masterdata.EnemyTypeData{
 			{
-				ID:              "slime",
-				Name:            "スライム",
-				BaseHP:          50,
-				BaseAttackPower: 5,
+				ID:     "slime",
+				Name:   "スライム",
+				BaseHP: 50,
 			},
 		},
 		PassiveSkills: []masterdata.PassiveSkillData{

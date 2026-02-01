@@ -124,12 +124,6 @@ func TestEnemiesJSONExists(t *testing.T) {
 		if err := ValidateEnemyTypeData(et); err != nil {
 			t.Errorf("敵タイプのバリデーションに失敗: %v", err)
 		}
-
-		// ASCIIアートが設定されていること
-
-		if et.ASCIIArt == "" {
-			t.Errorf("敵タイプにASCIIアートがありません: %s", et.ID)
-		}
 	}
 }
 

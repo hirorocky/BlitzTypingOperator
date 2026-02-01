@@ -73,7 +73,7 @@ type RootModel struct {
 
 	// 各シーンの画面インスタンス
 	homeScreen               *screens.HomeScreen
-	battleSelectScreen       *screens.BattleSelectScreenCarousel
+	battleSelectScreen       *screens.BattleSelectScreenRankBased
 	battleScreen             *screens.BattleScreen
 	agentCustomizationScreen *screens.AgentCustomizationScreen
 	inventoryScreen          *screens.InventoryScreen
@@ -111,6 +111,9 @@ type RootModel struct {
 
 	// skillTypes はスキルTypeマスタデータです
 	skillTypes map[string]domain.SkillType
+
+	// enemyTypes は敵Typeマスタデータです（報酬計算のランクチェックに使用）
+	enemyTypes map[string]domain.EnemyType
 }
 
 // NewRootModel はデフォルトの初期状態で新しいRootModelを作成します。
@@ -258,9 +261,10 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		)
 	}
 
-	// コアTypeとスキルTypeをマップに変換
+	// コアType、スキルType、敵Typeをマップに変換
 	coreTypesMap := make(map[string]domain.CoreType)
 	skillTypesMap := make(map[string]domain.SkillType)
+	enemyTypesMap := make(map[string]domain.EnemyType)
 	if domainSources != nil {
 		for _, ct := range domainSources.CoreTypes {
 			coreTypesMap[ct.ID] = ct
@@ -278,6 +282,9 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 				MinDropLevel:    mt.MinDropLevel,
 				Effects:         mt.Effects,
 			}
+		}
+		for _, et := range domainSources.EnemyTypes {
+			enemyTypesMap[et.ID] = et
 		}
 	}
 
@@ -356,9 +363,13 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	homeScreen.SetStatusMessage(statusMessage)
 	// スロット準備状態プロバイダーを設定（バトル選択の有効/無効判定に使用）
 	homeScreen.SetSlotProvider(slotManager)
+	// ランク進行情報を設定（ホーム画面での進行状況表示用）
+	homeScreen.SetCurrentRank(gs.EnemyProgress().CurrentRank)
+	homeScreen.SetMaxHP(gs.Player().MaxHP)
 
-	// バトル選択画面を初期化（カルーセル方式）
-	battleSelectScreen := screenFactory.CreateBattleSelectScreenCarousel(invProvider, gs)
+	// バトル選択画面を初期化（ランクベース方式）
+	progressAdapter := NewEnemyProgressAdapter(gs, enemyTypesMap, coreTypesMap, skillTypesMap)
+	battleSelectScreen := screenFactory.CreateBattleSelectScreenRankBased(invProvider, progressAdapter)
 
 	// 図鑑画面を初期化
 	encyclopediaScreen := screenFactory.CreateEncyclopediaScreen()
@@ -414,6 +425,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		invManager:  invManager,
 		coreTypes:   coreTypesMap,
 		skillTypes:  skillTypesMap,
+		enemyTypes:  enemyTypesMap,
 	}
 
 	// メッセージハンドラーと画面マップを初期化
@@ -473,17 +485,11 @@ func (m *RootModel) handleBattleResult(result screens.BattleResultMsg) {
 	m.gameState.AddEncounteredEnemy(result.EnemyID)
 
 	if result.Victory {
-		// 敵のデフォルトレベルを取得
-		defaultLevel := 1
-		if result.EnemyType != nil && result.EnemyType.DefaultLevel > 0 {
-			defaultLevel = result.EnemyType.DefaultLevel
-		}
-
-		// 勝利時：統計を記録し、最高レベルをデフォルトレベルで更新
+		// 勝利時：統計を記録し、デフォルトレベル1で更新
+		const defaultLevel = 1
 		m.gameState.RecordBattleVictory(result.Level, defaultLevel)
 
-		// 撃破済み敵情報を記録（敵選択UIで使用）
-		m.gameState.RecordEnemyDefeat(result.EnemyID, result.Level)
+		// 撃破済み敵情報の記録とHP成長は CalculateGuaranteedRewardWithProgress 内で処理される
 
 		// ノーダメージ判定付きで実績チェック
 		noDamage := result.Stats != nil && result.Stats.TotalDamageTaken == 0
@@ -499,11 +505,14 @@ func (m *RootModel) handleBattleResult(result screens.BattleResultMsg) {
 			TotalHealAmount:  result.Stats.TotalHealAmount,
 		}
 
-		// 確定報酬を計算（敵タイプのドロップ設定に基づく）
-		rewardResult := m.gameState.RewardCalculator().CalculateGuaranteedReward(
+		// 確定報酬を計算（敵タイプのドロップ設定に基づき、HP/ランク進行も反映）
+		rewardResult := m.gameState.RewardCalculator().CalculateGuaranteedRewardWithProgress(
 			rewardStats,
 			result.Level,
 			*result.EnemyType,
+			m.gameState.EnemyProgress(),
+			m.gameState.Player(),
+			m.enemyTypes,
 		)
 
 		// 報酬をインベントリに追加（RootModelのinvManagerに直接追加）
@@ -524,8 +533,10 @@ func (m *RootModel) handleBattleResult(result screens.BattleResultMsg) {
 		// 敗北時：統計を記録
 		m.gameState.RecordBattleDefeat(result.Level)
 
-		// ホーム画面の最高到達レベルを更新してホームに戻る
+		// ホーム画面の進行状況を更新してホームに戻る
 		m.homeScreen.SetMaxLevelReached(m.gameState.GetMaxLevelReached())
+		m.homeScreen.SetCurrentRank(m.gameState.EnemyProgress().CurrentRank)
+		m.homeScreen.SetMaxHP(m.gameState.Player().MaxHP)
 		m.currentScene = SceneHome
 	}
 
@@ -679,15 +690,18 @@ func (m *RootModel) handleScreenSceneChange(sceneName string) {
 func (m *RootModel) prepareSceneTransition(sceneName string) {
 	switch sceneName {
 	case "home":
-		// ホーム画面の最高到達レベルを更新
+		// ホーム画面の進行状況を更新
 		m.homeScreen.SetMaxLevelReached(m.gameState.GetMaxLevelReached())
+		m.homeScreen.SetCurrentRank(m.gameState.EnemyProgress().CurrentRank)
+		m.homeScreen.SetMaxHP(m.gameState.Player().MaxHP)
 		// バトル選択メニューの有効/無効状態を更新
 		m.homeScreen.RefreshMenuState()
 	case "battle_select":
-		// バトル選択画面を再初期化してリセット（カルーセル方式）
-		m.battleSelectScreen = m.screenFactory.CreateBattleSelectScreenCarousel(
+		// バトル選択画面を再初期化してリセット（ランクベース方式）
+		progressAdapter := NewEnemyProgressAdapter(m.gameState, m.enemyTypes, m.coreTypes, m.skillTypes)
+		m.battleSelectScreen = m.screenFactory.CreateBattleSelectScreenRankBased(
 			m.invProvider,
-			m.gameState,
+			progressAdapter,
 		)
 	case "encyclopedia":
 		// 最新の図鑑データで画面を再初期化

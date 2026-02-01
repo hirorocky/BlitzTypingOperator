@@ -59,11 +59,9 @@ func TestBattleEngine_BattleStart_FirstStrike(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
 		},
 	}
 
@@ -116,11 +114,9 @@ func TestBattleEngine_BattleStart_FirstStrike_NotEquipped(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
 		},
 	}
 
@@ -187,11 +183,9 @@ func TestBattleEngine_TypoRecovery(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
 		},
 	}
 
@@ -260,11 +254,9 @@ func TestBattleEngine_SecondChance(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
 		},
 	}
 

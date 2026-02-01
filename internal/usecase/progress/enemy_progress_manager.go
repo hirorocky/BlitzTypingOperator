@@ -62,16 +62,19 @@ func (m *EnemyProgressManager) GetCurrentRankEnemies() []domain.EnemyType {
 	return enemies
 }
 
+// DefaultEnemyLevel は未撃破敵のデフォルトレベルです。
+const DefaultEnemyLevel = 1
+
 // GetSelectableLevelRange は敵の選択可能レベル範囲を取得します。
-// 未撃破: デフォルトレベルのみ
+// 未撃破: レベル1のみ
 // 撃破済み: 1 から (最大撃破レベル + 5) まで
 func (m *EnemyProgressManager) GetSelectableLevelRange(enemyTypeID string) (min, max int) {
-	et, exists := m.enemyTypes[enemyTypeID]
+	_, exists := m.enemyTypes[enemyTypeID]
 	if !exists {
 		return 1, 1
 	}
 
-	return m.progress.GetSelectableLevelRange(enemyTypeID, et.DefaultLevel)
+	return m.progress.GetSelectableLevelRange(enemyTypeID, DefaultEnemyLevel)
 }
 
 // RecordVictory は撃破を記録しHP成長を適用します。

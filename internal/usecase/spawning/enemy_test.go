@@ -13,11 +13,10 @@ import (
 func TestEnemyStats_HPCalculation(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
+			Rank:   1,
 		},
 	}
 	generator := NewEnemyGenerator(enemyTypes)
@@ -55,11 +54,10 @@ func TestEnemyStats_HPCalculation(t *testing.T) {
 func TestEnemyStats_AttackPowerCalculation(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
+			Rank:   1,
 		},
 	}
 	generator := NewEnemyGenerator(enemyTypes)
@@ -92,25 +90,22 @@ func TestEnemyStats_AttackPowerCalculation(t *testing.T) {
 func TestEnemyVariation_RandomSelection(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
+			Rank:   1,
 		},
 		{
-			ID:              "goblin",
-			Name:            "ゴブリン",
-			BaseHP:          80,
-			BaseAttackPower: 8,
-			AttackType:      "physical",
+			ID:     "goblin",
+			Name:   "ゴブリン",
+			BaseHP: 80,
+			Rank:   1,
 		},
 		{
-			ID:              "skeleton",
-			Name:            "スケルトン",
-			BaseHP:          70,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "skeleton",
+			Name:   "スケルトン",
+			BaseHP: 70,
+			Rank:   1,
 		},
 	}
 	generator := NewEnemyGenerator(enemyTypes)
@@ -132,18 +127,16 @@ func TestEnemyVariation_RandomSelection(t *testing.T) {
 func TestEnemyVariation_SameLevelMultipleTypes(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
+			Rank:   1,
 		},
 		{
-			ID:              "goblin",
-			Name:            "ゴブリン",
-			BaseHP:          80,
-			BaseAttackPower: 8,
-			AttackType:      "physical",
+			ID:     "goblin",
+			Name:   "ゴブリン",
+			BaseHP: 80,
+			Rank:   1,
 		},
 	}
 	generator := NewEnemyGenerator(enemyTypes)
@@ -179,11 +172,10 @@ func TestEnemyLevel_Maximum(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
+			Rank:   1,
 		},
 	}
 	generator := NewEnemyGenerator(enemyTypes)
@@ -214,11 +206,10 @@ func TestEnemyLevel_MaxLevelDefeat(t *testing.T) {
 func TestEnemyLevel_ValidRange(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
+			Rank:   1,
 		},
 	}
 	generator := NewEnemyGenerator(enemyTypes)
@@ -240,11 +231,10 @@ func TestEnemyLevel_ValidRange(t *testing.T) {
 func TestEnemyGeneration_StatsScaling(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
+			Rank:   1,
 		},
 	}
 	generator := NewEnemyGenerator(enemyTypes)
@@ -272,11 +262,10 @@ func TestEnemyGeneration_StatsScaling(t *testing.T) {
 func TestEnemyGenerator_GenerateWithType(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "dragon",
-			Name:            "ドラゴン",
-			BaseHP:          500,
-			BaseAttackPower: 50,
-			AttackType:      "magic",
+			ID:     "dragon",
+			Name:   "ドラゴン",
+			BaseHP: 500,
+			Rank:   1,
 		},
 	}
 
@@ -355,9 +344,7 @@ func TestEnemyGenerator_GenerateWithType_ActionPatternIntegration(t *testing.T) 
 			ID:                      "test_enemy",
 			Name:                    "テスト敵",
 			BaseHP:                  100,
-			BaseAttackPower:         10,
-			AttackType:              "physical",
-			DefaultLevel:            1,
+			Rank:                    1,
 			ResolvedNormalActions:   normalActions,
 			ResolvedEnhancedActions: enhancedActions,
 			NormalPassive:           normalPassive,
@@ -406,20 +393,16 @@ func TestEnemyGenerator_GenerateWithType_ActionPatternIntegration(t *testing.T) 
 func TestEnemyGenerator_GenerateWithType_PassedFromBattleSelect(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
-			DefaultLevel:    1,
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
+			Rank:   1,
 		},
 		{
-			ID:              "dragon",
-			Name:            "ドラゴン",
-			BaseHP:          200,
-			BaseAttackPower: 20,
-			AttackType:      "magic",
-			DefaultLevel:    10,
+			ID:     "dragon",
+			Name:   "ドラゴン",
+			BaseHP: 200,
+			Rank:   1,
 		},
 	}
 
@@ -453,11 +436,10 @@ func TestEnemyGenerator_GenerateWithType_PassedFromBattleSelect(t *testing.T) {
 func TestEnemyGenerator_GenerateWithType_InvalidID(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
+			Rank:   1,
 		},
 	}
 

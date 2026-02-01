@@ -301,28 +301,24 @@ func TestVictoryResult(t *testing.T) {
 func createTestEnemyTypes() map[string]domain.EnemyType {
 	return map[string]domain.EnemyType{
 		"slime": {
-			ID:           "slime",
-			Name:         "スライム",
-			Rank:         1,
-			DefaultLevel: 1,
+			ID:   "slime",
+			Name: "スライム",
+			Rank: 1,
 		},
 		"bat": {
-			ID:           "bat",
-			Name:         "コウモリ",
-			Rank:         1,
-			DefaultLevel: 1,
+			ID:   "bat",
+			Name: "コウモリ",
+			Rank: 1,
 		},
 		"goblin": {
-			ID:           "goblin",
-			Name:         "ゴブリン",
-			Rank:         2,
-			DefaultLevel: 3,
+			ID:   "goblin",
+			Name: "ゴブリン",
+			Rank: 2,
 		},
 		"orc": {
-			ID:           "orc",
-			Name:         "オーク",
-			Rank:         2,
-			DefaultLevel: 5,
+			ID:   "orc",
+			Name: "オーク",
+			Rank: 2,
 		},
 	}
 }

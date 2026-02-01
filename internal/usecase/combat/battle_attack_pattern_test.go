@@ -42,11 +42,10 @@ func TestBattleState_SameAttackCount_Track(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          1000,
-			BaseAttackPower: 50,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 1000,
+			Rank:   1,
 		},
 	}
 
@@ -101,11 +100,10 @@ func TestBattleState_SameAttackCount_Reset(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          1000,
-			BaseAttackPower: 50,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 1000,
+			Rank:   1,
 		},
 	}
 
@@ -177,11 +175,10 @@ func TestBattleEngine_AdaptiveShield(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 100, // 100ダメージ
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
+			Rank:   1,
 		},
 	}
 

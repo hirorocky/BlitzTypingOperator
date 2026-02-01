@@ -107,8 +107,8 @@ func TestIntegrationHomeScreen(t *testing.T) {
 		t.Error("進行状況パネルが表示されていません")
 	}
 
-	if !containsS(rendered, "到達最高レベル") {
-		t.Error("到達最高レベルが表示されていません")
+	if !containsS(rendered, "到達ランク") {
+		t.Error("到達ランクが表示されていません")
 	}
 }
 
@@ -270,11 +270,10 @@ func containsS(s, substr string) bool {
 
 func createTestEnemy() *domain.EnemyModel {
 	enemyType := domain.EnemyType{
-		ID:              "test_enemy",
-		Name:            "テストエネミー",
-		BaseHP:          100,
-		BaseAttackPower: 10,
-		AttackType:      "physical",
+		ID:     "test_enemy",
+		Name:   "テストエネミー",
+		BaseHP: 100,
+		Rank:   1,
 	}
 
 	return domain.NewEnemy(

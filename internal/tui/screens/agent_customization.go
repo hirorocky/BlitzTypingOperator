@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"hirorocky/type-battle/internal/domain"
+	"hirorocky/type-battle/internal/tui/components"
 	"hirorocky/type-battle/internal/tui/styles"
 	"hirorocky/type-battle/internal/usecase/inventory"
 	"hirorocky/type-battle/internal/usecase/slot"
@@ -824,8 +825,13 @@ func (s *AgentCustomizationScreen) renderCoreDetail() string {
 	builder.WriteString(nameStyle.Render(core.TypeName))
 	builder.WriteString("\n\n")
 
-	// パッシブスキル情報（PassiveSkillIDがある場合のみ）
+	// ステータス表示
 	if coreType, ok := s.coreTypes[core.TypeID]; ok {
+		statsStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary)
+		builder.WriteString(statsStyle.Render(components.FormatStats(coreType)))
+		builder.WriteString("\n\n")
+
+		// パッシブスキル情報（PassiveSkillIDがある場合のみ）
 		if coreType.PassiveSkillID != "" {
 			passiveStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff).Bold(true)
 			// パッシブスキルの説明を表示

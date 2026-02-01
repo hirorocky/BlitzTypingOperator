@@ -157,11 +157,9 @@ func TestInitializeBattle(t *testing.T) {
 	// 敵タイプを準備
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 
@@ -198,11 +196,9 @@ func TestInitializeBattle(t *testing.T) {
 func TestInitializeBattle_EnemyGeneration(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "goblin",
-			Name:            "ゴブリン",
-			BaseHP:          100,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "goblin",
+			Name:   "ゴブリン",
+			BaseHP: 100,
 		},
 	}
 
@@ -240,11 +236,9 @@ func TestInitializeBattle_EnemyGeneration(t *testing.T) {
 func TestEnemyAttack(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 
@@ -284,11 +278,9 @@ func TestEnemyAttack(t *testing.T) {
 func TestEnemyAttack_WithDefenseBuff(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 20,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 
@@ -335,11 +327,9 @@ func TestEnemyAttack_WithDefenseBuff(t *testing.T) {
 func TestEnemyPhaseTransition(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "boss",
-			Name:            "ボス",
-			BaseHP:          200,
-			BaseAttackPower: 15,
-			AttackType:      "physical",
+			ID:     "boss",
+			Name:   "ボス",
+			BaseHP: 200,
 		},
 	}
 
@@ -385,11 +375,9 @@ func TestEnemyPhaseTransition(t *testing.T) {
 func TestEnemySelfBuff(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "boss",
-			Name:            "ボス",
-			BaseHP:          100,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "boss",
+			Name:   "ボス",
+			BaseHP: 100,
 		},
 	}
 
@@ -435,11 +423,9 @@ func TestEnemySelfBuff(t *testing.T) {
 func TestPlayerDebuff(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "boss",
-			Name:            "ボス",
-			BaseHP:          100,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "boss",
+			Name:   "ボス",
+			BaseHP: 100,
 		},
 	}
 
@@ -611,11 +597,9 @@ func TestAccuracyPenalty(t *testing.T) {
 func TestCheckVictory(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 
@@ -656,11 +640,9 @@ func TestCheckVictory(t *testing.T) {
 func TestCheckDefeat(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 
@@ -701,11 +683,9 @@ func TestCheckDefeat(t *testing.T) {
 func TestBattleStatistics(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 
@@ -750,11 +730,9 @@ func TestBattleStatistics(t *testing.T) {
 func TestRegisterPassiveSkills_SingleAgent(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 
@@ -813,11 +791,9 @@ func TestRegisterPassiveSkills_SingleAgent(t *testing.T) {
 func TestRegisterPassiveSkills_MultipleAgents(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 
@@ -904,11 +880,9 @@ func TestRegisterPassiveSkills_MultipleAgents(t *testing.T) {
 func TestRegisterPassiveSkills_LevelScaling(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 
@@ -966,11 +940,9 @@ func TestRegisterPassiveSkills_LevelScaling(t *testing.T) {
 func TestRegisterPassiveSkills_EmptyPassiveSkill(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 
@@ -1013,11 +985,9 @@ func TestRegisterPassiveSkills_EmptyPassiveSkill(t *testing.T) {
 func TestPassiveSkillDamageReduction(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 100, // 明確なダメージ値
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 
@@ -1079,11 +1049,9 @@ func TestPassiveSkillDamageReduction(t *testing.T) {
 func TestPassiveSkillSTRMultiplier(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          100,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 100,
 		},
 	}
 	engine := NewBattleEngine(enemyTypes)
@@ -1147,11 +1115,9 @@ func TestPassiveSkillSTRMultiplier(t *testing.T) {
 func TestPassiveSkillEffectContinuesDuringRecast(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 100,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 
@@ -1212,11 +1178,9 @@ func TestPassiveSkillEffectContinuesDuringRecast(t *testing.T) {
 func TestGetPlayerStatsWithPassive(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 
@@ -1273,11 +1237,9 @@ func TestGetPlayerStatsWithPassive(t *testing.T) {
 func TestPassiveSkillIntegration_BattleInitToStatCalculation(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          100,
-			BaseAttackPower: 50,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 100,
 		},
 	}
 
@@ -1342,11 +1304,9 @@ func TestPassiveSkillIntegration_BattleInitToStatCalculation(t *testing.T) {
 func TestPassiveSkillIntegration_MultipleAgentCoexistence(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          100,
-			BaseAttackPower: 100,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 100,
 		},
 	}
 
@@ -1462,11 +1422,9 @@ func TestPassiveSkillIntegration_MultipleAgentCoexistence(t *testing.T) {
 func TestPassiveSkillIntegration_RecastPersistence(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          100,
-			BaseAttackPower: 100,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 100,
 		},
 	}
 
@@ -1546,11 +1504,9 @@ func TestPassiveSkillIntegration_RecastPersistence(t *testing.T) {
 func TestPassiveSkillIntegration_CombinedEffects(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          100,
-			BaseAttackPower: 100,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 100,
 		},
 	}
 
@@ -1624,12 +1580,10 @@ func TestRegisterEnemyPassive_NormalPhase(t *testing.T) {
 	}
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
-			NormalPassive:   normalPassive,
+			ID:            "slime",
+			Name:          "スライム",
+			BaseHP:        50,
+			NormalPassive: normalPassive,
 		},
 	}
 
@@ -1685,11 +1639,9 @@ func TestRegisterEnemyPassive_NoPassive(t *testing.T) {
 	// パッシブなしの敵タイプ
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 			// NormalPassiveはnil
 		},
 	}
@@ -1745,12 +1697,10 @@ func TestRegisterEnemyPassive_EffectApplied(t *testing.T) {
 	}
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "goblin",
-			Name:            "ゴブリン",
-			BaseHP:          100,
-			BaseAttackPower: 50,
-			AttackType:      "physical",
-			NormalPassive:   normalPassive,
+			ID:            "goblin",
+			Name:          "ゴブリン",
+			BaseHP:        100,
+			NormalPassive: normalPassive,
 		},
 	}
 
@@ -1814,8 +1764,6 @@ func TestSwitchEnemyPassive_OnPhaseTransition(t *testing.T) {
 			ID:              "slime",
 			Name:            "スライム",
 			BaseHP:          100,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
 			NormalPassive:   normalPassive,
 			EnhancedPassive: enhancedPassive,
 		},
@@ -1894,12 +1842,10 @@ func TestSwitchEnemyPassive_NoEnhancedPassive(t *testing.T) {
 	}
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          100,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
-			NormalPassive:   normalPassive,
+			ID:            "slime",
+			Name:          "スライム",
+			BaseHP:        100,
+			NormalPassive: normalPassive,
 			// EnhancedPassiveはnil
 		},
 	}
@@ -1963,11 +1909,9 @@ func TestSwitchEnemyPassive_NoNormalPassive(t *testing.T) {
 	}
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          100,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 100,
 			// NormalPassiveはnil
 			EnhancedPassive: enhancedPassive,
 		},
@@ -2035,7 +1979,6 @@ func TestBattleEngine_DetermineNextAction_PatternBased(t *testing.T) {
 			ID:             "act_slash",
 			Name:           "斬撃",
 			ActionType:     domain.EnemyActionAttack,
-			AttackType:     "physical",
 			DamageBase:     10.0,
 			DamagePerLevel: 2.0,
 			ChargeTime:     1 * time.Second,
@@ -2056,8 +1999,6 @@ func TestBattleEngine_DetermineNextAction_PatternBased(t *testing.T) {
 			ID:                    "pattern_enemy",
 			Name:                  "パターン敵",
 			BaseHP:                100,
-			BaseAttackPower:       10,
-			AttackType:            "physical",
 			ResolvedNormalActions: normalActions,
 		},
 	}
@@ -2105,11 +2046,11 @@ func TestBattleEngine_DetermineNextAction_PatternBased(t *testing.T) {
 // TestBattleEngine_ProcessEnemyTurn_PhaseTransitionWithPatternReset はフェーズ遷移時の行動パターンリセットをテストします。
 func TestBattleEngine_ProcessEnemyTurn_PhaseTransitionWithPatternReset(t *testing.T) {
 	normalActions := []domain.EnemyAction{
-		{ID: "normal_1", Name: "通常攻撃1", ActionType: domain.EnemyActionAttack, AttackType: "physical"},
-		{ID: "normal_2", Name: "通常攻撃2", ActionType: domain.EnemyActionAttack, AttackType: "physical"},
+		{ID: "normal_attack_1", Name: "通常攻撃1", ActionType: domain.EnemyActionAttack, ChargeTime: 1 * time.Second, DamageBase: 10, DamagePerLevel: 2},
+		{ID: "normal_attack_2", Name: "通常攻撃2", ActionType: domain.EnemyActionAttack, ChargeTime: 1 * time.Second, DamageBase: 10, DamagePerLevel: 2},
 	}
 	enhancedActions := []domain.EnemyAction{
-		{ID: "enhanced_1", Name: "強化攻撃1", ActionType: domain.EnemyActionAttack, AttackType: "physical"},
+		{ID: "enhanced_attack_1", Name: "強化攻撃1", ActionType: domain.EnemyActionAttack, ChargeTime: 1 * time.Second, DamageBase: 15, DamagePerLevel: 3},
 	}
 	normalPassive := &domain.EnemyPassiveSkill{
 		ID:      "normal_passive",
@@ -2129,8 +2070,6 @@ func TestBattleEngine_ProcessEnemyTurn_PhaseTransitionWithPatternReset(t *testin
 			ID:                      "phase_enemy",
 			Name:                    "フェーズ敵",
 			BaseHP:                  100,
-			BaseAttackPower:         10,
-			AttackType:              "physical",
 			ResolvedNormalActions:   normalActions,
 			ResolvedEnhancedActions: enhancedActions,
 			NormalPassive:           normalPassive,
@@ -2199,19 +2138,16 @@ func TestBattleEngine_ProcessEnemyTurn_AdvanceActionIndex(t *testing.T) {
 			ID:         "act_1",
 			Name:       "行動1",
 			ActionType: domain.EnemyActionAttack,
-			AttackType: "physical",
 		},
 		{
 			ID:         "act_2",
 			Name:       "行動2",
 			ActionType: domain.EnemyActionAttack,
-			AttackType: "physical",
 		},
 		{
 			ID:         "act_3",
 			Name:       "行動3",
 			ActionType: domain.EnemyActionAttack,
-			AttackType: "physical",
 		},
 	}
 
@@ -2220,8 +2156,6 @@ func TestBattleEngine_ProcessEnemyTurn_AdvanceActionIndex(t *testing.T) {
 			ID:                    "sequence_enemy",
 			Name:                  "シーケンス敵",
 			BaseHP:                1000,
-			BaseAttackPower:       10,
-			AttackType:            "physical",
 			ResolvedNormalActions: normalActions,
 		},
 	}
@@ -2288,11 +2222,9 @@ func TestBattleEngine_ProcessEnemyTurn_AdvanceActionIndex(t *testing.T) {
 func TestBattleEngine_ApplyPatternBuff(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "boss",
-			Name:            "ボス",
-			BaseHP:          200,
-			BaseAttackPower: 20,
-			AttackType:      "physical",
+			ID:     "boss",
+			Name:   "ボス",
+			BaseHP: 200,
 		},
 	}
 
@@ -2348,11 +2280,9 @@ func TestBattleEngine_ApplyPatternBuff(t *testing.T) {
 func TestBattleEngine_ApplyPatternDebuff(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "boss",
-			Name:            "ボス",
-			BaseHP:          200,
-			BaseAttackPower: 20,
-			AttackType:      "physical",
+			ID:     "boss",
+			Name:   "ボス",
+			BaseHP: 200,
 		},
 	}
 
@@ -2417,11 +2347,9 @@ func TestBattleEngine_ProcessDefenseAction(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "defender",
-			Name:            "ディフェンダー",
-			BaseHP:          200,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "defender",
+			Name:   "ディフェンダー",
+			BaseHP: 200,
 			ResolvedNormalActions: []domain.EnemyAction{
 				defenseAction,
 			},
@@ -2476,11 +2404,9 @@ func TestBattleEngine_ProcessDefenseAction(t *testing.T) {
 func TestBattleEngine_ApplyDefenseReduction_PhysicalCut(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "defender",
-			Name:            "ディフェンダー",
-			BaseHP:          200,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "defender",
+			Name:   "ディフェンダー",
+			BaseHP: 200,
 		},
 	}
 
@@ -2526,11 +2452,9 @@ func TestBattleEngine_ApplyDefenseReduction_PhysicalCut(t *testing.T) {
 func TestBattleEngine_ApplyDefenseReduction_MagicCut(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "defender",
-			Name:            "ディフェンダー",
-			BaseHP:          200,
-			BaseAttackPower: 10,
-			AttackType:      "magic",
+			ID:     "defender",
+			Name:   "ディフェンダー",
+			BaseHP: 200,
 		},
 	}
 
@@ -2576,11 +2500,9 @@ func TestBattleEngine_ApplyDefenseReduction_MagicCut(t *testing.T) {
 func TestBattleEngine_CheckDebuffEvasion(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "evader",
-			Name:            "イベーダー",
-			BaseHP:          150,
-			BaseAttackPower: 15,
-			AttackType:      "physical",
+			ID:     "evader",
+			Name:   "イベーダー",
+			BaseHP: 150,
 		},
 	}
 
@@ -2635,16 +2557,13 @@ func TestBattleEngine_DefenseExpiration(t *testing.T) {
 		ID:         "attack",
 		Name:       "攻撃",
 		ActionType: domain.EnemyActionAttack,
-		AttackType: "physical",
 	}
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "defender",
-			Name:            "ディフェンダー",
-			BaseHP:          200,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "defender",
+			Name:   "ディフェンダー",
+			BaseHP: 200,
 			ResolvedNormalActions: []domain.EnemyAction{
 				defenseAction,
 				attackAction,
@@ -2704,11 +2623,9 @@ func TestBattleEngine_DefenseExpiration(t *testing.T) {
 func TestBattleEngine_CalculatePatternDamage(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "attacker",
-			Name:            "アタッカー",
-			BaseHP:          100,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "attacker",
+			Name:   "アタッカー",
+			BaseHP: 100,
 		},
 	}
 

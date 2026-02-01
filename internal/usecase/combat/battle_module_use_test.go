@@ -60,11 +60,9 @@ func TestBattleEngine_ModuleUse_EchoSkill(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
 		},
 	}
 
@@ -157,11 +155,9 @@ func TestBattleEngine_ModuleUse_MiracleHeal(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          1000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 1000,
 		},
 	}
 
@@ -243,11 +239,9 @@ func TestBattleEngine_ModuleUse_MiracleHeal_NotHealSkill(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          1000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 1000,
 		},
 	}
 

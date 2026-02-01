@@ -275,15 +275,11 @@ func (m *SkillDefinitionData) ToDomain() *domain.SkillModel {
 
 // EnemyTypeData はenemies.jsonから読み込む敵タイプデータの構造体です。
 type EnemyTypeData struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	BaseHP          int    `json:"base_hp"`
-	BaseAttackPower int    `json:"base_attack_power"`
-	AttackType      string `json:"attack_type"`
-	ASCIIArt        string `json:"ascii_art"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	BaseHP int    `json:"base_hp"`
 
-	// 拡張フィールド
-	DefaultLevel             int      `json:"default_level"`
+	// 行動パターン
 	NormalActionPatternIDs   []string `json:"normal_action_pattern"`
 	EnhancedActionPatternIDs []string `json:"enhanced_action_pattern"`
 	NormalPassiveID          string   `json:"normal_passive_id"`
@@ -337,10 +333,6 @@ func (e *EnemyTypeData) ToDomain() domain.EnemyType {
 		ID:                       e.ID,
 		Name:                     e.Name,
 		BaseHP:                   e.BaseHP,
-		BaseAttackPower:          e.BaseAttackPower,
-		AttackType:               e.AttackType,
-		ASCIIArt:                 e.ASCIIArt,
-		DefaultLevel:             e.DefaultLevel,
 		NormalActionPatternIDs:   e.NormalActionPatternIDs,
 		EnhancedActionPatternIDs: e.EnhancedActionPatternIDs,
 		DropItemCategory:         e.DropItemCategory,
@@ -1014,9 +1006,6 @@ func ValidateEnemyTypeData(data EnemyTypeData) error {
 	}
 	if data.BaseHP <= 0 {
 		return fmt.Errorf("敵の基礎HPが不正です: ID=%s, BaseHP=%d", data.ID, data.BaseHP)
-	}
-	if data.BaseAttackPower <= 0 {
-		return fmt.Errorf("敵の基礎攻撃力が不正です: ID=%s, BaseAttackPower=%d", data.ID, data.BaseAttackPower)
 	}
 	return nil
 }

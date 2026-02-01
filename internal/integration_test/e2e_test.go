@@ -98,7 +98,6 @@ func createTestExternalData() *masterdata.ExternalData {
 				ID:               "slime",
 				Name:             "スライム",
 				BaseHP:           50,
-				BaseAttackPower:  5,
 				DropItemCategory: "core",
 				DropItemTypeID:   "all_rounder",
 			},
@@ -188,7 +187,7 @@ func createTestRewardCalculator() *rewarding.RewardCalculator {
 func initBattleForTestE2E(_ *combat.BattleEngine, level int, agents []*domain.AgentModel, enemyTypes []domain.EnemyType) *combat.BattleState {
 	enemyType := enemyTypes[0]
 	hp := enemyType.BaseHP * level
-	attackPower := enemyType.BaseAttackPower + (level * 2)
+	attackPower := 5 + (level * 2) // 固定のベース攻撃力を使用
 	enemy := domain.NewEnemy(
 		"test-enemy-id",
 		enemyType.Name,
@@ -284,11 +283,9 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 	// バトル開始
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "goblin",
-			Name:            "ゴブリン",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "goblin",
+			Name:   "ゴブリン",
+			BaseHP: 50,
 		},
 	}
 	engine := combat.NewBattleEngine(enemyTypes)
@@ -482,11 +479,9 @@ func TestE2E_ProgressionFlow(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "goblin",
-			Name:            "ゴブリン",
-			BaseHP:          20, // 弱めに設定
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "goblin",
+			Name:   "ゴブリン",
+			BaseHP: 20, // 弱めに設定
 		},
 	}
 	engine := combat.NewBattleEngine(enemyTypes)
@@ -611,11 +606,9 @@ func TestE2E_DefeatAndRetry(t *testing.T) {
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "dragon",
-			Name:            "ドラゴン",
-			BaseHP:          1000, // 強い敵
-			BaseAttackPower: 100,
-			AttackType:      "magic",
+			ID:     "dragon",
+			Name:   "ドラゴン",
+			BaseHP: 1000, // 強い敵
 		},
 	}
 	engine := combat.NewBattleEngine(enemyTypes)
