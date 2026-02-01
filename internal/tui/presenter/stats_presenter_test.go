@@ -18,7 +18,7 @@ func TestCreateStatsData(t *testing.T) {
 	// バトル勝利を記録（選択レベル1, デフォルトレベル1）
 	gs.RecordBattleVictory(1, 1)
 
-	// v4.0.0: 敵撃破を記録してMaxLevelReachedを更新
+	// 敵撃破を記録してMaxLevelReachedを更新
 	gs.RecordEnemyDefeat("enemy_001", 1)
 
 	data := CreateStatsData(gs)
@@ -36,7 +36,6 @@ func TestCreateStatsData(t *testing.T) {
 	if data.BattleStats.Wins != 1 {
 		t.Errorf("Wins expected 1, got %d", data.BattleStats.Wins)
 	}
-	// v4.0.0: MaxLevelReachedはRecordEnemyDefeat経由で更新
 	if data.BattleStats.MaxLevelReached != 1 {
 		t.Errorf("MaxLevelReached expected 1, got %d", data.BattleStats.MaxLevelReached)
 	}

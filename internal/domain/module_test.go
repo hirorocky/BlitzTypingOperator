@@ -5,15 +5,15 @@ import (
 	"testing"
 )
 
-// TestModuleModel_フィールドの確認 はModuleModel構造体のフィールドが正しく設定されることを確認します。
-func TestModuleModel_フィールドの確認(t *testing.T) {
-	module := NewModuleFromType(ModuleType{
+// TestSkillModel_フィールドの確認 はSkillModel構造体のフィールドが正しく設定されることを確認します。
+func TestSkillModel_フィールドの確認(t *testing.T) {
+	module := NewSkillFromType(SkillType{
 		ID:          "fireball_lv1",
 		Name:        "ファイアボール",
 		Icon:        "🔥",
 		Tags:        []string{"magic_low"},
 		Description: "炎の魔法で敵に魔法ダメージを与える",
-		Effects: []ModuleEffect{
+		Effects: []SkillEffect{
 			{
 				Target:      TargetEnemy,
 				HPFormula:   &HPFormula{Base: 0, StatCoef: 1.0, StatRef: "INT"},
@@ -40,15 +40,15 @@ func TestModuleModel_フィールドの確認(t *testing.T) {
 	}
 }
 
-// TestNewModuleFromType_モジュール作成 はNewModuleFromType関数でモジュールが正しく作成されることを確認します。
-func TestNewModuleFromType_モジュール作成(t *testing.T) {
-	module := NewModuleFromType(ModuleType{
+// TestNewSkillFromType_モジュール作成 はNewSkillFromType関数でモジュールが正しく作成されることを確認します。
+func TestNewSkillFromType_モジュール作成(t *testing.T) {
+	module := NewSkillFromType(SkillType{
 		ID:          "physical_attack_lv1",
 		Name:        "物理打撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "物理攻撃で敵にダメージを与える",
-		Effects: []ModuleEffect{
+		Effects: []SkillEffect{
 			{
 				Target:      TargetEnemy,
 				HPFormula:   &HPFormula{Base: 0, StatCoef: 1.0, StatRef: "STR"},
@@ -66,16 +66,16 @@ func TestNewModuleFromType_モジュール作成(t *testing.T) {
 	}
 }
 
-// TestNewModuleFromType_タグのコピー はNewModuleFromTypeで作成したモジュールのTagsが元のスライスと独立していることを確認します。
-func TestNewModuleFromType_タグのコピー(t *testing.T) {
+// TestNewSkillFromType_タグのコピー はNewSkillFromTypeで作成したモジュールのTagsが元のスライスと独立していることを確認します。
+func TestNewSkillFromType_タグのコピー(t *testing.T) {
 	originalTags := []string{"magic_low", "fire"}
-	moduleType := ModuleType{
+	moduleType := SkillType{
 		ID:          "fireball_lv1",
 		Name:        "ファイアボール",
 		Icon:        "🔥",
 		Tags:        originalTags,
 		Description: "炎の魔法で敵に魔法ダメージを与える",
-		Effects: []ModuleEffect{
+		Effects: []SkillEffect{
 			{
 				Target:      TargetEnemy,
 				HPFormula:   &HPFormula{Base: 0, StatCoef: 1.0, StatRef: "INT"},
@@ -83,19 +83,19 @@ func TestNewModuleFromType_タグのコピー(t *testing.T) {
 			},
 		},
 	}
-	_ = NewModuleFromType(moduleType, nil)
+	_ = NewSkillFromType(moduleType, nil)
 
 	// 元のタグを変更
 	originalTags[0] = "modified_tag"
 
-	// ModuleTypeのTagsはスライスなので影響を受ける（GoのスライスはReferenceのため）
+	// SkillTypeのTagsはスライスなので影響を受ける（GoのスライスはReferenceのため）
 	// この挙動は許容される（パフォーマンスのためのトレードオフ）
 	// 本番コードではマスタデータは変更されないため問題なし
 }
 
-// TestModuleModel_HasTag_タグ存在確認 はHasTagメソッドがタグの存在を正しく判定することを確認します。
-func TestModuleModel_HasTag_タグ存在確認(t *testing.T) {
-	module := NewModuleFromType(ModuleType{
+// TestSkillModel_HasTag_タグ存在確認 はHasTagメソッドがタグの存在を正しく判定することを確認します。
+func TestSkillModel_HasTag_タグ存在確認(t *testing.T) {
+	module := NewSkillFromType(SkillType{
 		ID:   "test_module",
 		Tags: []string{"physical_low", "fire"},
 	}, nil)
@@ -111,9 +111,9 @@ func TestModuleModel_HasTag_タグ存在確認(t *testing.T) {
 	}
 }
 
-// TestModuleModel_HasTag_空タグリスト はTagsが空の場合に常にfalseを返すことを確認します。
-func TestModuleModel_HasTag_空タグリスト(t *testing.T) {
-	module := NewModuleFromType(ModuleType{
+// TestSkillModel_HasTag_空タグリスト はTagsが空の場合に常にfalseを返すことを確認します。
+func TestSkillModel_HasTag_空タグリスト(t *testing.T) {
+	module := NewSkillFromType(SkillType{
 		ID:   "test_module",
 		Tags: []string{},
 	}, nil)
@@ -123,8 +123,8 @@ func TestModuleModel_HasTag_空タグリスト(t *testing.T) {
 	}
 }
 
-// TestModuleModel_IsCompatibleWithCore はモジュールがコアに装備可能かを判定するメソッドをテストします。
-func TestModuleModel_IsCompatibleWithCore(t *testing.T) {
+// TestSkillModel_IsCompatibleWithCore はモジュールがコアに装備可能かを判定するメソッドをテストします。
+func TestSkillModel_IsCompatibleWithCore(t *testing.T) {
 	// 物理攻撃と魔法攻撃の低レベルモジュールを許可するコア
 	coreType := CoreType{
 		ID:          "test",
@@ -135,13 +135,13 @@ func TestModuleModel_IsCompatibleWithCore(t *testing.T) {
 	core := NewCoreWithTypeID("test", coreType, PassiveSkill{})
 
 	// 互換性のあるモジュール
-	compatibleModule := NewModuleFromType(ModuleType{
+	compatibleModule := NewSkillFromType(SkillType{
 		ID:   "physical_attack_lv1",
 		Tags: []string{"physical_low"},
 	}, nil)
 
 	// 互換性のないモジュール
-	incompatibleModule := NewModuleFromType(ModuleType{
+	incompatibleModule := NewSkillFromType(SkillType{
 		ID:   "heal_lv2",
 		Tags: []string{"heal_mid"},
 	}, nil)
@@ -155,8 +155,8 @@ func TestModuleModel_IsCompatibleWithCore(t *testing.T) {
 	}
 }
 
-// TestModuleModel_IsCompatibleWithCore_複数タグ はモジュールが複数タグを持つ場合の互換性判定をテストします。
-func TestModuleModel_IsCompatibleWithCore_複数タグ(t *testing.T) {
+// TestSkillModel_IsCompatibleWithCore_複数タグ はモジュールが複数タグを持つ場合の互換性判定をテストします。
+func TestSkillModel_IsCompatibleWithCore_複数タグ(t *testing.T) {
 	coreType := CoreType{
 		ID:          "test",
 		Name:        "テスト",
@@ -166,7 +166,7 @@ func TestModuleModel_IsCompatibleWithCore_複数タグ(t *testing.T) {
 	core := NewCoreWithTypeID("test", coreType, PassiveSkill{})
 
 	// 複数タグのうち1つがコアの許可タグに含まれる場合
-	moduleWithMultipleTags := NewModuleFromType(ModuleType{
+	moduleWithMultipleTags := NewSkillFromType(SkillType{
 		ID:   "hybrid_lv1",
 		Tags: []string{"physical_low", "fire"},
 	}, nil)
@@ -176,7 +176,7 @@ func TestModuleModel_IsCompatibleWithCore_複数タグ(t *testing.T) {
 	}
 
 	// どのタグもコアの許可タグに含まれない場合
-	moduleNoMatch := NewModuleFromType(ModuleType{
+	moduleNoMatch := NewSkillFromType(SkillType{
 		ID:   "heal_lv1",
 		Tags: []string{"heal_low", "light"},
 	}, nil)
@@ -188,9 +188,9 @@ func TestModuleModel_IsCompatibleWithCore_複数タグ(t *testing.T) {
 
 // ==================== Task 7.2: Icon()メソッドのテスト ====================
 
-// TestModuleType_Icon はModuleTypeのIconフィールドが正しく設定されることを確認します。
-func TestModuleType_Icon(t *testing.T) {
-	module := NewModuleFromType(ModuleType{
+// TestSkillType_Icon はSkillTypeのIconフィールドが正しく設定されることを確認します。
+func TestSkillType_Icon(t *testing.T) {
+	module := NewSkillFromType(SkillType{
 		ID:   "test",
 		Icon: "⚔️",
 		Tags: []string{"physical_low"},
@@ -201,9 +201,9 @@ func TestModuleType_Icon(t *testing.T) {
 	}
 }
 
-// TestModuleModel_Icon_Empty は空のアイコンに対してIcon()がデフォルト値を返すことを確認します。
-func TestModuleModel_Icon_Empty(t *testing.T) {
-	module := NewModuleFromType(ModuleType{
+// TestSkillModel_Icon_Empty は空のアイコンに対してIcon()がデフォルト値を返すことを確認します。
+func TestSkillModel_Icon_Empty(t *testing.T) {
+	module := NewSkillFromType(SkillType{
 		ID:   "test",
 		Icon: "",
 		Tags: []string{"physical_low"},
@@ -214,17 +214,17 @@ func TestModuleModel_Icon_Empty(t *testing.T) {
 	}
 }
 
-// ==================== ModuleModel TypeID/ChainEffect リファクタリングテスト ====================
+// ==================== SkillModel TypeID/ChainEffect リファクタリングテスト ====================
 
-// TestModuleModel_TypeIDフィールドの確認 はModuleModelにTypeIDフィールドが存在することを確認します。
-func TestModuleModel_TypeIDフィールドの確認(t *testing.T) {
-	module := NewModuleFromType(ModuleType{
+// TestSkillModel_TypeIDフィールドの確認 はSkillModelにTypeIDフィールドが存在することを確認します。
+func TestSkillModel_TypeIDフィールドの確認(t *testing.T) {
+	module := NewSkillFromType(SkillType{
 		ID:          "physical_attack_lv1",
 		Name:        "物理打撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "物理攻撃で敵にダメージを与える",
-		Effects: []ModuleEffect{
+		Effects: []SkillEffect{
 			{
 				Target:      TargetEnemy,
 				HPFormula:   &HPFormula{Base: 0, StatCoef: 1.0, StatRef: "STR"},
@@ -241,16 +241,16 @@ func TestModuleModel_TypeIDフィールドの確認(t *testing.T) {
 	}
 }
 
-// TestModuleModel_ChainEffect付きの作成 はChainEffect付きのモジュール作成をテストします。
-func TestModuleModel_ChainEffect付きの作成(t *testing.T) {
+// TestSkillModel_ChainEffect付きの作成 はChainEffect付きのモジュール作成をテストします。
+func TestSkillModel_ChainEffect付きの作成(t *testing.T) {
 	chainEffect := NewChainEffectWithTemplate("test_damage_bonus", ChainEffectDamageBonus, 25.0, "次の攻撃のダメージ+%.0f%%", "次攻撃ダメ+%.0f%%")
-	module := NewModuleFromType(ModuleType{
+	module := NewSkillFromType(SkillType{
 		ID:          "physical_attack_lv1",
 		Name:        "物理打撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "物理攻撃で敵にダメージを与える",
-		Effects: []ModuleEffect{
+		Effects: []SkillEffect{
 			{
 				Target:      TargetEnemy,
 				HPFormula:   &HPFormula{Base: 0, StatCoef: 1.0, StatRef: "STR"},
@@ -270,18 +270,18 @@ func TestModuleModel_ChainEffect付きの作成(t *testing.T) {
 	}
 }
 
-// TestModuleModel_同一TypeID異なるChainEffect は同一TypeIDで異なるChainEffectを持つモジュールを許容することを確認します。
-func TestModuleModel_同一TypeID異なるChainEffect(t *testing.T) {
+// TestSkillModel_同一TypeID異なるChainEffect は同一TypeIDで異なるChainEffectを持つモジュールを許容することを確認します。
+func TestSkillModel_同一TypeID異なるChainEffect(t *testing.T) {
 	chainEffect1 := NewChainEffectWithTemplate("test_damage_bonus", ChainEffectDamageBonus, 25.0, "次の攻撃のダメージ+%.0f%%", "次攻撃ダメ+%.0f%%")
 	chainEffect2 := NewChainEffectWithTemplate("test_heal_bonus", ChainEffectHealBonus, 20.0, "次の回復量+%.0f%%", "次回復量+%.0f%%")
 
-	moduleType := ModuleType{
+	moduleType := SkillType{
 		ID:          "physical_attack_lv1",
 		Name:        "物理打撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "物理攻撃で敵にダメージを与える",
-		Effects: []ModuleEffect{
+		Effects: []SkillEffect{
 			{
 				Target:      TargetEnemy,
 				HPFormula:   &HPFormula{Base: 0, StatCoef: 1.0, StatRef: "STR"},
@@ -290,8 +290,8 @@ func TestModuleModel_同一TypeID異なるChainEffect(t *testing.T) {
 		},
 	}
 
-	module1 := NewModuleFromType(moduleType, &chainEffect1)
-	module2 := NewModuleFromType(moduleType, &chainEffect2)
+	module1 := NewSkillFromType(moduleType, &chainEffect1)
+	module2 := NewSkillFromType(moduleType, &chainEffect2)
 
 	// 同じTypeIDであっても異なるChainEffectを持つことを許容
 	if module1.TypeID != module2.TypeID {
@@ -302,15 +302,15 @@ func TestModuleModel_同一TypeID異なるChainEffect(t *testing.T) {
 	}
 }
 
-// TestModuleModel_ChainEffectなし はChainEffectがnilのモジュールが正しく動作することを確認します。
-func TestModuleModel_ChainEffectなし(t *testing.T) {
-	module := NewModuleFromType(ModuleType{
+// TestSkillModel_ChainEffectなし はChainEffectがnilのモジュールが正しく動作することを確認します。
+func TestSkillModel_ChainEffectなし(t *testing.T) {
+	module := NewSkillFromType(SkillType{
 		ID:          "heal_lv1",
 		Name:        "ヒール",
 		Icon:        "💚",
 		Tags:        []string{"heal_low"},
 		Description: "HPを回復する",
-		Effects: []ModuleEffect{
+		Effects: []SkillEffect{
 			{
 				Target:      TargetSelf,
 				HPFormula:   &HPFormula{Base: 0, StatCoef: 0.8, StatRef: "INT"},
@@ -329,16 +329,16 @@ func TestModuleModel_ChainEffectなし(t *testing.T) {
 	}
 }
 
-// TestModuleModel_HasChainEffect はHasChainEffectメソッドをテストします。
-func TestModuleModel_HasChainEffect(t *testing.T) {
+// TestSkillModel_HasChainEffect はHasChainEffectメソッドをテストします。
+func TestSkillModel_HasChainEffect(t *testing.T) {
 	chainEffect := NewChainEffectWithTemplate("test_buff_extend", ChainEffectBuffExtend, 5.0, "バフ効果時間+%.0f秒", "バフ時間+%.0f秒")
-	moduleWithEffect := NewModuleFromType(ModuleType{
+	moduleWithEffect := NewSkillFromType(SkillType{
 		ID:          "buff_lv1",
 		Name:        "バフ",
 		Icon:        "⬆️",
 		Tags:        []string{"buff_low"},
 		Description: "バフを付与する",
-		Effects: []ModuleEffect{
+		Effects: []SkillEffect{
 			{
 				Target: TargetSelf,
 				ColumnSpec: &EffectColumnSpec{
@@ -355,13 +355,13 @@ func TestModuleModel_HasChainEffect(t *testing.T) {
 		t.Error("ChainEffectがある場合、HasChainEffect()はtrueを返すべきです")
 	}
 
-	moduleWithoutEffect := NewModuleFromType(ModuleType{
+	moduleWithoutEffect := NewSkillFromType(SkillType{
 		ID:          "buff_lv1",
 		Name:        "バフ",
 		Icon:        "⬆️",
 		Tags:        []string{"buff_low"},
 		Description: "バフを付与する",
-		Effects: []ModuleEffect{
+		Effects: []SkillEffect{
 			{
 				Target: TargetSelf,
 				ColumnSpec: &EffectColumnSpec{
@@ -376,97 +376,5 @@ func TestModuleModel_HasChainEffect(t *testing.T) {
 
 	if moduleWithoutEffect.HasChainEffect() {
 		t.Error("ChainEffectがない場合、HasChainEffect()はfalseを返すべきです")
-	}
-}
-
-// TestModuleEffect_IsDamageEffect はダメージ効果の判定をテストします。
-func TestModuleEffect_IsDamageEffect(t *testing.T) {
-	damageEffect := ModuleEffect{
-		Target:    TargetEnemy,
-		HPFormula: &HPFormula{Base: 0, StatCoef: 1.0, StatRef: "STR"},
-	}
-	if !damageEffect.IsDamageEffect() {
-		t.Error("敵対象のHPFormula効果はダメージ効果であるべきです")
-	}
-
-	healEffect := ModuleEffect{
-		Target:    TargetSelf,
-		HPFormula: &HPFormula{Base: 0, StatCoef: 0.8, StatRef: "INT"},
-	}
-	if healEffect.IsDamageEffect() {
-		t.Error("自身対象のHPFormula効果はダメージ効果ではないべきです")
-	}
-}
-
-// TestModuleEffect_IsHealEffect は回復効果の判定をテストします。
-func TestModuleEffect_IsHealEffect(t *testing.T) {
-	healEffect := ModuleEffect{
-		Target:    TargetSelf,
-		HPFormula: &HPFormula{Base: 0, StatCoef: 0.8, StatRef: "INT"},
-	}
-	if !healEffect.IsHealEffect() {
-		t.Error("自身対象のHPFormula効果は回復効果であるべきです")
-	}
-
-	damageEffect := ModuleEffect{
-		Target:    TargetEnemy,
-		HPFormula: &HPFormula{Base: 0, StatCoef: 1.0, StatRef: "STR"},
-	}
-	if damageEffect.IsHealEffect() {
-		t.Error("敵対象のHPFormula効果は回復効果ではないべきです")
-	}
-}
-
-// TestModuleEffect_IsBuffEffect はバフ効果の判定をテストします。
-func TestModuleEffect_IsBuffEffect(t *testing.T) {
-	buffEffect := ModuleEffect{
-		Target: TargetSelf,
-		ColumnSpec: &EffectColumnSpec{
-			Column:   ColDamageBonus,
-			Value:    10.0,
-			Duration: 10.0,
-		},
-	}
-	if !buffEffect.IsBuffEffect() {
-		t.Error("自身対象のColumnSpec効果はバフ効果であるべきです")
-	}
-
-	debuffEffect := ModuleEffect{
-		Target: TargetEnemy,
-		ColumnSpec: &EffectColumnSpec{
-			Column:   ColDamageCut,
-			Value:    -10.0,
-			Duration: 8.0,
-		},
-	}
-	if debuffEffect.IsBuffEffect() {
-		t.Error("敵対象のColumnSpec効果はバフ効果ではないべきです")
-	}
-}
-
-// TestModuleEffect_IsDebuffEffect はデバフ効果の判定をテストします。
-func TestModuleEffect_IsDebuffEffect(t *testing.T) {
-	debuffEffect := ModuleEffect{
-		Target: TargetEnemy,
-		ColumnSpec: &EffectColumnSpec{
-			Column:   ColDamageCut,
-			Value:    -10.0,
-			Duration: 8.0,
-		},
-	}
-	if !debuffEffect.IsDebuffEffect() {
-		t.Error("敵対象のColumnSpec効果はデバフ効果であるべきです")
-	}
-
-	buffEffect := ModuleEffect{
-		Target: TargetSelf,
-		ColumnSpec: &EffectColumnSpec{
-			Column:   ColDamageBonus,
-			Value:    10.0,
-			Duration: 10.0,
-		},
-	}
-	if buffEffect.IsDebuffEffect() {
-		t.Error("自身対象のColumnSpec効果はデバフ効果ではないべきです")
 	}
 }

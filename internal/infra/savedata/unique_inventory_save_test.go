@@ -11,7 +11,7 @@ import (
 // ==================== タスク7.1: 新セーブデータ構造体のテスト ====================
 
 // TestCoreInventorySave_JSONSerialization はCoreInventorySaveのJSON化をテストします。
-// v4.0.0: コアはTypeIDリスト形式で管理します。
+// コアはTypeIDリスト形式で管理します。
 func TestCoreInventorySave_JSONSerialization(t *testing.T) {
 	save := CoreInventorySave{
 		Cores: []string{"all_rounder", "attack_balance"},
@@ -124,7 +124,7 @@ func TestSkillSlotSaveCfg_JSONSerialization(t *testing.T) {
 }
 
 // TestAgentSlotSave_JSONSerialization はAgentSlotSaveのJSON化をテストします。
-// v4.0.0: CoreLevelフィールドを削除。
+// CoreLevelフィールドを削除。
 func TestAgentSlotSave_JSONSerialization(t *testing.T) {
 	save := AgentSlotSave{
 		CoreTypeID: "all_rounder",
@@ -164,7 +164,7 @@ func TestAgentSlotSave_JSONSerialization(t *testing.T) {
 }
 
 // TestAgentSlotSave_EmptySlot は空のAgentSlotSaveのJSON化をテストします。
-// v4.0.0: CoreLevelフィールドを削除。
+// CoreLevelフィールドを削除。
 func TestAgentSlotSave_EmptySlot(t *testing.T) {
 	// 空のスロット
 	save := AgentSlotSave{}
@@ -186,23 +186,15 @@ func TestAgentSlotSave_EmptySlot(t *testing.T) {
 }
 
 // TestInventorySaveDataV4_JSONSerialization は新しいInventorySaveDataのJSON化をテストします。
-// v4.0.0: コアはTypeIDリスト形式で管理します。
+// コアはTypeIDリスト形式で管理します。
 func TestInventorySaveDataV4_JSONSerialization(t *testing.T) {
 	save := &InventorySaveData{
-		// v4.0.0形式
 		UniqueCores: &CoreInventorySave{
 			Cores: []string{"all_rounder"},
 		},
 		UniqueSkills: &SkillInventorySave{
 			Skills: map[string][]string{"physical_lv1": {"damage_bonus"}},
 		},
-		// レガシーフィールド（後方互換性）
-		CoreInstances:   []CoreInstanceSave{},
-		ModuleInstances: []ModuleInstanceSave{},
-		AgentInstances:  []AgentInstanceSave{},
-		MaxCoreSlots:    100,
-		MaxModuleSlots:  200,
-		MaxAgentSlots:   20,
 	}
 
 	// JSON化
@@ -235,15 +227,10 @@ func TestInventorySaveDataV4_JSONSerialization(t *testing.T) {
 	}
 }
 
-// TestPlayerSaveDataV4_JSONSerialization は新しいPlayerSaveDataのJSON化をテストします。
-// v4.0.0: CoreLevelフィールドを削除し、MaxHPフィールドを追加。
-func TestPlayerSaveDataV4_JSONSerialization(t *testing.T) {
+// TestPlayerSaveData_JSONSerialization はPlayerSaveDataのJSON化をテストします。
+func TestPlayerSaveData_JSONSerialization(t *testing.T) {
 	save := &PlayerSaveData{
-		// v4.0.0: 最大HP
 		MaxHP: 1000,
-		// レガシーフィールド
-		EquippedAgentIDs: [3]string{},
-		// v4.0.0形式
 		AgentSlots: [3]AgentSlotSave{
 			{
 				CoreTypeID: "all_rounder",
@@ -292,17 +279,16 @@ func TestPlayerSaveDataV4_JSONSerialization(t *testing.T) {
 	}
 }
 
-// TestNewSaveDataV4 は新しいバージョンのNewSaveDataをテストします。
-// v4.0.0: バージョン、MaxHP、EnemyProgressの初期化を検証。
-func TestNewSaveDataV4(t *testing.T) {
+// TestNewSaveData_FullInitialization はNewSaveDataの完全な初期化をテストします。
+func TestNewSaveData_FullInitialization(t *testing.T) {
 	saveData := NewSaveData()
 
-	// バージョンが4.0.0であること
-	if saveData.Version != "4.0.0" {
-		t.Errorf("Version: got %s, want 4.0.0", saveData.Version)
+	// バージョンが0.0.1であること
+	if saveData.Version != "0.0.1" {
+		t.Errorf("Version: got %s, want 0.0.1", saveData.Version)
 	}
 
-	// 新フィールドが初期化されていること
+	// フィールドが初期化されていること
 	if saveData.Inventory.UniqueCores == nil {
 		t.Error("UniqueCoresがnilです")
 	}
@@ -323,12 +309,12 @@ func TestNewSaveDataV4(t *testing.T) {
 		}
 	}
 
-	// v4.0.0: MaxHPの初期値が1000であること
+	// MaxHPの初期値が1000であること
 	if saveData.Player.MaxHP != 1000 {
 		t.Errorf("Player.MaxHP: got %d, want 1000", saveData.Player.MaxHP)
 	}
 
-	// v4.0.0: EnemyProgressが初期化されていること
+	// EnemyProgressが初期化されていること
 	if saveData.EnemyProgress == nil {
 		t.Error("EnemyProgressがnilです")
 	}
@@ -343,12 +329,12 @@ func TestNewSaveDataV4(t *testing.T) {
 // ==================== タスク7.2: セーブ/ロード機能のテスト ====================
 
 // TestSaveAndLoadV4_FullData は新スキーマでのセーブとロードをテストします。
-// v4.0.0: コアはTypeIDリスト形式、CoreLevelなし、MaxHP追加。
-func TestSaveAndLoadV4_FullData(t *testing.T) {
+// TestSaveAndLoad_FullData はセーブデータのフル形式でのセーブ・ロードをテストします。
+func TestSaveAndLoad_FullData(t *testing.T) {
 	tmpDir := t.TempDir()
 	io := NewSaveDataIO(tmpDir, false)
 
-	// v4.0.0形式のセーブデータを作成
+	// セーブデータを作成
 	saveData := NewSaveData()
 
 	// ユニークコアを追加（TypeIDリスト形式）
@@ -358,7 +344,7 @@ func TestSaveAndLoadV4_FullData(t *testing.T) {
 	saveData.Inventory.UniqueSkills.Skills["physical_lv1"] = []string{"damage_bonus", "life_steal"}
 	saveData.Inventory.UniqueSkills.Skills["heal_lv1"] = []string{}
 
-	// エージェントスロットを設定（CoreLevelなし）
+	// エージェントスロットを設定
 	saveData.Player.AgentSlots[0] = AgentSlotSave{
 		CoreTypeID: "all_rounder",
 		Skills: [4]SkillSlotSaveCfg{
@@ -381,8 +367,8 @@ func TestSaveAndLoadV4_FullData(t *testing.T) {
 	}
 
 	// バージョン検証
-	if loadedData.Version != "4.0.0" {
-		t.Errorf("Version: got %s, want 4.0.0", loadedData.Version)
+	if loadedData.Version != "0.0.1" {
+		t.Errorf("Version: got %s, want 0.0.1", loadedData.Version)
 	}
 
 	// MaxHP検証
@@ -436,7 +422,7 @@ func TestSaveAndLoadV4_FullData(t *testing.T) {
 }
 
 // TestConvertCoreInventoryToSave はCoreInventoryからセーブ形式への変換をテストします。
-// v4.0.0: コアはTypeIDリスト形式で管理します。
+// コアはTypeIDリスト形式で管理します。
 func TestConvertCoreInventoryToSave(t *testing.T) {
 	// ドメインモデルを作成（TypeIDリスト）
 	cores := []string{"all_rounder", "attack_balance"}
@@ -468,7 +454,7 @@ func TestConvertCoreInventoryToSave(t *testing.T) {
 }
 
 // TestConvertSaveToCoreInventory はセーブ形式からCoreInventoryへの変換をテストします。
-// v4.0.0: コアはTypeIDリスト形式で管理します。
+// コアはTypeIDリスト形式で管理します。
 func TestConvertSaveToCoreInventory(t *testing.T) {
 	save := &CoreInventorySave{
 		Cores: []string{"all_rounder", "attack_balance"},
@@ -556,9 +542,9 @@ func TestConvertSaveToSkillInventory(t *testing.T) {
 }
 
 // TestConvertAgentSlotsToSave はAgentSlotからセーブ形式への変換をテストします。
-// v4.0.0: CoreLevelフィールドを削除。
+// CoreLevelフィールドを削除。
 func TestConvertAgentSlotsToSave(t *testing.T) {
-	// ドメインモデル形式（CoreTypeID, Skills配列）- v4.0.0: CoreLevelなし
+	// ドメインモデル形式（CoreTypeID, Skills配列）- CoreLevelなし
 	slots := [3]struct {
 		CoreTypeID string
 		Skills     [4]struct {
@@ -582,7 +568,7 @@ func TestConvertAgentSlotsToSave(t *testing.T) {
 		{},
 	}
 
-	// セーブ形式に変換（v4.0.0: レベル引数なし）
+	// セーブ形式に変換（レベル引数なし）
 	var saves [3]AgentSlotSave
 	for i, slot := range slots {
 		saves[i] = ConvertAgentSlotToSave(slot.CoreTypeID, slot.Skills)
@@ -601,7 +587,7 @@ func TestConvertAgentSlotsToSave(t *testing.T) {
 }
 
 // TestConvertSaveToAgentSlot はセーブ形式からAgentSlotへの変換をテストします。
-// v4.0.0: CoreLevelフィールドを削除。
+// CoreLevelフィールドを削除。
 func TestConvertSaveToAgentSlot(t *testing.T) {
 	save := AgentSlotSave{
 		CoreTypeID: "all_rounder",
@@ -622,7 +608,7 @@ func TestConvertSaveToAgentSlot(t *testing.T) {
 		// unknownはマスタに存在しない
 	}
 
-	// ドメイン形式に変換（存在しないTypeIDは無視）- v4.0.0: coreLevelを返さない
+	// ドメイン形式に変換（存在しないTypeIDは無視）- coreLevelを返さない
 	coreTypeID, skills := ConvertSaveToAgentSlot(save, validCoreTypeIDs, validSkillTypeIDs)
 
 	// 検証
@@ -638,7 +624,7 @@ func TestConvertSaveToAgentSlot(t *testing.T) {
 }
 
 // TestConvertSaveToAgentSlot_InvalidCore はマスタに存在しないコアが無視されることをテストします。
-// v4.0.0: CoreLevelフィールドを削除。
+// CoreLevelフィールドを削除。
 func TestConvertSaveToAgentSlot_InvalidCore(t *testing.T) {
 	save := AgentSlotSave{
 		CoreTypeID: "invalid_core",
@@ -658,7 +644,7 @@ func TestConvertSaveToAgentSlot_InvalidCore(t *testing.T) {
 		"physical_lv1": true,
 	}
 
-	// 変換（コアが無効な場合は全体が空になる）- v4.0.0: coreLevelを返さない
+	// 変換（コアが無効な場合は全体が空になる）- coreLevelを返さない
 	coreTypeID, skills := ConvertSaveToAgentSlot(save, validCoreTypeIDs, validSkillTypeIDs)
 
 	// コアが無効なのでスロット全体が空
@@ -675,12 +661,12 @@ func TestConvertSaveToAgentSlot_InvalidCore(t *testing.T) {
 // ==================== タスク7.3: セーブ/ロードの統合テスト ====================
 
 // TestSaveLoadIntegration_FullCycle は新スキーマでの保存・復元の統合テストです。
-// v4.0.0: コアはTypeIDリスト形式、CoreLevelなし、MaxHP追加。
+// コアはTypeIDリスト形式、CoreLevelなし、MaxHP追加。
 func TestSaveLoadIntegration_FullCycle(t *testing.T) {
 	tmpDir := t.TempDir()
 	io := NewSaveDataIO(tmpDir, false)
 
-	// 1. v4.0.0形式のセーブデータを作成
+	// 1. セーブデータを作成
 	saveData := NewSaveData()
 
 	// ユニークコアを設定（TypeIDリスト形式）
@@ -692,7 +678,7 @@ func TestSaveLoadIntegration_FullCycle(t *testing.T) {
 	saveData.Inventory.UniqueSkills.Skills["heal_lv1"] = []string{"heal_bonus"}
 	saveData.Inventory.UniqueSkills.Skills["buff_lv1"] = []string{}
 
-	// エージェントスロット0を設定（フル装備）- v4.0.0: CoreLevelなし
+	// エージェントスロット0を設定（フル装備）- CoreLevelなし
 	saveData.Player.AgentSlots[0] = AgentSlotSave{
 		CoreTypeID: "all_rounder",
 		Skills: [4]SkillSlotSaveCfg{
@@ -734,8 +720,8 @@ func TestSaveLoadIntegration_FullCycle(t *testing.T) {
 	// 4. 検証
 
 	// バージョン
-	if loadedData.Version != "4.0.0" {
-		t.Errorf("Version: got %s, want 4.0.0", loadedData.Version)
+	if loadedData.Version != "0.0.1" {
+		t.Errorf("Version: got %s, want 0.0.1", loadedData.Version)
 	}
 
 	// MaxHP
@@ -802,7 +788,7 @@ func TestSaveLoadIntegration_FullCycle(t *testing.T) {
 }
 
 // TestSaveLoadIntegration_InvalidTypeIDsIgnored はマスタに存在しないTypeIDが無視されることをテストします。
-// v4.0.0: コアはTypeIDリスト形式、CoreLevelなし。
+// コアはTypeIDリスト形式、CoreLevelなし。
 func TestSaveLoadIntegration_InvalidTypeIDsIgnored(t *testing.T) {
 	// セーブデータにマスタに存在しないTypeIDを含める
 	saveData := NewSaveData()
@@ -876,7 +862,7 @@ func TestSaveLoadIntegration_InvalidTypeIDsIgnored(t *testing.T) {
 		t.Error("invalid_skill should be filtered out")
 	}
 
-	// エージェントスロット0の変換テスト（コア有効、スキル一部無効）- v4.0.0: coreLevelなし
+	// エージェントスロット0の変換テスト（コア有効、スキル一部無効）- coreLevelなし
 	coreTypeID, skillSlots := ConvertSaveToAgentSlot(
 		saveData.Player.AgentSlots[0],
 		validCoreTypeIDs,
@@ -948,7 +934,7 @@ func TestSaveLoadIntegration_EmptyData(t *testing.T) {
 }
 
 // TestSaveLoadIntegration_NilConversion はnilセーブデータの変換をテストします。
-// v4.0.0: コアはTypeIDリスト形式で返される。
+// コアはTypeIDリスト形式で返される。
 func TestSaveLoadIntegration_NilConversion(t *testing.T) {
 	validTypeIDs := map[string]bool{"valid": true}
 
@@ -965,7 +951,7 @@ func TestSaveLoadIntegration_NilConversion(t *testing.T) {
 	}
 }
 
-// ==================== v4.0.0: EnemyProgress 変換テスト ====================
+// ==================== EnemyProgress 変換テスト ====================
 
 // TestConvertEnemyProgressToSave はEnemyProgressからセーブ形式への変換をテストします。
 func TestConvertEnemyProgressToSave(t *testing.T) {

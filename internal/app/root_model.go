@@ -100,7 +100,6 @@ type RootModel struct {
 	// チェイン効果データ（デバッグモードで使用）
 	chainEffects []masterdata.ChainEffectData
 
-	// v3.0.0: 新システムのマネージャー
 	// slotManager はエージェントスロット管理を担当します
 	slotManager *slot.AgentSlotManager
 
@@ -155,7 +154,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		chainEffectDefs := ConvertChainEffects(chainEffects)
 		domainSources = &gamestate.DomainDataSources{
 			CoreTypes:              coreTypes,
-			ModuleTypes:            moduleTypes,
+			SkillTypes:             moduleTypes,
 			EnemyTypes:             enemyTypes,
 			PassiveSkills:          passiveSkills,
 			ChainEffectDefinitions: chainEffectDefs,
@@ -199,7 +198,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	// 外部データで敵生成器と報酬計算器を更新（ドメイン型を使用）
 	if domainSources != nil {
 		gs.UpdateEnemyGenerator(domainSources.EnemyTypes)
-		gs.UpdateRewardCalculator(domainSources.CoreTypes, domainSources.ModuleTypes, domainSources.PassiveSkills)
+		gs.UpdateRewardCalculator(domainSources.CoreTypes, domainSources.SkillTypes, domainSources.PassiveSkills)
 
 		// チェイン効果プールを設定（UpdateRewardCalculatorで新しいRewardCalculatorが作成されるため再設定が必要）
 		if len(domainSources.ChainEffectDefinitions) > 0 {
@@ -208,12 +207,12 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		}
 	}
 
-	// v3.0.0: 新システムのマネージャーを作成
+	// 新システムのマネージャーを作成
 	invManager := inventory.NewInventoryManager()
 
-	// v4.0.0: セーブデータからユニークインベントリを復元
+	// セーブデータからユニークインベントリを復元
 	if loadedSaveData != nil && loadedSaveData.Inventory != nil {
-		// UniqueCoresを復元（v4.0.0: TypeIDリスト形式）
+		// UniqueCoresを復元（TypeIDリスト形式）
 		if loadedSaveData.Inventory.UniqueCores != nil && loadedSaveData.Inventory.UniqueCores.Cores != nil {
 			for _, typeID := range loadedSaveData.Inventory.UniqueCores.Cores {
 				invManager.AddCore(typeID)
@@ -266,7 +265,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		for _, ct := range domainSources.CoreTypes {
 			coreTypesMap[ct.ID] = ct
 		}
-		for _, mt := range domainSources.ModuleTypes {
+		for _, mt := range domainSources.SkillTypes {
 			// ModuleDropInfoからSkillTypeへの変換
 			skillTypesMap[mt.ID] = domain.SkillType{
 				ID:              mt.ID,
@@ -295,7 +294,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		chainEffectsMap,
 	)
 
-	// v3.0.0: セーブデータからエージェントスロットを復元
+	// セーブデータからエージェントスロットを復元
 	if loadedSaveData != nil && loadedSaveData.Player != nil {
 		for i, agentSlotSave := range loadedSaveData.Player.AgentSlots {
 			if agentSlotSave.CoreTypeID == "" {
@@ -331,7 +330,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	var invProvider InventoryProvider
 	var debugInvProvider *presenter.DebugInventoryProvider
 	if debugMode && externalData != nil {
-		// デバッグモード: 全CoreType/ModuleType/ChainEffectを選択可能
+		// デバッグモード: 全CoreType/SkillType/ChainEffectを選択可能
 		passiveSkills := ConvertPassiveSkills(externalData.PassiveSkills)
 		debugInvProvider = presenter.NewDebugInventoryProvider(
 			externalData.CoreTypes,
@@ -340,7 +339,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 			passiveSkills,
 		)
 
-		// v3.0.0: デバッグモードでもAgentSlotManagerを使用
+		// デバッグモードでもAgentSlotManagerを使用
 		debugInvProvider.SetSlotManager(slotManager)
 
 		invProvider = debugInvProvider
@@ -355,7 +354,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	// ホーム画面を初期化
 	homeScreen := screenFactory.CreateHomeScreen(gs.GetMaxLevelReached(), invProvider)
 	homeScreen.SetStatusMessage(statusMessage)
-	// v3.0.0: スロット準備状態プロバイダーを設定（バトル選択の有効/無効判定に使用）
+	// スロット準備状態プロバイダーを設定（バトル選択の有効/無効判定に使用）
 	homeScreen.SetSlotProvider(slotManager)
 
 	// バトル選択画面を初期化（カルーセル方式）
@@ -370,7 +369,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	// 設定画面を初期化
 	settingsScreen := screenFactory.CreateSettingsScreen()
 
-	// v3.0.0: エージェントカスタマイズ画面を初期化
+	// エージェントカスタマイズ画面を初期化
 	agentCustomizationScreen := screenFactory.CreateAgentCustomizationScreen(
 		invManager,
 		slotManager,
@@ -380,7 +379,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		chainEffectsMap,
 	)
 
-	// v3.0.0: インベントリ画面を初期化
+	// インベントリ画面を初期化
 	inventoryScreen := screenFactory.CreateInventoryScreen(
 		invManager,
 		slotManager,
@@ -410,7 +409,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		invProvider:              invProvider,
 		externalData:             externalData,
 		chainEffects:             chainEffects,
-		// v3.0.0: 新システムのマネージャー
+		// 新システムのマネージャー
 		slotManager: slotManager,
 		invManager:  invManager,
 		coreTypes:   coreTypesMap,
@@ -555,14 +554,14 @@ func (m *RootModel) performAutoSave() {
 	m.homeScreen.SetStatusMessage(m.statusMessage)
 }
 
-// appendNewSchemaToSaveData はv3.0.0新スキーマ（UniqueCores, UniqueSkills, AgentSlots）を
+// appendNewSchemaToSaveData は現行スキーマ（UniqueCores, UniqueSkills, AgentSlots）を
 // セーブデータに追加します。
 func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 	if m.invManager == nil || m.slotManager == nil {
 		return
 	}
 
-	// UniqueCoresを追加（v4.0.0: TypeIDリスト形式）
+	// UniqueCoresを追加（TypeIDリスト形式）
 	if saveData.Inventory.UniqueCores == nil {
 		saveData.Inventory.UniqueCores = &savedata.CoreInventorySave{
 			Cores: make([]string, 0),
@@ -619,52 +618,6 @@ func (m *RootModel) handleSaveRequest() {
 	saveData := m.gameState.ToSaveData()
 	m.appendNewSchemaToSaveData(saveData)
 
-	// デバッグモードの場合、invProviderからエージェント情報をオーバーライド
-	if m.debugMode && m.invProvider != nil {
-		agents := m.invProvider.GetAgents()
-		equippedAgents := m.invProvider.GetEquippedAgents()
-
-		// エージェントインスタンスを構築
-		agentInstances := make([]savedata.AgentInstanceSave, 0, len(agents))
-		for _, ag := range agents {
-			if ag == nil || ag.Core == nil {
-				continue
-			}
-			skills := make([]savedata.SkillInstanceSave, len(ag.Modules))
-			for i, mod := range ag.Modules {
-				if mod != nil {
-					skills[i] = savedata.SkillInstanceSave{
-						TypeID: mod.TypeID,
-					}
-					if mod.ChainEffect != nil {
-						skills[i].ChainEffect = &savedata.ChainEffectSave{
-							Type:  string(mod.ChainEffect.Type),
-							Value: mod.ChainEffect.Value,
-						}
-					}
-				}
-			}
-			agentInstances = append(agentInstances, savedata.AgentInstanceSave{
-				ID: ag.ID,
-				Core: savedata.CoreInstanceSave{
-					CoreTypeID: ag.Core.TypeID,
-					Level:      1, // レベル概念は削除されたが、セーブデータの後方互換性のため固定値1を保存
-				},
-				Skills: skills,
-			})
-		}
-		saveData.Inventory.AgentInstances = agentInstances
-
-		// 装備エージェントIDを構築
-		var equippedIDs [3]string
-		for i, ag := range equippedAgents {
-			if ag != nil && i < 3 {
-				equippedIDs[i] = ag.ID
-			}
-		}
-		saveData.Player.EquippedAgentIDs = equippedIDs
-	}
-
 	if err := m.saveDataIO.SaveGame(saveData); err != nil {
 		slog.Error("セーブに失敗",
 			slog.Any("error", err),
@@ -686,7 +639,7 @@ func (m *RootModel) startBattle(level int, enemyTypeID string) tea.Cmd {
 		enemy = m.gameState.EnemyGenerator().Generate(level)
 	}
 
-	// v3.0.0: AgentSlotManagerからエージェントを取得
+	// AgentSlotManagerからエージェントを取得
 	agents := m.invProvider.GetEquippedAgents()
 
 	// プレイヤーを準備（エージェントリストを渡す）

@@ -284,7 +284,7 @@ func (p PassiveSkill) buildValues() map[EffectColumn]float64 {
 		return p.Effects
 	}
 
-	// 後方互換性: EffectTypeとEffectValueから変換
+	// EffectTypeとEffectValueから変換
 	values := make(map[EffectColumn]float64)
 
 	switch p.EffectType {

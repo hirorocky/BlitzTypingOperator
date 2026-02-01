@@ -6,7 +6,7 @@ package savedata
 // ==================== CoreInventory 変換 ====================
 
 // ConvertCoreInventoryToSave はドメインのCoreInventory形式からセーブ形式に変換します。
-// v4.0.0: coresはTypeIDリスト形式です。
+// coresはTypeIDリスト形式です。
 func ConvertCoreInventoryToSave(cores []string) *CoreInventorySave {
 	result := &CoreInventorySave{
 		Cores: make([]string, len(cores)),
@@ -18,7 +18,7 @@ func ConvertCoreInventoryToSave(cores []string) *CoreInventorySave {
 }
 
 // ConvertSaveToCoreInventory はセーブ形式からドメインのCoreInventory形式に変換します。
-// v4.0.0: TypeIDリスト形式を返します。
+// TypeIDリスト形式を返します。
 // validTypeIDsに存在しないTypeIDは無視されます（マスタデータ整合性検証）。
 // saveがnilの場合は空のスライスを返します。
 func ConvertSaveToCoreInventory(save *CoreInventorySave, validTypeIDs map[string]bool) []string {
@@ -88,7 +88,7 @@ type SkillSlotData struct {
 }
 
 // ConvertAgentSlotToSave はドメインのAgentSlot形式からセーブ形式に変換します。
-// v4.0.0: coreLevel引数を削除（レベル概念の廃止）。
+// coreLevel引数を削除（レベル概念の廃止）。
 func ConvertAgentSlotToSave(coreTypeID string, skills [4]struct {
 	TypeID        string
 	ChainEffectID string
@@ -108,7 +108,7 @@ func ConvertAgentSlotToSave(coreTypeID string, skills [4]struct {
 }
 
 // ConvertSaveToAgentSlot はセーブ形式からドメインのAgentSlot形式に変換します。
-// v4.0.0: coreLevelを返さない（レベル概念の廃止）。
+// coreLevelを返さない（レベル概念の廃止）。
 // validCoreTypeIDsまたはvalidSkillTypeIDsに存在しないTypeIDは無視されます。
 // コアが無効な場合はスロット全体が空として扱われます。
 func ConvertSaveToAgentSlot(
@@ -143,7 +143,7 @@ type DefeatRecordInput struct {
 }
 
 // ConvertEnemyProgressToSave はドメインのEnemyProgress形式からセーブ形式に変換します。
-// v4.0.0: 敵進行データのセーブ形式への変換。
+// 敵進行データのセーブ形式への変換。
 func ConvertEnemyProgressToSave(currentRank int, defeatRecords map[string]struct {
 	Defeated         bool
 	MaxDefeatedLevel int
@@ -164,7 +164,7 @@ func ConvertEnemyProgressToSave(currentRank int, defeatRecords map[string]struct
 }
 
 // ConvertSaveToEnemyProgress はセーブ形式からドメインのEnemyProgress形式に変換します。
-// v4.0.0: 敵進行データのドメイン形式への変換。
+// 敵進行データのドメイン形式への変換。
 // saveがnilの場合はデフォルト値（rank=1, 空のrecords）を返します。
 func ConvertSaveToEnemyProgress(save *EnemyProgressSave) (currentRank int, defeatRecords map[string]DefeatRecordInput) {
 	if save == nil {

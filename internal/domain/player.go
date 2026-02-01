@@ -1,11 +1,9 @@
 // Package domain はゲームのドメインモデルを定義します。
 package domain
 
-// HP計算に使用する定数
-// 新仕様: 初期最大HP = 1000、敵撃破による成長で増加
-
 const (
-	InitialMaxHP = 1000 // 初期最大HP
+	// InitialMaxHP はプレイヤーの初期最大HPです。敵撃破による成長で増加します。
+	InitialMaxHP = 1000
 )
 
 // PlayerModel はゲーム内のプレイヤーエンティティを表す構造体です。
@@ -28,17 +26,6 @@ type PlayerModel struct {
 	// バフ/デバフ/コア特性/モジュールパッシブなどの効果を集約します。
 
 	EffectTable *EffectTable
-}
-
-// NewPlayer は新しいPlayerModelを作成します。
-// 初期状態ではHP/MaxHPは0で、後方互換性のために残されています。
-// 新規ゲーム開始時はNewPlayerWithMaxHP(InitialMaxHP)を使用してください。
-func NewPlayer() *PlayerModel {
-	return &PlayerModel{
-		HP:          0,
-		MaxHP:       0,
-		EffectTable: NewEffectTable(),
-	}
 }
 
 // NewPlayerWithMaxHP は指定された最大HPでPlayerModelを作成します。

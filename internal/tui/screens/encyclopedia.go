@@ -127,7 +127,7 @@ func (s *EncyclopediaScreen) getMaxIndex() int {
 	case CategoryCore:
 		return len(s.data.AllCoreTypes)
 	case CategoryModule:
-		return len(s.data.AllModuleTypes)
+		return len(s.data.AllSkillTypes)
 	case CategoryEnemy:
 		return len(s.data.AllEnemyTypes)
 	}
@@ -144,9 +144,9 @@ func (s *EncyclopediaScreen) isCoreTypeAcquired(id string) bool {
 	return false
 }
 
-// isModuleTypeAcquired はモジュールタイプが獲得済みかを返します。
-func (s *EncyclopediaScreen) isModuleTypeAcquired(id string) bool {
-	for _, acquired := range s.data.AcquiredModuleTypes {
+// isSkillTypeAcquired はモジュールタイプが獲得済みかを返します。
+func (s *EncyclopediaScreen) isSkillTypeAcquired(id string) bool {
+	for _, acquired := range s.data.AcquiredSkillTypes {
 		if acquired == id {
 			return true
 		}
@@ -173,8 +173,8 @@ func (s *EncyclopediaScreen) getCoreDisplayName(ct domain.CoreType) string {
 }
 
 // getModuleDisplayName はモジュールの表示名を返します（未獲得は???）。
-func (s *EncyclopediaScreen) getModuleDisplayName(mt ModuleTypeInfo) string {
-	if s.isModuleTypeAcquired(mt.ID) {
+func (s *EncyclopediaScreen) getModuleDisplayName(mt SkillTypeInfo) string {
+	if s.isSkillTypeAcquired(mt.ID) {
 		return mt.Name
 	}
 	return "???"
@@ -198,10 +198,10 @@ func (s *EncyclopediaScreen) getCoreCompletionRate() int {
 
 // getModuleCompletionRate はモジュール図鑑のコンプリート率を返します。
 func (s *EncyclopediaScreen) getModuleCompletionRate() int {
-	if len(s.data.AllModuleTypes) == 0 {
+	if len(s.data.AllSkillTypes) == 0 {
 		return 0
 	}
-	return len(s.data.AcquiredModuleTypes) * 100 / len(s.data.AllModuleTypes)
+	return len(s.data.AcquiredSkillTypes) * 100 / len(s.data.AllSkillTypes)
 }
 
 // getEnemyCompletionRate は敵図鑑のコンプリート率を返します。
@@ -376,7 +376,7 @@ func (s *EncyclopediaScreen) renderCorePreview() string {
 
 // renderModuleEncyclopedia はモジュール図鑑をレンダリングします。
 func (s *EncyclopediaScreen) renderModuleEncyclopedia() string {
-	if len(s.data.AllModuleTypes) == 0 {
+	if len(s.data.AllSkillTypes) == 0 {
 		return lipgloss.NewStyle().
 			Width(s.width).
 			Align(lipgloss.Center).
@@ -411,8 +411,8 @@ func (s *EncyclopediaScreen) renderModuleEncyclopedia() string {
 // renderModuleList はモジュール図鑑のリストをレンダリングします。
 func (s *EncyclopediaScreen) renderModuleList() string {
 	var items []string
-	for i, mt := range s.data.AllModuleTypes {
-		acquired := s.isModuleTypeAcquired(mt.ID)
+	for i, mt := range s.data.AllSkillTypes {
+		acquired := s.isSkillTypeAcquired(mt.ID)
 		style := lipgloss.NewStyle()
 		prefix := "  "
 		if i == s.selectedIndex {
@@ -436,12 +436,12 @@ func (s *EncyclopediaScreen) renderModuleList() string {
 
 // renderModulePreviewEncyclopedia はモジュール図鑑のプレビューをレンダリングします。
 func (s *EncyclopediaScreen) renderModulePreviewEncyclopedia() string {
-	if s.selectedIndex >= len(s.data.AllModuleTypes) {
+	if s.selectedIndex >= len(s.data.AllSkillTypes) {
 		return "選択してください"
 	}
 
-	mt := s.data.AllModuleTypes[s.selectedIndex]
-	acquired := s.isModuleTypeAcquired(mt.ID)
+	mt := s.data.AllSkillTypes[s.selectedIndex]
+	acquired := s.isSkillTypeAcquired(mt.ID)
 
 	if !acquired {
 		return "このモジュールはまだ獲得していません\n\n敵を倒してドロップを獲得しましょう"

@@ -63,7 +63,7 @@ type CoreType struct {
 // TypeIDのみで同一性が判定されます。
 type CoreModel struct {
 	// ID はコアインスタンスの一意識別子です。
-	// 後方互換性のために残されています。新規コードではTypeIDを使用してください。
+	// TypeIDと同じ値が設定されます。
 	ID string
 
 	// TypeID はコア特性ID（マスタデータ参照用）です。
@@ -132,7 +132,6 @@ func (c *CoreModel) IsTagAllowed(tag string) bool {
 // NewCoreWithTypeID はTypeIDベースでCoreModelを作成します。
 // ステータスはコア特性の重みから自動計算されます（100 × 重み）。
 // NameはType.Name形式で自動生成されます。
-// IDは後方互換性のためにTypeIDと同じ値が設定されますが、新規コードでは使用しないでください。
 func NewCoreWithTypeID(typeID string, coreType CoreType, passiveSkill PassiveSkill) *CoreModel {
 	// ステータスを重みベースで自動計算
 	stats := CalculateStats(coreType)
@@ -145,7 +144,7 @@ func NewCoreWithTypeID(typeID string, coreType CoreType, passiveSkill PassiveSki
 	name := coreType.Name
 
 	return &CoreModel{
-		ID:           typeID, // 後方互換性のため
+		ID:           typeID,
 		TypeID:       typeID,
 		Name:         name,
 		Type:         coreType,

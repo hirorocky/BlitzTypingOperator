@@ -39,13 +39,13 @@ func TestBattleEngine_ModuleUse_EchoSkill(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_echo_skill", Name: "エコースキル"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 100, StatCoef: 1.0, StatRef: "STR"},
@@ -54,8 +54,8 @@ func TestBattleEngine_ModuleUse_EchoSkill(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -72,7 +72,7 @@ func TestBattleEngine_ModuleUse_EchoSkill(t *testing.T) {
 	engine.SetPassiveSkills(passiveSkillDefs)
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	typingResult := &typing.TypingResult{
@@ -93,12 +93,12 @@ func TestBattleEngine_ModuleUse_EchoSkill(t *testing.T) {
 
 	// ダメージが2倍（2回発動）になることを確認
 	initialHP := state.Enemy.HP
-	_ = engine.ApplyModuleEffectWithEcho(state, agent, module, typingResult, repeatCount)
+	_ = engine.ApplySkillEffectWithEcho(state, agent, module, typingResult, repeatCount)
 	damageDealt := initialHP - state.Enemy.HP
 
 	// 通常ダメージと比較
 	state.Enemy.HP = initialHP
-	_ = engine.ApplyModuleEffectWithEcho(state, agent, module, typingResult, 1)
+	_ = engine.ApplySkillEffectWithEcho(state, agent, module, typingResult, 1)
 	singleDamage := initialHP - state.Enemy.HP
 
 	// 2回発動で約2倍のダメージ
@@ -136,13 +136,13 @@ func TestBattleEngine_ModuleUse_MiracleHeal(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_miracle_heal", Name: "ミラクルヒール"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_heal",
 		Name:        "テスト回復",
 		Icon:        "💚",
 		Tags:        []string{"heal"},
 		Description: "テスト用回復",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetSelf,
 				HPFormula:   &domain.HPFormula{Base: 20, StatCoef: 1.0, StatRef: "INT"},
@@ -151,8 +151,8 @@ func TestBattleEngine_ModuleUse_MiracleHeal(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -169,7 +169,7 @@ func TestBattleEngine_ModuleUse_MiracleHeal(t *testing.T) {
 	engine.SetPassiveSkills(passiveSkillDefs)
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	// HPを50%に減らす
@@ -222,13 +222,13 @@ func TestBattleEngine_ModuleUse_MiracleHeal_NotHealSkill(t *testing.T) {
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
 	// 攻撃スキル（回復ではない）
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 100, StatCoef: 1.0, StatRef: "STR"},
@@ -237,8 +237,8 @@ func TestBattleEngine_ModuleUse_MiracleHeal_NotHealSkill(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -255,7 +255,7 @@ func TestBattleEngine_ModuleUse_MiracleHeal_NotHealSkill(t *testing.T) {
 	engine.SetPassiveSkills(passiveSkillDefs)
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	// Act: 攻撃スキルでミラクルヒール判定

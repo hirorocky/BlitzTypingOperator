@@ -35,7 +35,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				Tags:         []string{"physical_low"},
 				Description:  "物理ダメージを与える基本攻撃",
 				MinDropLevel: 1,
-				Effects: []masterdata.ModuleEffectData{
+				Effects: []masterdata.SkillEffectData{
 					{
 						Target:      "enemy",
 						HPFormula:   &masterdata.HPFormulaData{Base: 0, StatCoef: 1.0, StatRef: "STR"},
@@ -50,7 +50,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				Tags:         []string{"magic_low"},
 				Description:  "魔法ダメージを与える基本魔法",
 				MinDropLevel: 1,
-				Effects: []masterdata.ModuleEffectData{
+				Effects: []masterdata.SkillEffectData{
 					{
 						Target:      "enemy",
 						HPFormula:   &masterdata.HPFormulaData{Base: 0, StatCoef: 1.0, StatRef: "INT"},
@@ -65,7 +65,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				Tags:         []string{"heal_low"},
 				Description:  "HPを回復する基本回復魔法",
 				MinDropLevel: 1,
-				Effects: []masterdata.ModuleEffectData{
+				Effects: []masterdata.SkillEffectData{
 					{
 						Target:      "self",
 						HPFormula:   &masterdata.HPFormulaData{Base: 0, StatCoef: 0.8, StatRef: "INT"},
@@ -80,7 +80,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				Tags:         []string{"buff_low"},
 				Description:  "一時的に攻撃力を上昇させる",
 				MinDropLevel: 1,
-				Effects: []masterdata.ModuleEffectData{
+				Effects: []masterdata.SkillEffectData{
 					{
 						Target: "self",
 						EffectColumn: &masterdata.EffectColumnData{
@@ -162,7 +162,7 @@ func createTestRewardCalculator() *rewarding.RewardCalculator {
 			Tags:         []string{"physical_low"},
 			Description:  "物理ダメージを与える",
 			MinDropLevel: 1,
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetEnemy,
 					HPFormula:   &domain.HPFormula{Base: 0, StatCoef: 1.0, StatRef: "STR"},
@@ -184,12 +184,40 @@ func createTestRewardCalculator() *rewarding.RewardCalculator {
 	return rewarding.NewRewardCalculator(coreTypes, moduleTypes, passiveSkills)
 }
 
+// initBattleForTestE2E はテスト用のバトル初期化ヘルパーです。
+func initBattleForTestE2E(_ *combat.BattleEngine, level int, agents []*domain.AgentModel, enemyTypes []domain.EnemyType) *combat.BattleState {
+	enemyType := enemyTypes[0]
+	hp := enemyType.BaseHP * level
+	attackPower := enemyType.BaseAttackPower + (level * 2)
+	enemy := domain.NewEnemy(
+		"test-enemy-id",
+		enemyType.Name,
+		level,
+		hp,
+		attackPower,
+		enemyType,
+	)
+
+	player := domain.NewPlayerWithMaxHP(domain.InitialMaxHP)
+	player.PrepareForBattle()
+
+	state := &combat.BattleState{
+		Enemy:          enemy,
+		Player:         player,
+		EquippedAgents: agents,
+		Level:          level,
+		Stats:          &combat.BattleStatistics{},
+	}
+
+	state.Enemy.PrepareNextAction()
+	return state
+}
+
 // ==================================================
 // Task 15.4: ゲームループE2Eテスト
 // ==================================================
 
 func TestE2E_NewGameFlow(t *testing.T) {
-
 	tempDir := t.TempDir()
 	io := savedata.NewSaveDataIO(tempDir, false)
 	initializer := startup.NewNewGameInitializer(createTestExternalData())
@@ -198,14 +226,15 @@ func TestE2E_NewGameFlow(t *testing.T) {
 	if !io.Exists() {
 		saveData := initializer.InitializeNewGame()
 
-		// 初期エージェントが装備されている
-		if len(saveData.Player.EquippedAgentIDs) == 0 {
-			t.Error("初期エージェントが装備されているべきです")
+		// 初期エージェントが装備されている（AgentSlots使用）
+		equippedCount := 0
+		for _, slot := range saveData.Player.AgentSlots {
+			if slot.CoreTypeID != "" {
+				equippedCount++
+			}
 		}
-
-		// 初期エージェントがインベントリに存在する（ID化された構造）
-		if len(saveData.Inventory.AgentInstances) == 0 {
-			t.Error("初期エージェントがインベントリに存在するべきです")
+		if equippedCount == 0 {
+			t.Error("初期エージェントが装備されているべきです")
 		}
 
 		// セーブ
@@ -221,8 +250,15 @@ func TestE2E_NewGameFlow(t *testing.T) {
 		t.Fatalf("ロードに失敗: %v", err)
 	}
 
-	// 状態が保持されている
-	if len(loadedData.Player.EquippedAgentIDs) == 0 {
+	// 状態が保持されている（AgentSlots使用）
+	hasEquipped := false
+	for _, slot := range loadedData.Player.AgentSlots {
+		if slot.CoreTypeID != "" {
+			hasEquipped = true
+			break
+		}
+	}
+	if !hasEquipped {
 		t.Error("装備エージェントが復元されるべきです")
 	}
 }
@@ -256,10 +292,7 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 		},
 	}
 	engine := combat.NewBattleEngine(enemyTypes)
-	battleState, err := engine.InitializeBattle(battleLevel, agents)
-	if err != nil {
-		t.Fatalf("バトル初期化に失敗: %v", err)
-	}
+	battleState := initBattleForTestE2E(engine, battleLevel, agents, enemyTypes)
 
 	// バトル進行：プレイヤーが攻撃して敵を倒す
 	typingResult := &typing.TypingResult{
@@ -274,7 +307,7 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 	for battleState.Enemy.IsAlive() {
 		agent := agents[0]
 		module := agent.Modules[0] // 物理攻撃
-		engine.ApplyModuleEffect(battleState, agent, module, typingResult)
+		engine.ApplySkillEffect(battleState, agent, module, typingResult)
 		engine.RecordTypingResult(battleState, typingResult)
 	}
 
@@ -310,24 +343,20 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 		t.Error("平均WPMが計算されるべきです")
 	}
 
-	// 報酬をインベントリに追加（v1.0.0形式）
+	// 報酬をユニークインベントリに追加
 	for _, c := range rewards.DroppedCores {
-		saveData.Inventory.CoreInstances = append(saveData.Inventory.CoreInstances, savedata.CoreInstanceSave{
-			CoreTypeID: c.TypeID,
-			Level:      1, // 後方互換性のため固定レベル
-		})
+		saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores, c.TypeID)
 	}
 	for _, m := range rewards.DroppedModules {
-		modSave := savedata.ModuleInstanceSave{
-			TypeID: m.TypeID,
-		}
+		chainID := ""
 		if m.ChainEffect != nil {
-			modSave.ChainEffect = &savedata.ChainEffectSave{
-				Type:  string(m.ChainEffect.Type),
-				Value: m.ChainEffect.Value,
-			}
+			chainID = string(m.ChainEffect.Type)
 		}
-		saveData.Inventory.ModuleInstances = append(saveData.Inventory.ModuleInstances, modSave)
+		if saveData.Inventory.UniqueSkills.Skills[m.TypeID] == nil {
+			saveData.Inventory.UniqueSkills.Skills[m.TypeID] = []string{}
+		}
+		saveData.Inventory.UniqueSkills.Skills[m.TypeID] = append(
+			saveData.Inventory.UniqueSkills.Skills[m.TypeID], chainID)
 	}
 
 	// 統計更新
@@ -338,7 +367,7 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 	}
 
 	// セーブ
-	err = io.SaveGame(saveData)
+	err := io.SaveGame(saveData)
 	if err != nil {
 		t.Fatalf("セーブに失敗: %v", err)
 	}
@@ -366,12 +395,12 @@ func TestE2E_AgentSynthesisFlow(t *testing.T) {
 	// 追加アイテム付きで新規ゲーム開始
 	saveData := initializer.CreateNewGameWithExtraItems()
 
-	// コアとモジュールがインベントリにある（v1.0.0形式）
-	if len(saveData.Inventory.CoreInstances) == 0 {
+	// ユニークコアとスキルがインベントリにある
+	if len(saveData.Inventory.UniqueCores.Cores) == 0 {
 		t.Fatal("コアがありません")
 	}
-	if len(saveData.Inventory.ModuleInstances) < 1 {
-		t.Fatalf("モジュールがありません: got %d", len(saveData.Inventory.ModuleInstances))
+	if len(saveData.Inventory.UniqueSkills.Skills) < 1 {
+		t.Fatalf("スキルがありません: got %d", len(saveData.Inventory.UniqueSkills.Skills))
 	}
 
 	// テスト用にドメインオブジェクトを作成（マスタデータから初期エージェントを使用）
@@ -395,34 +424,25 @@ func TestE2E_AgentSynthesisFlow(t *testing.T) {
 		t.Errorf("エージェントは%d個のモジュールを持つべきです", len(selectedModules))
 	}
 
-	// インベントリに追加（v2.0.0形式: コア情報とチェイン効果を埋め込み）
-	skills := make([]savedata.SkillInstanceSave, len(newAgent.Modules))
+	// AgentSlotsの最後のスロットを置換（初期状態では3スロット全て埋まっている）
+	slotIdx := 2 // 最後のスロットを使用
+
+	// スキルスロット構成を作成
+	var skillSlots [4]savedata.SkillSlotSaveCfg
 	for i, m := range newAgent.Modules {
-		skills[i] = savedata.SkillInstanceSave{
+		if i >= 4 {
+			break
+		}
+		skillSlots[i] = savedata.SkillSlotSaveCfg{
 			TypeID: m.TypeID,
 		}
 		if m.ChainEffect != nil {
-			skills[i].ChainEffect = &savedata.ChainEffectSave{
-				Type:  string(m.ChainEffect.Type),
-				Value: m.ChainEffect.Value,
-			}
+			skillSlots[i].ChainEffectID = string(m.ChainEffect.Type)
 		}
 	}
-	saveData.Inventory.AgentInstances = append(saveData.Inventory.AgentInstances, savedata.AgentInstanceSave{
-		ID: newAgent.ID,
-		Core: savedata.CoreInstanceSave{
-			CoreTypeID: newAgent.Core.TypeID,
-			Level:      1, // 後方互換性のため固定レベル
-		},
-		Skills: skills,
-	})
-
-	// エージェント装備（空きスロットを探して装備）
-	for i := range saveData.Player.EquippedAgentIDs {
-		if saveData.Player.EquippedAgentIDs[i] == "" {
-			saveData.Player.EquippedAgentIDs[i] = newAgent.ID
-			break
-		}
+	saveData.Player.AgentSlots[slotIdx] = savedata.AgentSlotSave{
+		CoreTypeID: newAgent.Core.TypeID,
+		Skills:     skillSlots,
 	}
 
 	// セーブ
@@ -437,10 +457,10 @@ func TestE2E_AgentSynthesisFlow(t *testing.T) {
 		t.Fatalf("ロードに失敗: %v", err)
 	}
 
-	// 新しいエージェントが保存されている（ID化された構造）
+	// 新しいエージェントが保存されている（AgentSlots形式）
 	found := false
-	for _, a := range loadedData.Inventory.AgentInstances {
-		if a.ID == "new_agent_1" {
+	for _, slot := range loadedData.Player.AgentSlots {
+		if slot.CoreTypeID == newAgent.Core.TypeID {
 			found = true
 			break
 		}
@@ -481,16 +501,13 @@ func TestE2E_ProgressionFlow(t *testing.T) {
 
 	// 5回バトルして進行
 	for level := 1; level <= 5; level++ {
-		battleState, err := engine.InitializeBattle(level, agents)
-		if err != nil {
-			t.Fatalf("バトル初期化に失敗: %v", err)
-		}
+		battleState := initBattleForTestE2E(engine, level, agents, enemyTypes)
 
 		// 敵を倒す
 		for battleState.Enemy.IsAlive() {
 			agent := agents[0]
 			module := agent.Modules[0]
-			engine.ApplyModuleEffect(battleState, agent, module, typingResult)
+			engine.ApplySkillEffect(battleState, agent, module, typingResult)
 		}
 
 		// 勝利確認
@@ -569,8 +586,15 @@ func TestE2E_SaveQuitRestartLoad(t *testing.T) {
 		t.Errorf("HighestWPM expected 150.5, got %f", loadedData.Statistics.HighestWPM)
 	}
 
-	// インベントリも復元されている（ID化された構造）
-	if len(loadedData.Inventory.AgentInstances) == 0 {
+	// エージェントスロットも復元されている
+	hasAgent := false
+	for _, slot := range loadedData.Player.AgentSlots {
+		if slot.CoreTypeID != "" {
+			hasAgent = true
+			break
+		}
+	}
+	if !hasAgent {
 		t.Error("エージェントが復元されるべきです")
 	}
 }
@@ -597,7 +621,7 @@ func TestE2E_DefeatAndRetry(t *testing.T) {
 	engine := combat.NewBattleEngine(enemyTypes)
 
 	// 強い敵とバトル
-	battleState, _ := engine.InitializeBattle(10, agents)
+	battleState := initBattleForTestE2E(engine, 10, agents, enemyTypes)
 
 	// 敵の攻撃を受け続けて敗北
 	for battleState.Player.IsAlive() {

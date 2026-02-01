@@ -166,7 +166,3 @@ func (e *SkillEffect) IsDebuffEffect() bool {
 	// 敵対象かつカラム効果（デバフ = 敵へのステータス弱化）
 	return e.Target == TargetEnemy
 }
-
-// ModuleEffect はSkillEffectのエイリアスです。
-// 後方互換性のために残されています。新規コードではSkillEffectを使用してください。
-type ModuleEffect = SkillEffect

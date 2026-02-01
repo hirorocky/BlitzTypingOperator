@@ -197,35 +197,3 @@ func TestSkillEffect_IsDebuffEffect(t *testing.T) {
 		t.Error("自身対象のColumnSpec効果はデバフ効果ではないべきです")
 	}
 }
-
-// ==================== ModuleType/ModuleEffect エイリアステスト ====================
-
-// TestModuleType_IsAliasOfSkillType はModuleTypeがSkillTypeのエイリアスであることを確認します。
-func TestModuleType_IsAliasOfSkillType(t *testing.T) {
-	// ModuleTypeとSkillTypeが同じ型であることを確認
-	var skillType SkillType
-	var moduleType ModuleType
-
-	// 型変換ができることを確認（同じ型のエイリアスであることの証明）
-	skillType = SkillType(moduleType)
-	moduleType = ModuleType(skillType)
-
-	// コンパイルが通れば成功
-	_ = skillType
-	_ = moduleType
-}
-
-// TestModuleEffect_IsAliasOfSkillEffect はModuleEffectがSkillEffectのエイリアスであることを確認します。
-func TestModuleEffect_IsAliasOfSkillEffect(t *testing.T) {
-	// ModuleEffectとSkillEffectが同じ型であることを確認
-	var skillEffect SkillEffect
-	var moduleEffect ModuleEffect
-
-	// 型変換ができることを確認（同じ型のエイリアスであることの証明）
-	skillEffect = SkillEffect(moduleEffect)
-	moduleEffect = ModuleEffect(skillEffect)
-
-	// コンパイルが通れば成功
-	_ = skillEffect
-	_ = moduleEffect
-}

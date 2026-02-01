@@ -450,7 +450,7 @@ func (m *AgentSlotManager) buildAgentFromSlot(slot int) *domain.AgentModel {
 	)
 
 	// スキルを構築
-	modules := make([]*domain.ModuleModel, 0, domain.MaxSkillSlotCount)
+	modules := make([]*domain.SkillModel, 0, domain.MaxSkillSlotCount)
 	for i := range domain.MaxSkillSlotCount {
 		skillConfig := targetSlot.GetSkill(i)
 		if skillConfig == nil || skillConfig.IsEmpty() {
@@ -469,8 +469,8 @@ func (m *AgentSlotManager) buildAgentFromSlot(slot int) *domain.AgentModel {
 	return domain.NewAgent(agentID, core, modules)
 }
 
-// buildModuleFromConfig はスキルスロット構成からModuleModelを構築します。
-func (m *AgentSlotManager) buildModuleFromConfig(config *domain.SkillSlotConfig) *domain.ModuleModel {
+// buildModuleFromConfig はスキルスロット構成からSkillModelを構築します。
+func (m *AgentSlotManager) buildModuleFromConfig(config *domain.SkillSlotConfig) *domain.SkillModel {
 	skillType, exists := m.skillTypes[config.TypeID]
 	if !exists {
 		return nil

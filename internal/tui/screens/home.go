@@ -23,7 +23,7 @@ type AgentProvider interface {
 }
 
 // SlotReadinessProvider はエージェントスロットの準備状態を提供するインターフェースです。
-// v3.0.0 AgentSlotManager で実装されます。
+// AgentSlotManagerで実装されます。
 type SlotReadinessProvider interface {
 	// GetReadySlotCount はバトルに使用可能なスロット数を返します。
 	GetReadySlotCount() int
@@ -66,7 +66,7 @@ type HomeScreen struct {
 	menu            *components.Menu
 	maxLevelReached int
 	agentProvider   AgentProvider         // 装備エージェントを取得するプロバイダー
-	slotProvider    SlotReadinessProvider // v3.0.0 スロット準備状態プロバイダー
+	slotProvider    SlotReadinessProvider // スロット準備状態プロバイダー
 	styles          *styles.GameStyles
 	width           int
 	height          int
@@ -379,7 +379,7 @@ func (s *HomeScreen) SetMaxLevelReached(level int) {
 }
 
 // SetSlotProvider はスロット準備状態プロバイダーを設定します。
-// v3.0.0 AgentSlotManager を使用してバトル選択の有効/無効を判断します。
+// AgentSlotManagerを使用してバトル選択の有効/無効を判断します。
 func (s *HomeScreen) SetSlotProvider(provider SlotReadinessProvider) {
 	s.slotProvider = provider
 }
@@ -388,7 +388,7 @@ func (s *HomeScreen) SetSlotProvider(provider SlotReadinessProvider) {
 func (s *HomeScreen) RefreshMenuState() {
 	hasEquippedAgents := false
 
-	// v3.0.0: slotProviderがある場合は優先使用（AgentSlotManager経由）
+	// slotProviderがある場合は優先使用（AgentSlotManager経由）
 	if s.slotProvider != nil {
 		hasEquippedAgents = s.slotProvider.GetReadySlotCount() > 0
 	} else if s.agentProvider != nil {

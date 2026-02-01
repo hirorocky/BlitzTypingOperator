@@ -52,7 +52,7 @@ func createTestMasterData() (map[string]domain.CoreType, map[string]domain.Skill
 			ID:   "slash",
 			Name: "スラッシュ",
 			Tags: []string{"physical"},
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetEnemy,
 					HPFormula:   &domain.HPFormula{Base: 10, StatCoef: 1.0, StatRef: "STR"},
@@ -64,7 +64,7 @@ func createTestMasterData() (map[string]domain.CoreType, map[string]domain.Skill
 			ID:   "heal",
 			Name: "ヒール",
 			Tags: []string{"heal"},
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetSelf,
 					HPFormula:   &domain.HPFormula{Base: 20, StatCoef: 1.0, StatRef: "WIL"},
@@ -76,7 +76,7 @@ func createTestMasterData() (map[string]domain.CoreType, map[string]domain.Skill
 			ID:   "fireball",
 			Name: "ファイアボール",
 			Tags: []string{"magic"},
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetEnemy,
 					HPFormula:   &domain.HPFormula{Base: 15, StatCoef: 1.5, StatRef: "INT"},
@@ -88,7 +88,7 @@ func createTestMasterData() (map[string]domain.CoreType, map[string]domain.Skill
 			ID:   "strike",
 			Name: "ストライク",
 			Tags: []string{"physical"},
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetEnemy,
 					HPFormula:   &domain.HPFormula{Base: 8, StatCoef: 0.8, StatRef: "STR"},
@@ -148,7 +148,7 @@ func TestBattleEngine_InitializeBattleWithSlotManager(t *testing.T) {
 	engine := NewBattleEngine(enemyTypes)
 
 	// バトル初期化
-	state, err := engine.InitializeBattle(5, agents)
+	state, err := engine.initializeBattleForTest(5, agents)
 	if err != nil {
 		t.Fatalf("バトル初期化に失敗: %v", err)
 	}
@@ -203,7 +203,7 @@ func TestBattleEngine_BuildAgentsForBattle_EmptySlotExclusion(t *testing.T) {
 	engine := NewBattleEngine(enemyTypes)
 
 	// バトル初期化
-	state, err := engine.InitializeBattle(5, agents)
+	state, err := engine.initializeBattleForTest(5, agents)
 	if err != nil {
 		t.Fatalf("バトル初期化に失敗: %v", err)
 	}
@@ -242,7 +242,7 @@ func TestBattleEngine_AllSlotsEmpty(t *testing.T) {
 	engine := NewBattleEngine(enemyTypes)
 
 	// バトル初期化はエラーになるべき
-	_, err := engine.InitializeBattle(5, agents)
+	_, err := engine.initializeBattleForTest(5, agents)
 	if err == nil {
 		t.Error("空のエージェントリストでバトル初期化が成功した（エラーになるべき）")
 	}
@@ -431,7 +431,7 @@ func TestBattleIntegration_BattleWithSlotAgents(t *testing.T) {
 	engine.SetPassiveSkills(passiveSkills)
 
 	// バトル初期化
-	state, err := engine.InitializeBattle(5, agents)
+	state, err := engine.initializeBattleForTest(5, agents)
 	if err != nil {
 		t.Fatalf("バトル初期化に失敗: %v", err)
 	}

@@ -10,14 +10,14 @@ import (
 )
 
 // newTestModule はテスト用ダメージモジュールを作成するヘルパー関数です。
-func newTestModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
 		Icon:        "⚔️",
 		Tags:        tags,
 		Description: description,
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -29,14 +29,14 @@ func newTestModule(id, name string, tags []string, statCoef float64, statRef, de
 }
 
 // newTestModuleWithChainEffect はチェイン効果付きモジュールを作成するヘルパー関数です。
-func newTestModuleWithChainEffect(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestModuleWithChainEffect(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
 		Icon:        "⚔️",
 		Tags:        tags,
 		Description: description,
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -298,7 +298,7 @@ func TestModuleDropInfo_ToDomainWithRandomChainEffect(t *testing.T) {
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 10.0, StatCoef: 1.0, StatRef: "STR"},
@@ -344,7 +344,7 @@ func TestAddRewardsToInventory_WithChainEffect(t *testing.T) {
 	// 報酬結果を作成
 	result := &RewardResult{
 		IsVictory:      true,
-		DroppedModules: []*domain.ModuleModel{module},
+		DroppedModules: []*domain.SkillModel{module},
 	}
 
 	// インベントリを作成（新システム）
@@ -514,7 +514,7 @@ func TestCalculateGuaranteedReward_ModuleDrop(t *testing.T) {
 			ID:           "physical_lv1",
 			Name:         "物理攻撃Lv1",
 			MinDropLevel: 1,
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{Target: domain.TargetEnemy, Probability: 1.0},
 			},
 		},

@@ -14,7 +14,7 @@ type AgentModel struct {
 
 	// Modules はエージェントに装備されているモジュール（スキル）のリストです。
 	// エージェントは1〜4つのモジュールを装備できます。
-	Modules []*ModuleModel
+	Modules []*SkillModel
 
 	// BaseStats はエージェントの基礎ステータス値です。
 	// コアのステータスから導出され、モジュール効果計算の基準となります。
@@ -31,9 +31,9 @@ const MaxModuleSlotCount = 4
 // NewAgent は新しいAgentModelを作成します。
 // 基礎ステータスはコアのステータスからコピーされます。
 // modulesはコピーされ、元のスライスとの参照共有を避けます。
-func NewAgent(id string, core *CoreModel, modules []*ModuleModel) *AgentModel {
+func NewAgent(id string, core *CoreModel, modules []*SkillModel) *AgentModel {
 	// モジュールリストをコピー（スライスの参照共有を避ける）
-	modulesCopy := make([]*ModuleModel, len(modules))
+	modulesCopy := make([]*SkillModel, len(modules))
 	copy(modulesCopy, modules)
 
 	return &AgentModel{

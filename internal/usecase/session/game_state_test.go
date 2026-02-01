@@ -16,7 +16,6 @@ func TestNewGameState(t *testing.T) {
 	}
 
 	// 初期状態の確認
-	// v4.0.0: MaxLevelReachedはGetMaxLevelReached()経由で取得
 	if gs.GetMaxLevelReached() != 0 {
 		t.Errorf("GetMaxLevelReached() expected 0, got %d", gs.GetMaxLevelReached())
 	}
@@ -28,8 +27,6 @@ func TestNewGameState(t *testing.T) {
 	if gs.Inventory() == nil {
 		t.Error("Inventory() returned nil")
 	}
-
-	// v3.0.0: AgentManager()は削除されました
 
 	if gs.Statistics() == nil {
 		t.Error("Statistics() returned nil")
@@ -44,7 +41,7 @@ func TestNewGameState(t *testing.T) {
 func TestRecordBattleVictory(t *testing.T) {
 	gs := NewGameStateForTest()
 
-	// 統計のみをテスト（v4.0.0: MaxLevelReachedはRecordEnemyDefeat経由で更新）
+	// 統計のみをテスト
 	gs.RecordBattleVictory(1, 1)
 
 	stats := gs.Statistics()
@@ -131,7 +128,6 @@ func TestAddEncounteredEnemy(t *testing.T) {
 func TestPreparePlayerForBattle(t *testing.T) {
 	gs := NewGameStateForTest()
 
-	// 新仕様: MaxHPが設定されているプレイヤーでバトル準備
 	// MaxHPが0で空のエージェントリストの場合、MaxHPは変更されない
 	gs.Player().InitializeHP(domain.InitialMaxHP)
 	gs.PreparePlayerForBattle([]*domain.AgentModel{})

@@ -9,14 +9,14 @@ import (
 )
 
 // newTestDamageModuleDomain はテスト用のダメージモジュールを作成するヘルパー関数です。
-func newTestDamageModuleDomain(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestDamageModuleDomain(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
 		Icon:        "⚔️",
 		Tags:        tags,
 		Description: description,
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -28,14 +28,14 @@ func newTestDamageModuleDomain(id, name string, tags []string, statCoef float64,
 }
 
 // newTestHealModuleDomain はテスト用の回復モジュールを作成するヘルパー関数です。
-func newTestHealModuleDomain(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestHealModuleDomain(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
 		Icon:        "💚",
 		Tags:        tags,
 		Description: description,
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetSelf,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -47,14 +47,14 @@ func newTestHealModuleDomain(id, name string, tags []string, statCoef float64, s
 }
 
 // newTestBuffModuleDomain はテスト用のバフモジュールを作成するヘルパー関数です。
-func newTestBuffModuleDomain(id, name string, tags []string, value float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestBuffModuleDomain(id, name string, tags []string, value float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
 		Icon:        "⬆️",
 		Tags:        tags,
 		Description: description,
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target: domain.TargetSelf,
 				ColumnSpec: &domain.EffectColumnSpec{
@@ -141,7 +141,7 @@ func TestCoreModel_TagAllowance(t *testing.T) {
 	}
 }
 
-func TestModuleModel_EffectsAndTags(t *testing.T) {
+func TestSkillModel_EffectsAndTags(t *testing.T) {
 
 	module := newTestDamageModuleDomain(
 		"module_1",
@@ -170,7 +170,7 @@ func TestModuleModel_EffectsAndTags(t *testing.T) {
 	}
 }
 
-func TestModuleModel_CoreCompatibility(t *testing.T) {
+func TestSkillModel_CoreCompatibility(t *testing.T) {
 	// モジュールとコアの互換性テスト
 	coreType := domain.CoreType{
 		ID:          "test_type",
@@ -209,7 +209,7 @@ func TestAgentModel_LevelEqualsCore(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "test", Name: "テスト", Description: ""}
 	core := domain.NewCoreWithTypeID("core_1", coreType, passiveSkill)
 
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		newTestDamageModuleDomain("m1", "物理打撃Lv1", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModuleDomain("m2", "ファイアボールLv1", []string{"magic_low"}, 1.0, "MAG", ""),
 		newTestHealModuleDomain("m3", "ヒールLv1", []string{"heal_low"}, 0.8, "MAG", ""),

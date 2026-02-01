@@ -71,7 +71,7 @@ func TestNewGameState(t *testing.T) {
 // TestGameState_HasMaxLevelReached はGameStateが到達最高レベルを保持することを検証します
 func TestGameState_HasMaxLevelReached(t *testing.T) {
 	gs := gamestate.NewGameStateForTest()
-	// 初期値は0であるべき（v4.0.0: GetMaxLevelReached経由で取得）
+	// 初期値は0であるべき
 	if gs.GetMaxLevelReached() < 0 {
 		t.Errorf("GetMaxLevelReached() should not be negative, got %d", gs.GetMaxLevelReached())
 	}

@@ -20,9 +20,9 @@ func TestPlayerModel_フィールドの確認(t *testing.T) {
 	}
 }
 
-// TestNewPlayer_プレイヤー作成 はNewPlayer関数でプレイヤーが正しく作成されることを確認します。
-func TestNewPlayer_プレイヤー作成(t *testing.T) {
-	player := NewPlayer()
+// TestNewPlayerWithMaxHP_プレイヤー作成 はNewPlayerWithMaxHP関数でプレイヤーが正しく作成されることを確認します。
+func TestNewPlayerWithMaxHP_プレイヤー作成(t *testing.T) {
+	player := NewPlayerWithMaxHP(0)
 
 	// 初期状態ではHP/MaxHPは0（エージェント装備後に計算）
 	if player.HP != 0 {
@@ -37,9 +37,8 @@ func TestNewPlayer_プレイヤー作成(t *testing.T) {
 }
 
 // TestPlayerModel_InitializeHP はHP初期化を確認します。
-// 新仕様: MaxHPは初期値1000固定、エージェント装備後にInitializeHPで設定
 func TestPlayerModel_InitializeHP(t *testing.T) {
-	player := NewPlayer()
+	player := NewPlayerWithMaxHP(0)
 
 	// 初期状態
 	if player.MaxHP != 0 {
@@ -49,7 +48,7 @@ func TestPlayerModel_InitializeHP(t *testing.T) {
 	// HP初期化
 	player.InitializeHP(InitialMaxHP)
 
-	// 新仕様: 初期最大HP = 1000
+	// 初期最大HP = 1000
 	if player.MaxHP != 1000 {
 		t.Errorf("MaxHPが期待値と異なります: got %d, want 1000", player.MaxHP)
 	}
@@ -77,8 +76,6 @@ func TestPlayerModel_バトル開始時全回復(t *testing.T) {
 // TestPlayerModel_HP増減 はHPの増減処理を確認します。
 func TestPlayerModel_HP増減(t *testing.T) {
 	player := NewPlayerWithMaxHP(InitialMaxHP)
-
-	// 新仕様: MaxHP = 1000
 
 	// ダメージを受ける
 	player.TakeDamage(30)
@@ -140,7 +137,7 @@ func TestPlayerModel_バトル持ち越しなし(t *testing.T) {
 
 // TestInitialMaxHP は初期最大HP定数が正しい値であることを確認します。
 func TestInitialMaxHP(t *testing.T) {
-	// 新仕様の初期最大HP
+	// 初期最大HPは1000
 	if InitialMaxHP != 1000 {
 		t.Errorf("InitialMaxHPが期待値と異なります: got %d, want 1000", InitialMaxHP)
 	}

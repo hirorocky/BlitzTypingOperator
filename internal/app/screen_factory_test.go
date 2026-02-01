@@ -15,8 +15,8 @@ func (m *mockInventoryProvider) GetCores() []*domain.CoreModel {
 	return []*domain.CoreModel{}
 }
 
-func (m *mockInventoryProvider) GetModules() []*domain.ModuleModel {
-	return []*domain.ModuleModel{}
+func (m *mockInventoryProvider) GetModules() []*domain.SkillModel {
+	return []*domain.SkillModel{}
 }
 
 func (m *mockInventoryProvider) GetAgents() []*domain.AgentModel {

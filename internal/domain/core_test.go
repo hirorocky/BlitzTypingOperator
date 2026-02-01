@@ -445,7 +445,7 @@ func TestNewCoreWithTypeID_AllowedTagsの独立性(t *testing.T) {
 
 // TestBaseStatValue はBaseStatValue定数が正しい値であることを確認します。
 func TestBaseStatValue(t *testing.T) {
-	// 新仕様: 基礎値は100
+	// ステータス計算の基礎値は100
 	if BaseStatValue != 100 {
 		t.Errorf("BaseStatValueが期待値と異なります: got %d, want 100", BaseStatValue)
 	}

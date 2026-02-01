@@ -48,7 +48,7 @@ func createBattleTestSkillTypes() map[string]domain.SkillType {
 			Name:        "スラッシュ",
 			Tags:        []string{"physical_low"},
 			Description: "物理攻撃",
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetEnemy,
 					HPFormula:   &domain.HPFormula{Base: 10, StatCoef: 1.0, StatRef: "STR"},
@@ -61,7 +61,7 @@ func createBattleTestSkillTypes() map[string]domain.SkillType {
 			Name:        "ヘビーストライク",
 			Tags:        []string{"physical_mid"},
 			Description: "強力な物理攻撃",
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetEnemy,
 					HPFormula:   &domain.HPFormula{Base: 20, StatCoef: 1.5, StatRef: "STR"},
@@ -74,7 +74,7 @@ func createBattleTestSkillTypes() map[string]domain.SkillType {
 			Name:        "ファイア",
 			Tags:        []string{"magic_low"},
 			Description: "魔法攻撃",
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetEnemy,
 					HPFormula:   &domain.HPFormula{Base: 15, StatCoef: 1.0, StatRef: "INT"},
@@ -87,7 +87,7 @@ func createBattleTestSkillTypes() map[string]domain.SkillType {
 			Name:        "キュア",
 			Tags:        []string{"heal_low"},
 			Description: "回復魔法",
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetSelf,
 					HPFormula:   &domain.HPFormula{Base: 20, StatCoef: 0.8, StatRef: "INT"},

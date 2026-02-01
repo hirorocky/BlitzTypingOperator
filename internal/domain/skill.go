@@ -58,7 +58,3 @@ func (t SkillType) IsCompatibleWithCore(core *CoreModel) bool {
 	}
 	return false
 }
-
-// ModuleType はSkillTypeのエイリアスです。
-// 後方互換性のために残されています。新規コードではSkillTypeを使用してください。
-type ModuleType = SkillType

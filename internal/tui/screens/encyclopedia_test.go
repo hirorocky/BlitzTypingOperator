@@ -78,7 +78,7 @@ func TestEncyclopediaModuleEncyclopedia(t *testing.T) {
 	screen.currentCategory = CategoryModule
 
 	// 全モジュールタイプが表示されていること
-	if len(screen.data.AllModuleTypes) == 0 {
+	if len(screen.data.AllSkillTypes) == 0 {
 		t.Error("モジュールタイプが空です")
 	}
 }
@@ -110,7 +110,7 @@ func TestEncyclopediaUnacquiredDisplay(t *testing.T) {
 	data := createTestEncyclopediaData()
 	// 獲得済みリストを空にする
 	data.AcquiredCoreTypes = []string{}
-	data.AcquiredModuleTypes = []string{}
+	data.AcquiredSkillTypes = []string{}
 	data.EncounteredEnemies = []string{}
 
 	screen := NewEncyclopediaScreen(data)
@@ -227,7 +227,7 @@ func createTestEncyclopediaData() *EncyclopediaData {
 		{ID: "healer", Name: "ヒーラー", StatWeights: map[string]float64{"STR": 0.8, "INT": 1.4, "WIL": 0.9, "LUK": 0.9}},
 	}
 
-	moduleTypes := []ModuleTypeInfo{
+	moduleTypes := []SkillTypeInfo{
 		{ID: "physical_lv1", Name: "物理攻撃Lv1", Icon: "⚔️", Tags: []string{"physical_low"}, Description: "基本的な物理攻撃"},
 		{ID: "magic_lv1", Name: "魔法攻撃Lv1", Icon: "💥", Tags: []string{"magic_low"}, Description: "基本的な魔法攻撃"},
 		{ID: "heal_lv1", Name: "回復Lv1", Icon: "💚", Tags: []string{"heal_low"}, Description: "基本的な回復"},
@@ -240,11 +240,11 @@ func createTestEncyclopediaData() *EncyclopediaData {
 	}
 
 	return &EncyclopediaData{
-		AllCoreTypes:        coreTypes,
-		AllModuleTypes:      moduleTypes,
-		AllEnemyTypes:       enemyTypes,
-		AcquiredCoreTypes:   []string{"all_rounder"},
-		AcquiredModuleTypes: []string{"physical_lv1"},
-		EncounteredEnemies:  []string{"goblin"},
+		AllCoreTypes:       coreTypes,
+		AllSkillTypes:      moduleTypes,
+		AllEnemyTypes:      enemyTypes,
+		AcquiredCoreTypes:  []string{"all_rounder"},
+		AcquiredSkillTypes: []string{"physical_lv1"},
+		EncounteredEnemies: []string{"goblin"},
 	}
 }

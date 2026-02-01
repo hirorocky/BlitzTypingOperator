@@ -6,14 +6,14 @@ import (
 )
 
 // newTestDamageModule はテスト用ダメージモジュールを作成するヘルパー関数です。
-func newTestDamageModule(id, name string, tags []string, statCoef float64, statRef, description string) *ModuleModel {
-	return NewModuleFromType(ModuleType{
+func newTestDamageModule(id, name string, tags []string, statCoef float64, statRef, description string) *SkillModel {
+	return NewSkillFromType(SkillType{
 		ID:          id,
 		Name:        name,
 		Icon:        "⚔️",
 		Tags:        tags,
 		Description: description,
-		Effects: []ModuleEffect{
+		Effects: []SkillEffect{
 			{
 				Target:      TargetEnemy,
 				HPFormula:   &HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -43,7 +43,7 @@ func TestAgentModel_フィールドの確認(t *testing.T) {
 
 	core := NewCoreWithTypeID("attack_balance", coreType, passiveSkill)
 
-	modules := []*ModuleModel{
+	modules := []*SkillModel{
 		newTestDamageModule("mod_001", "物理打撃Lv1", []string{"physical_low"}, 1.0, "STR", "物理攻撃"),
 		newTestDamageModule("mod_002", "ファイアボールLv1", []string{"magic_low"}, 1.0, "MAG", "魔法攻撃"),
 		newTestDamageModule("mod_003", "物理打撃Lv1", []string{"physical_low"}, 1.0, "STR", "物理攻撃"),
@@ -84,7 +84,7 @@ func TestAgentModel_ステータス導出(t *testing.T) {
 	passiveSkill := PassiveSkill{ID: "test_skill"}
 	core := NewCoreWithTypeID("test", coreType, passiveSkill)
 
-	modules := []*ModuleModel{
+	modules := []*SkillModel{
 		newTestDamageModule("mod_001", "テストモジュール1", []string{"physical_low"}, 1.0, "STR", "テスト"),
 		newTestDamageModule("mod_002", "テストモジュール2", []string{"physical_low"}, 1.0, "STR", "テスト"),
 		newTestDamageModule("mod_003", "テストモジュール3", []string{"physical_low"}, 1.0, "STR", "テスト"),
@@ -119,7 +119,7 @@ func TestNewAgent_エージェント作成(t *testing.T) {
 
 	core := NewCoreWithTypeID("attack_balance", coreType, passiveSkill)
 
-	modules := []*ModuleModel{
+	modules := []*SkillModel{
 		newTestDamageModule("mod_001", "物理打撃Lv1", []string{"physical_low"}, 1.0, "STR", "物理攻撃"),
 		newTestDamageModule("mod_002", "ファイアボールLv1", []string{"magic_low"}, 1.0, "MAG", "魔法攻撃"),
 		newTestDamageModule("mod_003", "物理打撃Lv1", []string{"physical_low"}, 1.0, "STR", "物理攻撃"),
@@ -150,7 +150,7 @@ func TestNewAgent_モジュール数確認(t *testing.T) {
 	passiveSkill := PassiveSkill{ID: "test_skill"}
 	core := NewCoreWithTypeID("test", coreType, passiveSkill)
 
-	modules := []*ModuleModel{
+	modules := []*SkillModel{
 		newTestDamageModule("mod_001", "テストモジュール1", []string{"physical_low"}, 1.0, "STR", "テスト"),
 		newTestDamageModule("mod_002", "テストモジュール2", []string{"physical_low"}, 1.0, "STR", "テスト"),
 		newTestDamageModule("mod_003", "テストモジュール3", []string{"physical_low"}, 1.0, "STR", "テスト"),
@@ -222,7 +222,7 @@ func TestAgentModel_基礎ステータス算出(t *testing.T) {
 			passiveSkill := PassiveSkill{ID: "test_skill"}
 			core := NewCoreWithTypeID(tt.coreType.ID, tt.coreType, passiveSkill)
 
-			modules := make([]*ModuleModel, 4)
+			modules := make([]*SkillModel, 4)
 			for i := 0; i < 4; i++ {
 				modules[i] = newTestDamageModule("mod", "テスト", []string{"physical_low"}, 1.0, "STR", "テスト")
 			}
@@ -256,7 +256,7 @@ func TestAgentModel_Modules(t *testing.T) {
 	passiveSkill := PassiveSkill{ID: "test_skill"}
 	core := NewCoreWithTypeID("test", coreType, passiveSkill)
 
-	modules := []*ModuleModel{
+	modules := []*SkillModel{
 		newTestDamageModule("mod_001", "モジュール1", []string{"physical_low"}, 1.0, "STR", "テスト"),
 		newTestDamageModule("mod_002", "モジュール2", []string{"physical_low"}, 1.5, "STR", "テスト"),
 		newTestDamageModule("mod_003", "モジュール3", []string{"physical_low"}, 2.0, "STR", "テスト"),
@@ -294,7 +294,7 @@ func TestAgentModel_モジュールの独立性(t *testing.T) {
 	passiveSkill := PassiveSkill{ID: "test_skill"}
 	core := NewCoreWithTypeID("test", coreType, passiveSkill)
 
-	originalModules := []*ModuleModel{
+	originalModules := []*SkillModel{
 		newTestDamageModule("mod_001", "モジュール1", []string{"physical_low"}, 1.0, "STR", "テスト"),
 		newTestDamageModule("mod_002", "モジュール2", []string{"physical_low"}, 1.5, "STR", "テスト"),
 		newTestDamageModule("mod_003", "モジュール3", []string{"physical_low"}, 2.0, "STR", "テスト"),

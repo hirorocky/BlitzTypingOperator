@@ -38,13 +38,13 @@ func TestBattleEngine_BattleStart_FirstStrike(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_first_strike", Name: "ファーストストライク"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 100, StatCoef: 1.0, StatRef: "STR"},
@@ -53,8 +53,8 @@ func TestBattleEngine_BattleStart_FirstStrike(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -71,7 +71,7 @@ func TestBattleEngine_BattleStart_FirstStrike(t *testing.T) {
 	engine.SetPassiveSkills(passiveSkillDefs)
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	// Act: バトル開始時のファーストストライク判定
@@ -95,13 +95,13 @@ func TestBattleEngine_BattleStart_FirstStrike_NotEquipped(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_other", Name: "その他"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 100, StatCoef: 1.0, StatRef: "STR"},
@@ -110,8 +110,8 @@ func TestBattleEngine_BattleStart_FirstStrike_NotEquipped(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -127,7 +127,7 @@ func TestBattleEngine_BattleStart_FirstStrike_NotEquipped(t *testing.T) {
 	engine := NewBattleEngine(enemyTypes)
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 
 	// Act
 	isFirstStrike := engine.EvaluateFirstStrike(state, agent)
@@ -166,13 +166,13 @@ func TestBattleEngine_TypoRecovery(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_typo_recovery", Name: "タイポリカバリー"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 100, StatCoef: 1.0, StatRef: "STR"},
@@ -181,8 +181,8 @@ func TestBattleEngine_TypoRecovery(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -199,7 +199,7 @@ func TestBattleEngine_TypoRecovery(t *testing.T) {
 	engine.SetPassiveSkills(passiveSkillDefs)
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	// Act: タイポリカバリー発動チェック
@@ -239,13 +239,13 @@ func TestBattleEngine_SecondChance(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_second_chance", Name: "セカンドチャンス"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 100, StatCoef: 1.0, StatRef: "STR"},
@@ -254,8 +254,8 @@ func TestBattleEngine_SecondChance(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -272,7 +272,7 @@ func TestBattleEngine_SecondChance(t *testing.T) {
 	engine.SetPassiveSkills(passiveSkillDefs)
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	// Act: セカンドチャンス発動チェック

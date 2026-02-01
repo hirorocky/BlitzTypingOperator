@@ -8,7 +8,6 @@ import (
 )
 
 // ==================== CoreInventory テスト ====================
-// 新仕様: TypeIDベースのフラグ管理（レベル概念を削除）
 
 // TestCoreInventory_NewCoreInventory は新しいCoreInventoryが正しく作成されることを確認します。
 func TestCoreInventory_NewCoreInventory(t *testing.T) {

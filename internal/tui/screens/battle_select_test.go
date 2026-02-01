@@ -11,15 +11,15 @@ import (
 )
 
 // newTestDamageModule はテスト用のダメージモジュールを作成するヘルパー関数です。
-func newTestDamageModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestDamageModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
 		Icon:            "⚔️",
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -36,15 +36,15 @@ func containsString(s, substr string) bool {
 }
 
 // newTestHealModule はテスト用の回復モジュールを作成するヘルパー関数です。
-func newTestHealModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestHealModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
 		Icon:            "💚",
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetSelf,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -56,15 +56,15 @@ func newTestHealModule(id, name string, tags []string, statCoef float64, statRef
 }
 
 // newTestBuffModule はテスト用のバフモジュールを作成するヘルパー関数です。
-func newTestBuffModule(id, name string, tags []string, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestBuffModule(id, name string, tags []string, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
 		Icon:            "⬆️",
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target: domain.TargetSelf,
 				ColumnSpec: &domain.EffectColumnSpec{
@@ -80,15 +80,15 @@ func newTestBuffModule(id, name string, tags []string, description string) *doma
 }
 
 // newTestModuleWithChainEffect はチェイン効果付きモジュールを作成するヘルパー関数です。
-func newTestModuleWithChainEffect(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestModuleWithChainEffect(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
 		Icon:            "⚔️",
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -202,7 +202,7 @@ func TestBattleSelectWithAgentEquipped(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		newTestDamageModule("m1", "モジュール1", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModule("m2", "モジュール2", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModule("m3", "モジュール3", []string{"physical_low"}, 1.0, "STR", ""),
@@ -230,7 +230,7 @@ func TestBattleSelectConfirmScreen(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		newTestDamageModule("m1", "モジュール1", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModule("m2", "モジュール2", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModule("m3", "モジュール3", []string{"physical_low"}, 1.0, "STR", ""),
@@ -512,7 +512,7 @@ func createTestAgent() *domain.AgentModel {
 		AllowedTags: []string{"physical_low"},
 	}
 	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		newTestDamageModule("m1", "モジュール1", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModule("m2", "モジュール2", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModule("m3", "モジュール3", []string{"physical_low"}, 1.0, "STR", ""),

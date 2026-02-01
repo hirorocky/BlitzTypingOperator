@@ -168,7 +168,7 @@ type RewardResult struct {
 	DroppedCores []*domain.CoreModel
 
 	// DroppedModules はドロップしたモジュールのリストです。
-	DroppedModules []*domain.ModuleModel
+	DroppedModules []*domain.SkillModel
 
 	// EnemyLevel は撃破した敵のレベルです。
 	EnemyLevel int
@@ -196,7 +196,7 @@ type TempStorage struct {
 	Cores []*domain.CoreModel
 
 	// Modules は一時保管中のモジュールリストです。
-	Modules []*domain.ModuleModel
+	Modules []*domain.SkillModel
 }
 
 // AddCore はコアを一時保管に追加します。
@@ -205,7 +205,7 @@ func (s *TempStorage) AddCore(core *domain.CoreModel) {
 }
 
 // AddModule はモジュールを一時保管に追加します。
-func (s *TempStorage) AddModule(module *domain.ModuleModel) {
+func (s *TempStorage) AddModule(module *domain.SkillModel) {
 	s.Modules = append(s.Modules, module)
 }
 
@@ -217,7 +217,7 @@ func (s *TempStorage) RetrieveCores() []*domain.CoreModel {
 }
 
 // RetrieveModules は一時保管中のモジュールを全て取り出します。
-func (s *TempStorage) RetrieveModules() []*domain.ModuleModel {
+func (s *TempStorage) RetrieveModules() []*domain.SkillModel {
 	modules := s.Modules
 	s.Modules = nil
 	return modules
@@ -255,20 +255,20 @@ type ModuleDropInfo struct {
 	MinDropLevel int
 
 	// Effects はモジュールの効果リストです。
-	Effects []domain.ModuleEffect
+	Effects []domain.SkillEffect
 }
 
-// ToModuleType はModuleDropInfoをドメインモデルのModuleTypeに変換します。
-func (m *ModuleDropInfo) ToModuleType() domain.ModuleType {
+// ToSkillType はModuleDropInfoをドメインモデルのSkillTypeに変換します。
+func (m *ModuleDropInfo) ToSkillType() domain.SkillType {
 	// Tagsをコピー（スライスの参照共有を避ける）
 	tagsCopy := make([]string, len(m.Tags))
 	copy(tagsCopy, m.Tags)
 
 	// Effectsをコピー
-	effectsCopy := make([]domain.ModuleEffect, len(m.Effects))
+	effectsCopy := make([]domain.SkillEffect, len(m.Effects))
 	copy(effectsCopy, m.Effects)
 
-	return domain.ModuleType{
+	return domain.SkillType{
 		ID:              m.ID,
 		Name:            m.Name,
 		Icon:            m.Icon,
@@ -281,16 +281,16 @@ func (m *ModuleDropInfo) ToModuleType() domain.ModuleType {
 	}
 }
 
-// ToDomain はModuleDropInfoをドメインモデルのModuleModelに変換します。
-func (m *ModuleDropInfo) ToDomain() *domain.ModuleModel {
-	moduleType := m.ToModuleType()
-	return domain.NewModuleFromType(moduleType, nil)
+// ToDomain はModuleDropInfoをドメインモデルのSkillModelに変換します。
+func (m *ModuleDropInfo) ToDomain() *domain.SkillModel {
+	moduleType := m.ToSkillType()
+	return domain.NewSkillFromType(moduleType, nil)
 }
 
 // ToDomainWithChainEffect はチェイン効果付きでドメインモデルに変換します。
-func (m *ModuleDropInfo) ToDomainWithChainEffect(chainEffect *domain.ChainEffect) *domain.ModuleModel {
-	moduleType := m.ToModuleType()
-	return domain.NewModuleFromType(moduleType, chainEffect)
+func (m *ModuleDropInfo) ToDomainWithChainEffect(chainEffect *domain.ChainEffect) *domain.SkillModel {
+	moduleType := m.ToSkillType()
+	return domain.NewSkillFromType(moduleType, chainEffect)
 }
 
 // RewardCalculator はドメイン型を使用した報酬計算を担当する構造体です。
@@ -342,7 +342,7 @@ func (c *RewardCalculator) CreateRewardResult(isVictory bool, stats *BattleStati
 		Stats:          stats,
 		EnemyLevel:     enemyLevel,
 		DroppedCores:   make([]*domain.CoreModel, 0),
-		DroppedModules: make([]*domain.ModuleModel, 0),
+		DroppedModules: make([]*domain.SkillModel, 0),
 	}
 
 	if !isVictory {
@@ -365,8 +365,8 @@ func (c *RewardCalculator) GetEligibleCoreTypes(enemyLevel int) []domain.CoreTyp
 	return eligible
 }
 
-// GetEligibleModuleTypes は指定レベルでドロップ可能なモジュールを返します。
-func (c *RewardCalculator) GetEligibleModuleTypes(enemyLevel int) []ModuleDropInfo {
+// GetEligibleSkillTypes は指定レベルでドロップ可能なモジュールを返します。
+func (c *RewardCalculator) GetEligibleSkillTypes(enemyLevel int) []ModuleDropInfo {
 	eligible := make([]ModuleDropInfo, 0)
 	for _, moduleType := range c.moduleTypes {
 		if moduleType.MinDropLevel <= enemyLevel {
@@ -390,7 +390,7 @@ func (c *RewardCalculator) CheckInventoryFull(
 func (c *RewardCalculator) CreateTempStorage() *TempStorage {
 	return &TempStorage{
 		Cores:   make([]*domain.CoreModel, 0),
-		Modules: make([]*domain.ModuleModel, 0),
+		Modules: make([]*domain.SkillModel, 0),
 	}
 }
 
@@ -413,7 +413,7 @@ func (c *RewardCalculator) CalculateGuaranteedReward(
 		Stats:            stats,
 		EnemyLevel:       enemyLevel,
 		DroppedCores:     make([]*domain.CoreModel, 0),
-		DroppedModules:   make([]*domain.ModuleModel, 0),
+		DroppedModules:   make([]*domain.SkillModel, 0),
 	}
 
 	// 確定ドロップ処理
@@ -473,7 +473,7 @@ func (c *RewardCalculator) RollCoreDropWithTypeID(typeID string, enemyLevel int)
 
 // RollModuleDropWithTypeID は指定されたTypeIDのモジュールを生成します。
 // 敵レベルに応じたチェイン効果をランダムに選択します。
-func (c *RewardCalculator) RollModuleDropWithTypeID(typeID string, enemyLevel int) *domain.ModuleModel {
+func (c *RewardCalculator) RollModuleDropWithTypeID(typeID string, enemyLevel int) *domain.SkillModel {
 	// 指定されたTypeIDのモジュールを検索
 	var selectedType *ModuleDropInfo
 	for i := range c.moduleTypes {

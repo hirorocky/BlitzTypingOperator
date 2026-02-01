@@ -15,15 +15,15 @@ import (
 )
 
 // newTestDamageModule はテスト用のダメージモジュールを作成するヘルパー関数です。
-func newTestDamageModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestDamageModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
 		Icon:            "⚔️",
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -35,15 +35,15 @@ func newTestDamageModule(id, name string, tags []string, statCoef float64, statR
 }
 
 // newTestHealModule はテスト用の回復モジュールを作成するヘルパー関数です。
-func newTestHealModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestHealModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
 		Icon:            "💚",
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetSelf,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -55,15 +55,15 @@ func newTestHealModule(id, name string, tags []string, statCoef float64, statRef
 }
 
 // newTestBuffModule はテスト用のバフモジュールを作成するヘルパー関数です。
-func newTestBuffModule(id, name string, tags []string, value float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestBuffModule(id, name string, tags []string, value float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
 		Icon:            "⬆️",
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target: domain.TargetSelf,
 				ColumnSpec: &domain.EffectColumnSpec{
@@ -288,10 +288,7 @@ func createTestEnemy() *domain.EnemyModel {
 }
 
 func createTestPlayer() *domain.PlayerModel {
-	player := domain.NewPlayer()
-	player.MaxHP = 100
-	player.HP = 100
-	return player
+	return domain.NewPlayerWithMaxHP(100)
 }
 
 func createTestAgents() []*domain.AgentModel {
@@ -304,7 +301,7 @@ func createTestAgents() []*domain.AgentModel {
 
 	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		newTestDamageModule("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ"),
 		newTestDamageModule("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "MAG", "魔法ダメージ"),
 		newTestHealModule("m3", "回復", []string{"heal_low"}, 1.0, "MAG", "HP回復"),

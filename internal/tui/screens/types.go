@@ -66,16 +66,16 @@ func (b *BaseScreen) HandleWindowSizeMsg(msg tea.WindowSizeMsg) {
 
 // EncyclopediaData は図鑑データです。
 type EncyclopediaData struct {
-	AllCoreTypes        []domain.CoreType
-	AllModuleTypes      []ModuleTypeInfo
-	AllEnemyTypes       []domain.EnemyType
-	AcquiredCoreTypes   []string
-	AcquiredModuleTypes []string
-	EncounteredEnemies  []string
+	AllCoreTypes       []domain.CoreType
+	AllSkillTypes      []SkillTypeInfo
+	AllEnemyTypes      []domain.EnemyType
+	AcquiredCoreTypes  []string
+	AcquiredSkillTypes []string
+	EncounteredEnemies []string
 }
 
-// ModuleTypeInfo はモジュールタイプ情報です。
-type ModuleTypeInfo struct {
+// SkillTypeInfo はモジュールタイプ情報です。
+type SkillTypeInfo struct {
 	ID          string
 	Name        string
 	Icon        string

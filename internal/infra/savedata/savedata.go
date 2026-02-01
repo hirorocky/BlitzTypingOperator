@@ -12,11 +12,8 @@ import (
 )
 
 // CurrentSaveDataVersion は現在のセーブデータバージョンです。
-// セーブデータの形式が変更された場合にインクリメントします。
-// v2.0.0: ID化最適化（フルオブジェクト → ID参照）
-// v3.0.0: ユニークインベントリ管理 + エージェントスロットシステム
-// v4.0.0: コアレベル廃止 + 敵進行システム（EnemyProgress）
-const CurrentSaveDataVersion = "4.0.0"
+// まだ正式版をリリースしていないので、リリースするまではv0.0.1で固定する。
+const CurrentSaveDataVersion = "0.0.1"
 
 // SaveFileName はセーブファイル名です。
 const SaveFileName = "save.json"
@@ -52,7 +49,7 @@ type SaveData struct {
 
 	Inventory *InventorySaveData `json:"inventory"`
 
-	// EnemyProgress は敵進行データです（v4.0.0で追加）。
+	// EnemyProgress は敵進行データです。
 
 	EnemyProgress *EnemyProgressSave `json:"enemy_progress"`
 
@@ -71,31 +68,13 @@ type SaveData struct {
 
 // PlayerSaveData はプレイヤーのセーブデータです。
 type PlayerSaveData struct {
-	// MaxHP はプレイヤーの最大HPです（v4.0.0で追加）。
+	// MaxHP はプレイヤーの最大HPです。
 	// 新規ゲーム開始時は1000、敵撃破による成長で増加します。
 	MaxHP int `json:"max_hp"`
 
-	// EquippedAgentIDs は装備中のエージェントIDリストです（スロット番号順）。
-	// 空きスロットは空文字列で表現されます。
-	// 注意: v3.0.0以降はAgentSlotsを使用。後方互換性のため残存。
-	EquippedAgentIDs [3]string `json:"equipped_agent_ids"`
-
 	// AgentSlots はエージェントスロット構成です（3スロット）。
-	// v3.0.0で追加。コア・スキルの自由付け替え方式で管理します。
+	// コア・スキルの自由付け替え方式で管理します。
 	AgentSlots [3]AgentSlotSave `json:"agent_slots"`
-}
-
-// CoreInstanceSave はコアインスタンスの軽量セーブデータです。
-// v1.0.0ではIDフィールドを削除し、CoreTypeIDとLevelのみを保存します。
-// ロード時にマスタデータからステータスを再計算します。
-type CoreInstanceSave struct {
-	// CoreTypeID はコア特性ID（例: "all_rounder"）です。
-	// マスタデータ（cores.json）から参照します。
-	CoreTypeID string `json:"core_type_id"`
-
-	// Level はコアのレベルです。
-	// ステータスはレベルとコア特性から再計算されます。
-	Level int `json:"level"`
 }
 
 // ChainEffectSave はチェイン効果のセーブデータです。
@@ -120,30 +99,10 @@ type SkillInstanceSave struct {
 }
 
 // ModuleInstanceSave はSkillInstanceSaveのエイリアスです。
-// 後方互換性のために残されています。新規コードではSkillInstanceSaveを使用してください。
 type ModuleInstanceSave = SkillInstanceSave
 
-// AgentInstanceSave はエージェントインスタンスの軽量セーブデータです。
-// コア情報を直接保持し、インベントリに依存せずにロード時に再構築します。
-// 注意: v3.0.0以降はAgentSlotSaveを使用。後方互換性のため残存。
-type AgentInstanceSave struct {
-	// ID はエージェントインスタンスの一意識別子です。
-	ID string `json:"id"`
-
-	// Core はエージェントが使用するコアの情報です。
-	// エージェント合成時にコアは消費されるため、インベントリとは別に保持します。
-	Core CoreInstanceSave `json:"core"`
-
-	// Skills はスキルインスタンスのリストです（4つ）。
-	// 各スキルのTypeIDとChainEffectをペアで保持し、データの整合性を保証します。
-	// JSONキーは後方互換性のため"modules"のままです。
-	Skills []SkillInstanceSave `json:"modules"`
-}
-
-// ==================== v3.0.0 新構造体 ====================
-
 // CoreInventorySave はユニークコアインベントリのセーブデータです。
-// v4.0.0: TypeIDリスト形式に変更（レベル概念を廃止）。
+// TypeIDリスト形式で管理します。
 type CoreInventorySave struct {
 	// Cores は保有CoreTypeIDリストです。
 	Cores []string `json:"cores"`
@@ -167,7 +126,7 @@ type SkillSlotSaveCfg struct {
 }
 
 // AgentSlotSave はエージェントスロットのセーブデータです。
-// v4.0.0: CoreLevelフィールドを削除。コアはTypeIDのみで管理。
+// コアはTypeIDのみで管理します。
 type AgentSlotSave struct {
 	// CoreTypeID はコアTypeID（空の場合はスロット空）です。
 	CoreTypeID string `json:"core_type_id,omitempty"`
@@ -177,44 +136,13 @@ type AgentSlotSave struct {
 }
 
 // InventorySaveData はインベントリのセーブデータです。
-// v1.0.0ではModuleCountsをModuleInstancesに置き換え、チェイン効果を管理します。
-// v3.0.0ではUniqueCores/UniqueSkillsでユニーク管理に移行します。
 type InventorySaveData struct {
-	// UniqueCores はユニークコアインベントリです（v3.0.0で追加）。
-	// TypeID→最大レベルのマップ形式で管理します。
+	// UniqueCores はユニークコアインベントリです。
 	UniqueCores *CoreInventorySave `json:"unique_cores,omitempty"`
 
-	// UniqueSkills はユニークスキルインベントリです（v3.0.0で追加）。
+	// UniqueSkills はユニークスキルインベントリです。
 	// TypeID→チェイン効果IDリストのマップ形式で管理します。
 	UniqueSkills *SkillInventorySave `json:"skills,omitempty"`
-
-	// CoreInstances は所持コアのTypeID+Levelリストです。
-	// 注意: v3.0.0以降はUniqueCoresを使用。後方互換性のため残存。
-	CoreInstances []CoreInstanceSave `json:"core_instances"`
-
-	// ModuleCounts は所持モジュールの個数マップです（後方互換性のため保持）。
-	// v1.0.0ではModuleInstancesを使用しますが、旧データ読み込み時に参照されます。
-	ModuleCounts map[string]int `json:"module_counts,omitempty"`
-
-	// ModuleInstances は所持モジュールのインスタンスリストです（v1.0.0で追加）。
-	// 注意: v3.0.0以降はUniqueSkillsを使用。後方互換性のため残存。
-	ModuleInstances []ModuleInstanceSave `json:"module_instances,omitempty"`
-
-	// AgentInstances は所持エージェントの参照リストです。
-	// 注意: v3.0.0以降はPlayerSaveData.AgentSlotsを使用。後方互換性のため残存。
-	AgentInstances []AgentInstanceSave `json:"agent_instances"`
-
-	// MaxCoreSlots はコアの最大所持数です。
-	// 注意: v3.0.0以降はユニーク管理のため不要。後方互換性のため残存。
-	MaxCoreSlots int `json:"max_core_slots"`
-
-	// MaxModuleSlots はモジュールの最大所持数です。
-	// 注意: v3.0.0以降はユニーク管理のため不要。後方互換性のため残存。
-	MaxModuleSlots int `json:"max_module_slots"`
-
-	// MaxAgentSlots はエージェントの最大所持数です。
-	// 注意: v3.0.0以降はユニーク管理のため不要。後方互換性のため残存。
-	MaxAgentSlots int `json:"max_agent_slots"`
 }
 
 // StatisticsSaveData は統計のセーブデータです。
@@ -266,9 +194,7 @@ type SettingsSaveData struct {
 	KeyBindings map[string]string `json:"key_bindings"`
 }
 
-// ==================== v4.0.0: 敵進行システム ====================
-
-// EnemyProgressSave は敵進行データのセーブデータです（v4.0.0で追加）。
+// EnemyProgressSave は敵進行データのセーブデータです。
 type EnemyProgressSave struct {
 	// CurrentRank は現在解放済みランクです（1から開始）。
 	CurrentRank int `json:"current_rank"`
@@ -287,37 +213,22 @@ type DefeatRecordSave struct {
 }
 
 // NewSaveData は新しいセーブデータを作成します。
-// v4.0.0形式で初期化されます。
 func NewSaveData() *SaveData {
 	return &SaveData{
 		Version:   CurrentSaveDataVersion,
 		Timestamp: time.Now(),
 		Player: &PlayerSaveData{
-			// v4.0.0: 初期最大HP
-			MaxHP: 1000,
-			// レガシーフィールド（後方互換性のため）
-			EquippedAgentIDs: [3]string{},
-			// v3.0.0: エージェントスロット
+			MaxHP:      1000,
 			AgentSlots: [3]AgentSlotSave{},
 		},
 		Inventory: &InventorySaveData{
-			// v4.0.0: TypeIDリスト形式
 			UniqueCores: &CoreInventorySave{
 				Cores: make([]string, 0),
 			},
 			UniqueSkills: &SkillInventorySave{
 				Skills: make(map[string][]string),
 			},
-			// レガシーフィールド（後方互換性のため）
-			CoreInstances:   make([]CoreInstanceSave, 0),
-			ModuleCounts:    make(map[string]int),
-			ModuleInstances: make([]ModuleInstanceSave, 0),
-			AgentInstances:  make([]AgentInstanceSave, 0),
-			MaxCoreSlots:    100,
-			MaxModuleSlots:  200,
-			MaxAgentSlots:   20,
 		},
-		// v4.0.0: 敵進行データ
 		EnemyProgress: &EnemyProgressSave{
 			CurrentRank:   1,
 			DefeatRecords: make(map[string]DefeatRecordSave),
@@ -548,13 +459,11 @@ func ValidateSaveData(data *SaveData) error {
 }
 
 // ValidateSaveVersion はセーブデータのバージョンが現在のバージョンと互換性があるか検証します。
-// v4.0.0以降のセーブデータのみ受け付けます。旧バージョンはエラーを返します。
 func ValidateSaveVersion(version string) error {
 	if version == "" {
 		return fmt.Errorf("セーブデータのバージョンが空です")
 	}
 
-	// 現在のバージョン（v4.0.0）のみサポート
 	if version != CurrentSaveDataVersion {
 		return fmt.Errorf("セーブデータのバージョン %s はサポートされていません。v%s が必要です", version, CurrentSaveDataVersion)
 	}

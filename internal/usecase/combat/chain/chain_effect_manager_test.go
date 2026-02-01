@@ -62,7 +62,7 @@ func TestCheckAndTrigger(t *testing.T) {
 	cem.RegisterChainEffect(0, &effect, "slash_lv1")
 
 	// エージェント1がモジュールを使用（チェイン効果が発動）
-	triggered := cem.CheckAndTrigger(1, ModuleEffectFlags{HasDamage: true})
+	triggered := cem.CheckAndTrigger(1, SkillEffectFlags{HasDamage: true})
 
 	// 発動した効果を確認
 	if len(triggered) != 1 {
@@ -96,7 +96,7 @@ func TestCheckAndTriggerSameAgent(t *testing.T) {
 	cem.RegisterChainEffect(0, &effect, "slash_lv1")
 
 	// 同じエージェント0がモジュールを使用（発動しない）
-	triggered := cem.CheckAndTrigger(0, ModuleEffectFlags{HasDamage: true})
+	triggered := cem.CheckAndTrigger(0, SkillEffectFlags{HasDamage: true})
 
 	// 発動しない
 	if len(triggered) != 0 {
@@ -224,7 +224,7 @@ func TestDamageAmpEffect(t *testing.T) {
 	cem.RegisterChainEffect(0, &effect, "amp_skill")
 
 	// 他エージェントが攻撃（発動）
-	triggered := cem.CheckAndTrigger(1, ModuleEffectFlags{HasDamage: true})
+	triggered := cem.CheckAndTrigger(1, SkillEffectFlags{HasDamage: true})
 
 	if len(triggered) != 1 {
 		t.Fatalf("発動した効果数: got %d, want 1", len(triggered))
@@ -243,7 +243,7 @@ func TestHealBonusEffect(t *testing.T) {
 	cem.RegisterChainEffect(0, &effect, "heal_amp")
 
 	// 他エージェントが回復（発動）
-	triggered := cem.CheckAndTrigger(1, ModuleEffectFlags{HasHeal: true})
+	triggered := cem.CheckAndTrigger(1, SkillEffectFlags{HasHeal: true})
 
 	if len(triggered) != 1 {
 		t.Fatalf("発動した効果数: got %d, want 1", len(triggered))
@@ -262,7 +262,7 @@ func TestBuffExtendEffect(t *testing.T) {
 	cem.RegisterChainEffect(0, &effect, "buff_extend")
 
 	// 他エージェントがバフ（発動）
-	triggered := cem.CheckAndTrigger(1, ModuleEffectFlags{HasBuff: true})
+	triggered := cem.CheckAndTrigger(1, SkillEffectFlags{HasBuff: true})
 
 	if len(triggered) != 1 {
 		t.Fatalf("発動した効果数: got %d, want 1", len(triggered))
@@ -277,24 +277,24 @@ func TestEffectCategoryMatching(t *testing.T) {
 	tests := []struct {
 		name          string
 		effectType    domain.ChainEffectType
-		moduleFlags   ModuleEffectFlags
+		moduleFlags   SkillEffectFlags
 		shouldTrigger bool
 	}{
 		// 攻撃強化効果は攻撃モジュールで発動
-		{"DamageBonus-Damage", domain.ChainEffectDamageBonus, ModuleEffectFlags{HasDamage: true}, true},
-		{"DamageBonus-Heal", domain.ChainEffectDamageBonus, ModuleEffectFlags{HasHeal: true}, false},
+		{"DamageBonus-Damage", domain.ChainEffectDamageBonus, SkillEffectFlags{HasDamage: true}, true},
+		{"DamageBonus-Heal", domain.ChainEffectDamageBonus, SkillEffectFlags{HasHeal: true}, false},
 
 		// 回復強化効果は回復モジュールで発動
-		{"HealBonus-Heal", domain.ChainEffectHealBonus, ModuleEffectFlags{HasHeal: true}, true},
-		{"HealBonus-Damage", domain.ChainEffectHealBonus, ModuleEffectFlags{HasDamage: true}, false},
+		{"HealBonus-Heal", domain.ChainEffectHealBonus, SkillEffectFlags{HasHeal: true}, true},
+		{"HealBonus-Damage", domain.ChainEffectHealBonus, SkillEffectFlags{HasDamage: true}, false},
 
 		// バフ延長効果はバフモジュールで発動
-		{"BuffExtend-Buff", domain.ChainEffectBuffExtend, ModuleEffectFlags{HasBuff: true}, true},
-		{"BuffExtend-Debuff", domain.ChainEffectBuffExtend, ModuleEffectFlags{HasDebuff: true}, false},
+		{"BuffExtend-Buff", domain.ChainEffectBuffExtend, SkillEffectFlags{HasBuff: true}, true},
+		{"BuffExtend-Debuff", domain.ChainEffectBuffExtend, SkillEffectFlags{HasDebuff: true}, false},
 
 		// デバフ延長効果はデバフモジュールで発動
-		{"DebuffExtend-Debuff", domain.ChainEffectDebuffExtend, ModuleEffectFlags{HasDebuff: true}, true},
-		{"DebuffExtend-Buff", domain.ChainEffectDebuffExtend, ModuleEffectFlags{HasBuff: true}, false},
+		{"DebuffExtend-Debuff", domain.ChainEffectDebuffExtend, SkillEffectFlags{HasDebuff: true}, true},
+		{"DebuffExtend-Buff", domain.ChainEffectDebuffExtend, SkillEffectFlags{HasBuff: true}, false},
 	}
 
 	for _, tt := range tests {

@@ -207,43 +207,6 @@ func (e *BattleEngine) SetRng(rng *rand.Rand) {
 	e.rng = rng
 }
 
-// ==================== バトル初期化（Task 7.1） ====================
-
-// InitializeBattle はバトルを初期化します。
-
-func (e *BattleEngine) InitializeBattle(level int, agents []*domain.AgentModel) (*BattleState, error) {
-	if len(agents) == 0 {
-		return nil, fmt.Errorf("エージェントが装備されていません")
-	}
-
-	// 敵を生成
-	enemy := e.generateEnemy(level)
-	if enemy == nil {
-		return nil, fmt.Errorf("敵の生成に失敗しました")
-	}
-
-	// プレイヤーを初期化（初期最大HPで作成）
-	player := domain.NewPlayerWithMaxHP(domain.InitialMaxHP)
-	player.PrepareForBattle() // HP全回復、EffectTableリセット
-
-	// バトル状態を作成
-	state := &BattleState{
-		Enemy:          enemy,
-		Player:         player,
-		EquippedAgents: agents,
-		Level:          level,
-		Stats: &BattleStatistics{
-			StartTime: time.Now(),
-		},
-	}
-
-	// 最初の行動を準備してチャージ開始
-	state.Enemy.PrepareNextAction()
-	e.StartEnemyCharging(state, time.Now())
-
-	return state, nil
-}
-
 // generateEnemy は指定レベルの敵を生成します。
 
 func (e *BattleEngine) generateEnemy(level int) *domain.EnemyModel {
@@ -577,7 +540,7 @@ func (e *BattleEngine) getModifiedStatValue(stats domain.Stats, statRef string, 
 
 // calculateHPChange は効果のHP変化量を計算します。
 func (e *BattleEngine) calculateHPChange(
-	effect *domain.ModuleEffect,
+	effect *domain.SkillEffect,
 	stats domain.Stats,
 	typingResult *typing.TypingResult,
 	effects domain.EffectResult,
@@ -602,12 +565,12 @@ func (e *BattleEngine) calculateHPChange(
 	return int(baseHP)
 }
 
-// ApplyModuleEffect はモジュール効果を適用します。
+// ApplySkillEffect はモジュール効果を適用します。
 // 新しいエフェクトベースのシステムで各効果を順に評価・適用します。
-func (e *BattleEngine) ApplyModuleEffect(
+func (e *BattleEngine) ApplySkillEffect(
 	state *BattleState,
 	agent *domain.AgentModel,
-	module *domain.ModuleModel,
+	module *domain.SkillModel,
 	typingResult *typing.TypingResult,
 ) int {
 	// プレイヤーの効果を取得
@@ -714,17 +677,17 @@ func (e *BattleEngine) ApplyModuleEffect(
 	return totalEffect
 }
 
-// ApplyModuleEffectWithCombo はコンボカウントを考慮してモジュール効果を適用します。
+// ApplySkillEffectWithCombo はコンボカウントを考慮してモジュール効果を適用します。
 // スタック型パッシブスキル（ps_combo_master等）の効果を正しく計算します。
-func (e *BattleEngine) ApplyModuleEffectWithCombo(
+func (e *BattleEngine) ApplySkillEffectWithCombo(
 	state *BattleState,
 	agent *domain.AgentModel,
-	module *domain.ModuleModel,
+	module *domain.SkillModel,
 	typingResult *typing.TypingResult,
 	comboCount int,
 ) int {
 	// 基本効果を適用
-	baseDamage := e.ApplyModuleEffect(state, agent, module, typingResult)
+	baseDamage := e.ApplySkillEffect(state, agent, module, typingResult)
 
 	// コンボ乗算を計算
 	comboMultiplier := e.calculateStackMultiplier(state, comboCount)
@@ -855,12 +818,12 @@ func (e *BattleEngine) GetPlayerFinalStats(state *BattleState) domain.EffectResu
 	return state.Player.EffectTable.Aggregate(ctx)
 }
 
-// CalculateModuleEffectWithPassive はパッシブスキル効果を適用したモジュール効果を計算します。
+// CalculateSkillEffectWithPassive はパッシブスキル効果を適用したモジュール効果を計算します。
 // 新しいエフェクトベースシステムでは、全ての効果の合計値を返します。
-// 注意: この関数は基礎計算のみを行い、実際のバトル中のエフェクト適用はApplyModuleEffectで行われます。
-func (e *BattleEngine) CalculateModuleEffectWithPassive(
+// 注意: この関数は基礎計算のみを行い、実際のバトル中のエフェクト適用はApplySkillEffectで行われます。
+func (e *BattleEngine) CalculateSkillEffectWithPassive(
 	agent *domain.AgentModel,
-	module *domain.ModuleModel,
+	module *domain.SkillModel,
 	typingResult *typing.TypingResult,
 ) int {
 	totalEffect := 0
@@ -896,17 +859,17 @@ func (e *BattleEngine) EvaluateEchoSkill(state *BattleState, agent *domain.Agent
 	return 1 // 通常は1回
 }
 
-// ApplyModuleEffectWithEcho はエコースキルを考慮してモジュール効果を適用します。
-func (e *BattleEngine) ApplyModuleEffectWithEcho(
+// ApplySkillEffectWithEcho はエコースキルを考慮してモジュール効果を適用します。
+func (e *BattleEngine) ApplySkillEffectWithEcho(
 	state *BattleState,
 	agent *domain.AgentModel,
-	module *domain.ModuleModel,
+	module *domain.SkillModel,
 	typingResult *typing.TypingResult,
 	repeatCount int,
 ) int {
 	totalEffect := 0
 	for i := 0; i < repeatCount; i++ {
-		effect := e.ApplyModuleEffect(state, agent, module, typingResult)
+		effect := e.ApplySkillEffect(state, agent, module, typingResult)
 		totalEffect += effect
 	}
 	return totalEffect
@@ -914,7 +877,7 @@ func (e *BattleEngine) ApplyModuleEffectWithEcho(
 
 // EvaluateMiracleHeal はps_miracle_healの発動を評価します。
 // 回復スキル使用時のみ確率で発動します。
-func (e *BattleEngine) EvaluateMiracleHeal(state *BattleState, agent *domain.AgentModel, module *domain.ModuleModel) bool {
+func (e *BattleEngine) EvaluateMiracleHeal(state *BattleState, agent *domain.AgentModel, module *domain.SkillModel) bool {
 	// 回復効果を持たないスキルでは発動しない
 	hasHeal := false
 	for _, effect := range module.Type.Effects {

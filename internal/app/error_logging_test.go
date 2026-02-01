@@ -32,16 +32,15 @@ func TestGameStateFromSaveDataLogsAddCoreError(t *testing.T) {
 	buf, cleanup := setupTestLogger()
 	defer cleanup()
 
-	// 正常なセーブデータを作成（v1.0.0形式）
+	// 正常なセーブデータを作成
 	saveData := savedata.NewSaveData()
 	saveData.Inventory = &savedata.InventorySaveData{
-		CoreInstances: []savedata.CoreInstanceSave{
-			{
-				CoreTypeID: "all_rounder",
-				Level:      1,
-			},
+		UniqueCores: &savedata.CoreInventorySave{
+			Cores: []string{"all_rounder"},
 		},
-		ModuleInstances: []savedata.ModuleInstanceSave{},
+		UniqueSkills: &savedata.SkillInventorySave{
+			Skills: make(map[string][]string),
+		},
 	}
 
 	// テスト用のソースデータを作成
@@ -73,35 +72,36 @@ func TestGameStateFromSaveDataLogsAddCoreError(t *testing.T) {
 }
 
 // TestGameStateFromSaveDataLogsAgentErrors は AddAgent および EquipAgent のエラーがログ出力されることをテストします。
-
 func TestGameStateFromSaveDataLogsAgentErrors(t *testing.T) {
 	// slogのログ出力をキャプチャ
 	buf, cleanup := setupTestLogger()
 	defer cleanup()
 
-	// エージェントを含むセーブデータを作成（v1.0.0形式）
+	// エージェントを含むセーブデータを作成
 	saveData := savedata.NewSaveData()
 	saveData.Inventory = &savedata.InventorySaveData{
-		CoreInstances:   []savedata.CoreInstanceSave{},
-		ModuleInstances: []savedata.ModuleInstanceSave{},
-		AgentInstances: []savedata.AgentInstanceSave{
+		UniqueCores: &savedata.CoreInventorySave{
+			Cores: []string{},
+		},
+		UniqueSkills: &savedata.SkillInventorySave{
+			Skills: make(map[string][]string),
+		},
+	}
+	saveData.Player = &savedata.PlayerSaveData{
+		MaxHP: 1000,
+		AgentSlots: [3]savedata.AgentSlotSave{
 			{
-				ID: "test_agent_001",
-				Core: savedata.CoreInstanceSave{
-					CoreTypeID: "all_rounder",
-					Level:      1,
-				},
-				Skills: []savedata.SkillInstanceSave{
+				CoreTypeID: "all_rounder",
+				Skills: [4]savedata.SkillSlotSaveCfg{
 					{TypeID: "mod_slash"},
 					{TypeID: "mod_slash"},
 					{TypeID: "mod_slash"},
 					{TypeID: "mod_slash"},
 				},
 			},
+			{},
+			{},
 		},
-	}
-	saveData.Player = &savedata.PlayerSaveData{
-		EquippedAgentIDs: [3]string{"test_agent_001", "", ""},
 	}
 
 	// テスト用のソースデータを作成
@@ -135,7 +135,7 @@ func TestGameStateFromSaveDataLogsAgentErrors(t *testing.T) {
 }
 
 // TestInventoryManagerLogsErrors は InventoryManager のコア追加が正常に動作することをテストします。
-// 新システム（v3.0.0）ではTypeIDベースのユニーク管理のため、容量制限はありません。
+// 新システムではTypeIDベースのユニーク管理のため、容量制限はありません。
 
 func TestInventoryManagerLogsErrors(t *testing.T) {
 	// slogのログ出力をキャプチャ
@@ -186,7 +186,7 @@ func TestSlogLoggingFunctionality(t *testing.T) {
 }
 
 // TestLoggedAddCoreError は構造化ログが正しく出力されることをテストします。
-// 新システム（v3.0.0）では容量制限がないため、手動でエラーログを出力してテストします。
+// 新システムでは容量制限がないため、手動でエラーログを出力してテストします。
 
 func TestLoggedAddCoreError(t *testing.T) {
 	buf, cleanup := setupTestLogger()

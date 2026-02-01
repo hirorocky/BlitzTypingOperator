@@ -3,6 +3,7 @@
 package integration_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -12,14 +13,14 @@ import (
 )
 
 // newTestDamageModuleBattle はテスト用のダメージモジュールを作成するヘルパー関数です。
-func newTestDamageModuleBattle(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestDamageModuleBattle(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
 		Icon:        "⚔️",
 		Tags:        tags,
 		Description: description,
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -31,14 +32,14 @@ func newTestDamageModuleBattle(id, name string, tags []string, statCoef float64,
 }
 
 // newTestHealModuleBattle はテスト用の回復モジュールを作成するヘルパー関数です。
-func newTestHealModuleBattle(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestHealModuleBattle(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
 		Icon:        "💚",
 		Tags:        tags,
 		Description: description,
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetSelf,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -50,14 +51,14 @@ func newTestHealModuleBattle(id, name string, tags []string, statCoef float64, s
 }
 
 // newTestBuffModuleBattle はテスト用のバフモジュールを作成するヘルパー関数です。
-func newTestBuffModuleBattle(id, name string, tags []string, value float64, _, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestBuffModuleBattle(id, name string, tags []string, value float64, _, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
 		Icon:        "⬆️",
 		Tags:        tags,
 		Description: description,
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target: domain.TargetSelf,
 				ColumnSpec: &domain.EffectColumnSpec{
@@ -89,7 +90,7 @@ func createTestAgents() []*domain.AgentModel {
 	passiveSkill := domain.PassiveSkill{ID: "test", Name: "テスト", Description: ""}
 	core := domain.NewCoreWithTypeID("core_1", coreType, passiveSkill)
 
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		newTestDamageModuleBattle("m1", "物理打撃Lv1", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModuleBattle("m2", "ファイアボールLv1", []string{"magic_low"}, 1.0, "MAG", ""),
 		newTestHealModuleBattle("m3", "ヒールLv1", []string{"heal_low"}, 0.8, "MAG", ""),
@@ -114,15 +115,50 @@ func createTestEnemyTypes() []domain.EnemyType {
 	}
 }
 
-func TestBattleFlow_Initialize(t *testing.T) {
+// initBattleForTest はテスト用のバトル初期化ヘルパーです。
+// BattleStateを直接構築し、敵の生成と行動準備を行います。
+func initBattleForTest(engine *combat.BattleEngine, level int, agents []*domain.AgentModel, enemyTypes []domain.EnemyType) *combat.BattleState {
+	// 敵を生成
+	enemyType := enemyTypes[0]
+	hp := enemyType.BaseHP * level
+	attackPower := enemyType.BaseAttackPower + (level * 2)
+	enemy := domain.NewEnemy(
+		"test-enemy-id",
+		enemyType.Name+" Lv."+fmt.Sprintf("%d", level),
+		level,
+		hp,
+		attackPower,
+		enemyType,
+	)
 
-	engine := combat.NewBattleEngine(createTestEnemyTypes())
+	// プレイヤーを初期化
+	player := domain.NewPlayerWithMaxHP(domain.InitialMaxHP)
+	player.PrepareForBattle()
+
+	// バトル状態を作成
+	state := &combat.BattleState{
+		Enemy:          enemy,
+		Player:         player,
+		EquippedAgents: agents,
+		Level:          level,
+		Stats: &combat.BattleStatistics{
+			StartTime: time.Now(),
+		},
+	}
+
+	// 最初の行動を準備してチャージ開始
+	state.Enemy.PrepareNextAction()
+	engine.StartEnemyCharging(state, time.Now())
+
+	return state
+}
+
+func TestBattleFlow_Initialize(t *testing.T) {
+	enemyTypes := createTestEnemyTypes()
+	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
-	state, err := engine.InitializeBattle(1, agents)
-	if err != nil {
-		t.Fatalf("バトル初期化に失敗: %v", err)
-	}
+	state := initBattleForTest(engine, 1, agents, enemyTypes)
 
 	// 敵が生成されている
 	if state.Enemy == nil {
@@ -141,11 +177,11 @@ func TestBattleFlow_Initialize(t *testing.T) {
 }
 
 func TestBattleFlow_EnemyAttack(t *testing.T) {
-
-	engine := combat.NewBattleEngine(createTestEnemyTypes())
+	enemyTypes := createTestEnemyTypes()
+	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state := initBattleForTest(engine, 1, agents, enemyTypes)
 	initialHP := state.Player.HP
 
 	// 敵攻撃を処理
@@ -163,11 +199,11 @@ func TestBattleFlow_EnemyAttack(t *testing.T) {
 }
 
 func TestBattleFlow_ModuleUse_Attack(t *testing.T) {
-
-	engine := combat.NewBattleEngine(createTestEnemyTypes())
+	enemyTypes := createTestEnemyTypes()
+	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state := initBattleForTest(engine, 1, agents, enemyTypes)
 	initialEnemyHP := state.Enemy.HP
 
 	// タイピング結果
@@ -182,7 +218,7 @@ func TestBattleFlow_ModuleUse_Attack(t *testing.T) {
 	// 物理攻撃モジュールを使用
 	agent := agents[0]
 	module := agent.Modules[0] // 物理打撃
-	damage := engine.ApplyModuleEffect(state, agent, module, typingResult)
+	damage := engine.ApplySkillEffect(state, agent, module, typingResult)
 
 	// ダメージが与えられた
 	if damage <= 0 {
@@ -196,11 +232,11 @@ func TestBattleFlow_ModuleUse_Attack(t *testing.T) {
 }
 
 func TestBattleFlow_ModuleUse_Heal(t *testing.T) {
-
-	engine := combat.NewBattleEngine(createTestEnemyTypes())
+	enemyTypes := createTestEnemyTypes()
+	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state := initBattleForTest(engine, 1, agents, enemyTypes)
 
 	// プレイヤーにダメージを与える
 	state.Player.TakeDamage(30)
@@ -218,7 +254,7 @@ func TestBattleFlow_ModuleUse_Heal(t *testing.T) {
 	// 回復モジュールを使用
 	agent := agents[0]
 	module := agent.Modules[2] // ヒール
-	healAmount := engine.ApplyModuleEffect(state, agent, module, typingResult)
+	healAmount := engine.ApplySkillEffect(state, agent, module, typingResult)
 
 	// 回復量が正の値
 	if healAmount <= 0 {
@@ -232,11 +268,11 @@ func TestBattleFlow_ModuleUse_Heal(t *testing.T) {
 }
 
 func TestBattleFlow_VictoryCondition(t *testing.T) {
-
-	engine := combat.NewBattleEngine(createTestEnemyTypes())
+	enemyTypes := createTestEnemyTypes()
+	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state := initBattleForTest(engine, 1, agents, enemyTypes)
 
 	// 敵HPを0にする
 	state.Enemy.HP = 0
@@ -253,11 +289,11 @@ func TestBattleFlow_VictoryCondition(t *testing.T) {
 }
 
 func TestBattleFlow_DefeatCondition(t *testing.T) {
-
-	engine := combat.NewBattleEngine(createTestEnemyTypes())
+	enemyTypes := createTestEnemyTypes()
+	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state := initBattleForTest(engine, 1, agents, enemyTypes)
 
 	// プレイヤーHPを0にする
 	state.Player.HP = 0
@@ -274,11 +310,11 @@ func TestBattleFlow_DefeatCondition(t *testing.T) {
 }
 
 func TestBattleFlow_PhaseTransition(t *testing.T) {
-
-	engine := combat.NewBattleEngine(createTestEnemyTypes())
+	enemyTypes := createTestEnemyTypes()
+	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state := initBattleForTest(engine, 1, agents, enemyTypes)
 
 	// 初期フェーズは通常
 	if state.Enemy.Phase != domain.PhaseNormal {
@@ -337,11 +373,11 @@ func TestBattleFlow_TypingChallenge(t *testing.T) {
 }
 
 func TestBattleFlow_BuffDebuffInteraction(t *testing.T) {
-
-	engine := combat.NewBattleEngine(createTestEnemyTypes())
+	enemyTypes := createTestEnemyTypes()
+	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state := initBattleForTest(engine, 1, agents, enemyTypes)
 
 	// プレイヤーに防御バフを付与
 	state.Player.EffectTable.AddBuff("防御UP", 10.0, map[domain.EffectColumn]float64{
@@ -359,12 +395,12 @@ func TestBattleFlow_BuffDebuffInteraction(t *testing.T) {
 }
 
 func TestBattleFlow_AccuracyPenalty(t *testing.T) {
-
-	engine := combat.NewBattleEngine(createTestEnemyTypes())
+	enemyTypes := createTestEnemyTypes()
+	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
 	// バトル初期化
-	_, _ = engine.InitializeBattle(1, agents)
+	_ = initBattleForTest(engine, 1, agents, enemyTypes)
 
 	agent := agents[0]
 	module := agent.Modules[0]
@@ -375,7 +411,7 @@ func TestBattleFlow_AccuracyPenalty(t *testing.T) {
 		SpeedFactor:    1.0,
 		AccuracyFactor: 0.95,
 	}
-	highDamage := engine.CalculateModuleEffectWithPassive(agent, module, highAccuracyResult)
+	highDamage := engine.CalculateSkillEffectWithPassive(agent, module, highAccuracyResult)
 
 	// 低い正確性（50%未満）
 	lowAccuracyResult := &typing.TypingResult{
@@ -383,7 +419,7 @@ func TestBattleFlow_AccuracyPenalty(t *testing.T) {
 		SpeedFactor:    1.0,
 		AccuracyFactor: 0.4,
 	}
-	lowDamage := engine.CalculateModuleEffectWithPassive(agent, module, lowAccuracyResult)
+	lowDamage := engine.CalculateSkillEffectWithPassive(agent, module, lowAccuracyResult)
 
 	// 低い正確性の方が効果が低い（半減ペナルティ適用）
 	if lowDamage >= highDamage {
@@ -393,10 +429,11 @@ func TestBattleFlow_AccuracyPenalty(t *testing.T) {
 
 func TestBattleFlow_Statistics(t *testing.T) {
 	// バトル統計の記録
-	engine := combat.NewBattleEngine(createTestEnemyTypes())
+	enemyTypes := createTestEnemyTypes()
+	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state := initBattleForTest(engine, 1, agents, enemyTypes)
 
 	// タイピング結果を記録
 	result := &typing.TypingResult{
@@ -493,10 +530,7 @@ func TestBattleFlow_LevelSelection_PatternBased(t *testing.T) {
 
 	// レベル10でバトル開始
 	level := 10
-	state, err := engine.InitializeBattle(level, agents)
-	if err != nil {
-		t.Fatalf("バトル初期化に失敗: %v", err)
-	}
+	state := initBattleForTest(engine, level, agents, enemyTypes)
 
 	// 敵タイプを手動で設定（テスト用）
 	state.Enemy = domain.NewEnemy("test", "ゴブリンリーダー Lv.10", level, 1000, 30, enemyTypes[0])
@@ -545,7 +579,7 @@ func TestBattleFlow_PhaseTransition_PassiveSwitch(t *testing.T) {
 	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
-	state, _ := engine.InitializeBattle(10, agents)
+	state := initBattleForTest(engine, 10, agents, enemyTypes)
 	state.Enemy = domain.NewEnemy("test", "ゴブリンリーダー Lv.10", 10, 1000, 30, enemyTypes[0])
 	engine.RegisterEnemyPassive(state)
 
@@ -610,7 +644,7 @@ func TestBattleFlow_PatternLoopAndProgress(t *testing.T) {
 	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
-	state, _ := engine.InitializeBattle(5, agents)
+	state := initBattleForTest(engine, 5, agents, enemyTypes)
 	state.Enemy = domain.NewEnemy("test", "ゴブリンリーダー Lv.5", 5, 500, 20, enemyTypes[0])
 
 	// 通常パターンは2つ（斬撃→パワーアップ）
@@ -653,7 +687,7 @@ func TestBattleFlow_EnemyDefeatRecordIntegration(t *testing.T) {
 
 	// 初回バトル（レベル5）
 	level := 5
-	state, _ := engine.InitializeBattle(level, agents)
+	state := initBattleForTest(engine, level, agents, enemyTypes)
 	state.Enemy = domain.NewEnemy("test", "ゴブリンリーダー Lv.5", level, 500, 20, enemyTypes[0])
 
 	// バトル終了（勝利）
@@ -676,7 +710,7 @@ func TestBattleFlow_EnemyDefeatRecordIntegration(t *testing.T) {
 
 	// 2回目のバトル（より高いレベルで挑戦可能）
 	level2 := 10
-	state2, _ := engine.InitializeBattle(level2, agents)
+	state2 := initBattleForTest(engine, level2, agents, enemyTypes)
 	state2.Enemy = domain.NewEnemy("test", "ゴブリンリーダー Lv.10", level2, 1000, 30, enemyTypes[0])
 	state2.Enemy.HP = 0
 	engine.CheckBattleEnd(state2)
@@ -733,7 +767,7 @@ func TestBattleFlow_ChargingAndDefenseIntegration(t *testing.T) {
 	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
-	state, _ := engine.InitializeBattle(10, agents)
+	state := initBattleForTest(engine, 10, agents, enemyTypes)
 	state.Enemy = domain.NewEnemy("test", "ディフェンダーゴブリン Lv.10", 10, 800, 8, enemyTypes[0])
 
 	// 攻撃行動でチャージ開始
@@ -822,7 +856,7 @@ func TestBattleFlow_BuffDebuffPattern(t *testing.T) {
 	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
-	state, _ := engine.InitializeBattle(5, agents)
+	state := initBattleForTest(engine, 5, agents, enemyTypes)
 	state.Enemy = domain.NewEnemy("test", "バフゴブリン Lv.5", 5, 300, 6, enemyTypes[0])
 
 	// 自己バフ行動を実行

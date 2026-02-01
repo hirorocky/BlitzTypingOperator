@@ -58,27 +58,18 @@ func TestSaveLoadFlow_WriteAndRead(t *testing.T) {
 }
 
 func TestSaveLoadFlow_InventoryPersistence(t *testing.T) {
-	// インベントリの永続化テスト（v1.0.0形式）
+	// ユニークインベントリの永続化テスト
 	tempDir := t.TempDir()
 	io := savedata.NewSaveDataIO(tempDir, false)
 
 	// テスト用データを作成
 	saveData := savedata.NewSaveData()
 
-	// コアインスタンスを追加（v1.0.0形式: TypeIDとLevelのみ）
-	saveData.Inventory.CoreInstances = append(saveData.Inventory.CoreInstances, savedata.CoreInstanceSave{
-		CoreTypeID: "test_type",
-		Level:      5,
-	})
+	// ユニークコアを追加
+	saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores, "test_type")
 
-	// モジュールインスタンスを追加（v1.0.0形式: TypeIDとChainEffect）
-	saveData.Inventory.ModuleInstances = append(saveData.Inventory.ModuleInstances, savedata.ModuleInstanceSave{
-		TypeID: "module_1",
-		ChainEffect: &savedata.ChainEffectSave{
-			Type:  "damage_bonus",
-			Value: 15.0,
-		},
-	})
+	// ユニークスキルを追加（チェイン効果付き）
+	saveData.Inventory.UniqueSkills.Skills["module_1"] = []string{"damage_bonus"}
 
 	// セーブ
 	err := io.SaveGame(saveData)
@@ -92,28 +83,21 @@ func TestSaveLoadFlow_InventoryPersistence(t *testing.T) {
 		t.Fatalf("ロードに失敗: %v", err)
 	}
 
-	// コア確認（v1.0.0形式）
-	if len(loadedData.Inventory.CoreInstances) != 1 {
-		t.Fatalf("コアインスタンス数 expected 1, got %d", len(loadedData.Inventory.CoreInstances))
+	// ユニークコア確認
+	if len(loadedData.Inventory.UniqueCores.Cores) != 1 {
+		t.Fatalf("ユニークコア数 expected 1, got %d", len(loadedData.Inventory.UniqueCores.Cores))
 	}
-	loadedCore := loadedData.Inventory.CoreInstances[0]
-	if loadedCore.CoreTypeID != "test_type" {
-		t.Errorf("Core CoreTypeID expected 'test_type', got '%s'", loadedCore.CoreTypeID)
-	}
-	if loadedCore.Level != 5 {
-		t.Errorf("Core Level expected 5, got %d", loadedCore.Level)
+	if loadedData.Inventory.UniqueCores.Cores[0] != "test_type" {
+		t.Errorf("Core TypeID expected 'test_type', got '%s'", loadedData.Inventory.UniqueCores.Cores[0])
 	}
 
-	// モジュール確認（v1.0.0形式）
-	if len(loadedData.Inventory.ModuleInstances) != 1 {
-		t.Fatalf("モジュールインスタンス数 expected 1, got %d", len(loadedData.Inventory.ModuleInstances))
+	// ユニークスキル確認
+	chains, ok := loadedData.Inventory.UniqueSkills.Skills["module_1"]
+	if !ok {
+		t.Fatal("module_1 スキルが見つかりません")
 	}
-	loadedMod := loadedData.Inventory.ModuleInstances[0]
-	if loadedMod.TypeID != "module_1" {
-		t.Errorf("Module TypeID expected 'module_1', got '%s'", loadedMod.TypeID)
-	}
-	if loadedMod.ChainEffect == nil || loadedMod.ChainEffect.Type != "damage_bonus" {
-		t.Error("Module ChainEffect not correctly restored")
+	if len(chains) != 1 || chains[0] != "damage_bonus" {
+		t.Error("Skill ChainEffect not correctly restored")
 	}
 }
 

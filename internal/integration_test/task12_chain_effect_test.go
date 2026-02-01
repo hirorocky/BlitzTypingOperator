@@ -9,14 +9,14 @@ import (
 )
 
 // newTestModuleForChain はテスト用モジュールを作成します。
-func newTestModuleForChain(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestModuleForChain(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
 		Icon:        "⚔️",
 		Tags:        tags,
 		Description: description,
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -28,14 +28,14 @@ func newTestModuleForChain(id, name string, tags []string, statCoef float64, sta
 }
 
 // newTestModuleWithChainEffectForChain はチェイン効果付きテスト用モジュールを作成します。
-func newTestModuleWithChainEffectForChain(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestModuleWithChainEffectForChain(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
 		Icon:        "⚔️",
 		Tags:        tags,
 		Description: description,
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},

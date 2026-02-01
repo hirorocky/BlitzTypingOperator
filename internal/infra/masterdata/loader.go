@@ -159,10 +159,6 @@ type SkillEffectData struct {
 	Icon         string            `json:"icon"`
 }
 
-// ModuleEffectData はSkillEffectDataのエイリアスです。
-// 後方互換性のために残されています。新規コードではSkillEffectDataを使用してください。
-type ModuleEffectData = SkillEffectData
-
 // SkillDefinitionData はskills.json（またはmodules.json）から読み込むスキル定義データの構造体です。
 type SkillDefinitionData struct {
 	ID              string            `json:"id"`
@@ -182,7 +178,7 @@ type ModuleDefinitionData = SkillDefinitionData
 
 // modulesFileData はmodules.jsonのルート構造です。
 type modulesFileData struct {
-	ModuleTypes []ModuleDefinitionData `json:"module_types"`
+	SkillTypes []ModuleDefinitionData `json:"module_types"`
 }
 
 // LoadModuleDefinitions はmodules.jsonからモジュール定義を読み込みます。
@@ -198,7 +194,7 @@ func (l *DataLoader) LoadModuleDefinitions() ([]ModuleDefinitionData, error) {
 		return nil, fmt.Errorf("modules.jsonのパースに失敗: %w", err)
 	}
 
-	return fileData.ModuleTypes, nil
+	return fileData.SkillTypes, nil
 }
 
 // ToDomainType はSkillDefinitionDataをドメインモデルのSkillTypeに変換します。

@@ -9,7 +9,7 @@ import (
 
 // TestInventoryProviderAdapter はInventoryProviderAdapterの基本動作をテストします。
 func TestInventoryProviderAdapter(t *testing.T) {
-	// v3.0.0: 新システムのAgentSlotManagerを使用
+	// 新システムのAgentSlotManagerを使用
 	coreInv := domain.NewCoreInventory()
 	skillInv := domain.NewSkillInventory()
 
@@ -28,13 +28,13 @@ func TestInventoryProviderAdapter(t *testing.T) {
 		t.Fatal("NewInventoryProviderAdapter returned nil")
 	}
 
-	// コア取得（v3.0.0では空スライス）
+	// コア取得（空スライス）
 	cores := adapter.GetCores()
 	if cores == nil {
 		t.Error("GetCores returned nil")
 	}
 
-	// モジュール取得（v3.0.0では空スライス）
+	// モジュール取得（空スライス）
 	modules := adapter.GetModules()
 	if modules == nil {
 		t.Error("GetModules returned nil")
@@ -49,7 +49,7 @@ func TestInventoryProviderAdapter(t *testing.T) {
 
 // TestInventoryProviderAdapter_WithData はデータがある場合のテストです。
 func TestInventoryProviderAdapter_WithData(t *testing.T) {
-	// v3.0.0: コアとスキルをインベントリに追加
+	// コアとスキルをインベントリに追加
 	coreInv := domain.NewCoreInventory()
 	skillInv := domain.NewSkillInventory()
 
@@ -91,7 +91,7 @@ func TestInventoryProviderAdapter_WithData(t *testing.T) {
 
 	adapter := NewInventoryProviderAdapter(slotMgr)
 
-	// v3.0.0: GetCores/GetModulesは空スライスを返す
+	// GetCores/GetModulesは空スライスを返す
 	cores := adapter.GetCores()
 	if len(cores) != 0 {
 		t.Errorf("Expected 0 cores, got %d", len(cores))
@@ -110,7 +110,7 @@ func TestInventoryProviderAdapter_WithData(t *testing.T) {
 }
 
 // TestInventoryProviderAdapter_AddAgent はエージェント追加をテストします。
-// v3.0.0では、この操作は無効化されています（スロットへの直接設定を使用）。
+// 、この操作は無効化されています（スロットへの直接設定を使用）。
 func TestInventoryProviderAdapter_AddAgent(t *testing.T) {
 	coreInv := domain.NewCoreInventory()
 	skillInv := domain.NewSkillInventory()
@@ -128,7 +128,7 @@ func TestInventoryProviderAdapter_AddAgent(t *testing.T) {
 
 	initialCount := len(adapter.GetAgents())
 
-	// v3.0.0: AddAgentは何もしない
+	// AddAgentは何もしない
 	coreType := domain.CoreType{
 		ID:          "test_type",
 		Name:        "テスト",
@@ -142,7 +142,7 @@ func TestInventoryProviderAdapter_AddAgent(t *testing.T) {
 		t.Errorf("AddAgent failed: %v", err)
 	}
 
-	// v3.0.0: AddAgentは無効化されているので、カウントは変わらない
+	// AddAgentは無効化されているので、カウントは変わらない
 	if len(adapter.GetAgents()) != initialCount {
 		t.Errorf("Expected %d agents, got %d", initialCount, len(adapter.GetAgents()))
 	}
