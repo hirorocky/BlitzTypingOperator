@@ -38,15 +38,15 @@ func TestBattleEngine_TypingDone_PerfectRhythm(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_perfect_rhythm", Name: "パーフェクトリズム"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 50, StatCoef: 1.0, StatRef: "STR"},
@@ -55,18 +55,16 @@ func TestBattleEngine_TypingDone_PerfectRhythm(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	// 敵タイプを作成
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
 		},
 	}
 
@@ -75,7 +73,7 @@ func TestBattleEngine_TypingDone_PerfectRhythm(t *testing.T) {
 	engine.SetPassiveSkills(passiveSkillDefs)
 
 	// バトルを初期化
-	state, err := engine.InitializeBattle(1, agents)
+	state, err := engine.initializeBattleForTest(1, agents)
 	if err != nil {
 		t.Fatalf("InitializeBattle failed: %v", err)
 	}
@@ -89,7 +87,7 @@ func TestBattleEngine_TypingDone_PerfectRhythm(t *testing.T) {
 		SpeedFactor:    1.0,
 		AccuracyFactor: 0.95,
 	}
-	baselineDamage := engine.ApplyModuleEffect(state, agent, module, baselineResult)
+	baselineDamage := engine.ApplySkillEffect(state, agent, module, baselineResult)
 
 	// 敵HPをリセット
 	state.Enemy.HP = state.Enemy.MaxHP
@@ -102,7 +100,7 @@ func TestBattleEngine_TypingDone_PerfectRhythm(t *testing.T) {
 		SpeedFactor:    1.0,
 		AccuracyFactor: 1.0,
 	}
-	damage := engine.ApplyModuleEffect(state, agent, module, typingResult)
+	damage := engine.ApplySkillEffect(state, agent, module, typingResult)
 
 	// Assert: ダメージが約1.5倍になっていることを確認
 	// AccuracyFactorの違いも考慮（0.95 vs 1.0）
@@ -141,15 +139,15 @@ func TestBattleEngine_TypingDone_PerfectRhythm_NotTriggered(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_perfect_rhythm", Name: "パーフェクトリズム"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 50, StatCoef: 1.0, StatRef: "STR"},
@@ -158,23 +156,21 @@ func TestBattleEngine_TypingDone_PerfectRhythm_NotTriggered(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
 		},
 	}
 
 	engine := NewBattleEngine(enemyTypes)
 	engine.SetPassiveSkills(passiveSkillDefs)
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	// 正確性95%のタイピング結果（100%未満）
@@ -185,13 +181,13 @@ func TestBattleEngine_TypingDone_PerfectRhythm_NotTriggered(t *testing.T) {
 		SpeedFactor:    1.0,
 		AccuracyFactor: 0.95,
 	}
-	damage := engine.ApplyModuleEffect(state, agent, module, typingResult)
+	damage := engine.ApplySkillEffect(state, agent, module, typingResult)
 
 	// 敵HPをリセット
 	state.Enemy.HP = state.Enemy.MaxHP
 
 	// 同じ条件でもう一度（パッシブなしの一貫性確認）
-	damage2 := engine.ApplyModuleEffect(state, agent, module, typingResult)
+	damage2 := engine.ApplySkillEffect(state, agent, module, typingResult)
 
 	// Assert: ダメージが1.5倍にならない（ほぼ同じダメージ）
 	ratio := float64(damage2) / float64(damage)
@@ -226,15 +222,15 @@ func TestBattleEngine_TypingDone_SpeedBreak(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_speed_break", Name: "スピードブレイク"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 100, StatCoef: 1.0, StatRef: "STR"},
@@ -243,23 +239,21 @@ func TestBattleEngine_TypingDone_SpeedBreak(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
 		},
 	}
 
 	engine := NewBattleEngine(enemyTypes)
 	engine.SetPassiveSkills(passiveSkillDefs)
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	// ベースラインダメージを計算（WPM70、パッシブ発動しない）
@@ -270,7 +264,7 @@ func TestBattleEngine_TypingDone_SpeedBreak(t *testing.T) {
 		SpeedFactor:    1.0,
 		AccuracyFactor: 1.0,
 	}
-	baselineDamage := engine.ApplyModuleEffect(state, agent, module, baselineResult)
+	baselineDamage := engine.ApplySkillEffect(state, agent, module, baselineResult)
 
 	// 敵HPをリセット
 	state.Enemy.HP = state.Enemy.MaxHP
@@ -283,7 +277,7 @@ func TestBattleEngine_TypingDone_SpeedBreak(t *testing.T) {
 		SpeedFactor:    1.2,
 		AccuracyFactor: 1.0,
 	}
-	damage := engine.ApplyModuleEffect(state, agent, module, typingResult)
+	damage := engine.ApplySkillEffect(state, agent, module, typingResult)
 
 	// Assert: ダメージが約1.25倍（SpeedFactorも考慮）
 	// SpeedFactorの違いを補正: 1.2 vs 1.0
@@ -322,15 +316,15 @@ func TestBattleEngine_TypingDone_SpeedBreak_NotTriggered(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_speed_break", Name: "スピードブレイク"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 100, StatCoef: 1.0, StatRef: "STR"},
@@ -339,23 +333,21 @@ func TestBattleEngine_TypingDone_SpeedBreak_NotTriggered(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
 		},
 	}
 
 	engine := NewBattleEngine(enemyTypes)
 	engine.SetPassiveSkills(passiveSkillDefs)
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	// WPM=70のタイピング結果（80未満）
@@ -366,13 +358,13 @@ func TestBattleEngine_TypingDone_SpeedBreak_NotTriggered(t *testing.T) {
 		SpeedFactor:    1.0,
 		AccuracyFactor: 1.0,
 	}
-	damage := engine.ApplyModuleEffect(state, agent, module, typingResult)
+	damage := engine.ApplySkillEffect(state, agent, module, typingResult)
 
 	// 敵HPをリセット
 	state.Enemy.HP = state.Enemy.MaxHP
 
 	// 同じ条件でもう一度
-	damage2 := engine.ApplyModuleEffect(state, agent, module, typingResult)
+	damage2 := engine.ApplySkillEffect(state, agent, module, typingResult)
 
 	// Assert: ダメージが1.25倍にならない
 	ratio := float64(damage2) / float64(damage)
@@ -422,18 +414,18 @@ func TestBattleEngine_TypingDone_Combined(t *testing.T) {
 	}
 
 	passiveSkill1 := domain.PassiveSkill{ID: "ps_perfect_rhythm", Name: "パーフェクトリズム"}
-	core1 := domain.NewCore("core_001", "テストコア1", 10, coreType, passiveSkill1)
+	core1 := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill1)
 
 	passiveSkill2 := domain.PassiveSkill{ID: "ps_speed_break", Name: "スピードブレイク"}
-	core2 := domain.NewCore("core_002", "テストコア2", 10, coreType, passiveSkill2)
+	core2 := domain.NewCoreWithTypeID("core_002", coreType, passiveSkill2)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 100, StatCoef: 1.0, StatRef: "STR"},
@@ -442,25 +434,23 @@ func TestBattleEngine_TypingDone_Combined(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
+	module := domain.NewSkillFromType(moduleType, nil)
 
-	agent1 := domain.NewAgent("agent_001", core1, []*domain.ModuleModel{module})
-	agent2 := domain.NewAgent("agent_002", core2, []*domain.ModuleModel{module})
+	agent1 := domain.NewAgent("agent_001", core1, []*domain.SkillModel{module})
+	agent2 := domain.NewAgent("agent_002", core2, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent1, agent2}
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
 		},
 	}
 
 	engine := NewBattleEngine(enemyTypes)
 	engine.SetPassiveSkills(passiveSkillDefs)
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	// ベースラインダメージ（パッシブなし: WPM=70, Accuracy=95%）
@@ -471,7 +461,7 @@ func TestBattleEngine_TypingDone_Combined(t *testing.T) {
 		SpeedFactor:    1.0,
 		AccuracyFactor: 0.95,
 	}
-	baselineDamage := engine.ApplyModuleEffect(state, agent1, module, baselineResult)
+	baselineDamage := engine.ApplySkillEffect(state, agent1, module, baselineResult)
 
 	// 敵HPをリセット
 	state.Enemy.HP = state.Enemy.MaxHP
@@ -484,7 +474,7 @@ func TestBattleEngine_TypingDone_Combined(t *testing.T) {
 		SpeedFactor:    1.2,
 		AccuracyFactor: 1.0,
 	}
-	damage := engine.ApplyModuleEffect(state, agent1, module, typingResult)
+	damage := engine.ApplySkillEffect(state, agent1, module, typingResult)
 
 	// Assert: 両方の効果が適用される（1.5 * 1.25 = 1.875倍）
 	// SpeedFactorとAccuracyFactorの違いを補正

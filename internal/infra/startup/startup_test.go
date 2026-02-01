@@ -28,7 +28,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				Icon:        "⚔️",
 				Tags:        []string{"physical_low"},
 				Description: "物理ダメージを与える基本攻撃",
-				Effects: []masterdata.ModuleEffectData{
+				Effects: []masterdata.SkillEffectData{
 					{
 						Target:      "enemy",
 						HPFormula:   &masterdata.HPFormulaData{Base: 0, StatCoef: 1.0, StatRef: "STR"},
@@ -42,7 +42,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				Icon:        "🔥",
 				Tags:        []string{"magic_low"},
 				Description: "魔法ダメージを与える基本魔法",
-				Effects: []masterdata.ModuleEffectData{
+				Effects: []masterdata.SkillEffectData{
 					{
 						Target:      "enemy",
 						HPFormula:   &masterdata.HPFormulaData{Base: 0, StatCoef: 1.2, StatRef: "MAG"},
@@ -56,7 +56,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				Icon:        "💚",
 				Tags:        []string{"heal_low"},
 				Description: "HPを回復する基本回復魔法",
-				Effects: []masterdata.ModuleEffectData{
+				Effects: []masterdata.SkillEffectData{
 					{
 						Target:      "self",
 						HPFormula:   &masterdata.HPFormulaData{Base: 0, StatCoef: 0.8, StatRef: "MAG"},
@@ -70,7 +70,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				Icon:        "⬆️",
 				Tags:        []string{"buff_low"},
 				Description: "一時的に攻撃力を上昇させる",
-				Effects: []masterdata.ModuleEffectData{
+				Effects: []masterdata.SkillEffectData{
 					{
 						Target: "self",
 						EffectColumn: &masterdata.EffectColumnData{
@@ -85,10 +85,9 @@ func createTestExternalData() *masterdata.ExternalData {
 		},
 		EnemyTypes: []masterdata.EnemyTypeData{
 			{
-				ID:              "slime",
-				Name:            "スライム",
-				BaseHP:          50,
-				BaseAttackPower: 5,
+				ID:     "slime",
+				Name:   "スライム",
+				BaseHP: 50,
 			},
 		},
 		PassiveSkills: []masterdata.PassiveSkillData{
@@ -155,11 +154,6 @@ func TestNewGameInitializer_CreateInitialAgents(t *testing.T) {
 			t.Errorf("初期エージェント%dは1つのモジュールを持つべきです: got %d", i+1, len(agent.Modules))
 		}
 
-		// エージェントレベルがコアレベルと一致すること
-		if agent.Level != agent.Core.Level {
-			t.Errorf("エージェント%dのレベルはコアレベルと一致するべきです", i+1)
-		}
-
 		// オールラウンダー特性であること
 		if agent.Core.Type.ID != "all_rounder" {
 			t.Errorf("初期エージェント%dのコアはオールラウンダー特性であるべきです: got %s", i+1, agent.Core.Type.ID)
@@ -168,7 +162,6 @@ func TestNewGameInitializer_CreateInitialAgents(t *testing.T) {
 }
 
 func TestNewGameInitializer_InitializeNewGame(t *testing.T) {
-
 	initializer := NewNewGameInitializer(createTestExternalData())
 
 	saveData := initializer.InitializeNewGame()
@@ -176,16 +169,10 @@ func TestNewGameInitializer_InitializeNewGame(t *testing.T) {
 		t.Fatal("新規ゲームデータが作成されるべきです")
 	}
 
-	// インベントリに初期コアが含まれている（エージェント合成で消費されるため0）
-	// 初期エージェントが3体作成されていること（ID化された構造）
-	if len(saveData.Inventory.AgentInstances) != 3 {
-		t.Errorf("初期エージェントが3体存在するべきです: got %d", len(saveData.Inventory.AgentInstances))
-	}
-
-	// 初期エージェントが3体装備されていること
+	// AgentSlotsに初期エージェントが3体設定されていること
 	equippedCount := 0
-	for _, id := range saveData.Player.EquippedAgentIDs {
-		if id != "" {
+	for _, slot := range saveData.Player.AgentSlots {
+		if slot.CoreTypeID != "" {
 			equippedCount++
 		}
 	}
@@ -193,20 +180,21 @@ func TestNewGameInitializer_InitializeNewGame(t *testing.T) {
 		t.Errorf("初期エージェントが3体装備されているべきです: got %d", equippedCount)
 	}
 
-	// 装備されているエージェントIDがインベントリのエージェントと一致すること
-	for _, equippedID := range saveData.Player.EquippedAgentIDs {
-		if equippedID == "" {
-			continue
+	// 各スロットにコアとスキルが設定されていること
+	for i, slot := range saveData.Player.AgentSlots {
+		if slot.CoreTypeID == "" {
+			t.Errorf("スロット%dにコアが設定されているべきです", i)
 		}
-		found := false
-		for _, a := range saveData.Inventory.AgentInstances {
-			if a.ID == equippedID {
-				found = true
+		// 少なくとも1つのスキルが設定されていること
+		hasSkill := false
+		for _, skill := range slot.Skills {
+			if skill.TypeID != "" {
+				hasSkill = true
 				break
 			}
 		}
-		if !found {
-			t.Errorf("装備エージェントID %s がインベントリ内のエージェントと一致するべきです", equippedID)
+		if !hasSkill {
+			t.Errorf("スロット%dに少なくとも1つのスキルが設定されているべきです", i)
 		}
 	}
 }
@@ -266,14 +254,13 @@ func TestNewGameInitializer_MultipleCalls(t *testing.T) {
 		t.Error("異なる呼び出しで異なるセーブデータオブジェクトが作成されるべきです")
 	}
 
-	// 両方のセーブデータにエージェントが含まれていること
-	if len(saveData1.Inventory.AgentInstances) == 0 {
-		t.Error("saveData1にエージェントが含まれているべきです")
+	// 両方のセーブデータにAgentSlotsが設定されていること
+	hasSlot1 := saveData1.Player.AgentSlots[0].CoreTypeID != ""
+	hasSlot2 := saveData2.Player.AgentSlots[0].CoreTypeID != ""
+	if !hasSlot1 {
+		t.Error("saveData1にエージェントスロットが設定されているべきです")
 	}
-	if len(saveData2.Inventory.AgentInstances) == 0 {
-		t.Error("saveData2にエージェントが含まれているべきです")
+	if !hasSlot2 {
+		t.Error("saveData2にエージェントスロットが設定されているべきです")
 	}
-
-	// FirstAgentは固定IDを返すため、エージェントIDは同じ
-	// （これは新しい設計の正しい動作）
 }

@@ -17,13 +17,13 @@ func TestCreateEncyclopediaData(t *testing.T) {
 	}
 
 	// 基本的なデータ構造が存在すること（内容はマスタデータ依存）
-	// AllCoreTypes, AllModuleTypes, AllEnemyTypes が nil でないこと
+	// AllCoreTypes, AllSkillTypes, AllEnemyTypes が nil でないこと
 	if data.AllCoreTypes == nil {
 		t.Error("AllCoreTypes is nil")
 	}
 
-	if data.AllModuleTypes == nil {
-		t.Error("AllModuleTypes is nil")
+	if data.AllSkillTypes == nil {
+		t.Error("AllSkillTypes is nil")
 	}
 
 	if data.AllEnemyTypes == nil {

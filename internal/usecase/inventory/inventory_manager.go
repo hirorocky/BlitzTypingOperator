@@ -57,10 +57,9 @@ func (m *InventoryManager) Skills() *domain.SkillInventory {
 }
 
 // AddCore はコアを追加します。
-// 新規TypeIDの場合、または既存の最大レベルより高い場合に更新します。
-// 更新された場合はtrue、更新されなかった場合はfalseを返します。
-func (m *InventoryManager) AddCore(typeID string, level int) bool {
-	return m.cores.AddCore(typeID, level)
+// 新規TypeIDの場合にtrueを返し、既に保有している場合はfalseを返します。
+func (m *InventoryManager) AddCore(typeID string) bool {
+	return m.cores.AddCore(typeID)
 }
 
 // AddSkill はスキルを追加します。
@@ -71,12 +70,7 @@ func (m *InventoryManager) AddSkill(typeID string, chainEffectID string) {
 
 // GetOwnedCoreTypes は保有コアTypeID一覧を返します。
 func (m *InventoryManager) GetOwnedCoreTypes() []string {
-	ownedCores := m.cores.GetOwnedCores()
-	result := make([]string, 0, len(ownedCores))
-	for typeID := range ownedCores {
-		result = append(result, typeID)
-	}
-	return result
+	return m.cores.GetOwnedCores()
 }
 
 // GetOwnedSkillTypes は保有スキルTypeID一覧を返します。

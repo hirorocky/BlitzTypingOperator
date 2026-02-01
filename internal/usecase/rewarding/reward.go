@@ -113,12 +113,6 @@ func (p *ChainEffectPool) GenerateRandomEffect() *domain.ChainEffect {
 	return &effect
 }
 
-// ドロップ関連の定数
-const (
-	// CoreLevelRange はコアレベルの敵レベルからの変動範囲です。
-	CoreLevelRange = 2
-)
-
 // BattleStatistics はバトル統計を表す構造体です。
 type BattleStatistics struct {
 	// TotalWPM はWPMの合計値です。
@@ -174,10 +168,28 @@ type RewardResult struct {
 	DroppedCores []*domain.CoreModel
 
 	// DroppedModules はドロップしたモジュールのリストです。
-	DroppedModules []*domain.ModuleModel
+	DroppedModules []*domain.SkillModel
 
 	// EnemyLevel は撃破した敵のレベルです。
 	EnemyLevel int
+
+	// HPGain は獲得最大HP（敵撃破によるHP成長）です。
+	HPGain int
+
+	// RankUnlocked は新ランク解放フラグです。
+	RankUnlocked bool
+
+	// PreviousMaxHP はHP増加前の最大HP値です（表示用）。
+	PreviousMaxHP int
+
+	// NewMaxHP はHP増加後の最大HP値です（表示用）。
+	NewMaxHP int
+
+	// PreviousRank はランク増加前のランク値です（表示用）。
+	PreviousRank int
+
+	// NewRank はランク増加後のランク値です（表示用）。
+	NewRank int
 }
 
 // InventoryWarning はインベントリ警告を表す構造体です。
@@ -196,7 +208,7 @@ type TempStorage struct {
 	Cores []*domain.CoreModel
 
 	// Modules は一時保管中のモジュールリストです。
-	Modules []*domain.ModuleModel
+	Modules []*domain.SkillModel
 }
 
 // AddCore はコアを一時保管に追加します。
@@ -205,7 +217,7 @@ func (s *TempStorage) AddCore(core *domain.CoreModel) {
 }
 
 // AddModule はモジュールを一時保管に追加します。
-func (s *TempStorage) AddModule(module *domain.ModuleModel) {
+func (s *TempStorage) AddModule(module *domain.SkillModel) {
 	s.Modules = append(s.Modules, module)
 }
 
@@ -217,7 +229,7 @@ func (s *TempStorage) RetrieveCores() []*domain.CoreModel {
 }
 
 // RetrieveModules は一時保管中のモジュールを全て取り出します。
-func (s *TempStorage) RetrieveModules() []*domain.ModuleModel {
+func (s *TempStorage) RetrieveModules() []*domain.SkillModel {
 	modules := s.Modules
 	s.Modules = nil
 	return modules
@@ -255,20 +267,20 @@ type ModuleDropInfo struct {
 	MinDropLevel int
 
 	// Effects はモジュールの効果リストです。
-	Effects []domain.ModuleEffect
+	Effects []domain.SkillEffect
 }
 
-// ToModuleType はModuleDropInfoをドメインモデルのModuleTypeに変換します。
-func (m *ModuleDropInfo) ToModuleType() domain.ModuleType {
+// ToSkillType はModuleDropInfoをドメインモデルのSkillTypeに変換します。
+func (m *ModuleDropInfo) ToSkillType() domain.SkillType {
 	// Tagsをコピー（スライスの参照共有を避ける）
 	tagsCopy := make([]string, len(m.Tags))
 	copy(tagsCopy, m.Tags)
 
 	// Effectsをコピー
-	effectsCopy := make([]domain.ModuleEffect, len(m.Effects))
+	effectsCopy := make([]domain.SkillEffect, len(m.Effects))
 	copy(effectsCopy, m.Effects)
 
-	return domain.ModuleType{
+	return domain.SkillType{
 		ID:              m.ID,
 		Name:            m.Name,
 		Icon:            m.Icon,
@@ -281,16 +293,16 @@ func (m *ModuleDropInfo) ToModuleType() domain.ModuleType {
 	}
 }
 
-// ToDomain はModuleDropInfoをドメインモデルのModuleModelに変換します。
-func (m *ModuleDropInfo) ToDomain() *domain.ModuleModel {
-	moduleType := m.ToModuleType()
-	return domain.NewModuleFromType(moduleType, nil)
+// ToDomain はModuleDropInfoをドメインモデルのSkillModelに変換します。
+func (m *ModuleDropInfo) ToDomain() *domain.SkillModel {
+	moduleType := m.ToSkillType()
+	return domain.NewSkillFromType(moduleType, nil)
 }
 
 // ToDomainWithChainEffect はチェイン効果付きでドメインモデルに変換します。
-func (m *ModuleDropInfo) ToDomainWithChainEffect(chainEffect *domain.ChainEffect) *domain.ModuleModel {
-	moduleType := m.ToModuleType()
-	return domain.NewModuleFromType(moduleType, chainEffect)
+func (m *ModuleDropInfo) ToDomainWithChainEffect(chainEffect *domain.ChainEffect) *domain.SkillModel {
+	moduleType := m.ToSkillType()
+	return domain.NewSkillFromType(moduleType, chainEffect)
 }
 
 // RewardCalculator はドメイン型を使用した報酬計算を担当する構造体です。
@@ -335,11 +347,6 @@ func (c *RewardCalculator) GetChainEffectPool() *ChainEffectPool {
 	return c.chainEffectPool
 }
 
-// GetCoreLevelRange はコアレベルの変動範囲を返します。
-func (c *RewardCalculator) GetCoreLevelRange() int {
-	return CoreLevelRange
-}
-
 // CreateRewardResult は報酬結果を作成します。
 func (c *RewardCalculator) CreateRewardResult(isVictory bool, stats *BattleStatistics, enemyLevel int) *RewardResult {
 	result := &RewardResult{
@@ -347,7 +354,7 @@ func (c *RewardCalculator) CreateRewardResult(isVictory bool, stats *BattleStati
 		Stats:          stats,
 		EnemyLevel:     enemyLevel,
 		DroppedCores:   make([]*domain.CoreModel, 0),
-		DroppedModules: make([]*domain.ModuleModel, 0),
+		DroppedModules: make([]*domain.SkillModel, 0),
 	}
 
 	if !isVictory {
@@ -370,8 +377,8 @@ func (c *RewardCalculator) GetEligibleCoreTypes(enemyLevel int) []domain.CoreTyp
 	return eligible
 }
 
-// GetEligibleModuleTypes は指定レベルでドロップ可能なモジュールを返します。
-func (c *RewardCalculator) GetEligibleModuleTypes(enemyLevel int) []ModuleDropInfo {
+// GetEligibleSkillTypes は指定レベルでドロップ可能なモジュールを返します。
+func (c *RewardCalculator) GetEligibleSkillTypes(enemyLevel int) []ModuleDropInfo {
 	eligible := make([]ModuleDropInfo, 0)
 	for _, moduleType := range c.moduleTypes {
 		if moduleType.MinDropLevel <= enemyLevel {
@@ -395,7 +402,7 @@ func (c *RewardCalculator) CheckInventoryFull(
 func (c *RewardCalculator) CreateTempStorage() *TempStorage {
 	return &TempStorage{
 		Cores:   make([]*domain.CoreModel, 0),
-		Modules: make([]*domain.ModuleModel, 0),
+		Modules: make([]*domain.SkillModel, 0),
 	}
 }
 
@@ -418,7 +425,7 @@ func (c *RewardCalculator) CalculateGuaranteedReward(
 		Stats:            stats,
 		EnemyLevel:       enemyLevel,
 		DroppedCores:     make([]*domain.CoreModel, 0),
-		DroppedModules:   make([]*domain.ModuleModel, 0),
+		DroppedModules:   make([]*domain.SkillModel, 0),
 	}
 
 	// 確定ドロップ処理
@@ -460,9 +467,6 @@ func (c *RewardCalculator) RollCoreDropWithTypeID(typeID string, enemyLevel int)
 		return nil
 	}
 
-	// コアレベルは敵レベルと同じ
-	coreLevel := enemyLevel
-
 	// パッシブスキルを取得
 	passiveSkill := domain.PassiveSkill{}
 	if c.passiveSkills != nil {
@@ -471,10 +475,9 @@ func (c *RewardCalculator) RollCoreDropWithTypeID(typeID string, enemyLevel int)
 		}
 	}
 
-	// コアをインスタンス化（TypeIDベース）
+	// コアをインスタンス化（TypeIDベース、レベルなし）
 	return domain.NewCoreWithTypeID(
 		selectedType.ID,
-		coreLevel,
 		*selectedType,
 		passiveSkill,
 	)
@@ -482,7 +485,7 @@ func (c *RewardCalculator) RollCoreDropWithTypeID(typeID string, enemyLevel int)
 
 // RollModuleDropWithTypeID は指定されたTypeIDのモジュールを生成します。
 // 敵レベルに応じたチェイン効果をランダムに選択します。
-func (c *RewardCalculator) RollModuleDropWithTypeID(typeID string, enemyLevel int) *domain.ModuleModel {
+func (c *RewardCalculator) RollModuleDropWithTypeID(typeID string, enemyLevel int) *domain.SkillModel {
 	// 指定されたTypeIDのモジュールを検索
 	var selectedType *ModuleDropInfo
 	for i := range c.moduleTypes {
@@ -550,6 +553,66 @@ func (c *RewardCalculator) generateLevelBasedChainEffect(enemyLevel int) *domain
 	return &effect
 }
 
+// CalculateGuaranteedRewardWithProgress はHP成長報酬付きで確定ドロップを計算します。
+// 敵タイプのDropItemCategoryとDropItemTypeIDに基づいてアイテムを決定し、
+// EnemyProgressに撃破を記録し、PlayerModelにHP成長を適用します。
+func (c *RewardCalculator) CalculateGuaranteedRewardWithProgress(
+	stats *BattleStatistics,
+	enemyLevel int,
+	enemyType domain.EnemyType,
+	progress *domain.EnemyProgress,
+	player *domain.PlayerModel,
+	enemyTypes map[string]domain.EnemyType,
+) *RewardResult {
+	// 基本の報酬計算
+	result := c.CalculateGuaranteedReward(stats, enemyLevel, enemyType)
+
+	// 変更前の値を記録
+	previousMaxHP := player.MaxHP
+	previousRank := progress.CurrentRank
+
+	// HP成長を計算
+	hpGain, _ := progress.RecordDefeat(enemyType.ID, enemyLevel)
+
+	// HP成長をPlayerModelに適用
+	if hpGain > 0 {
+		player.IncreaseMaxHP(hpGain)
+	}
+
+	// ランク解放チェック
+	rankUnlocked := false
+	if checkRankComplete(progress, enemyTypes) {
+		progress.CurrentRank++
+		rankUnlocked = true
+	}
+
+	result.HPGain = hpGain
+	result.RankUnlocked = rankUnlocked
+	result.PreviousMaxHP = previousMaxHP
+	result.NewMaxHP = player.MaxHP
+	result.PreviousRank = previousRank
+	result.NewRank = progress.CurrentRank
+
+	return result
+}
+
+// checkRankComplete はランク内全敵撃破チェックを行います。
+func checkRankComplete(progress *domain.EnemyProgress, enemyTypes map[string]domain.EnemyType) bool {
+	currentRank := progress.CurrentRank
+
+	hasEnemiesInRank := false
+	for _, et := range enemyTypes {
+		if et.Rank == currentRank {
+			hasEnemiesInRank = true
+			if !progress.IsDefeated(et.ID) {
+				return false
+			}
+		}
+	}
+
+	return hasEnemiesInRank
+}
+
 // AddRewardsToInventory はドロップしたアイテムをインベントリに追加します。
 // 新しいインベントリシステムではTypeIDベースでユニーク管理されるため、
 // 同一TypeIDのより高いレベルのみが保存されます（コア）。
@@ -559,13 +622,12 @@ func AddRewardsToInventory(
 	coreInv *domain.CoreInventory,
 	skillInv *domain.SkillInventory,
 ) *InventoryWarning {
-	// コアをインベントリに追加（TypeID + Level）
+	// コアをインベントリに追加（TypeIDのみ）
 	for _, core := range result.DroppedCores {
-		updated := coreInv.AddCore(core.Type.ID, core.Level)
+		updated := coreInv.AddCore(core.Type.ID)
 		if updated {
 			slog.Info("コアをインベントリに追加",
 				slog.String("core_type_id", core.Type.ID),
-				slog.Int("level", core.Level),
 			)
 		}
 	}

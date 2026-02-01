@@ -18,6 +18,9 @@ func TestCreateStatsData(t *testing.T) {
 	// バトル勝利を記録（選択レベル1, デフォルトレベル1）
 	gs.RecordBattleVictory(1, 1)
 
+	// 敵撃破を記録してMaxLevelReachedを更新
+	gs.RecordEnemyDefeat("enemy_001", 1)
+
 	data := CreateStatsData(gs)
 
 	if data == nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"hirorocky/type-battle/internal/tui/ascii"
 	"hirorocky/type-battle/internal/tui/styles"
 	"hirorocky/type-battle/internal/usecase/rewarding"
 
@@ -98,6 +99,18 @@ func (s *RewardScreen) View() string {
 	builder.WriteString(s.renderMainContent())
 	builder.WriteString("\n\n")
 
+	// HP増加表示
+	if s.result.HPGain > 0 {
+		builder.WriteString(s.renderHPGain())
+		builder.WriteString("\n\n")
+	}
+
+	// ランクアップ表示
+	if s.result.RankUnlocked {
+		builder.WriteString(s.renderRankUp())
+		builder.WriteString("\n\n")
+	}
+
 	// ヒント
 	hintStyle := lipgloss.NewStyle().
 		Foreground(styles.ColorSubtle).
@@ -173,7 +186,7 @@ func (s *RewardScreen) renderDrops() string {
 		items = append(items, coreStyle.Render("【コア】"))
 
 		for _, core := range s.result.DroppedCores {
-			coreInfo := fmt.Sprintf("  %s (Lv.%d)", core.Name, core.Level)
+			coreInfo := fmt.Sprintf("  %s", core.Name)
 			items = append(items, lipgloss.NewStyle().
 				Foreground(styles.ColorSecondary).
 				Render(coreInfo))
@@ -224,6 +237,56 @@ func (s *RewardScreen) renderDrops() string {
 		Padding(1).
 		Width(35).
 		Render(titleStyle.Render("🎁 ドロップ") + "\n\n" + content)
+}
+
+// renderHPGain はHP増加を表示します。
+func (s *RewardScreen) renderHPGain() string {
+	hpStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorBuff).
+		Align(lipgloss.Center).
+		Width(s.width)
+
+	return hpStyle.Render(fmt.Sprintf("💚 最大HP +%d！ (%d → %d)",
+		s.result.HPGain, s.result.PreviousMaxHP, s.result.NewMaxHP))
+}
+
+// renderRankUp はランクアップを大きく表示します。
+func (s *RewardScreen) renderRankUp() string {
+	var builder strings.Builder
+
+	// タイトル
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(ascii.GoldColor).
+		Align(lipgloss.Center).
+		Width(s.width)
+
+	builder.WriteString(titleStyle.Render("✨ RANK UP! ✨"))
+	builder.WriteString("\n\n")
+
+	// ランク数字を影付きで表示
+	shadowRenderer := ascii.NewShadowNumbers()
+	rankArt := shadowRenderer.RenderShadowNumber(s.result.NewRank)
+
+	rankContent := lipgloss.NewStyle().
+		Align(lipgloss.Center).
+		Width(s.width).
+		Render(rankArt)
+
+	builder.WriteString(rankContent)
+	builder.WriteString("\n")
+
+	// ランク変化の説明
+	descStyle := lipgloss.NewStyle().
+		Foreground(ascii.DarkGoldColor).
+		Align(lipgloss.Center).
+		Width(s.width)
+
+	builder.WriteString(descStyle.Render(fmt.Sprintf("ランク %d → %d",
+		s.result.PreviousRank, s.result.NewRank)))
+
+	return builder.String()
 }
 
 // SetSize はウィンドウサイズを設定します。

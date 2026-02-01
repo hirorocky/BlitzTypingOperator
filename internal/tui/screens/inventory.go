@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"hirorocky/type-battle/internal/domain"
+	"hirorocky/type-battle/internal/tui/components"
 	"hirorocky/type-battle/internal/tui/styles"
 	"hirorocky/type-battle/internal/usecase/inventory"
 	"hirorocky/type-battle/internal/usecase/slot"
@@ -78,7 +79,6 @@ type InventoryScreen struct {
 type CoreInventoryItem struct {
 	TypeID        string
 	TypeName      string
-	MaxLevel      int
 	IsEquipped    bool  // いずれかのスロットに装備中か
 	EquippedSlots []int // 装備中のスロット番号リスト
 }
@@ -231,17 +231,11 @@ func (s *InventoryScreen) updateCoreList() {
 	// 装備状況を取得
 	equippedCores := s.getEquippedCoreTypeIDs()
 
-	// TypeIDでソートするためにキーを取得
-	typeIDs := make([]string, 0, len(ownedCores))
-	for typeID := range ownedCores {
-		typeIDs = append(typeIDs, typeID)
-	}
-	sort.Strings(typeIDs)
+	// TypeIDでソート
+	sort.Strings(ownedCores)
 
 	// リストを構築
-	for _, typeID := range typeIDs {
-		maxLevel := ownedCores[typeID]
-
+	for _, typeID := range ownedCores {
 		// コアタイプ名を取得
 		typeName := typeID
 		if coreType, ok := s.coreTypes[typeID]; ok {
@@ -254,7 +248,6 @@ func (s *InventoryScreen) updateCoreList() {
 		item := CoreInventoryItem{
 			TypeID:        typeID,
 			TypeName:      typeName,
-			MaxLevel:      maxLevel,
 			IsEquipped:    len(equippedSlots) > 0,
 			EquippedSlots: equippedSlots,
 		}
@@ -496,7 +489,7 @@ func (s *InventoryScreen) renderCoreListItems() string {
 			equipMark = fmt.Sprintf(" [E%s]", strings.Join(slots, ","))
 		}
 
-		item := fmt.Sprintf("%s Lv.%d%s", core.TypeName, core.MaxLevel, equipMark)
+		item := fmt.Sprintf("%s%s", core.TypeName, equipMark)
 
 		// プレフィックスを含めた全体の内容を作成し、表示幅で切り詰め後パディング
 		fullContent := prefix + item
@@ -526,10 +519,6 @@ func (s *InventoryScreen) renderCorePreviewContent() string {
 
 	builder.WriteString(labelStyle.Render("TypeID: "))
 	builder.WriteString(valueStyle.Render(core.TypeID))
-	builder.WriteString("\n")
-
-	builder.WriteString(labelStyle.Render("取得済み最大レベル: "))
-	builder.WriteString(valueStyle.Render(fmt.Sprintf("Lv.%d", core.MaxLevel)))
 	builder.WriteString("\n\n")
 
 	// コアタイプの詳細情報
@@ -538,12 +527,11 @@ func (s *InventoryScreen) renderCorePreviewContent() string {
 		builder.WriteString(valueStyle.Render(strings.Join(coreType.AllowedTags, ", ")))
 		builder.WriteString("\n")
 
-		// ステータス重み
-		builder.WriteString(labelStyle.Render("ステータス重み:"))
+		// ステータス（計算後の値を固定順で表示）
+		builder.WriteString(labelStyle.Render("ステータス:"))
 		builder.WriteString("\n")
-		for stat, weight := range coreType.StatWeights {
-			fmt.Fprintf(&builder, "  %s: %.1f\n", stat, weight)
-		}
+		builder.WriteString(valueStyle.Render("  " + components.FormatStats(coreType)))
+		builder.WriteString("\n")
 	}
 
 	// 装備状況

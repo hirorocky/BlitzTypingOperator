@@ -18,7 +18,6 @@ func TestBattleEngine_VoltageInitialization(t *testing.T) {
 			ID:                     "test_enemy",
 			Name:                   "テスト敵",
 			BaseHP:                 100,
-			BaseAttackPower:        10,
 			VoltageRisePer10s:      20.0,
 			NormalActionPatternIDs: []string{},
 			ResolvedNormalActions: []domain.EnemyAction{
@@ -36,10 +35,10 @@ func TestBattleEngine_VoltageInitialization(t *testing.T) {
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
 	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
-	state, err := engine.InitializeBattle(1, agents)
+	state, err := engine.initializeBattleForTest(1, agents)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -58,7 +57,6 @@ func TestBattleEngine_UpdateEffects_VoltageRise(t *testing.T) {
 			ID:                     "test_enemy",
 			Name:                   "テスト敵",
 			BaseHP:                 100,
-			BaseAttackPower:        10,
 			VoltageRisePer10s:      20.0, // 10秒で20ポイント上昇
 			NormalActionPatternIDs: []string{},
 			ResolvedNormalActions: []domain.EnemyAction{
@@ -75,10 +73,10 @@ func TestBattleEngine_UpdateEffects_VoltageRise(t *testing.T) {
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
 	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
-	state, err := engine.InitializeBattle(1, agents)
+	state, err := engine.initializeBattleForTest(1, agents)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -99,7 +97,6 @@ func TestBattleEngine_UpdateEffects_VoltageContinuesOnPhaseTransition(t *testing
 			ID:                     "test_enemy",
 			Name:                   "テスト敵",
 			BaseHP:                 100,
-			BaseAttackPower:        10,
 			VoltageRisePer10s:      20.0,
 			NormalActionPatternIDs: []string{},
 			ResolvedNormalActions: []domain.EnemyAction{
@@ -116,10 +113,10 @@ func TestBattleEngine_UpdateEffects_VoltageContinuesOnPhaseTransition(t *testing
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
 	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
-	state, err := engine.InitializeBattle(1, agents)
+	state, err := engine.initializeBattleForTest(1, agents)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -150,7 +147,6 @@ func TestBattleEngine_UpdateEffects_VoltageSmallIncrement(t *testing.T) {
 			ID:                     "test_enemy",
 			Name:                   "テスト敵",
 			BaseHP:                 100,
-			BaseAttackPower:        10,
 			VoltageRisePer10s:      10.0, // 10秒で10ポイント = 1秒で1ポイント = 0.1秒で0.1ポイント
 			NormalActionPatternIDs: []string{},
 			ResolvedNormalActions: []domain.EnemyAction{
@@ -167,10 +163,10 @@ func TestBattleEngine_UpdateEffects_VoltageSmallIncrement(t *testing.T) {
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
 	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
-	state, err := engine.InitializeBattle(1, agents)
+	state, err := engine.initializeBattleForTest(1, agents)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -191,7 +187,6 @@ func TestBattleEngine_UpdateEffects_VoltageZeroRise(t *testing.T) {
 			ID:                     "test_enemy",
 			Name:                   "テスト敵",
 			BaseHP:                 100,
-			BaseAttackPower:        10,
 			VoltageRisePer10s:      0.0, // 上昇しない設定
 			NormalActionPatternIDs: []string{},
 			ResolvedNormalActions: []domain.EnemyAction{
@@ -208,10 +203,10 @@ func TestBattleEngine_UpdateEffects_VoltageZeroRise(t *testing.T) {
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
 	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
-	state, err := engine.InitializeBattle(1, agents)
+	state, err := engine.initializeBattleForTest(1, agents)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -230,10 +225,9 @@ func TestBattleEngine_UpdateEffects_VoltageZeroRise(t *testing.T) {
 func TestBattleEngine_VoltageManager_NotNil(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          100,
-			BaseAttackPower: 10,
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 100,
 		},
 	}
 
@@ -251,11 +245,10 @@ func TestBattleEngine_VoltageDamageMultiplier_100Percent(t *testing.T) {
 			ID:                     "test_enemy",
 			Name:                   "テスト敵",
 			BaseHP:                 1000,
-			BaseAttackPower:        10, // 基礎攻撃力10
 			VoltageRisePer10s:      0.0,
 			NormalActionPatternIDs: []string{},
 			ResolvedNormalActions: []domain.EnemyAction{
-				{ID: "attack_1", Name: "攻撃", ActionType: domain.EnemyActionAttack, ChargeTime: 2 * time.Second},
+				{ID: "attack_1", Name: "攻撃", ActionType: domain.EnemyActionAttack, ChargeTime: 2 * time.Second, DamageBase: 10, DamagePerLevel: 2},
 			},
 		},
 	}
@@ -268,10 +261,10 @@ func TestBattleEngine_VoltageDamageMultiplier_100Percent(t *testing.T) {
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
 	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 10.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
-	state, err := engine.InitializeBattle(1, agents)
+	state, err := engine.initializeBattleForTest(1, agents)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -280,7 +273,7 @@ func TestBattleEngine_VoltageDamageMultiplier_100Percent(t *testing.T) {
 	initialPlayerHP := state.Player.HP
 	damage := engine.ProcessEnemyAttackDamage(state, "physical")
 
-	// 敵攻撃力 = BaseAttackPower(10) + level(1)*2 = 12
+	// 敵攻撃力 = DamageBase(10) + level(1) * DamagePerLevel(2) = 12
 	// ボルテージ100% -> 乗算 x1.0 -> 最終ダメージ = 12
 	expectedDamage := 12
 	if damage != expectedDamage {
@@ -300,11 +293,10 @@ func TestBattleEngine_VoltageDamageMultiplier_150Percent(t *testing.T) {
 			ID:                     "test_enemy",
 			Name:                   "テスト敵",
 			BaseHP:                 1000,
-			BaseAttackPower:        10, // 基礎攻撃力10
 			VoltageRisePer10s:      0.0,
 			NormalActionPatternIDs: []string{},
 			ResolvedNormalActions: []domain.EnemyAction{
-				{ID: "attack_1", Name: "攻撃", ActionType: domain.EnemyActionAttack, ChargeTime: 2 * time.Second},
+				{ID: "attack_1", Name: "攻撃", ActionType: domain.EnemyActionAttack, ChargeTime: 2 * time.Second, DamageBase: 10, DamagePerLevel: 2},
 			},
 		},
 	}
@@ -317,10 +309,10 @@ func TestBattleEngine_VoltageDamageMultiplier_150Percent(t *testing.T) {
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
 	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 10.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
-	state, err := engine.InitializeBattle(1, agents)
+	state, err := engine.initializeBattleForTest(1, agents)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -331,7 +323,7 @@ func TestBattleEngine_VoltageDamageMultiplier_150Percent(t *testing.T) {
 	initialPlayerHP := state.Player.HP
 	damage := engine.ProcessEnemyAttackDamage(state, "physical")
 
-	// 敵攻撃力 = BaseAttackPower(10) + level(1)*2 = 12
+	// 敵攻撃力 = DamageBase(10) + level(1) * DamagePerLevel(2) = 12
 	// ボルテージ150% -> 乗算 x1.5 -> 最終ダメージ = 18
 	expectedDamage := 18
 	if damage != expectedDamage {
@@ -351,11 +343,10 @@ func TestBattleEngine_VoltageDamageMultiplier_200Percent(t *testing.T) {
 			ID:                     "test_enemy",
 			Name:                   "テスト敵",
 			BaseHP:                 1000,
-			BaseAttackPower:        10, // 基礎攻撃力10
 			VoltageRisePer10s:      0.0,
 			NormalActionPatternIDs: []string{},
 			ResolvedNormalActions: []domain.EnemyAction{
-				{ID: "attack_1", Name: "攻撃", ActionType: domain.EnemyActionAttack, ChargeTime: 2 * time.Second},
+				{ID: "attack_1", Name: "攻撃", ActionType: domain.EnemyActionAttack, ChargeTime: 2 * time.Second, DamageBase: 10, DamagePerLevel: 2},
 			},
 		},
 	}
@@ -368,10 +359,10 @@ func TestBattleEngine_VoltageDamageMultiplier_200Percent(t *testing.T) {
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
 	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 10.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
-	state, err := engine.InitializeBattle(1, agents)
+	state, err := engine.initializeBattleForTest(1, agents)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -382,7 +373,7 @@ func TestBattleEngine_VoltageDamageMultiplier_200Percent(t *testing.T) {
 	initialPlayerHP := state.Player.HP
 	damage := engine.ProcessEnemyAttackDamage(state, "physical")
 
-	// 敵攻撃力 = BaseAttackPower(10) + level(1)*2 = 12
+	// 敵攻撃力 = DamageBase(10) + level(1) * DamagePerLevel(2) = 12
 	// ボルテージ200% -> 乗算 x2.0 -> 最終ダメージ = 24
 	expectedDamage := 24
 	if damage != expectedDamage {

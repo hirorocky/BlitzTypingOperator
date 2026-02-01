@@ -89,7 +89,7 @@ func TestInventorySlot_AddCoreAndSetSlot(t *testing.T) {
 	passiveSkills := createTestPassiveSkills()
 
 	// コアを追加
-	updated := invManager.AddCore("all_rounder", 5)
+	updated := invManager.AddCore("all_rounder")
 	if !updated {
 		t.Fatal("コアの追加に失敗しました")
 	}
@@ -105,7 +105,7 @@ func TestInventorySlot_AddCoreAndSetSlot(t *testing.T) {
 	)
 
 	// スロットにコアを設定
-	err := slotManager.SetCore(0, "all_rounder", 5)
+	err := slotManager.SetCore(0, "all_rounder")
 	if err != nil {
 		t.Errorf("コア設定に失敗: %v", err)
 	}
@@ -115,21 +115,18 @@ func TestInventorySlot_AddCoreAndSetSlot(t *testing.T) {
 	if slot0.CoreTypeID != "all_rounder" {
 		t.Errorf("CoreTypeIDが不正: got %s, want all_rounder", slot0.CoreTypeID)
 	}
-	if slot0.CoreLevel != 5 {
-		t.Errorf("CoreLevelが不正: got %d, want 5", slot0.CoreLevel)
-	}
 }
 
-// TestInventorySlot_AddCoreAtLowerLevel はコアを最大レベル以下で設定できることをテストします。
-func TestInventorySlot_AddCoreAtLowerLevel(t *testing.T) {
+// TestInventorySlot_AddCoreToMultipleSlots はコアを複数スロットに設定できることをテストします。
+func TestInventorySlot_AddCoreToMultipleSlots(t *testing.T) {
 	// テスト環境のセットアップ
 	invManager := inventory.NewInventoryManager()
 	coreTypes := createTestCoreTypes()
 	skillTypes := createTestSkillTypes()
 	passiveSkills := createTestPassiveSkills()
 
-	// コアをレベル10で追加
-	invManager.AddCore("all_rounder", 10)
+	// コアを追加
+	invManager.AddCore("all_rounder")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -141,33 +138,31 @@ func TestInventorySlot_AddCoreAtLowerLevel(t *testing.T) {
 		nil, // chainEffects
 	)
 
-	// レベル5で設定（最大レベル以下）
-	err := slotManager.SetCore(0, "all_rounder", 5)
+	// 複数スロットに設定
+	err := slotManager.SetCore(0, "all_rounder")
 	if err != nil {
-		t.Errorf("レベル5でのコア設定に失敗: %v", err)
+		t.Errorf("スロット0へのコア設定に失敗: %v", err)
 	}
 
-	// レベル1で設定
-	err = slotManager.SetCore(1, "all_rounder", 1)
+	err = slotManager.SetCore(1, "all_rounder")
 	if err != nil {
-		t.Errorf("レベル1でのコア設定に失敗: %v", err)
+		t.Errorf("スロット1へのコア設定に失敗: %v", err)
 	}
 
-	// レベル10で設定
-	err = slotManager.SetCore(2, "all_rounder", 10)
+	err = slotManager.SetCore(2, "all_rounder")
 	if err != nil {
-		t.Errorf("レベル10でのコア設定に失敗: %v", err)
+		t.Errorf("スロット2へのコア設定に失敗: %v", err)
 	}
 
 	// スロットの状態を確認
-	if slotManager.GetSlot(0).CoreLevel != 5 {
-		t.Errorf("スロット0のレベルが不正: got %d, want 5", slotManager.GetSlot(0).CoreLevel)
+	if slotManager.GetSlot(0).CoreTypeID != "all_rounder" {
+		t.Errorf("スロット0のCoreTypeIDが不正: got %s, want all_rounder", slotManager.GetSlot(0).CoreTypeID)
 	}
-	if slotManager.GetSlot(1).CoreLevel != 1 {
-		t.Errorf("スロット1のレベルが不正: got %d, want 1", slotManager.GetSlot(1).CoreLevel)
+	if slotManager.GetSlot(1).CoreTypeID != "all_rounder" {
+		t.Errorf("スロット1のCoreTypeIDが不正: got %s, want all_rounder", slotManager.GetSlot(1).CoreTypeID)
 	}
-	if slotManager.GetSlot(2).CoreLevel != 10 {
-		t.Errorf("スロット2のレベルが不正: got %d, want 10", slotManager.GetSlot(2).CoreLevel)
+	if slotManager.GetSlot(2).CoreTypeID != "all_rounder" {
+		t.Errorf("スロット2のCoreTypeIDが不正: got %s, want all_rounder", slotManager.GetSlot(2).CoreTypeID)
 	}
 }
 
@@ -190,22 +185,22 @@ func TestInventorySlot_CoreNotOwnedError(t *testing.T) {
 	)
 
 	// 保有していないコアを設定しようとする
-	err := slotManager.SetCore(0, "all_rounder", 1)
+	err := slotManager.SetCore(0, "all_rounder")
 	if err != slot.ErrCoreNotOwned {
 		t.Errorf("ErrCoreNotOwnedが返されるべき: got %v", err)
 	}
 }
 
-// TestInventorySlot_LevelOutOfRangeError は最大レベルを超えるレベルでエラーになることをテストします。
-func TestInventorySlot_LevelOutOfRangeError(t *testing.T) {
+// TestInventorySlot_CoreTypeNotFoundError は存在しないコアタイプでエラーになることをテストします。
+func TestInventorySlot_CoreTypeNotFoundError(t *testing.T) {
 	// テスト環境のセットアップ
 	invManager := inventory.NewInventoryManager()
 	coreTypes := createTestCoreTypes()
 	skillTypes := createTestSkillTypes()
 	passiveSkills := createTestPassiveSkills()
 
-	// コアをレベル5で追加
-	invManager.AddCore("all_rounder", 5)
+	// コアを追加
+	invManager.AddCore("all_rounder")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -217,10 +212,10 @@ func TestInventorySlot_LevelOutOfRangeError(t *testing.T) {
 		nil, // chainEffects
 	)
 
-	// 最大レベルを超えるレベルで設定しようとする
-	err := slotManager.SetCore(0, "all_rounder", 10)
-	if err != slot.ErrLevelOutOfRange {
-		t.Errorf("ErrLevelOutOfRangeが返されるべき: got %v", err)
+	// 存在しないコアタイプを設定しようとする
+	err := slotManager.SetCore(0, "nonexistent_core")
+	if err != slot.ErrCoreNotOwned {
+		t.Errorf("ErrCoreNotOwnedが返されるべき: got %v", err)
 	}
 }
 
@@ -233,7 +228,7 @@ func TestInventorySlot_CoreUpdateReflectsOnNewSlotManager(t *testing.T) {
 	passiveSkills := createTestPassiveSkills()
 
 	// 初期コア追加
-	invManager.AddCore("all_rounder", 3)
+	invManager.AddCore("all_rounder")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -246,17 +241,17 @@ func TestInventorySlot_CoreUpdateReflectsOnNewSlotManager(t *testing.T) {
 	)
 
 	// レベル3で設定できる
-	err := slotManager.SetCore(0, "all_rounder", 3)
+	err := slotManager.SetCore(0, "all_rounder")
 	if err != nil {
 		t.Errorf("レベル3でのコア設定に失敗: %v", err)
 	}
 
 	// インベントリにより高いレベルのコアを追加
-	invManager.AddCore("all_rounder", 7)
+	invManager.AddCore("all_rounder")
 
 	// 同じSlotManagerからより高いレベルで設定できるようになる
 	// (インベントリへの参照を保持しているため)
-	err = slotManager.SetCore(1, "all_rounder", 7)
+	err = slotManager.SetCore(1, "all_rounder")
 	if err != nil {
 		t.Errorf("レベル7でのコア設定に失敗: %v", err)
 	}
@@ -273,7 +268,7 @@ func TestInventorySlot_AddSkillAndSetSlot(t *testing.T) {
 	passiveSkills := createTestPassiveSkills()
 
 	// コアとスキルを追加
-	invManager.AddCore("all_rounder", 5)
+	invManager.AddCore("all_rounder")
 	invManager.AddSkill("physical_strike", "")
 
 	// AgentSlotManagerを作成
@@ -287,7 +282,7 @@ func TestInventorySlot_AddSkillAndSetSlot(t *testing.T) {
 	)
 
 	// コアを設定
-	err := slotManager.SetCore(0, "all_rounder", 5)
+	err := slotManager.SetCore(0, "all_rounder")
 	if err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
@@ -314,7 +309,7 @@ func TestInventorySlot_AddSkillWithChainEffect(t *testing.T) {
 	passiveSkills := createTestPassiveSkills()
 
 	// コアとスキル（チェイン効果付き）を追加
-	invManager.AddCore("all_rounder", 5)
+	invManager.AddCore("all_rounder")
 	invManager.AddSkill("fireball", "chain_fire_damage")
 
 	// AgentSlotManagerを作成
@@ -328,7 +323,7 @@ func TestInventorySlot_AddSkillWithChainEffect(t *testing.T) {
 	)
 
 	// コアを設定
-	slotManager.SetCore(0, "all_rounder", 5)
+	slotManager.SetCore(0, "all_rounder")
 
 	// チェイン効果付きでスキルを設定
 	err := slotManager.SetSkill(0, 0, "fireball", "chain_fire_damage")
@@ -355,7 +350,7 @@ func TestInventorySlot_SkillNotOwnedError(t *testing.T) {
 	passiveSkills := createTestPassiveSkills()
 
 	// コアのみ追加（スキルは追加しない）
-	invManager.AddCore("all_rounder", 5)
+	invManager.AddCore("all_rounder")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -368,7 +363,7 @@ func TestInventorySlot_SkillNotOwnedError(t *testing.T) {
 	)
 
 	// コアを設定
-	slotManager.SetCore(0, "all_rounder", 5)
+	slotManager.SetCore(0, "all_rounder")
 
 	// 保有していないスキルを設定しようとする
 	err := slotManager.SetSkill(0, 0, "physical_strike", "")
@@ -386,7 +381,7 @@ func TestInventorySlot_ChainVariationNotOwnedError(t *testing.T) {
 	passiveSkills := createTestPassiveSkills()
 
 	// コアとスキル（チェイン効果なし）を追加
-	invManager.AddCore("all_rounder", 5)
+	invManager.AddCore("all_rounder")
 	invManager.AddSkill("fireball", "")
 
 	// AgentSlotManagerを作成
@@ -400,7 +395,7 @@ func TestInventorySlot_ChainVariationNotOwnedError(t *testing.T) {
 	)
 
 	// コアを設定
-	slotManager.SetCore(0, "all_rounder", 5)
+	slotManager.SetCore(0, "all_rounder")
 
 	// 保有していないチェイン効果でスキルを設定しようとする
 	err := slotManager.SetSkill(0, 0, "fireball", "chain_not_owned")
@@ -418,7 +413,7 @@ func TestInventorySlot_SkillIncompatibleError(t *testing.T) {
 	passiveSkills := createTestPassiveSkills()
 
 	// ヒーラーコアと物理スキルを追加
-	invManager.AddCore("healer", 5)
+	invManager.AddCore("healer")
 	invManager.AddSkill("power_slash", "") // physical_mid タグ
 
 	// AgentSlotManagerを作成
@@ -432,7 +427,7 @@ func TestInventorySlot_SkillIncompatibleError(t *testing.T) {
 	)
 
 	// ヒーラーコアを設定
-	slotManager.SetCore(0, "healer", 5)
+	slotManager.SetCore(0, "healer")
 
 	// 互換性のないスキルを設定しようとする
 	err := slotManager.SetSkill(0, 0, "power_slash", "")
@@ -450,8 +445,8 @@ func TestInventorySlot_CompatibleSkillsFilter(t *testing.T) {
 	passiveSkills := createTestPassiveSkills()
 
 	// 複数のコアとスキルを追加
-	invManager.AddCore("all_rounder", 5)
-	invManager.AddCore("attacker", 5)
+	invManager.AddCore("all_rounder")
+	invManager.AddCore("attacker")
 	invManager.AddSkill("physical_strike", "")
 	invManager.AddSkill("fireball", "")
 	invManager.AddSkill("heal", "")
@@ -468,7 +463,7 @@ func TestInventorySlot_CompatibleSkillsFilter(t *testing.T) {
 	)
 
 	// オールラウンダーコアを設定
-	slotManager.SetCore(0, "all_rounder", 5)
+	slotManager.SetCore(0, "all_rounder")
 
 	// 互換スキル一覧を取得
 	compatibleSkills := slotManager.GetCompatibleSkills(0)
@@ -477,7 +472,7 @@ func TestInventorySlot_CompatibleSkillsFilter(t *testing.T) {
 	}
 
 	// アタッカーコアを設定
-	slotManager.SetCore(1, "attacker", 5)
+	slotManager.SetCore(1, "attacker")
 
 	// 互換スキル一覧を取得
 	compatibleSkills = slotManager.GetCompatibleSkills(1)
@@ -495,8 +490,8 @@ func TestInventorySlot_SkillAutoRemoveOnCoreChange(t *testing.T) {
 	passiveSkills := createTestPassiveSkills()
 
 	// オールラウンダーとヒーラーを追加
-	invManager.AddCore("all_rounder", 5)
-	invManager.AddCore("healer", 5)
+	invManager.AddCore("all_rounder")
+	invManager.AddCore("healer")
 	invManager.AddSkill("physical_strike", "")
 	invManager.AddSkill("heal", "")
 
@@ -511,7 +506,7 @@ func TestInventorySlot_SkillAutoRemoveOnCoreChange(t *testing.T) {
 	)
 
 	// オールラウンダーコアを設定
-	slotManager.SetCore(0, "all_rounder", 5)
+	slotManager.SetCore(0, "all_rounder")
 
 	// スキルを設定
 	slotManager.SetSkill(0, 0, "physical_strike", "")
@@ -523,7 +518,7 @@ func TestInventorySlot_SkillAutoRemoveOnCoreChange(t *testing.T) {
 	}
 
 	// ヒーラーコアに変更（physical_strikeは互換性がない）
-	slotManager.SetCore(0, "healer", 5)
+	slotManager.SetCore(0, "healer")
 
 	// physical_strikeが自動削除され、healのみ残る
 	skillCount := slotManager.GetSlot(0).GetSkillCount()
@@ -553,7 +548,7 @@ func TestInventorySlot_MultipleSlotsSameCore(t *testing.T) {
 	passiveSkills := createTestPassiveSkills()
 
 	// コアを追加
-	invManager.AddCore("all_rounder", 10)
+	invManager.AddCore("all_rounder")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -566,15 +561,15 @@ func TestInventorySlot_MultipleSlotsSameCore(t *testing.T) {
 	)
 
 	// 全スロットに同じコアを異なるレベルで設定
-	err := slotManager.SetCore(0, "all_rounder", 10)
+	err := slotManager.SetCore(0, "all_rounder")
 	if err != nil {
 		t.Errorf("スロット0への設定に失敗: %v", err)
 	}
-	err = slotManager.SetCore(1, "all_rounder", 5)
+	err = slotManager.SetCore(1, "all_rounder")
 	if err != nil {
 		t.Errorf("スロット1への設定に失敗: %v", err)
 	}
-	err = slotManager.SetCore(2, "all_rounder", 1)
+	err = slotManager.SetCore(2, "all_rounder")
 	if err != nil {
 		t.Errorf("スロット2への設定に失敗: %v", err)
 	}
@@ -594,7 +589,7 @@ func TestInventorySlot_MultipleSlotsSameSkill_ShouldFail(t *testing.T) {
 	passiveSkills := createTestPassiveSkills()
 
 	// コアとスキルを追加
-	invManager.AddCore("all_rounder", 5)
+	invManager.AddCore("all_rounder")
 	invManager.AddSkill("physical_strike", "")
 
 	// AgentSlotManagerを作成
@@ -609,7 +604,7 @@ func TestInventorySlot_MultipleSlotsSameSkill_ShouldFail(t *testing.T) {
 
 	// 全スロットにコアを設定
 	for i := range 3 {
-		slotManager.SetCore(i, "all_rounder", 5)
+		slotManager.SetCore(i, "all_rounder")
 	}
 
 	// 最初のスロットにスキルを設定

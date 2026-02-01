@@ -159,10 +159,6 @@ type SkillEffectData struct {
 	Icon         string            `json:"icon"`
 }
 
-// ModuleEffectData はSkillEffectDataのエイリアスです。
-// 後方互換性のために残されています。新規コードではSkillEffectDataを使用してください。
-type ModuleEffectData = SkillEffectData
-
 // SkillDefinitionData はskills.json（またはmodules.json）から読み込むスキル定義データの構造体です。
 type SkillDefinitionData struct {
 	ID              string            `json:"id"`
@@ -182,7 +178,7 @@ type ModuleDefinitionData = SkillDefinitionData
 
 // modulesFileData はmodules.jsonのルート構造です。
 type modulesFileData struct {
-	ModuleTypes []ModuleDefinitionData `json:"module_types"`
+	SkillTypes []ModuleDefinitionData `json:"module_types"`
 }
 
 // LoadModuleDefinitions はmodules.jsonからモジュール定義を読み込みます。
@@ -198,7 +194,7 @@ func (l *DataLoader) LoadModuleDefinitions() ([]ModuleDefinitionData, error) {
 		return nil, fmt.Errorf("modules.jsonのパースに失敗: %w", err)
 	}
 
-	return fileData.ModuleTypes, nil
+	return fileData.SkillTypes, nil
 }
 
 // ToDomainType はSkillDefinitionDataをドメインモデルのSkillTypeに変換します。
@@ -279,15 +275,11 @@ func (m *SkillDefinitionData) ToDomain() *domain.SkillModel {
 
 // EnemyTypeData はenemies.jsonから読み込む敵タイプデータの構造体です。
 type EnemyTypeData struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	BaseHP          int    `json:"base_hp"`
-	BaseAttackPower int    `json:"base_attack_power"`
-	AttackType      string `json:"attack_type"`
-	ASCIIArt        string `json:"ascii_art"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	BaseHP int    `json:"base_hp"`
 
-	// 拡張フィールド
-	DefaultLevel             int      `json:"default_level"`
+	// 行動パターン
 	NormalActionPatternIDs   []string `json:"normal_action_pattern"`
 	EnhancedActionPatternIDs []string `json:"enhanced_action_pattern"`
 	NormalPassiveID          string   `json:"normal_passive_id"`
@@ -299,6 +291,10 @@ type EnemyTypeData struct {
 	// VoltageRisePer10s は10秒あたりのボルテージ上昇量です。
 	// 0の場合はボルテージが上昇しません。未設定時のデフォルト値は10です。
 	VoltageRisePer10s *float64 `json:"voltage_rise_per_10s,omitempty"`
+
+	// ランクシステム
+	// Rank は敵のランクです（1から開始）。未設定時のデフォルト値は1です。
+	Rank *int `json:"rank,omitempty"`
 }
 
 // enemiesFileData はenemies.jsonのルート構造です。
@@ -325,23 +321,24 @@ func (l *DataLoader) LoadEnemyTypes() ([]EnemyTypeData, error) {
 // DefaultVoltageRisePer10s はボルテージ上昇量のデフォルト値（10ポイント/10秒）です。
 const DefaultVoltageRisePer10s = 10.0
 
+// DefaultEnemyRank は敵ランクのデフォルト値（ランク1）です。
+const DefaultEnemyRank = 1
+
 // ToDomain はEnemyTypeDataをドメインモデルのEnemyTypeに変換します。
 // actionMap が指定された場合、行動パターンIDを解決します。
 // VoltageRisePer10sが未設定の場合はデフォルト値（10）を適用します。
+// Rankが未設定の場合はデフォルト値（1）を適用します。
 func (e *EnemyTypeData) ToDomain() domain.EnemyType {
 	return domain.EnemyType{
 		ID:                       e.ID,
 		Name:                     e.Name,
 		BaseHP:                   e.BaseHP,
-		BaseAttackPower:          e.BaseAttackPower,
-		AttackType:               e.AttackType,
-		ASCIIArt:                 e.ASCIIArt,
-		DefaultLevel:             e.DefaultLevel,
 		NormalActionPatternIDs:   e.NormalActionPatternIDs,
 		EnhancedActionPatternIDs: e.EnhancedActionPatternIDs,
 		DropItemCategory:         e.DropItemCategory,
 		DropItemTypeID:           e.DropItemTypeID,
 		VoltageRisePer10s:        e.GetVoltageRisePer10s(),
+		Rank:                     e.GetRank(),
 	}
 }
 
@@ -352,6 +349,15 @@ func (e *EnemyTypeData) GetVoltageRisePer10s() float64 {
 		return DefaultVoltageRisePer10s
 	}
 	return *e.VoltageRisePer10s
+}
+
+// GetRank は敵のランクを返します。
+// 未設定の場合はデフォルト値（1）を返します。
+func (e *EnemyTypeData) GetRank() int {
+	if e.Rank == nil {
+		return DefaultEnemyRank
+	}
+	return *e.Rank
 }
 
 // ==================== 敵行動定義 ====================
@@ -1000,9 +1006,6 @@ func ValidateEnemyTypeData(data EnemyTypeData) error {
 	}
 	if data.BaseHP <= 0 {
 		return fmt.Errorf("敵の基礎HPが不正です: ID=%s, BaseHP=%d", data.ID, data.BaseHP)
-	}
-	if data.BaseAttackPower <= 0 {
-		return fmt.Errorf("敵の基礎攻撃力が不正です: ID=%s, BaseAttackPower=%d", data.ID, data.BaseAttackPower)
 	}
 	return nil
 }

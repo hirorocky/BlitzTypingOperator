@@ -22,22 +22,21 @@ func TestCalculateStats_Basic(t *testing.T) {
 		},
 	}
 
-	// レベル1でテスト
-	stats := CalculateStats(1, coreType)
+	// 重みベースでテスト
+	stats := CalculateStats(coreType)
 
-	// 基礎値(10) × レベル(1) × 重み(1.0) = 10
-	if stats.STR != 10 {
-		t.Errorf("STR expected 10, got %d", stats.STR)
+	// 基礎値(100) × 重み(1.0) = 100
+	if stats.STR != 100 {
+		t.Errorf("STR expected 100, got %d", stats.STR)
 	}
-	if stats.INT != 10 {
-		t.Errorf("INT expected 10, got %d", stats.INT)
+	if stats.INT != 100 {
+		t.Errorf("INT expected 100, got %d", stats.INT)
 	}
-	if stats.WIL != 10 {
-		t.Errorf("WIL expected 10, got %d", stats.WIL)
+	if stats.WIL != 100 {
+		t.Errorf("WIL expected 100, got %d", stats.WIL)
 	}
-	// LUKはレベルに依存せず、10 × 重み(1.0) = 10
-	if stats.LUK != 10 {
-		t.Errorf("LUK expected 10, got %d", stats.LUK)
+	if stats.LUK != 100 {
+		t.Errorf("LUK expected 100, got %d", stats.LUK)
 	}
 }
 
@@ -50,20 +49,19 @@ func TestCalculateStats_WithWeights(t *testing.T) {
 			"STR": 1.5, // 50%増加
 			"INT": 0.5, // 50%減少
 			"WIL": 2.0, // 2倍
-			"LUK": 0.5, // 50%（LUK基準値の影響）
+			"LUK": 0.5, // 50%
 		},
 	}
 
-	// レベル2でテスト
-	stats := CalculateStats(2, coreType)
+	// 重みベースでテスト
+	stats := CalculateStats(coreType)
 
-	// STR, INT, WIL: 基礎値(10) × レベル(2) × 重み
-	// LUK: 基礎値(10) × 重み（レベル無関係）
+	// 基礎値(100) × 重み
 	expected := map[string]int{
-		"STR": 30, // 20 × 1.5 = 30
-		"INT": 10, // 20 × 0.5 = 10
-		"WIL": 40, // 20 × 2.0 = 40
-		"LUK": 5,  // 10 × 0.5 = 5 (レベル無関係)
+		"STR": 150, // 100 × 1.5 = 150
+		"INT": 50,  // 100 × 0.5 = 50
+		"WIL": 200, // 100 × 2.0 = 200
+		"LUK": 50,  // 100 × 0.5 = 50
 	}
 
 	if stats.STR != expected["STR"] {
@@ -80,11 +78,11 @@ func TestCalculateStats_WithWeights(t *testing.T) {
 	}
 }
 
-// TestCalculateStats_HighLevel は高レベルでの計算をテストします。
-func TestCalculateStats_HighLevel(t *testing.T) {
+// TestCalculateStats_TypicalCoreType は典型的なコア特性での計算をテストします。
+func TestCalculateStats_TypicalCoreType(t *testing.T) {
 	coreType := domain.CoreType{
-		ID:   "high-level-type",
-		Name: "高レベルテスト",
+		ID:   "attack-balance",
+		Name: "攻撃バランス",
 		StatWeights: map[string]float64{
 			"STR": 1.2,
 			"INT": 0.8,
@@ -93,11 +91,10 @@ func TestCalculateStats_HighLevel(t *testing.T) {
 		},
 	}
 
-	// レベル10でテスト
-	stats := CalculateStats(10, coreType)
+	// 重みベースでテスト
+	stats := CalculateStats(coreType)
 
-	// STR, INT, WIL: 基礎値(10) × レベル(10) = 100
-	// LUK: 基礎値(10) × 重み（レベル無関係）
+	// 基礎値(100) × 重み
 	if stats.STR != 120 {
 		t.Errorf("STR expected 120, got %d", stats.STR)
 	}
@@ -107,9 +104,8 @@ func TestCalculateStats_HighLevel(t *testing.T) {
 	if stats.WIL != 100 {
 		t.Errorf("WIL expected 100, got %d", stats.WIL)
 	}
-	// LUKはレベルに依存しない
-	if stats.LUK != 10 {
-		t.Errorf("LUK expected 10, got %d", stats.LUK)
+	if stats.LUK != 100 {
+		t.Errorf("LUK expected 100, got %d", stats.LUK)
 	}
 }
 
@@ -126,7 +122,7 @@ func TestCalculateStats_ZeroWeight(t *testing.T) {
 		},
 	}
 
-	stats := CalculateStats(5, coreType)
+	stats := CalculateStats(coreType)
 
 	// ゼロ重みは0になる
 	if stats.STR != 0 {
@@ -136,12 +132,12 @@ func TestCalculateStats_ZeroWeight(t *testing.T) {
 		t.Errorf("WIL expected 0, got %d", stats.WIL)
 	}
 	// 通常重みは計算される
-	// INT: 10 × 5 × 1.0 = 50
-	if stats.INT != 50 {
-		t.Errorf("INT expected 50, got %d", stats.INT)
+	// INT: 100 × 1.0 = 100
+	if stats.INT != 100 {
+		t.Errorf("INT expected 100, got %d", stats.INT)
 	}
-	// LUK: 10 × 1.0 = 10 (レベル無関係)
-	if stats.LUK != 10 {
-		t.Errorf("LUK expected 10, got %d", stats.LUK)
+	// LUK: 100 × 1.0 = 100
+	if stats.LUK != 100 {
+		t.Errorf("LUK expected 100, got %d", stats.LUK)
 	}
 }

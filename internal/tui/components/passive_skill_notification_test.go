@@ -22,7 +22,7 @@ func createTestPassiveSkill() domain.PassiveSkill {
 
 func TestPassiveSkillNotification_NewPassiveSkillNotification(t *testing.T) {
 	skill := createTestPassiveSkill()
-	notification := NewPassiveSkillNotification(&skill, 5)
+	notification := NewPassiveSkillNotification(&skill)
 
 	if notification == nil {
 		t.Fatal("NewPassiveSkillNotification should return non-nil")
@@ -30,7 +30,7 @@ func TestPassiveSkillNotification_NewPassiveSkillNotification(t *testing.T) {
 }
 
 func TestPassiveSkillNotification_NewPassiveSkillNotificationWithNil(t *testing.T) {
-	notification := NewPassiveSkillNotification(nil, 5)
+	notification := NewPassiveSkillNotification(nil)
 
 	if notification == nil {
 		t.Fatal("NewPassiveSkillNotification should return non-nil even for nil skill")
@@ -39,7 +39,7 @@ func TestPassiveSkillNotification_NewPassiveSkillNotificationWithNil(t *testing.
 
 func TestPassiveSkillNotification_GetName(t *testing.T) {
 	skill := createTestPassiveSkill()
-	notification := NewPassiveSkillNotification(&skill, 5)
+	notification := NewPassiveSkillNotification(&skill)
 
 	name := notification.GetName()
 	if name != "テストスキル" {
@@ -48,7 +48,7 @@ func TestPassiveSkillNotification_GetName(t *testing.T) {
 }
 
 func TestPassiveSkillNotification_GetNameWithNil(t *testing.T) {
-	notification := NewPassiveSkillNotification(nil, 5)
+	notification := NewPassiveSkillNotification(nil)
 
 	name := notification.GetName()
 	if name != "" {
@@ -58,7 +58,7 @@ func TestPassiveSkillNotification_GetNameWithNil(t *testing.T) {
 
 func TestPassiveSkillNotification_GetDescription(t *testing.T) {
 	skill := createTestPassiveSkill()
-	notification := NewPassiveSkillNotification(&skill, 5)
+	notification := NewPassiveSkillNotification(&skill)
 
 	desc := notification.GetDescription()
 	if desc != "テスト効果を付与する" {
@@ -68,7 +68,7 @@ func TestPassiveSkillNotification_GetDescription(t *testing.T) {
 
 func TestPassiveSkillNotification_GetEffects(t *testing.T) {
 	skill := createTestPassiveSkill()
-	notification := NewPassiveSkillNotification(&skill, 5)
+	notification := NewPassiveSkillNotification(&skill)
 
 	effects := notification.GetEffects()
 
@@ -81,7 +81,7 @@ func TestPassiveSkillNotification_GetEffects(t *testing.T) {
 
 func TestPassiveSkillNotification_RenderCompact(t *testing.T) {
 	skill := createTestPassiveSkill()
-	notification := NewPassiveSkillNotification(&skill, 5)
+	notification := NewPassiveSkillNotification(&skill)
 
 	result := notification.RenderCompact()
 
@@ -93,7 +93,7 @@ func TestPassiveSkillNotification_RenderCompact(t *testing.T) {
 
 func TestPassiveSkillNotification_RenderDetail(t *testing.T) {
 	skill := createTestPassiveSkill()
-	notification := NewPassiveSkillNotification(&skill, 5)
+	notification := NewPassiveSkillNotification(&skill)
 
 	result := notification.RenderDetail(40)
 
@@ -107,7 +107,7 @@ func TestPassiveSkillNotification_RenderDetail(t *testing.T) {
 }
 
 func TestPassiveSkillNotification_RenderNilSkill(t *testing.T) {
-	notification := NewPassiveSkillNotification(nil, 5)
+	notification := NewPassiveSkillNotification(nil)
 
 	result := notification.RenderCompact()
 
@@ -137,7 +137,7 @@ func TestPassiveSkillNotification_HasActiveEffects(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			notification := NewPassiveSkillNotification(tt.skill, 5)
+			notification := NewPassiveSkillNotification(tt.skill)
 			got := notification.HasActiveEffects()
 			if got != tt.wantActive {
 				t.Errorf("HasActiveEffects() = %v, want %v", got, tt.wantActive)
@@ -158,7 +158,7 @@ func TestPassiveSkillNotification_RenderEffectsList(t *testing.T) {
 			domain.ColCritRate:      0.1,
 		},
 	}
-	notification := NewPassiveSkillNotification(&skill, 3)
+	notification := NewPassiveSkillNotification(&skill)
 
 	result := notification.RenderEffectsList()
 

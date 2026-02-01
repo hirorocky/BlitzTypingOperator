@@ -1,12 +1,9 @@
 // Package domain はゲームのドメインモデルを定義します。
 package domain
 
-// HP計算に使用する定数
-// MaxHP = 装備中エージェントのコアレベル平均 × HP係数 + 基礎HP
-
 const (
-	HPCoefficient = 10.0 // レベル平均に掛ける係数
-	BaseHP        = 100  // 基礎HP値
+	// InitialMaxHP はプレイヤーの初期最大HPです。敵撃破による成長で増加します。
+	InitialMaxHP = 1000
 )
 
 // PlayerModel はゲーム内のプレイヤーエンティティを表す構造体です。
@@ -31,39 +28,32 @@ type PlayerModel struct {
 	EffectTable *EffectTable
 }
 
-// NewPlayer は新しいPlayerModelを作成します。
-// 初期状態ではHP/MaxHPは0で、エージェント装備後にRecalculateHPで計算されます。
-func NewPlayer() *PlayerModel {
+// NewPlayerWithMaxHP は指定された最大HPでPlayerModelを作成します。
+// 新規ゲーム開始時はInitialMaxHP（1000）を渡してください。
+// セーブデータからの復元時は保存されたMaxHPを渡してください。
+func NewPlayerWithMaxHP(maxHP int) *PlayerModel {
 	return &PlayerModel{
-		HP:          0,
-		MaxHP:       0,
+		HP:          maxHP,
+		MaxHP:       maxHP,
 		EffectTable: NewEffectTable(),
 	}
 }
 
-// CalculateMaxHP は装備中エージェントのコアレベル平均からMaxHPを計算します。
-
-// エージェントが装備されていない場合は基礎HPを返します。
-func CalculateMaxHP(agents []*AgentModel) int {
-	if len(agents) == 0 {
-		return BaseHP
+// IncreaseMaxHP は最大HPを増加させます。
+// 敵撃破による成長時に使用します。
+// 負の値やゼロは無視されます（MaxHPは減少しません）。
+func (p *PlayerModel) IncreaseMaxHP(amount int) {
+	if amount <= 0 {
+		return
 	}
-
-	totalLevel := 0
-	for _, agent := range agents {
-		totalLevel += agent.Level
-	}
-
-	// 平均レベル × HP係数 + 基礎HP
-	avgLevel := float64(totalLevel) / float64(len(agents))
-	return int(avgLevel*HPCoefficient) + BaseHP
+	p.MaxHP += amount
 }
 
-// RecalculateHP は装備エージェントに基づいてMaxHPを再計算し、HPを全回復します。
-
-func (p *PlayerModel) RecalculateHP(agents []*AgentModel) {
-	p.MaxHP = CalculateMaxHP(agents)
-	p.HP = p.MaxHP
+// InitializeHP はプレイヤーのMaxHPを設定し、HPを全回復します。
+// エージェント装備後の初期化に使用します。
+func (p *PlayerModel) InitializeHP(maxHP int) {
+	p.MaxHP = maxHP
+	p.HP = maxHP
 }
 
 // FullHeal はHPを最大値まで回復します。

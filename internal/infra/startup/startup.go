@@ -58,16 +58,15 @@ func (i *NewGameInitializer) CreateInitialAgents() []*domain.AgentModel {
 			}
 		}
 
-		// コアを作成
+		// コアを作成（レベルなし）
 		core := domain.NewCoreWithTypeID(
 			firstAgentData.CoreTypeID,
-			firstAgentData.CoreLevel,
 			coreType,
 			passiveSkill,
 		)
 
 		// モジュールを作成
-		modules := make([]*domain.ModuleModel, 0, len(firstAgentData.Modules))
+		modules := make([]*domain.SkillModel, 0, len(firstAgentData.Modules))
 		for _, modData := range firstAgentData.Modules {
 			// モジュール定義を検索
 			var moduleDef *masterdata.ModuleDefinitionData
@@ -112,7 +111,7 @@ func (i *NewGameInitializer) CreateInitialAgents() []*domain.AgentModel {
 			}
 
 			// モジュールを作成
-			module := domain.NewModuleFromType(moduleDef.ToDomainType(), chainEffect)
+			module := domain.NewSkillFromType(moduleDef.ToDomainType(), chainEffect)
 			modules = append(modules, module)
 		}
 
@@ -170,25 +169,24 @@ func convertChainEffectType(s string) domain.ChainEffectType {
 }
 
 // InitializeNewGame は新規ゲームを初期化してセーブデータを作成します。
-// v3.0.0形式：ユニークインベントリ + エージェントスロットシステム
+// ユニークインベントリ + エージェントスロットシステム
 func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 	// 基本のセーブデータを作成
 	saveData := savedata.NewSaveData()
 
-	// v3.0.0: 初期コアとスキルをユニークインベントリに追加
-	// コア：オールラウンダーLv1
+	// 初期コアとスキルをユニークインベントリに追加
+	// コア：オールラウンダー（TypeIDリスト形式）
 	// スキル：軽斬撃、応急手当、気合い溜め
-	saveData.Inventory.UniqueCores.Cores["all_rounder"] = 1
+	saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores, "all_rounder")
 
 	saveData.Inventory.UniqueSkills.Skills["physical_strike_lv1"] = []string{}
 	saveData.Inventory.UniqueSkills.Skills["heal_lv1"] = []string{}
 	saveData.Inventory.UniqueSkills.Skills["str_buff_lv1"] = []string{}
 
-	// v3.0.0: 初期エージェントスロット構成
-	// 3スロットにオールラウンダーLv1 + 1スキルずつ分散
+	// 初期エージェントスロット構成
+	// 3スロットにオールラウンダー + 1スキルずつ分散
 	saveData.Player.AgentSlots[0] = savedata.AgentSlotSave{
 		CoreTypeID: "all_rounder",
-		CoreLevel:  1,
 		Skills: [4]savedata.SkillSlotSaveCfg{
 			{TypeID: "physical_strike_lv1"},
 			{},
@@ -198,7 +196,6 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 	}
 	saveData.Player.AgentSlots[1] = savedata.AgentSlotSave{
 		CoreTypeID: "all_rounder",
-		CoreLevel:  1,
 		Skills: [4]savedata.SkillSlotSaveCfg{
 			{TypeID: "heal_lv1"},
 			{},
@@ -208,7 +205,6 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 	}
 	saveData.Player.AgentSlots[2] = savedata.AgentSlotSave{
 		CoreTypeID: "all_rounder",
-		CoreLevel:  1,
 		Skills: [4]savedata.SkillSlotSaveCfg{
 			{TypeID: "str_buff_lv1"},
 			{},
@@ -217,50 +213,11 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 		},
 	}
 
-	// 旧形式の初期化（後方互換性のため残す）
-	initialAgents := i.CreateInitialAgents()
-
-	agentInstances := make([]savedata.AgentInstanceSave, 0, len(initialAgents))
-	equippedAgentIDs := [3]string{"", "", ""}
-
-	for idx, agent := range initialAgents {
-		skills := make([]savedata.SkillInstanceSave, len(agent.Modules))
-		for skillIdx, m := range agent.Modules {
-			skills[skillIdx] = savedata.SkillInstanceSave{
-				TypeID: m.TypeID,
-			}
-			if m.ChainEffect != nil {
-				skills[skillIdx].ChainEffect = &savedata.ChainEffectSave{
-					Type:  string(m.ChainEffect.Type),
-					Value: m.ChainEffect.Value,
-				}
-			}
-		}
-
-		agentInstances = append(agentInstances, savedata.AgentInstanceSave{
-			ID: agent.ID,
-			Core: savedata.CoreInstanceSave{
-				CoreTypeID: agent.Core.TypeID,
-				Level:      agent.Core.Level,
-			},
-			Skills: skills,
-		})
-
-		if idx < 3 {
-			equippedAgentIDs[idx] = agent.ID
-		}
-	}
-
-	saveData.Inventory.AgentInstances = agentInstances
-	saveData.Inventory.CoreInstances = []savedata.CoreInstanceSave{}
-	saveData.Player.EquippedAgentIDs = equippedAgentIDs
-
 	return saveData
 }
 
 // CreateNewGameWithExtraItems は追加アイテム付きで新規ゲームを初期化します。
 // デバッグや特殊条件での開始用
-// v1.0.0形式に対応：TypeIDとLevelのみを保存
 func (i *NewGameInitializer) CreateNewGameWithExtraItems() *savedata.SaveData {
 	saveData := i.InitializeNewGame()
 
@@ -273,25 +230,25 @@ func (i *NewGameInitializer) CreateNewGameWithExtraItems() *savedata.SaveData {
 	// 最初のエージェントから追加素材を作成
 	extraAgent := extraAgents[0]
 
-	// 追加のコアをインベントリに追加
-	saveData.Inventory.CoreInstances = append(saveData.Inventory.CoreInstances, savedata.CoreInstanceSave{
-		CoreTypeID: extraAgent.Core.TypeID,
-		Level:      extraAgent.Core.Level,
-	})
+	// 追加のコアをユニークコアインベントリに追加
+	saveData.Inventory.UniqueCores.Cores = append(
+		saveData.Inventory.UniqueCores.Cores,
+		extraAgent.Core.TypeID,
+	)
 
-	// 追加のスキルをインベントリにModuleInstancesとして追加
+	// 追加のスキルをユニークスキルインベントリに追加
 	for _, skill := range extraAgent.Modules {
-		skillSave := savedata.SkillInstanceSave{
-			TypeID: skill.TypeID,
-		}
-		// チェイン効果があれば変換
+		chainEffectID := ""
 		if skill.ChainEffect != nil {
-			skillSave.ChainEffect = &savedata.ChainEffectSave{
-				Type:  string(skill.ChainEffect.Type),
-				Value: skill.ChainEffect.Value,
-			}
+			chainEffectID = string(skill.ChainEffect.Type)
 		}
-		saveData.Inventory.ModuleInstances = append(saveData.Inventory.ModuleInstances, skillSave)
+		if saveData.Inventory.UniqueSkills.Skills[skill.TypeID] == nil {
+			saveData.Inventory.UniqueSkills.Skills[skill.TypeID] = []string{}
+		}
+		saveData.Inventory.UniqueSkills.Skills[skill.TypeID] = append(
+			saveData.Inventory.UniqueSkills.Skills[skill.TypeID],
+			chainEffectID,
+		)
 	}
 
 	return saveData

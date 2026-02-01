@@ -79,9 +79,11 @@ func TestSkillType_HasTag_空タグリスト(t *testing.T) {
 func TestSkillType_IsCompatibleWithCore(t *testing.T) {
 	coreType := CoreType{
 		ID:          "test",
+		Name:        "テスト",
 		AllowedTags: []string{"physical_low", "magic_low"},
+		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
 	}
-	core := NewCore("core_001", "テストコア", 1, coreType, PassiveSkill{})
+	core := NewCoreWithTypeID("test", coreType, PassiveSkill{})
 
 	// 互換性のあるスキル
 	compatibleSkill := SkillType{
@@ -194,36 +196,4 @@ func TestSkillEffect_IsDebuffEffect(t *testing.T) {
 	if buffEffect.IsDebuffEffect() {
 		t.Error("自身対象のColumnSpec効果はデバフ効果ではないべきです")
 	}
-}
-
-// ==================== ModuleType/ModuleEffect エイリアステスト ====================
-
-// TestModuleType_IsAliasOfSkillType はModuleTypeがSkillTypeのエイリアスであることを確認します。
-func TestModuleType_IsAliasOfSkillType(t *testing.T) {
-	// ModuleTypeとSkillTypeが同じ型であることを確認
-	var skillType SkillType
-	var moduleType ModuleType
-
-	// 型変換ができることを確認（同じ型のエイリアスであることの証明）
-	skillType = SkillType(moduleType)
-	moduleType = ModuleType(skillType)
-
-	// コンパイルが通れば成功
-	_ = skillType
-	_ = moduleType
-}
-
-// TestModuleEffect_IsAliasOfSkillEffect はModuleEffectがSkillEffectのエイリアスであることを確認します。
-func TestModuleEffect_IsAliasOfSkillEffect(t *testing.T) {
-	// ModuleEffectとSkillEffectが同じ型であることを確認
-	var skillEffect SkillEffect
-	var moduleEffect ModuleEffect
-
-	// 型変換ができることを確認（同じ型のエイリアスであることの証明）
-	skillEffect = SkillEffect(moduleEffect)
-	moduleEffect = ModuleEffect(skillEffect)
-
-	// コンパイルが通れば成功
-	_ = skillEffect
-	_ = moduleEffect
 }

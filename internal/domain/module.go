@@ -86,13 +86,3 @@ func NewSkillFromType(skillType SkillType, chainEffect *ChainEffect) *SkillModel
 		ChainEffect: chainEffect,
 	}
 }
-
-// ModuleModel はSkillModelのエイリアスです。
-// 後方互換性のために残されています。新規コードではSkillModelを使用してください。
-type ModuleModel = SkillModel
-
-// NewModuleFromType はNewSkillFromTypeの後方互換ラッパーです。
-// 後方互換性のために残されています。新規コードではNewSkillFromTypeを使用してください。
-func NewModuleFromType(moduleType ModuleType, chainEffect *ChainEffect) *ModuleModel {
-	return NewSkillFromType(moduleType, chainEffect)
-}

@@ -22,6 +22,9 @@ const (
 
 	// AttackPowerPerLevel はレベルあたりの攻撃力上昇値です。
 	AttackPowerPerLevel = 2
+
+	// DefaultBaseAttackPower はデフォルトの基礎攻撃力です。
+	DefaultBaseAttackPower = 5
 )
 
 // EnemyGenerator はドメイン型を使用した敵生成を担当する構造体です。
@@ -56,7 +59,7 @@ func (g *EnemyGenerator) Generate(level int) *domain.EnemyModel {
 
 	// レベルに応じたステータス計算
 	hp := g.calculateHP(selectedType.BaseHP, level)
-	attackPower := g.calculateAttackPower(selectedType.BaseAttackPower, level)
+	attackPower := g.calculateAttackPowerFromActions(selectedType, level)
 
 	// 敵モデルを作成
 	return domain.NewEnemy(
@@ -88,7 +91,7 @@ func (g *EnemyGenerator) GenerateWithType(level int, typeID string) *domain.Enem
 	}
 
 	hp := g.calculateHP(selectedType.BaseHP, level)
-	attackPower := g.calculateAttackPower(selectedType.BaseAttackPower, level)
+	attackPower := g.calculateAttackPowerFromActions(*selectedType, level)
 
 	return domain.NewEnemy(
 		uuid.New().String(),
@@ -113,15 +116,13 @@ func (g *EnemyGenerator) SetSeed(seed int64) {
 // generateDefaultEnemy はデフォルトの敵を生成します。
 func (g *EnemyGenerator) generateDefaultEnemy(level int) *domain.EnemyModel {
 	defaultType := domain.EnemyType{
-		ID:              "default",
-		Name:            "敵",
-		BaseHP:          50,
-		BaseAttackPower: 5,
-		AttackType:      "physical",
+		ID:     "default",
+		Name:   "敵",
+		BaseHP: 50,
 	}
 
 	hp := g.calculateHP(defaultType.BaseHP, level)
-	attackPower := g.calculateAttackPower(defaultType.BaseAttackPower, level)
+	attackPower := g.calculateAttackPower(DefaultBaseAttackPower, level)
 
 	return domain.NewEnemy(
 		uuid.New().String(),
@@ -141,6 +142,20 @@ func (g *EnemyGenerator) calculateHP(baseHP int, level int) int {
 // calculateAttackPower はレベルに応じた攻撃力を計算します。
 func (g *EnemyGenerator) calculateAttackPower(baseAttackPower int, level int) int {
 	return baseAttackPower + (level * AttackPowerPerLevel)
+}
+
+// calculateAttackPowerFromActions は行動パターンから攻撃力を計算します。
+// 最初の攻撃行動のDamageBase + Level * DamagePerLevelを返します。
+func (g *EnemyGenerator) calculateAttackPowerFromActions(enemyType domain.EnemyType, level int) int {
+	// 解決済み行動パターンから最初の攻撃行動を取得
+	for _, action := range enemyType.ResolvedNormalActions {
+		if action.ActionType == domain.EnemyActionAttack {
+			damage := action.DamageBase + float64(level)*action.DamagePerLevel
+			return int(damage)
+		}
+	}
+	// 攻撃行動がない場合はデフォルト値
+	return g.calculateAttackPower(DefaultBaseAttackPower, level)
 }
 
 // clampLevel はレベルを有効範囲内にクランプします。

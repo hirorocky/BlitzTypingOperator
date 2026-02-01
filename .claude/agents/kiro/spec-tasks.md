@@ -72,6 +72,23 @@ Generate implementation tasks for the feature based on approved requirements and
 - If sequential mode is true, omit `(P)` entirely
 - If existing tasks.md found, merge with new content
 
+**TUI動作確認タスク（TUI MCP使用）**:
+- TUIに変更がある機能では、TUI MCPを使った動作確認タスクを**必ず**含める
+- タスクには以下を明記すること：
+  - TUI MCPを使用することを明示（`tui-test` MCPサーバー）
+  - 確認対象の画面名と操作内容
+  - 期待される表示・動作
+  - 具体的な確認手順（キー操作、アサーション）
+- TUI確認タスクは該当するUI実装タスクの直後に配置する
+- フォーマット例：
+  ```
+  - [ ] X.Y TUI MCPで○○画面の動作を確認する
+    - `launch_tui`でゲームを起動する（mode: "buffer"）
+    - ○○画面に遷移する（キー操作: ○○）
+    - △△が正しく表示されることを確認する（assert_contains）
+    - □□操作が正常に動作することを確認する
+  ```
+
 ### Step 3: Finalize
 
 **Write and update**:

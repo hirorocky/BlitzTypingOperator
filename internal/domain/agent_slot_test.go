@@ -68,12 +68,12 @@ func TestAgentSlot_IsEmpty(t *testing.T) {
 		},
 		{
 			name: "CoreTypeIDが空の場合は空スロット",
-			slot: &AgentSlot{CoreTypeID: "", CoreLevel: 0},
+			slot: &AgentSlot{CoreTypeID: ""},
 			want: true,
 		},
 		{
 			name: "コアが設定されている場合は空でない",
-			slot: &AgentSlot{CoreTypeID: "core_001", CoreLevel: 5},
+			slot: &AgentSlot{CoreTypeID: "core_001"},
 			want: false,
 		},
 	}
@@ -103,7 +103,6 @@ func TestAgentSlot_GetSkillCount(t *testing.T) {
 			name: "1つのスキルが設定されている場合は1",
 			slot: &AgentSlot{
 				CoreTypeID: "core_001",
-				CoreLevel:  5,
 				Skills: [4]SkillSlotConfig{
 					{TypeID: "skill_001", ChainEffectID: ""},
 					{},
@@ -117,7 +116,6 @@ func TestAgentSlot_GetSkillCount(t *testing.T) {
 			name: "複数のスキルが設定されている場合はその数",
 			slot: &AgentSlot{
 				CoreTypeID: "core_001",
-				CoreLevel:  5,
 				Skills: [4]SkillSlotConfig{
 					{TypeID: "skill_001", ChainEffectID: "chain_001"},
 					{TypeID: "skill_002", ChainEffectID: ""},
@@ -131,7 +129,6 @@ func TestAgentSlot_GetSkillCount(t *testing.T) {
 			name: "全スキルスロットが設定されている場合は4",
 			slot: &AgentSlot{
 				CoreTypeID: "core_001",
-				CoreLevel:  5,
 				Skills: [4]SkillSlotConfig{
 					{TypeID: "skill_001", ChainEffectID: ""},
 					{TypeID: "skill_002", ChainEffectID: ""},
@@ -156,7 +153,6 @@ func TestAgentSlot_GetSkillCount(t *testing.T) {
 func TestAgentSlot_Clear(t *testing.T) {
 	slot := &AgentSlot{
 		CoreTypeID: "core_001",
-		CoreLevel:  5,
 		Skills: [4]SkillSlotConfig{
 			{TypeID: "skill_001", ChainEffectID: "chain_001"},
 			{TypeID: "skill_002", ChainEffectID: ""},
@@ -169,9 +165,6 @@ func TestAgentSlot_Clear(t *testing.T) {
 
 	if slot.CoreTypeID != "" {
 		t.Errorf("Clear後のCoreTypeIDは空であるべき、got %q", slot.CoreTypeID)
-	}
-	if slot.CoreLevel != 0 {
-		t.Errorf("Clear後のCoreLevelは0であるべき、got %d", slot.CoreLevel)
 	}
 	if !slot.IsEmpty() {
 		t.Error("Clear後のスロットは空であるべき")
@@ -198,9 +191,6 @@ func TestNewAgentSlot(t *testing.T) {
 	if slot.CoreTypeID != "" {
 		t.Errorf("新規スロットのCoreTypeIDは空であるべき、got %q", slot.CoreTypeID)
 	}
-	if slot.CoreLevel != 0 {
-		t.Errorf("新規スロットのCoreLevelは0であるべき、got %d", slot.CoreLevel)
-	}
 	if slot.GetSkillCount() != 0 {
 		t.Errorf("新規スロットのスキル数は0であるべき、got %d", slot.GetSkillCount())
 	}
@@ -209,13 +199,10 @@ func TestNewAgentSlot(t *testing.T) {
 func TestAgentSlot_SetCore(t *testing.T) {
 	slot := NewAgentSlot()
 
-	slot.SetCore("core_001", 10)
+	slot.SetCore("core_001")
 
 	if slot.CoreTypeID != "core_001" {
 		t.Errorf("SetCore後のCoreTypeID = %q, want %q", slot.CoreTypeID, "core_001")
-	}
-	if slot.CoreLevel != 10 {
-		t.Errorf("SetCore後のCoreLevel = %d, want %d", slot.CoreLevel, 10)
 	}
 	if slot.IsEmpty() {
 		t.Error("コア設定後のスロットは空であるべきではない")
@@ -225,7 +212,6 @@ func TestAgentSlot_SetCore(t *testing.T) {
 func TestAgentSlot_SetSkill(t *testing.T) {
 	slot := &AgentSlot{
 		CoreTypeID: "core_001",
-		CoreLevel:  5,
 	}
 
 	slot.SetSkill(0, "skill_001", "chain_001")
@@ -251,7 +237,6 @@ func TestAgentSlot_SetSkill(t *testing.T) {
 func TestAgentSlot_SetSkill_IgnoresInvalidIndex(t *testing.T) {
 	slot := &AgentSlot{
 		CoreTypeID: "core_001",
-		CoreLevel:  5,
 	}
 
 	// 無効なインデックスの設定は無視される
@@ -266,7 +251,6 @@ func TestAgentSlot_SetSkill_IgnoresInvalidIndex(t *testing.T) {
 func TestAgentSlot_ClearSkill(t *testing.T) {
 	slot := &AgentSlot{
 		CoreTypeID: "core_001",
-		CoreLevel:  5,
 		Skills: [4]SkillSlotConfig{
 			{TypeID: "skill_001", ChainEffectID: "chain_001"},
 			{TypeID: "skill_002", ChainEffectID: ""},
@@ -292,7 +276,6 @@ func TestAgentSlot_ClearSkill(t *testing.T) {
 func TestAgentSlot_ClearSkill_IgnoresInvalidIndex(t *testing.T) {
 	slot := &AgentSlot{
 		CoreTypeID: "core_001",
-		CoreLevel:  5,
 		Skills: [4]SkillSlotConfig{
 			{TypeID: "skill_001", ChainEffectID: ""},
 			{},
@@ -313,7 +296,6 @@ func TestAgentSlot_ClearSkill_IgnoresInvalidIndex(t *testing.T) {
 func TestAgentSlot_GetSkill(t *testing.T) {
 	slot := &AgentSlot{
 		CoreTypeID: "core_001",
-		CoreLevel:  5,
 		Skills: [4]SkillSlotConfig{
 			{TypeID: "skill_001", ChainEffectID: "chain_001"},
 			{TypeID: "skill_002", ChainEffectID: ""},

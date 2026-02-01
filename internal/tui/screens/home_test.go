@@ -57,7 +57,7 @@ func TestHomeScreenMenuItems(t *testing.T) {
 
 func TestHomeScreenNavigation(t *testing.T) {
 	// モックAgentProviderを使用してバトル選択を有効化
-	screen := NewHomeScreen(0, &mockAgentProvider{agents: []*domain.AgentModel{{Level: 1}}})
+	screen := NewHomeScreen(0, &mockAgentProvider{agents: []*domain.AgentModel{{}}})
 
 	// 下キーで移動
 	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyDown})
@@ -150,15 +150,16 @@ func TestHomeScreenHasASCIILogo(t *testing.T) {
 
 func TestHomeScreenHasLevelASCII(t *testing.T) {
 	screen := NewHomeScreen(15, nil)
+	screen.SetCurrentRank(3) // ランクを設定して影付き数字を表示
 	screen.width = 120
 	screen.height = 40
 
 	rendered := screen.View()
 
-	// ASCII数字の特徴的な文字が含まれることを確認
-	// 数字は「█」を使用
-	if !containsAny(rendered, "█") {
-		t.Error("ASCII数字が表示されていません")
+	// 影付きASCII数字の特徴的な文字が含まれることを確認
+	// 数字は「█」と影「░」を使用
+	if !containsAny(rendered, "█", "░") {
+		t.Error("影付きASCII数字が表示されていません")
 	}
 }
 
@@ -251,11 +252,10 @@ func TestHomeScreenShowsEquippedAgentsWithCard(t *testing.T) {
 		StatWeights: map[string]float64{"STR": 1.0, "MAG": 1.0, "SPD": 1.0, "LUK": 1.0},
 		AllowedTags: []string{"physical_low"},
 	}
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 	agent := &domain.AgentModel{
-		ID:    "agent1",
-		Level: 5,
-		Core:  core,
+		ID:   "agent1",
+		Core: core,
 	}
 	provider := &mockAgentProvider{agents: []*domain.AgentModel{agent}}
 	screen := NewHomeScreen(10, provider)
@@ -284,9 +284,9 @@ func TestHomeScreenShowsMaxLevel(t *testing.T) {
 
 	rendered := screen.View()
 
-	// 到達最高レベルセクションが含まれることを確認
-	if !containsAny(rendered, "到達最高レベル") {
-		t.Error("到達最高レベルセクションが表示されていません")
+	// 到達ランクセクションが含まれることを確認
+	if !containsAny(rendered, "到達ランク") {
+		t.Error("到達ランクセクションが表示されていません")
 	}
 }
 
@@ -299,11 +299,10 @@ func TestHomeScreenEmptySlots(t *testing.T) {
 		StatWeights: map[string]float64{"STR": 1.0, "MAG": 1.0, "SPD": 1.0, "LUK": 1.0},
 		AllowedTags: []string{"physical_low"},
 	}
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 	agent := &domain.AgentModel{
-		ID:    "agent1",
-		Level: 5,
-		Core:  core,
+		ID:   "agent1",
+		Core: core,
 	}
 	provider := &mockAgentProvider{agents: []*domain.AgentModel{agent}}
 	screen := NewHomeScreen(5, provider)
@@ -313,7 +312,7 @@ func TestHomeScreenEmptySlots(t *testing.T) {
 	rendered := screen.View()
 
 	// 空きスロット表示が含まれることを確認
-	if !containsAny(rendered, "(空)", "(未装備)") {
+	if !containsAny(rendered, "スロット空き") {
 		t.Error("空スロット表示がありません")
 	}
 }

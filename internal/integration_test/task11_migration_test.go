@@ -65,8 +65,8 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		invMgr := inventory.NewInventoryManager()
 
 		// コアを追加
-		invMgr.AddCore("warrior", 10)
-		invMgr.AddCore("mage", 5)
+		invMgr.AddCore("warrior")
+		invMgr.AddCore("mage")
 
 		// スキルを追加
 		invMgr.AddSkill("slash", "")
@@ -83,7 +83,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		)
 
 		// コアを設定（旧システムの「合成」に相当）
-		err := slotMgr.SetCore(0, "warrior", 5)
+		err := slotMgr.SetCore(0, "warrior")
 		if err != nil {
 			t.Fatalf("SetCoreに失敗: %v", err)
 		}
@@ -105,7 +105,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		invMgr := inventory.NewInventoryManager()
 
 		// コアを追加
-		invMgr.AddCore("warrior", 10)
+		invMgr.AddCore("warrior")
 
 		// スキルを追加
 		invMgr.AddSkill("slash", "")
@@ -121,7 +121,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		)
 
 		// コアとスキルを設定
-		_ = slotMgr.SetCore(0, "warrior", 5)
+		_ = slotMgr.SetCore(0, "warrior")
 		_ = slotMgr.SetSkill(0, 0, "slash", "")
 
 		// バトル用エージェントを構築（旧システムのGetEquippedAgentsに相当）
@@ -138,10 +138,6 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		if agents[0].Core.TypeID != "warrior" {
 			t.Errorf("コアTypeIDが不正: got %s, want warrior", agents[0].Core.TypeID)
 		}
-
-		if agents[0].Core.Level != 5 {
-			t.Errorf("コアレベルが不正: got %d, want 5", agents[0].Core.Level)
-		}
 	})
 
 	t.Run("複数スロットにエージェントを設定できる", func(t *testing.T) {
@@ -149,8 +145,8 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		invMgr := inventory.NewInventoryManager()
 
 		// コアを追加
-		invMgr.AddCore("warrior", 10)
-		invMgr.AddCore("mage", 5)
+		invMgr.AddCore("warrior")
+		invMgr.AddCore("mage")
 
 		// スキルを追加
 		invMgr.AddSkill("slash", "")
@@ -167,11 +163,11 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		)
 
 		// スロット0にウォリアーを設定
-		_ = slotMgr.SetCore(0, "warrior", 5)
+		_ = slotMgr.SetCore(0, "warrior")
 		_ = slotMgr.SetSkill(0, 0, "slash", "")
 
 		// スロット1にメイジを設定
-		_ = slotMgr.SetCore(1, "mage", 3)
+		_ = slotMgr.SetCore(1, "mage")
 		_ = slotMgr.SetSkill(1, 0, "fireball", "")
 
 		// バトル用エージェントを構築
@@ -192,7 +188,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		invMgr := inventory.NewInventoryManager()
 
 		// コアを追加
-		invMgr.AddCore("warrior", 10)
+		invMgr.AddCore("warrior")
 
 		// スキルを追加
 		invMgr.AddSkill("slash", "")
@@ -208,7 +204,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		)
 
 		// スロット1にのみ設定（スロット0は空）
-		_ = slotMgr.SetCore(1, "warrior", 5)
+		_ = slotMgr.SetCore(1, "warrior")
 		_ = slotMgr.SetSkill(1, 0, "slash", "")
 
 		// バトル用エージェントを構築
@@ -223,43 +219,41 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 
 // TestTask11_InventoryManagerUniqueness は新システムのユニーク管理を確認します。
 func TestTask11_InventoryManagerUniqueness(t *testing.T) {
-	t.Run("同一TypeIDの高レベルコアで最大レベルが更新される", func(t *testing.T) {
+	t.Run("同一TypeIDのコアは重複追加されない", func(t *testing.T) {
 		invMgr := inventory.NewInventoryManager()
 
-		// レベル5のコアを追加
-		invMgr.AddCore("warrior", 5)
+		// コアを追加
+		invMgr.AddCore("warrior")
 
-		// レベル10のコアを追加
-		updated := invMgr.AddCore("warrior", 10)
+		// 同じコアを再度追加（重複なので更新されない）
+		updated := invMgr.AddCore("warrior")
 
-		if !updated {
-			t.Error("高レベルコアで更新されるべき")
+		if updated {
+			t.Error("重複コアでは更新されないべき")
 		}
 
-		// 最大レベルが10であることを確認
-		maxLevel := invMgr.Cores().GetMaxLevel("warrior")
-		if maxLevel != 10 {
-			t.Errorf("最大レベルが不正: got %d, want 10", maxLevel)
+		// コアが保有されていることを確認
+		if !invMgr.Cores().HasCore("warrior") {
+			t.Error("コアが保有されているべき")
 		}
 	})
 
-	t.Run("同一TypeIDの低レベルコアでは更新されない", func(t *testing.T) {
+	t.Run("異なるTypeIDのコアは追加される", func(t *testing.T) {
 		invMgr := inventory.NewInventoryManager()
 
-		// レベル10のコアを追加
-		invMgr.AddCore("warrior", 10)
+		// コアを追加
+		invMgr.AddCore("warrior")
 
-		// レベル5のコアを追加（更新されないはず）
-		updated := invMgr.AddCore("warrior", 5)
+		// 別のコアを追加
+		updated := invMgr.AddCore("mage")
 
-		if updated {
-			t.Error("低レベルコアでは更新されないべき")
+		if !updated {
+			t.Error("異なるコアでは更新されるべき")
 		}
 
-		// 最大レベルが10のままであることを確認
-		maxLevel := invMgr.Cores().GetMaxLevel("warrior")
-		if maxLevel != 10 {
-			t.Errorf("最大レベルが不正: got %d, want 10", maxLevel)
+		// 両方のコアが保有されていることを確認
+		if !invMgr.Cores().HasCore("warrior") || !invMgr.Cores().HasCore("mage") {
+			t.Error("両方のコアが保有されているべき")
 		}
 	})
 

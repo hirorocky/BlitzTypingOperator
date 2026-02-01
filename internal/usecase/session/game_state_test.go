@@ -16,8 +16,8 @@ func TestNewGameState(t *testing.T) {
 	}
 
 	// 初期状態の確認
-	if gs.MaxLevelReached != 0 {
-		t.Errorf("MaxLevelReached expected 0, got %d", gs.MaxLevelReached)
+	if gs.GetMaxLevelReached() != 0 {
+		t.Errorf("GetMaxLevelReached() expected 0, got %d", gs.GetMaxLevelReached())
 	}
 
 	if gs.Player() == nil {
@@ -27,8 +27,6 @@ func TestNewGameState(t *testing.T) {
 	if gs.Inventory() == nil {
 		t.Error("Inventory() returned nil")
 	}
-
-	// v3.0.0: AgentManager()は削除されました
 
 	if gs.Statistics() == nil {
 		t.Error("Statistics() returned nil")
@@ -43,28 +41,23 @@ func TestNewGameState(t *testing.T) {
 func TestRecordBattleVictory(t *testing.T) {
 	gs := NewGameStateForTest()
 
-	// デフォルトレベル1の敵をレベル1で撃破
+	// 統計のみをテスト
 	gs.RecordBattleVictory(1, 1)
-
-	if gs.MaxLevelReached != 1 {
-		t.Errorf("MaxLevelReached expected 1, got %d", gs.MaxLevelReached)
-	}
 
 	stats := gs.Statistics()
 	if stats.Battle().Wins != 1 {
 		t.Errorf("Wins expected 1, got %d", stats.Battle().Wins)
 	}
 
-	// デフォルトレベル3の敵をレベル5で撃破（MaxLevelReachedはデフォルトレベル3で更新される）
+	// 追加の勝利を記録
 	gs.RecordBattleVictory(5, 3)
-	if gs.MaxLevelReached != 3 {
-		t.Errorf("MaxLevelReached expected 3, got %d", gs.MaxLevelReached)
+	if stats.Battle().Wins != 2 {
+		t.Errorf("Wins expected 2, got %d", stats.Battle().Wins)
 	}
 
-	// デフォルトレベル2の敵を撃破（MaxLevelReachedは更新されない）
 	gs.RecordBattleVictory(4, 2)
-	if gs.MaxLevelReached != 3 {
-		t.Errorf("MaxLevelReached expected 3, got %d", gs.MaxLevelReached)
+	if stats.Battle().Wins != 3 {
+		t.Errorf("Wins expected 3, got %d", stats.Battle().Wins)
 	}
 }
 
@@ -135,15 +128,141 @@ func TestAddEncounteredEnemy(t *testing.T) {
 func TestPreparePlayerForBattle(t *testing.T) {
 	gs := NewGameStateForTest()
 
-	// v3.0.0: 空のエージェントリストでバトル準備
+	// MaxHPが0で空のエージェントリストの場合、MaxHPは変更されない
+	gs.Player().InitializeHP(domain.InitialMaxHP)
 	gs.PreparePlayerForBattle([]*domain.AgentModel{})
 
 	player := gs.Player()
-	// HPが設定されていることを確認（最小でもBaseHP）
-	if player.MaxHP < domain.BaseHP {
-		t.Errorf("MaxHP should be at least BaseHP (%d), got %d", domain.BaseHP, player.MaxHP)
+	// HPが初期最大HP（1000）であることを確認
+	if player.MaxHP != domain.InitialMaxHP {
+		t.Errorf("MaxHP should be %d, got %d", domain.InitialMaxHP, player.MaxHP)
 	}
 	if player.HP != player.MaxHP {
 		t.Errorf("HP should equal MaxHP after preparation")
+	}
+}
+
+// ==================== EnemyProgress 統合テスト（Task 7.1） ====================
+
+// TestGameState_EnemyProgress はGameStateがEnemyProgressを正しく統合していることをテストします。
+func TestGameState_EnemyProgress(t *testing.T) {
+	gs := NewGameStateForTest()
+
+	// 初期状態の確認
+	progress := gs.EnemyProgress()
+	if progress == nil {
+		t.Fatal("EnemyProgress() returned nil")
+	}
+
+	// 初期ランクは1
+	if progress.CurrentRank != 1 {
+		t.Errorf("Initial CurrentRank expected 1, got %d", progress.CurrentRank)
+	}
+
+	// 初期状態では敵は未撃破
+	if gs.IsEnemyDefeated("enemy_001") {
+		t.Error("Enemy should not be defeated initially")
+	}
+}
+
+// TestGameState_DefeatedEnemyProvider_Interface はDefeatedEnemyProviderインターフェースの実装をテストします。
+func TestGameState_DefeatedEnemyProvider_Interface(t *testing.T) {
+	gs := NewGameStateForTest()
+
+	// IsEnemyDefeated: 未撃破の敵
+	if gs.IsEnemyDefeated("enemy_001") {
+		t.Error("Enemy should not be defeated initially")
+	}
+
+	// GetDefeatedLevel: 未撃破の敵は0
+	if level := gs.GetDefeatedLevel("enemy_001"); level != 0 {
+		t.Errorf("GetDefeatedLevel for undefeated enemy expected 0, got %d", level)
+	}
+
+	// GetMaxDefeatedLevel: 初期状態は0
+	if level := gs.GetMaxDefeatedLevel(); level != 0 {
+		t.Errorf("GetMaxDefeatedLevel expected 0 initially, got %d", level)
+	}
+
+	// GetMaxLevelReached: 初期状態は0
+	if level := gs.GetMaxLevelReached(); level != 0 {
+		t.Errorf("GetMaxLevelReached expected 0 initially, got %d", level)
+	}
+
+	// GetDefeatedEnemies: 初期状態は空マップ
+	defeatedEnemies := gs.GetDefeatedEnemies()
+	if len(defeatedEnemies) != 0 {
+		t.Errorf("GetDefeatedEnemies expected empty map, got %d entries", len(defeatedEnemies))
+	}
+}
+
+// TestGameState_RecordEnemyDefeat_WithEnemyProgress は撃破記録がEnemyProgressを正しく更新することをテストします。
+func TestGameState_RecordEnemyDefeat_WithEnemyProgress(t *testing.T) {
+	gs := NewGameStateForTest()
+
+	// 敵を撃破
+	gs.RecordEnemyDefeat("enemy_001", 5)
+
+	// 撃破状態を確認
+	if !gs.IsEnemyDefeated("enemy_001") {
+		t.Error("Enemy should be defeated after RecordEnemyDefeat")
+	}
+
+	// 撃破レベルを確認
+	if level := gs.GetDefeatedLevel("enemy_001"); level != 5 {
+		t.Errorf("GetDefeatedLevel expected 5, got %d", level)
+	}
+
+	// GetMaxDefeatedLevel を確認
+	if level := gs.GetMaxDefeatedLevel(); level != 5 {
+		t.Errorf("GetMaxDefeatedLevel expected 5, got %d", level)
+	}
+
+	// GetDefeatedEnemies を確認
+	defeatedEnemies := gs.GetDefeatedEnemies()
+	if len(defeatedEnemies) != 1 {
+		t.Errorf("GetDefeatedEnemies expected 1 entry, got %d", len(defeatedEnemies))
+	}
+	if defeatedEnemies["enemy_001"] != 5 {
+		t.Errorf("GetDefeatedEnemies[enemy_001] expected 5, got %d", defeatedEnemies["enemy_001"])
+	}
+
+	// より高いレベルで撃破
+	gs.RecordEnemyDefeat("enemy_001", 10)
+	if level := gs.GetDefeatedLevel("enemy_001"); level != 10 {
+		t.Errorf("GetDefeatedLevel after higher level defeat expected 10, got %d", level)
+	}
+
+	// より低いレベルで撃破しても更新されない
+	gs.RecordEnemyDefeat("enemy_001", 7)
+	if level := gs.GetDefeatedLevel("enemy_001"); level != 10 {
+		t.Errorf("GetDefeatedLevel should not decrease, expected 10, got %d", level)
+	}
+}
+
+// TestGameState_SetEnemyProgress はSetEnemyProgressが正しく動作することをテストします。
+func TestGameState_SetEnemyProgress(t *testing.T) {
+	gs := NewGameStateForTest()
+
+	// 新しいEnemyProgressを作成して設定
+	newProgress := domain.NewEnemyProgress()
+	newProgress.CurrentRank = 3
+	newProgress.DefeatRecords["enemy_001"] = domain.EnemyDefeatRecord{
+		Defeated:         true,
+		MaxDefeatedLevel: 15,
+	}
+
+	gs.SetEnemyProgress(newProgress)
+
+	// 設定が反映されていることを確認
+	progress := gs.EnemyProgress()
+	if progress.CurrentRank != 3 {
+		t.Errorf("CurrentRank expected 3, got %d", progress.CurrentRank)
+	}
+	if !gs.IsEnemyDefeated("enemy_001") {
+		t.Error("Enemy should be defeated after SetEnemyProgress")
+	}
+	if level := gs.GetDefeatedLevel("enemy_001"); level != 15 {
+		t.Errorf("GetDefeatedLevel expected 15, got %d", level)
 	}
 }

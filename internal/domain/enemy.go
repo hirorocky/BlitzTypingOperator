@@ -72,20 +72,6 @@ type EnemyType struct {
 	// BaseHP は敵の基礎HP値です。
 	BaseHP int
 
-	// BaseAttackPower は敵の基礎攻撃力です。
-	BaseAttackPower int
-
-	// AttackType は攻撃属性（physical / magic）です。
-	AttackType string
-
-	// ASCIIArt は敵の外観（ASCIIアート）です。
-	ASCIIArt string
-
-	// ========== 拡張フィールド ==========
-
-	// DefaultLevel はデフォルトレベル（1〜100）です。未撃破時はこのレベルのみ選択可能。
-	DefaultLevel int
-
 	// NormalActionPatternIDs は通常状態での行動パターンIDの配列です。
 	NormalActionPatternIDs []string
 
@@ -115,11 +101,12 @@ type EnemyType struct {
 	// VoltageRisePer10s は10秒間でのボルテージ上昇量です。
 	// 0の場合はボルテージが上昇しません。デフォルト値は10（infra層で設定）。
 	VoltageRisePer10s float64
-}
 
-// IsValidDefaultLevel はデフォルトレベルが有効範囲（1〜100）かどうかを判定します。
-func (e EnemyType) IsValidDefaultLevel() bool {
-	return e.DefaultLevel >= 1 && e.DefaultLevel <= 100
+	// ========== ランクシステム ==========
+
+	// Rank は敵のランクです（1から開始）。
+	// 同じランクの敵を全て撃破すると次のランクが解放されます。
+	Rank int
 }
 
 // HasValidNormalActionPattern は通常行動パターンが有効（最低1つの行動を持つ）かどうかを判定します。
@@ -155,6 +142,11 @@ func (e EnemyType) GetVoltageRisePer10s() float64 {
 		return 0
 	}
 	return e.VoltageRisePer10s
+}
+
+// IsValidRank はランクが有効範囲（1以上）かどうかを判定します。
+func (e EnemyType) IsValidRank() bool {
+	return e.Rank >= 1
 }
 
 // EnemyModel はゲーム内の敵エンティティを表す構造体です。
@@ -320,10 +312,10 @@ func (e *EnemyModel) GetCurrentPattern() []EnemyAction {
 func (e *EnemyModel) GetCurrentAction() EnemyAction {
 	pattern := e.GetCurrentPattern()
 	if len(pattern) == 0 {
-		// 行動パターンが空の場合はデフォルトの攻撃行動
+		// 行動パターンが空の場合はデフォルトの物理攻撃行動
 		return EnemyAction{
 			ActionType: EnemyActionAttack,
-			AttackType: e.Type.AttackType,
+			AttackType: "physical",
 		}
 	}
 	return pattern[e.ActionIndex]

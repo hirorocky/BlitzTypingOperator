@@ -10,14 +10,14 @@ import (
 )
 
 // newTestModule はテスト用ダメージモジュールを作成するヘルパー関数です。
-func newTestModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
 		Icon:        "⚔️",
 		Tags:        tags,
 		Description: description,
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -29,14 +29,14 @@ func newTestModule(id, name string, tags []string, statCoef float64, statRef, de
 }
 
 // newTestModuleWithChainEffect はチェイン効果付きモジュールを作成するヘルパー関数です。
-func newTestModuleWithChainEffect(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestModuleWithChainEffect(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
 		Icon:        "⚔️",
 		Tags:        tags,
 		Description: description,
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -124,9 +124,9 @@ func TestInventoryFull_Warning(t *testing.T) {
 	skillInv := domain.NewSkillInventory()
 
 	// 新システムでは容量制限がないため、いくつ追加しても警告は出ない
-	coreInv.AddCore("core_type_1", 1)
-	coreInv.AddCore("core_type_2", 1)
-	coreInv.AddCore("core_type_3", 1)
+	coreInv.AddCore("core_type_1")
+	coreInv.AddCore("core_type_2")
+	coreInv.AddCore("core_type_3")
 
 	calculator := NewRewardCalculator(nil, nil, nil)
 
@@ -143,7 +143,7 @@ func TestInventoryFull_TempStorage(t *testing.T) {
 	calculator := NewRewardCalculator(nil, nil, nil)
 
 	// ドロップしたアイテムを一時保管
-	droppedCore := domain.NewCore("temp_core", "一時コア", 10, domain.CoreType{}, domain.PassiveSkill{})
+	droppedCore := domain.NewCoreWithTypeID("temp_core", domain.CoreType{}, domain.PassiveSkill{})
 	droppedModule := newTestModule("temp_module", "一時モジュール", []string{}, 10.0, "STR", "テスト")
 
 	storage := calculator.CreateTempStorage()
@@ -175,8 +175,8 @@ func TestInventoryFull_PromptDiscard(t *testing.T) {
 	skillInv := domain.NewSkillInventory()
 
 	// いくつ追加してもユニーク管理なので容量制限なし
-	coreInv.AddCore("core_type_1", 1)
-	coreInv.AddCore("core_type_2", 1)
+	coreInv.AddCore("core_type_1")
+	coreInv.AddCore("core_type_2")
 
 	warning := calculator.CheckInventoryFull(coreInv, skillInv)
 
@@ -298,7 +298,7 @@ func TestModuleDropInfo_ToDomainWithRandomChainEffect(t *testing.T) {
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 10.0, StatCoef: 1.0, StatRef: "STR"},
@@ -344,7 +344,7 @@ func TestAddRewardsToInventory_WithChainEffect(t *testing.T) {
 	// 報酬結果を作成
 	result := &RewardResult{
 		IsVictory:      true,
-		DroppedModules: []*domain.ModuleModel{module},
+		DroppedModules: []*domain.SkillModel{module},
 	}
 
 	// インベントリを作成（新システム）
@@ -514,7 +514,7 @@ func TestCalculateGuaranteedReward_ModuleDrop(t *testing.T) {
 			ID:           "physical_lv1",
 			Name:         "物理攻撃Lv1",
 			MinDropLevel: 1,
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{Target: domain.TargetEnemy, Probability: 1.0},
 			},
 		},
@@ -656,37 +656,10 @@ func TestRollCoreDropWithTypeID_GeneratesCorrectType(t *testing.T) {
 	if core.Type.Name != "攻撃バランス" {
 		t.Errorf("コアType.Nameが期待と異なる: got %s, want 攻撃バランス", core.Type.Name)
 	}
-	// core.Nameはレベルを含む表示用名前
-	expectedName := "攻撃バランス Lv.10"
+	// core.Name はType名
+	expectedName := "攻撃バランス"
 	if core.Name != expectedName {
 		t.Errorf("コア名が期待と異なる: got %s, want %s", core.Name, expectedName)
-	}
-}
-
-// TestRollCoreDropWithTypeID_LevelEqualsEnemyLevel はコアレベルが敵レベルと同じであることをテストします。
-func TestRollCoreDropWithTypeID_LevelEqualsEnemyLevel(t *testing.T) {
-	coreTypes := []domain.CoreType{
-		{
-			ID:           "attack_balance",
-			Name:         "攻撃バランス",
-			MinDropLevel: 1,
-			StatWeights:  map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
-		},
-	}
-
-	calculator := NewRewardCalculator(coreTypes, nil, nil)
-
-	// 様々なレベルでテスト
-	testLevels := []int{1, 5, 10, 20, 50, 100}
-	for _, enemyLevel := range testLevels {
-		core := calculator.RollCoreDropWithTypeID("attack_balance", enemyLevel)
-		if core == nil {
-			t.Fatal("コアがnilであってはならない")
-		}
-
-		if core.Level != enemyLevel {
-			t.Errorf("コアレベルは敵レベルと同じであるべき: got %d, expected %d", core.Level, enemyLevel)
-		}
 	}
 }
 
@@ -707,31 +680,6 @@ func TestRollCoreDropWithTypeID_InvalidTypeID(t *testing.T) {
 
 	if core != nil {
 		t.Error("存在しないTypeIDの場合はnilを返すべき")
-	}
-}
-
-// TestRollCoreDropWithTypeID_LevelOne は敵レベル1の場合にレベル1のコアが生成されることをテストします。
-func TestRollCoreDropWithTypeID_LevelOne(t *testing.T) {
-	coreTypes := []domain.CoreType{
-		{
-			ID:           "attack_balance",
-			Name:         "攻撃バランス",
-			MinDropLevel: 1,
-			StatWeights:  map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
-		},
-	}
-
-	calculator := NewRewardCalculator(coreTypes, nil, nil)
-
-	// 敵レベル1の場合
-	for i := 0; i < 10; i++ {
-		core := calculator.RollCoreDropWithTypeID("attack_balance", 1)
-		if core == nil {
-			t.Fatal("コアがnilであってはならない")
-		}
-		if core.Level != 1 {
-			t.Errorf("敵レベル1の場合はコアレベルも1であるべき: got %d", core.Level)
-		}
 	}
 }
 
@@ -1022,5 +970,144 @@ func TestRollModuleDropWithTypeID_NoChainEffectPool(t *testing.T) {
 	}
 	if module.HasChainEffect() {
 		t.Error("チェイン効果プールがない場合はチェイン効果がnilであるべき")
+	}
+}
+
+// ==================== タスク5.2: HP成長報酬テスト ====================
+
+// TestRewardResult_HPGain はRewardResultにHP成長情報が含まれることをテストします。
+func TestRewardResult_HPGain(t *testing.T) {
+	result := &RewardResult{
+		IsVictory:        true,
+		ShowRewardScreen: true,
+		HPGain:           10,
+		RankUnlocked:     false,
+	}
+
+	if result.HPGain != 10 {
+		t.Errorf("HPGainが期待と異なる: got %d, want 10", result.HPGain)
+	}
+	if result.RankUnlocked {
+		t.Error("RankUnlockedがfalseであるべき")
+	}
+}
+
+// TestCalculateGuaranteedRewardWithProgress はHP成長報酬付きの報酬計算をテストします。
+func TestCalculateGuaranteedRewardWithProgress(t *testing.T) {
+	coreTypes := []domain.CoreType{
+		{
+			ID:           "attack_balance",
+			Name:         "攻撃バランス",
+			MinDropLevel: 1,
+			AllowedTags:  []string{"physical_low"},
+			StatWeights:  map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
+		},
+	}
+
+	calculator := NewRewardCalculator(coreTypes, nil, nil)
+
+	stats := &BattleStatistics{
+		TotalWPM:         80.0,
+		TotalAccuracy:    0.95,
+		TotalTypingCount: 10,
+	}
+
+	slimeType := domain.EnemyType{
+		ID:               "slime",
+		Name:             "スライム",
+		DropItemCategory: "core",
+		DropItemTypeID:   "attack_balance",
+		Rank:             1,
+	}
+
+	batType := domain.EnemyType{
+		ID:               "bat",
+		Name:             "コウモリ",
+		DropItemCategory: "core",
+		DropItemTypeID:   "attack_balance",
+		Rank:             1,
+	}
+
+	// EnemyProgressManagerを作成（ランク1に2体の敵）
+	progress := domain.NewEnemyProgress()
+	player := domain.NewPlayerWithMaxHP(domain.InitialMaxHP)
+	enemyTypes := map[string]domain.EnemyType{
+		"slime": slimeType,
+		"bat":   batType,
+	}
+
+	// HP成長報酬付きで報酬計算（1体目）
+	result := calculator.CalculateGuaranteedRewardWithProgress(stats, 1, slimeType, progress, player, enemyTypes)
+
+	if result == nil {
+		t.Fatal("報酬結果がnilであってはならない")
+	}
+	if result.HPGain != domain.HPGainPerFirstDefeat {
+		t.Errorf("HPGainが期待と異なる: got %d, want %d", result.HPGain, domain.HPGainPerFirstDefeat)
+	}
+	if result.RankUnlocked {
+		t.Error("1体目撃破でランク解放されるべきではない（ランク内に2体いる）")
+	}
+
+	// PlayerのMaxHPが増加していることを確認
+	expectedMaxHP := domain.InitialMaxHP + domain.HPGainPerFirstDefeat
+	if player.MaxHP != expectedMaxHP {
+		t.Errorf("PlayerのMaxHPが期待と異なる: got %d, want %d", player.MaxHP, expectedMaxHP)
+	}
+
+	// EnemyProgressに撃破が記録されていることを確認
+	if !progress.IsDefeated("slime") {
+		t.Error("敵が撃破済みとして記録されていない")
+	}
+}
+
+// TestCalculateGuaranteedRewardWithProgress_RankUnlock はランク解放をテストします。
+func TestCalculateGuaranteedRewardWithProgress_RankUnlock(t *testing.T) {
+	coreTypes := []domain.CoreType{
+		{
+			ID:           "attack_balance",
+			Name:         "攻撃バランス",
+			MinDropLevel: 1,
+			AllowedTags:  []string{"physical_low"},
+			StatWeights:  map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
+		},
+	}
+
+	calculator := NewRewardCalculator(coreTypes, nil, nil)
+
+	stats := &BattleStatistics{
+		TotalWPM:         80.0,
+		TotalAccuracy:    0.95,
+		TotalTypingCount: 10,
+	}
+
+	// ランク1に敵1体のみ
+	enemyType := domain.EnemyType{
+		ID:               "slime",
+		Name:             "スライム",
+		DropItemCategory: "core",
+		DropItemTypeID:   "attack_balance",
+		Rank:             1,
+	}
+
+	progress := domain.NewEnemyProgress()
+	player := domain.NewPlayerWithMaxHP(domain.InitialMaxHP)
+	enemyTypes := map[string]domain.EnemyType{
+		"slime": enemyType,
+	}
+
+	// 唯一の敵を撃破
+	result := calculator.CalculateGuaranteedRewardWithProgress(stats, 1, enemyType, progress, player, enemyTypes)
+
+	if result == nil {
+		t.Fatal("報酬結果がnilであってはならない")
+	}
+	if !result.RankUnlocked {
+		t.Error("唯一の敵撃破でランク解放されるべき")
+	}
+
+	// ランクが進行していることを確認
+	if progress.CurrentRank != 2 {
+		t.Errorf("ランクが進行していない: got %d, want 2", progress.CurrentRank)
 	}
 }

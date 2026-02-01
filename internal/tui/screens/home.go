@@ -23,7 +23,7 @@ type AgentProvider interface {
 }
 
 // SlotReadinessProvider はエージェントスロットの準備状態を提供するインターフェースです。
-// v3.0.0 AgentSlotManager で実装されます。
+// internal/usecase/slot.AgentSlotManagerで実装されます。
 type SlotReadinessProvider interface {
 	// GetReadySlotCount はバトルに使用可能なスロット数を返します。
 	GetReadySlotCount() int
@@ -44,14 +44,41 @@ type DefeatedEnemyProvider interface {
 	GetMaxLevelReached() int
 }
 
+// EnemyProgressProvider はランクベースの敵進行情報を提供するインターフェースです。
+// BattleSelectScreenRankBasedが敵表示とレベル選択の制約を判断するために使用します。
+type EnemyProgressProvider interface {
+	// GetCurrentRank は現在解放済みランクを返します。
+	GetCurrentRank() int
+	// GetMaxUnlockedRank は解放済み最大ランクを返します。
+	// プレイヤーの進行度で解放されているランクの最大値（GetCurrentRankと同値）
+	GetMaxUnlockedRank() int
+	// GetCurrentRankEnemies は現在ランクの敵リストを返します。
+	GetCurrentRankEnemies() []domain.EnemyType
+	// GetEnemiesByRank は指定ランクの敵リストを返します。
+	// ランク選択時に任意のランクの敵を取得するために使用します。
+	GetEnemiesByRank(rank int) []domain.EnemyType
+	// IsDefeated は指定した敵が撃破済みかどうかを返します。
+	IsDefeated(enemyTypeID string) bool
+	// GetMaxDefeatedLevel は指定した敵の撃破済み最大レベルを返します。
+	GetMaxDefeatedLevel(enemyTypeID string) int
+	// GetSelectableLevelRange は敵の選択可能レベル範囲を取得します。
+	GetSelectableLevelRange(enemyTypeID string) (min, max int)
+	// GetDropItemName はドロップアイテムの日本語名を返します。
+	// category: "core" または "module"
+	// typeID: コアまたはスキルのTypeID
+	GetDropItemName(category, typeID string) string
+}
+
 // HomeScreen はホーム画面を表します。
 
 // UI-Improvement Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6
 type HomeScreen struct {
 	menu            *components.Menu
 	maxLevelReached int
+	currentRank     int                   // 到達ランク（レベルに代わる新進行指標）
+	maxHP           int                   // プレイヤーの最大HP
 	agentProvider   AgentProvider         // 装備エージェントを取得するプロバイダー
-	slotProvider    SlotReadinessProvider // v3.0.0 スロット準備状態プロバイダー
+	slotProvider    SlotReadinessProvider // スロット準備状態プロバイダー
 	styles          *styles.GameStyles
 	width           int
 	height          int
@@ -59,6 +86,7 @@ type HomeScreen struct {
 	// UI改善: ASCIIアートレンダラー
 	logoRenderer   ascii.ASCIILogoRenderer
 	numberRenderer ascii.ASCIINumberRenderer
+	shadowRenderer ascii.ShadowNumberRenderer // 影付き数字レンダラー（ランク表示用）
 	// セーブ確認ダイアログ
 	confirmDialog  *components.ConfirmDialog
 	showingConfirm bool
@@ -104,6 +132,7 @@ func NewHomeScreen(maxLevelReached int, agentProvider AgentProvider) *HomeScreen
 		// UI改善: ASCIIアートレンダラーを初期化
 		logoRenderer:   ascii.NewASCIILogo(),
 		numberRenderer: ascii.NewASCIINumbers(),
+		shadowRenderer: ascii.NewShadowNumbers(),
 		// セーブ確認ダイアログを初期化
 		confirmDialog: components.NewConfirmDialog(
 			"セーブ確認",
@@ -293,23 +322,21 @@ func (s *HomeScreen) renderStatusPanel() string {
 	builder.WriteString(titleStyle.Render("進行状況"))
 	builder.WriteString("\n\n")
 
-	// UI改善: 到達最高レベルをASCII数字アートで表示
-
-	builder.WriteString(labelStyle.Render("到達最高レベル:"))
+	// 到達ランクを影付きASCII数字アートで表示
+	builder.WriteString(labelStyle.Render("到達ランク:"))
 	builder.WriteString("\n")
-	if s.maxLevelReached == 0 {
+	if s.currentRank == 0 {
 		builder.WriteString(labelStyle.Render("  まだなし"))
 	} else {
-		// ASCII数字でレベルを表示
-		levelArt := s.numberRenderer.RenderNumber(s.maxLevelReached, styles.ColorPrimary)
-		builder.WriteString(levelArt)
+		// 影付きASCII数字でランクを表示
+		rankArt := s.shadowRenderer.RenderShadowNumber(s.currentRank)
+		builder.WriteString(rankArt)
 	}
-	builder.WriteString("\n")
+	builder.WriteString("\n\n")
 
-	// 挑戦可能最大レベル
-	builder.WriteString(labelStyle.Render("挑戦可能レベル: "))
-	nextLevel := s.maxLevelReached + 1
-	builder.WriteString(valueStyle.Render(fmt.Sprintf("Lv.%d まで", nextLevel)))
+	// 最大HP表示
+	builder.WriteString(labelStyle.Render("最大HP: "))
+	builder.WriteString(valueStyle.Render(fmt.Sprintf("%d", s.maxHP)))
 	builder.WriteString("\n\n")
 
 	// 装備中エージェント
@@ -338,19 +365,17 @@ func (s *HomeScreen) renderStatusPanel() string {
 		builder.WriteString("\n")
 		builder.WriteString(guideStyle.Render("  合成・装備を行ってください"))
 	} else {
-		for i, agent := range equippedAgents {
-			slotLabel := fmt.Sprintf("スロット%d: ", i+1)
-			builder.WriteString(labelStyle.Render(slotLabel))
-			agentInfo := fmt.Sprintf("%s (Lv.%d)", agent.GetCoreTypeName(), agent.Level)
-			builder.WriteString(valueStyle.Render(agentInfo))
+		for _, agent := range equippedAgents {
+			// コア名のみ表示（スロット番号は省略）
+			agentInfo := agent.GetCoreTypeName()
+			builder.WriteString(valueStyle.Render("• " + agentInfo))
 			builder.WriteString("\n")
 		}
 
-		// 空きスロットを表示
-		for i := len(equippedAgents); i < 3; i++ {
-			slotLabel := fmt.Sprintf("スロット%d: ", i+1)
-			builder.WriteString(labelStyle.Render(slotLabel))
-			builder.WriteString(labelStyle.Render("(空)"))
+		// 空きスロット数を表示
+		emptySlots := 3 - len(equippedAgents)
+		if emptySlots > 0 {
+			builder.WriteString(labelStyle.Render(fmt.Sprintf("  (+%d スロット空き)", emptySlots)))
 			builder.WriteString("\n")
 		}
 	}
@@ -363,8 +388,18 @@ func (s *HomeScreen) SetMaxLevelReached(level int) {
 	s.maxLevelReached = level
 }
 
+// SetCurrentRank は到達ランクを設定します。
+func (s *HomeScreen) SetCurrentRank(rank int) {
+	s.currentRank = rank
+}
+
+// SetMaxHP はプレイヤーの最大HPを設定します。
+func (s *HomeScreen) SetMaxHP(maxHP int) {
+	s.maxHP = maxHP
+}
+
 // SetSlotProvider はスロット準備状態プロバイダーを設定します。
-// v3.0.0 AgentSlotManager を使用してバトル選択の有効/無効を判断します。
+// AgentSlotManagerを使用してバトル選択の有効/無効を判断します。
 func (s *HomeScreen) SetSlotProvider(provider SlotReadinessProvider) {
 	s.slotProvider = provider
 }
@@ -373,7 +408,7 @@ func (s *HomeScreen) SetSlotProvider(provider SlotReadinessProvider) {
 func (s *HomeScreen) RefreshMenuState() {
 	hasEquippedAgents := false
 
-	// v3.0.0: slotProviderがある場合は優先使用（AgentSlotManager経由）
+	// slotProviderがある場合は優先使用（AgentSlotManager経由）
 	if s.slotProvider != nil {
 		hasEquippedAgents = s.slotProvider.GetReadySlotCount() > 0
 	} else if s.agentProvider != nil {

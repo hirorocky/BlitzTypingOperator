@@ -43,7 +43,7 @@ type BattleResultMsg struct {
 
 // ModuleSlot はモジュールスロットを表します。
 type ModuleSlot struct {
-	Module            *domain.ModuleModel
+	Module            *domain.SkillModel
 	Agent             *domain.AgentModel
 	AgentIndex        int
 	ModuleIndex       int

@@ -30,6 +30,8 @@ Kiro-style Spec Driven Development implementation on AI-DLC (AI Development Life
 - 要件番号（例: `Requirement 12.1`, `Requirements 4.1-4.7`）
 - タスク番号（例: `Task 7.2`, `Phase 1`）
 - 仕様書への参照（例: `REQ-001`, `設計書3.2節`）
+- バージョン情報（例: `v4.0.0:`, `v3.0.0以降は`）
+- 「新仕様」「旧仕様」などの一時的な差分を示す表現
 
 ### コメントに含めるべき情報
 - **何をするか**（処理の目的）
@@ -57,6 +59,13 @@ type ModuleModel struct { ... }
 // モジュールはエージェント合成時にコアに装備され、バトル中に使用可能なスキルになります。
 type ModuleModel struct { ... }
 ```
+
+### 残してはいけないコード
+以下のようなコードは作成せず、発見した場合は削除すること：
+- 後方互換性のためだけに残されたコード・フィールド・関数
+- 「レガシー」「廃止予定」とコメントされたコード
+- 使用されていない古い形式のデータ構造
+- 新旧両方の実装が並存している状態
 
 ## Minimal Workflow
 - Phase 0 (optional): `/kiro:steering`, `/kiro:steering-custom`

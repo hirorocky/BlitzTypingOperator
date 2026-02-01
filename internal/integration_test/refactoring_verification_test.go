@@ -31,7 +31,7 @@ func convertExternalDataToDomainSources(ext *masterdata.ExternalData) *gamestate
 		coreTypes[i] = ct.ToDomain()
 	}
 
-	// ModuleTypes の変換
+	// SkillTypes の変換
 	moduleTypes := make([]rewarding.ModuleDropInfo, len(ext.ModuleDefinitions))
 	for i, md := range ext.ModuleDefinitions {
 		// マスタデータからドメインモデルに変換
@@ -72,135 +72,44 @@ func convertExternalDataToDomainSources(ext *masterdata.ExternalData) *gamestate
 
 	return &gamestate.DomainDataSources{
 		CoreTypes:     coreTypes,
-		ModuleTypes:   moduleTypes,
+		SkillTypes:    moduleTypes,
 		EnemyTypes:    enemyTypes,
 		PassiveSkills: nil,
 	}
 }
 
+// initBattleForTestVerify はテスト用のバトル初期化ヘルパーです。
+func initBattleForTestVerify(_ *combat.BattleEngine, level int, agents []*domain.AgentModel, enemyTypes []domain.EnemyType) *combat.BattleState {
+	enemyType := enemyTypes[0]
+	hp := enemyType.BaseHP * level
+	attackPower := 5 + (level * 2) // 固定のベース攻撃力を使用
+	enemy := domain.NewEnemy(
+		"test-enemy-id",
+		enemyType.Name,
+		level,
+		hp,
+		attackPower,
+		enemyType,
+	)
+
+	player := domain.NewPlayerWithMaxHP(domain.InitialMaxHP)
+	player.PrepareForBattle()
+
+	state := &combat.BattleState{
+		Enemy:          enemy,
+		Player:         player,
+		EquippedAgents: agents,
+		Level:          level,
+		Stats:          &combat.BattleStatistics{},
+	}
+
+	state.Enemy.PrepareNextAction()
+	return state
+}
+
 // ==================================================
 // Task 12.1: リファクタリング完了の検証
-// 要件: 12.1 - 全ユニットテストが通過することを確認
-// 要件: 12.2 - 既存セーブデータが正常に読み込めることを確認
-// 要件: 12.3 - 外部から観測可能な動作に変更がないことを確認
 // ==================================================
-
-// TestRefactoring_SaveDataBackwardCompatibility はセーブデータの後方互換性を検証します。
-// 要件12.2: 既存セーブデータが正常に読み込めることを確認
-func TestRefactoring_SaveDataBackwardCompatibility(t *testing.T) {
-	tempDir := t.TempDir()
-	io := savedata.NewSaveDataIO(tempDir, false)
-	externalData := createTestExternalData()
-
-	// リファクタリング前の形式でセーブデータを作成（手動構築）
-	saveData := savedata.NewSaveData()
-
-	// プレイヤー情報（装備エージェントIDのみ）
-	saveData.Player.EquippedAgentIDs = [3]string{"agent_1", "agent_2", ""}
-
-	// インベントリ情報（v1.0.0形式）
-	saveData.Inventory.CoreInstances = []savedata.CoreInstanceSave{
-		{CoreTypeID: "all_rounder", Level: 5},
-		{CoreTypeID: "all_rounder", Level: 3},
-	}
-	saveData.Inventory.ModuleInstances = []savedata.ModuleInstanceSave{
-		{TypeID: "physical_strike_lv1", ChainEffect: nil},
-		{TypeID: "physical_strike_lv1", ChainEffect: nil},
-		{TypeID: "fireball_lv1", ChainEffect: nil},
-		{TypeID: "heal_lv1", ChainEffect: nil},
-		{TypeID: "attack_buff_lv1", ChainEffect: nil},
-	}
-	saveData.Inventory.AgentInstances = []savedata.AgentInstanceSave{
-		{
-			ID: "agent_1",
-			Core: savedata.CoreInstanceSave{
-				CoreTypeID: "all_rounder",
-				Level:      5,
-			},
-			Skills: []savedata.SkillInstanceSave{
-				{TypeID: "physical_strike_lv1"},
-				{TypeID: "fireball_lv1"},
-				{TypeID: "heal_lv1"},
-				{TypeID: "attack_buff_lv1"},
-			},
-		},
-	}
-
-	// 統計情報
-	saveData.Statistics.TotalBattles = 25
-	saveData.Statistics.Victories = 20
-	saveData.Statistics.Defeats = 5
-	saveData.Statistics.MaxLevelReached = 10
-	saveData.Statistics.HighestWPM = 150.5
-	saveData.Statistics.AverageWPM = 92.0
-	saveData.Statistics.EncounteredEnemies = []string{"slime", "goblin"}
-
-	// 実績情報
-	saveData.Achievements.Unlocked = []string{"first_victory", "wpm_100"}
-	saveData.Achievements.Progress = map[string]int{}
-
-	// セーブ
-	err := io.SaveGame(saveData)
-	if err != nil {
-		t.Fatalf("セーブに失敗: %v", err)
-	}
-
-	// ロードしてデータを検証
-	loadedData, err := io.LoadGame()
-	if err != nil {
-		t.Fatalf("ロードに失敗: %v", err)
-	}
-
-	// プレイヤー情報の検証
-	if loadedData.Player.EquippedAgentIDs[0] != "agent_1" {
-		t.Errorf("EquippedAgentIDs[0] expected 'agent_1', got '%s'", loadedData.Player.EquippedAgentIDs[0])
-	}
-
-	// インベントリの検証
-	if len(loadedData.Inventory.CoreInstances) != 2 {
-		t.Errorf("CoreInstances expected 2, got %d", len(loadedData.Inventory.CoreInstances))
-	}
-	if len(loadedData.Inventory.AgentInstances) != 1 {
-		t.Errorf("AgentInstances expected 1, got %d", len(loadedData.Inventory.AgentInstances))
-	}
-
-	// 統計の検証
-	if loadedData.Statistics.TotalBattles != 25 {
-		t.Errorf("TotalBattles expected 25, got %d", loadedData.Statistics.TotalBattles)
-	}
-	if loadedData.Statistics.Victories != 20 {
-		t.Errorf("Victories expected 20, got %d", loadedData.Statistics.Victories)
-	}
-	if loadedData.Statistics.MaxLevelReached != 10 {
-		t.Errorf("MaxLevelReached expected 10, got %d", loadedData.Statistics.MaxLevelReached)
-	}
-
-	// 図鑑の検証（統計に含まれる）
-	if len(loadedData.Statistics.EncounteredEnemies) != 2 {
-		t.Errorf("EncounteredEnemies expected 2, got %d", len(loadedData.Statistics.EncounteredEnemies))
-	}
-
-	// 実績の検証
-	foundFirstVictory := false
-	for _, ach := range loadedData.Achievements.Unlocked {
-		if ach == "first_victory" {
-			foundFirstVictory = true
-			break
-		}
-	}
-	if !foundFirstVictory {
-		t.Error("first_victory achievement should be in unlocked list")
-	}
-
-	// GameStateへの変換を検証（リファクタリング後のgame_stateパッケージ使用）
-	gs := gamestate.GameStateFromSaveData(loadedData, convertExternalDataToDomainSources(externalData))
-	if gs == nil {
-		t.Fatal("GameState should not be nil")
-	}
-	if gs.Statistics().Battle().TotalBattles != 25 {
-		t.Errorf("GameState TotalBattles expected 25, got %d", gs.Statistics().Battle().TotalBattles)
-	}
-}
 
 // TestRefactoring_GameStateRoundTrip はGameStateのセーブ/ロード往復を検証します。
 // 要件12.1, 12.2, 12.3: データ整合性の維持
@@ -278,21 +187,16 @@ func TestRefactoring_DataConversionIntegration(t *testing.T) {
 func TestRefactoring_BattleFlowUnchanged(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "goblin",
-			Name:            "ゴブリン",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "goblin",
+			Name:   "ゴブリン",
+			BaseHP: 50,
 		},
 	}
 	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
 
 	// バトル初期化
-	state, err := engine.InitializeBattle(1, agents)
-	if err != nil {
-		t.Fatalf("バトル初期化に失敗: %v", err)
-	}
+	state := initBattleForTestVerify(engine, 1, agents, enemyTypes)
 
 	// 初期状態の検証
 	if state.Enemy == nil {
@@ -326,7 +230,7 @@ func TestRefactoring_BattleFlowUnchanged(t *testing.T) {
 	initialEnemyHP := state.Enemy.HP
 	agent := agents[0]
 	module := agent.Modules[0]
-	moduleDamage := engine.ApplyModuleEffect(state, agent, module, typingResult)
+	moduleDamage := engine.ApplySkillEffect(state, agent, module, typingResult)
 	if moduleDamage <= 0 {
 		t.Error("モジュールダメージは正の値であるべき")
 	}
@@ -392,12 +296,12 @@ func TestRefactoring_ScreenInterfaceCompliance(t *testing.T) {
 // 要件7.3: Module.Icon()メソッドの追加
 func TestRefactoring_ModuleIconMethod(t *testing.T) {
 	// 新しいモジュールシステムでは、各効果にアイコンが設定されます
-	module := domain.NewModuleFromType(domain.ModuleType{
+	module := domain.NewSkillFromType(domain.SkillType{
 		ID:   "test_module",
 		Name: "テストモジュール",
 		Icon: "⚔️",
 		Tags: []string{"physical_low"},
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: 1.0, StatRef: "STR"},
@@ -455,12 +359,12 @@ func TestRefactoring_TypeRenaming(t *testing.T) {
 
 	// 他のフィールドも存在することを確認（構造体の完全性テスト）
 	encycDataFull := screens.EncyclopediaData{
-		AllCoreTypes:        []domain.CoreType{},
-		AllModuleTypes:      []screens.ModuleTypeInfo{},
-		AllEnemyTypes:       []domain.EnemyType{},
-		AcquiredCoreTypes:   []string{"core1"},
-		AcquiredModuleTypes: []string{"module1"},
-		EncounteredEnemies:  []string{"enemy1"},
+		AllCoreTypes:       []domain.CoreType{},
+		AllSkillTypes:      []screens.SkillTypeInfo{},
+		AllEnemyTypes:      []domain.EnemyType{},
+		AcquiredCoreTypes:  []string{"core1"},
+		AcquiredSkillTypes: []string{"module1"},
+		EncounteredEnemies: []string{"enemy1"},
 	}
 	if len(encycDataFull.AcquiredCoreTypes) != 1 {
 		t.Error("EncyclopediaData fields should be accessible")
@@ -549,11 +453,9 @@ func TestRefactoring_AllComponentsIntegrated(t *testing.T) {
 	// 5. バトルエンジンの動作確認
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 	engine := combat.NewBattleEngine(enemyTypes)
@@ -563,10 +465,7 @@ func TestRefactoring_AllComponentsIntegrated(t *testing.T) {
 	}
 	agent := agents[0]
 
-	battleState, err := engine.InitializeBattle(1, agents)
-	if err != nil {
-		t.Fatalf("バトル初期化に失敗: %v", err)
-	}
+	battleState := initBattleForTestVerify(engine, 1, agents, enemyTypes)
 
 	// 6. バトル進行
 	typingResult := &typing.TypingResult{
@@ -578,7 +477,7 @@ func TestRefactoring_AllComponentsIntegrated(t *testing.T) {
 	}
 
 	for battleState.Enemy.IsAlive() {
-		engine.ApplyModuleEffect(battleState, agent, agent.Modules[0], typingResult)
+		engine.ApplySkillEffect(battleState, agent, agent.Modules[0], typingResult)
 		engine.RecordTypingResult(battleState, typingResult)
 	}
 

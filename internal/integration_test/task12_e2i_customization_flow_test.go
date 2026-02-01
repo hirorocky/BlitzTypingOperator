@@ -150,7 +150,7 @@ func TestE2I_FullCustomizationFlow(t *testing.T) {
 	passiveSkills := createE2ITestPassiveSkills()
 
 	// インベントリにアイテムを追加（バトル報酬シミュレーション）
-	invManager.AddCore("berserker", 15)
+	invManager.AddCore("berserker")
 	invManager.AddSkill("basic_attack", "chain_combo")      // チェイン効果付き
 	invManager.AddSkill("basic_attack", "chain_crit")       // 同じスキル、別のチェイン効果
 	invManager.AddSkill("power_attack", "")                 // チェイン効果なし
@@ -170,7 +170,7 @@ func TestE2I_FullCustomizationFlow(t *testing.T) {
 	slotIndex := 0
 
 	// ステップ2: コア設定
-	err := slotManager.SetCore(slotIndex, "berserker", 10) // 最大15だが10で設定
+	err := slotManager.SetCore(slotIndex, "berserker")
 	if err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
@@ -179,9 +179,6 @@ func TestE2I_FullCustomizationFlow(t *testing.T) {
 	slot0 := slotManager.GetSlot(slotIndex)
 	if slot0.CoreTypeID != "berserker" {
 		t.Errorf("CoreTypeIDが不正: got %s, want berserker", slot0.CoreTypeID)
-	}
-	if slot0.CoreLevel != 10 {
-		t.Errorf("CoreLevelが不正: got %d, want 10", slot0.CoreLevel)
 	}
 
 	// ステップ4: 互換スキル一覧を取得
@@ -231,8 +228,8 @@ func TestE2I_FullCustomizationFlow(t *testing.T) {
 	}
 
 	agent := agents[0]
-	if agent.Level != 10 {
-		t.Errorf("エージェントレベルが不正: got %d, want 10", agent.Level)
+	if agent.Core.TypeID != "berserker" {
+		t.Errorf("エージェントコアTypeIDが不正: got %s, want berserker", agent.Core.TypeID)
 	}
 	if len(agent.Modules) != 3 {
 		t.Errorf("エージェントスキル数が不正: got %d, want 3", len(agent.Modules))
@@ -248,9 +245,9 @@ func TestE2I_MultipleAgentCustomizationFlow(t *testing.T) {
 	passiveSkills := createE2ITestPassiveSkills()
 
 	// 3種類のコアと各種スキルを追加
-	invManager.AddCore("berserker", 20)
-	invManager.AddCore("archmage", 18)
-	invManager.AddCore("priest", 15)
+	invManager.AddCore("berserker")
+	invManager.AddCore("archmage")
+	invManager.AddCore("priest")
 
 	invManager.AddSkill("basic_attack", "")
 	invManager.AddSkill("power_attack", "")
@@ -271,17 +268,17 @@ func TestE2I_MultipleAgentCustomizationFlow(t *testing.T) {
 	)
 
 	// スロット0: バーサーカー（物理アタッカー）
-	slotManager.SetCore(0, "berserker", 20)
+	slotManager.SetCore(0, "berserker")
 	slotManager.SetSkill(0, 0, "basic_attack", "")
 	slotManager.SetSkill(0, 1, "power_attack", "")
 
 	// スロット1: アークメイジ（魔法アタッカー）
-	slotManager.SetCore(1, "archmage", 18)
+	slotManager.SetCore(1, "archmage")
 	slotManager.SetSkill(1, 0, "fire_bolt", "")
 	slotManager.SetSkill(1, 1, "inferno", "")
 
 	// スロット2: プリースト（サポート）
-	slotManager.SetCore(2, "priest", 15)
+	slotManager.SetCore(2, "priest")
 	slotManager.SetSkill(2, 0, "heal", "")
 	slotManager.SetSkill(2, 1, "cure_all", "")
 	slotManager.SetSkill(2, 2, "attack_up", "")
@@ -300,21 +297,17 @@ func TestE2I_MultipleAgentCustomizationFlow(t *testing.T) {
 	// 各エージェントの構成確認
 	expectedConfigs := []struct {
 		coreTypeID string
-		level      int
 		skillCount int
 	}{
-		{"berserker", 20, 2},
-		{"archmage", 18, 2},
-		{"priest", 15, 3},
+		{"berserker", 2},
+		{"archmage", 2},
+		{"priest", 3},
 	}
 
 	for i, expected := range expectedConfigs {
 		agent := agents[i]
 		if agent.Core.TypeID != expected.coreTypeID {
 			t.Errorf("エージェント%d CoreTypeIDが不正: got %s, want %s", i, agent.Core.TypeID, expected.coreTypeID)
-		}
-		if agent.Level != expected.level {
-			t.Errorf("エージェント%d レベルが不正: got %d, want %d", i, agent.Level, expected.level)
 		}
 		if len(agent.Modules) != expected.skillCount {
 			t.Errorf("エージェント%d スキル数が不正: got %d, want %d", i, len(agent.Modules), expected.skillCount)
@@ -333,7 +326,7 @@ func TestE2I_CompatibilityFiltering_AllTagsMatch(t *testing.T) {
 	passiveSkills := createE2ITestPassiveSkills()
 
 	// バランスコア（ほぼすべてのタグを許可）
-	invManager.AddCore("balanced", 10)
+	invManager.AddCore("balanced")
 
 	// 各種スキルを追加
 	invManager.AddSkill("basic_attack", "")   // physical_low
@@ -355,7 +348,7 @@ func TestE2I_CompatibilityFiltering_AllTagsMatch(t *testing.T) {
 	)
 
 	// バランスコアを設定
-	slotManager.SetCore(0, "balanced", 10)
+	slotManager.SetCore(0, "balanced")
 
 	// 互換スキル一覧を取得
 	compatibleSkills := slotManager.GetCompatibleSkills(0)
@@ -376,7 +369,7 @@ func TestE2I_CompatibilityFiltering_NoTagsMatch(t *testing.T) {
 	passiveSkills := createE2ITestPassiveSkills()
 
 	// プリーストコア（heal_low, heal_mid, buff_low のみ許可）
-	invManager.AddCore("priest", 10)
+	invManager.AddCore("priest")
 
 	// 物理スキルのみ追加（プリーストとは互換性なし）
 	invManager.AddSkill("basic_attack", "")   // physical_low
@@ -394,7 +387,7 @@ func TestE2I_CompatibilityFiltering_NoTagsMatch(t *testing.T) {
 	)
 
 	// プリーストコアを設定
-	slotManager.SetCore(0, "priest", 10)
+	slotManager.SetCore(0, "priest")
 
 	// 互換スキル一覧を取得
 	compatibleSkills := slotManager.GetCompatibleSkills(0)
@@ -414,8 +407,8 @@ func TestE2I_CompatibilityFiltering_CoreChangeRemovesIncompatible(t *testing.T) 
 	passiveSkills := createE2ITestPassiveSkills()
 
 	// バランスとバーサーカーを追加
-	invManager.AddCore("balanced", 10)
-	invManager.AddCore("berserker", 10)
+	invManager.AddCore("balanced")
+	invManager.AddCore("berserker")
 
 	// 各種スキルを追加
 	invManager.AddSkill("basic_attack", "") // physical_low - 両方互換
@@ -433,7 +426,7 @@ func TestE2I_CompatibilityFiltering_CoreChangeRemovesIncompatible(t *testing.T) 
 	)
 
 	// バランスコアを設定
-	slotManager.SetCore(0, "balanced", 10)
+	slotManager.SetCore(0, "balanced")
 
 	// スキルを設定
 	slotManager.SetSkill(0, 0, "basic_attack", "")
@@ -446,7 +439,7 @@ func TestE2I_CompatibilityFiltering_CoreChangeRemovesIncompatible(t *testing.T) 
 	}
 
 	// バーサーカーに変更（fire_boltとhealは互換性がない）
-	slotManager.SetCore(0, "berserker", 10)
+	slotManager.SetCore(0, "berserker")
 
 	// basic_attackのみ残る
 	if slotManager.GetSlot(0).GetSkillCount() != 1 {
@@ -469,7 +462,7 @@ func TestE2I_CompatibilityFiltering_ValidateMethod(t *testing.T) {
 	passiveSkills := createE2ITestPassiveSkills()
 
 	// アークメイジコアを追加（magic系のみ許可）
-	invManager.AddCore("archmage", 10)
+	invManager.AddCore("archmage")
 
 	// スキルを追加
 	invManager.AddSkill("fire_bolt", "")    // magic_low - 互換
@@ -486,7 +479,7 @@ func TestE2I_CompatibilityFiltering_ValidateMethod(t *testing.T) {
 	)
 
 	// アークメイジコアを設定
-	slotManager.SetCore(0, "archmage", 10)
+	slotManager.SetCore(0, "archmage")
 
 	// 互換性検証
 	if !slotManager.ValidateSkillCompatibility(0, "fire_bolt") {
@@ -511,7 +504,7 @@ func TestE2I_ChainEffectVariationSelection(t *testing.T) {
 	passiveSkills := createE2ITestPassiveSkills()
 
 	// コアを追加
-	invManager.AddCore("berserker", 10)
+	invManager.AddCore("berserker")
 
 	// 同じスキルに複数のチェイン効果を追加
 	invManager.AddSkill("basic_attack", "chain_fire")
@@ -529,7 +522,7 @@ func TestE2I_ChainEffectVariationSelection(t *testing.T) {
 	)
 
 	// コアを設定
-	slotManager.SetCore(0, "berserker", 10)
+	slotManager.SetCore(0, "berserker")
 
 	// 保有しているチェイン効果を確認
 	chainVariations := invManager.Skills().GetChainVariations("basic_attack")
@@ -562,16 +555,16 @@ func TestE2I_ChainEffectVariationSelection(t *testing.T) {
 	}
 }
 
-// TestE2I_LevelSelectionRange はレベル選択範囲の動作をテストします。
-func TestE2I_LevelSelectionRange(t *testing.T) {
+// TestE2I_CoreSettingWorks はコア設定が動作することをテストします。
+func TestE2I_CoreSettingWorks(t *testing.T) {
 	// テスト環境のセットアップ
 	invManager := inventory.NewInventoryManager()
 	coreTypes := createE2ITestCoreTypes()
 	skillTypes := createE2ITestSkillTypes()
 	passiveSkills := createE2ITestPassiveSkills()
 
-	// コアを最大レベル50で追加
-	invManager.AddCore("berserker", 50)
+	// コアを追加
+	invManager.AddCore("berserker")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -583,43 +576,13 @@ func TestE2I_LevelSelectionRange(t *testing.T) {
 		nil, // chainEffects
 	)
 
-	// 最小レベル（1）で設定
-	err := slotManager.SetCore(0, "berserker", 1)
+	// コアを設定
+	err := slotManager.SetCore(0, "berserker")
 	if err != nil {
-		t.Errorf("レベル1での設定に失敗: %v", err)
+		t.Errorf("コア設定に失敗: %v", err)
 	}
-	if slotManager.GetSlot(0).CoreLevel != 1 {
-		t.Errorf("レベル1が設定されるべき: got %d", slotManager.GetSlot(0).CoreLevel)
-	}
-
-	// 中間レベル（25）で設定
-	err = slotManager.SetCore(0, "berserker", 25)
-	if err != nil {
-		t.Errorf("レベル25での設定に失敗: %v", err)
-	}
-	if slotManager.GetSlot(0).CoreLevel != 25 {
-		t.Errorf("レベル25が設定されるべき: got %d", slotManager.GetSlot(0).CoreLevel)
-	}
-
-	// 最大レベル（50）で設定
-	err = slotManager.SetCore(0, "berserker", 50)
-	if err != nil {
-		t.Errorf("レベル50での設定に失敗: %v", err)
-	}
-	if slotManager.GetSlot(0).CoreLevel != 50 {
-		t.Errorf("レベル50が設定されるべき: got %d", slotManager.GetSlot(0).CoreLevel)
-	}
-
-	// 範囲外（0）はエラー
-	err = slotManager.SetCore(0, "berserker", 0)
-	if err != slot.ErrLevelOutOfRange {
-		t.Errorf("レベル0はErrLevelOutOfRangeを返すべき: got %v", err)
-	}
-
-	// 範囲外（51）はエラー
-	err = slotManager.SetCore(0, "berserker", 51)
-	if err != slot.ErrLevelOutOfRange {
-		t.Errorf("レベル51はErrLevelOutOfRangeを返すべき: got %v", err)
+	if slotManager.GetSlot(0).CoreTypeID != "berserker" {
+		t.Errorf("CoreTypeIDが不正: got %s, want berserker", slotManager.GetSlot(0).CoreTypeID)
 	}
 }
 
@@ -632,8 +595,8 @@ func TestE2I_SlotClearAndReconfigure(t *testing.T) {
 	passiveSkills := createE2ITestPassiveSkills()
 
 	// コアとスキルを追加
-	invManager.AddCore("berserker", 10)
-	invManager.AddCore("archmage", 10)
+	invManager.AddCore("berserker")
+	invManager.AddCore("archmage")
 	invManager.AddSkill("basic_attack", "")
 	invManager.AddSkill("fire_bolt", "")
 
@@ -648,7 +611,7 @@ func TestE2I_SlotClearAndReconfigure(t *testing.T) {
 	)
 
 	// 初期設定
-	slotManager.SetCore(0, "berserker", 10)
+	slotManager.SetCore(0, "berserker")
 	slotManager.SetSkill(0, 0, "basic_attack", "")
 
 	// 設定確認
@@ -668,15 +631,12 @@ func TestE2I_SlotClearAndReconfigure(t *testing.T) {
 	}
 
 	// 再設定（別のコア）
-	slotManager.SetCore(0, "archmage", 8)
+	slotManager.SetCore(0, "archmage")
 	slotManager.SetSkill(0, 0, "fire_bolt", "")
 
 	// 再設定確認
 	if slotManager.GetSlot(0).CoreTypeID != "archmage" {
 		t.Errorf("CoreTypeIDが不正: got %s, want archmage", slotManager.GetSlot(0).CoreTypeID)
-	}
-	if slotManager.GetSlot(0).CoreLevel != 8 {
-		t.Errorf("CoreLevelが不正: got %d, want 8", slotManager.GetSlot(0).CoreLevel)
 	}
 }
 
@@ -689,7 +649,7 @@ func TestE2I_SameSkillMultipleTimes_ShouldFail(t *testing.T) {
 	passiveSkills := createE2ITestPassiveSkills()
 
 	// コアとスキルを追加
-	invManager.AddCore("berserker", 10)
+	invManager.AddCore("berserker")
 	invManager.AddSkill("basic_attack", "")
 
 	// AgentSlotManagerを作成
@@ -703,7 +663,7 @@ func TestE2I_SameSkillMultipleTimes_ShouldFail(t *testing.T) {
 	)
 
 	// コアを設定
-	slotManager.SetCore(0, "berserker", 10)
+	slotManager.SetCore(0, "berserker")
 
 	// 最初のスロットにスキルを設定
 	err := slotManager.SetSkill(0, 0, "basic_attack", "")

@@ -2,6 +2,7 @@
 package screens
 
 import (
+	"strings"
 	"testing"
 
 	"hirorocky/type-battle/internal/domain"
@@ -77,7 +78,7 @@ func TestEncyclopediaModuleEncyclopedia(t *testing.T) {
 	screen.currentCategory = CategoryModule
 
 	// 全モジュールタイプが表示されていること
-	if len(screen.data.AllModuleTypes) == 0 {
+	if len(screen.data.AllSkillTypes) == 0 {
 		t.Error("モジュールタイプが空です")
 	}
 }
@@ -109,7 +110,7 @@ func TestEncyclopediaUnacquiredDisplay(t *testing.T) {
 	data := createTestEncyclopediaData()
 	// 獲得済みリストを空にする
 	data.AcquiredCoreTypes = []string{}
-	data.AcquiredModuleTypes = []string{}
+	data.AcquiredSkillTypes = []string{}
 	data.EncounteredEnemies = []string{}
 
 	screen := NewEncyclopediaScreen(data)
@@ -173,6 +174,50 @@ func TestEncyclopediaRender(t *testing.T) {
 	}
 }
 
+// TestEncyclopediaCoreNoLevelDisplay はコア図鑑にレベル表示がないことを確認します。
+func TestEncyclopediaCoreNoLevelDisplay(t *testing.T) {
+	data := createTestEncyclopediaData()
+	screen := NewEncyclopediaScreen(data)
+	screen.width = 120
+	screen.height = 40
+
+	// コア図鑑タブを選択
+	screen.currentCategory = CategoryCore
+	screen.selectedIndex = 0
+
+	rendered := screen.View()
+
+	// レベル関連の表示がないことを確認
+	levelStrings := []string{"Lv.", "レベル", "Level", "最大Lv", "MaxLv"}
+	for _, levelStr := range levelStrings {
+		if strings.Contains(rendered, levelStr) {
+			t.Errorf("コア図鑑にレベル表示があります: %s", levelStr)
+		}
+	}
+}
+
+// TestEncyclopediaCoreOwnershipStatusDisplay はコア保有状態の表示を確認します。
+func TestEncyclopediaCoreOwnershipStatusDisplay(t *testing.T) {
+	data := createTestEncyclopediaData()
+	// 獲得済みコアを設定
+	data.AcquiredCoreTypes = []string{"all_rounder"}
+
+	screen := NewEncyclopediaScreen(data)
+	screen.width = 120
+	screen.height = 40
+
+	// コア図鑑タブを選択
+	screen.currentCategory = CategoryCore
+	screen.selectedIndex = 0
+
+	rendered := screen.View()
+
+	// 保有状態の表示があることを確認
+	if !strings.Contains(rendered, "獲得済み") {
+		t.Error("コア図鑑に保有状態表示がありません")
+	}
+}
+
 // ==================== ヘルパー関数 ====================
 
 func createTestEncyclopediaData() *EncyclopediaData {
@@ -182,7 +227,7 @@ func createTestEncyclopediaData() *EncyclopediaData {
 		{ID: "healer", Name: "ヒーラー", StatWeights: map[string]float64{"STR": 0.8, "INT": 1.4, "WIL": 0.9, "LUK": 0.9}},
 	}
 
-	moduleTypes := []ModuleTypeInfo{
+	moduleTypes := []SkillTypeInfo{
 		{ID: "physical_lv1", Name: "物理攻撃Lv1", Icon: "⚔️", Tags: []string{"physical_low"}, Description: "基本的な物理攻撃"},
 		{ID: "magic_lv1", Name: "魔法攻撃Lv1", Icon: "💥", Tags: []string{"magic_low"}, Description: "基本的な魔法攻撃"},
 		{ID: "heal_lv1", Name: "回復Lv1", Icon: "💚", Tags: []string{"heal_low"}, Description: "基本的な回復"},
@@ -195,11 +240,11 @@ func createTestEncyclopediaData() *EncyclopediaData {
 	}
 
 	return &EncyclopediaData{
-		AllCoreTypes:        coreTypes,
-		AllModuleTypes:      moduleTypes,
-		AllEnemyTypes:       enemyTypes,
-		AcquiredCoreTypes:   []string{"all_rounder"},
-		AcquiredModuleTypes: []string{"physical_lv1"},
-		EncounteredEnemies:  []string{"goblin"},
+		AllCoreTypes:       coreTypes,
+		AllSkillTypes:      moduleTypes,
+		AllEnemyTypes:      enemyTypes,
+		AcquiredCoreTypes:  []string{"all_rounder"},
+		AcquiredSkillTypes: []string{"physical_lv1"},
+		EncounteredEnemies: []string{"goblin"},
 	}
 }

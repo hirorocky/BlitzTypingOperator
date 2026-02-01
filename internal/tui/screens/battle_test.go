@@ -449,11 +449,9 @@ func TestBattleScreenResultDisplaysMessage(t *testing.T) {
 
 func createTestEnemy() *domain.EnemyModel {
 	enemyType := domain.EnemyType{
-		ID:              "test_enemy",
-		Name:            "テストエネミー",
-		BaseHP:          100,
-		BaseAttackPower: 10,
-		AttackType:      "physical",
+		ID:     "test_enemy",
+		Name:   "テストエネミー",
+		BaseHP: 100,
 	}
 
 	return domain.NewEnemy(
@@ -467,10 +465,7 @@ func createTestEnemy() *domain.EnemyModel {
 }
 
 func createTestPlayer() *domain.PlayerModel {
-	player := domain.NewPlayer()
-	player.MaxHP = 100
-	player.HP = 100
-	return player
+	return domain.NewPlayerWithMaxHP(100)
 }
 
 func createTestAgents() []*domain.AgentModel {
@@ -481,9 +476,9 @@ func createTestAgents() []*domain.AgentModel {
 		AllowedTags: []string{"physical_low", "magic_low", "heal_low", "buff_low"},
 	}
 
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		newTestDamageModule("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ"),
 		newTestDamageModule("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
 		newTestHealModule("m3", "回復", []string{"heal_low"}, 1.0, "INT", "HP回復"),
@@ -574,7 +569,6 @@ func TestBattleScreenEnemyAttackTimerDisplay(t *testing.T) {
 	action := domain.EnemyAction{
 		ID:         "attack",
 		ActionType: domain.EnemyActionAttack,
-		AttackType: "physical",
 		ChargeTime: 2 * time.Second,
 	}
 	enemy.SetNextAction(&action)
@@ -1223,11 +1217,11 @@ func createTestAgentsWithChainEffect() []*domain.AgentModel {
 		AllowedTags: []string{"physical_low", "magic_low", "heal_low", "buff_low"},
 	}
 
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 
 	// チェイン効果付きモジュール
 	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25)
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		newTestModuleWithChainEffect("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect),
 		newTestDamageModule("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
 		newTestHealModule("m3", "回復", []string{"heal_low"}, 1.0, "INT", "HP回復"),
@@ -1552,9 +1546,9 @@ func createTestAgentsWithHealModule() []*domain.AgentModel {
 		AllowedTags: []string{"physical_low", "heal_low", "magic_low", "buff_low"},
 	}
 
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		newTestDamageModule("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ"),
 		newTestDamageModule("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
 		newTestHealModule("m3", "回復", []string{"heal_low"}, 5.0, "INT", "HP回復"),
@@ -1613,9 +1607,9 @@ func createTestAgentsWithChainEffectMultiple() []*domain.AgentModel {
 	}
 
 	// エージェント1
-	core1 := domain.NewCore("core1", "テストコア1", 5, coreType, domain.PassiveSkill{})
+	core1 := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 	chainEffect1 := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25)
-	modules1 := []*domain.ModuleModel{
+	modules1 := []*domain.SkillModel{
 		newTestModuleWithChainEffect("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect1),
 		newTestDamageModule("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
 		newTestHealModule("m3", "回復", []string{"heal_low"}, 1.0, "INT", "HP回復"),
@@ -1624,9 +1618,9 @@ func createTestAgentsWithChainEffectMultiple() []*domain.AgentModel {
 	agent1 := domain.NewAgent("agent1", core1, modules1)
 
 	// エージェント2
-	core2 := domain.NewCore("core2", "テストコア2", 5, coreType, domain.PassiveSkill{})
+	core2 := domain.NewCoreWithTypeID("core2", coreType, domain.PassiveSkill{})
 	chainEffect2 := domain.NewChainEffect("test_effect", domain.ChainEffectHealBonus, 30)
-	modules2 := []*domain.ModuleModel{
+	modules2 := []*domain.SkillModel{
 		newTestModuleWithChainEffect("m5", "物理攻撃2", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect2),
 		newTestDamageModule("m6", "魔法攻撃2", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
 		newTestHealModule("m7", "回復2", []string{"heal_low"}, 1.0, "INT", "HP回復"),

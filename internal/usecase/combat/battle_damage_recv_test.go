@@ -38,15 +38,15 @@ func TestBattleEngine_DamageRecv_LastStand(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_last_stand", Name: "ラストスタンド"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 50, StatCoef: 1.0, StatRef: "STR"},
@@ -55,17 +55,15 @@ func TestBattleEngine_DamageRecv_LastStand(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          1000,
-			BaseAttackPower: 50, // 大きなダメージ
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 1000,
 		},
 	}
 
@@ -74,7 +72,7 @@ func TestBattleEngine_DamageRecv_LastStand(t *testing.T) {
 	// テスト用に乱数シードを固定
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	// プレイヤーHPを25%以下に設定
@@ -116,15 +114,15 @@ func TestBattleEngine_DamageRecv_LastStand_HPAbove25(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_last_stand", Name: "ラストスタンド"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 50, StatCoef: 1.0, StatRef: "STR"},
@@ -133,29 +131,26 @@ func TestBattleEngine_DamageRecv_LastStand_HPAbove25(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          1000,
-			BaseAttackPower: 50,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 1000,
 		},
 	}
 
 	engine := NewBattleEngine(enemyTypes)
 	engine.SetPassiveSkills(passiveSkillDefs)
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	// プレイヤーHPを50%に設定（25%以上）
-	// MaxHP = 200 (コアレベル10: 10*10+100)
-	state.Player.HP = 100 // 100/200 = 50%
+	state.Player.HP = 500 // 500/1000 = 50%
 
 	// Act
 	damage := engine.ProcessEnemyAttackDamage(state, "physical")
@@ -193,15 +188,15 @@ func TestBattleEngine_DamageRecv_CounterCharge(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_counter_charge", Name: "カウンターチャージ"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト用攻撃",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 50, StatCoef: 1.0, StatRef: "STR"},
@@ -210,24 +205,22 @@ func TestBattleEngine_DamageRecv_CounterCharge(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 10,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
 		},
 	}
 
 	engine := NewBattleEngine(enemyTypes)
 	engine.SetPassiveSkills(passiveSkillDefs)
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	// Act: 敵の攻撃を処理

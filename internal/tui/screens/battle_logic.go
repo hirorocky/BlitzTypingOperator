@@ -260,7 +260,7 @@ func (s *BattleScreen) isModuleUsable(slotIndex int) bool {
 }
 
 // startAgentRecast はエージェントのリキャストを開始し、チェイン効果を登録します。
-func (s *BattleScreen) startAgentRecast(agentIndex int, module *domain.ModuleModel) {
+func (s *BattleScreen) startAgentRecast(agentIndex int, module *domain.SkillModel) {
 	if s.recastManager == nil {
 		return
 	}
@@ -276,7 +276,7 @@ func (s *BattleScreen) startAgentRecast(agentIndex int, module *domain.ModuleMod
 }
 
 // triggerChainEffects はモジュール使用時に他エージェントのチェイン効果を発動します。
-func (s *BattleScreen) triggerChainEffects(usingAgentIndex int, effectFlags chain.ModuleEffectFlags) {
+func (s *BattleScreen) triggerChainEffects(usingAgentIndex int, effectFlags chain.SkillEffectFlags) {
 	if s.chainEffectManager == nil {
 		return
 	}
@@ -543,7 +543,7 @@ func (s *BattleScreen) CompleteTyping() {
 	agentIndex := slot.AgentIndex
 
 	// モジュールの効果フラグを取得
-	effectFlags := getModuleEffectFlags(module)
+	effectFlags := getSkillEffectFlags(module)
 
 	// 他エージェントの待機中チェイン効果を発動（モジュール効果適用前）
 	s.triggerChainEffects(agentIndex, effectFlags)
@@ -585,17 +585,17 @@ func (s *BattleScreen) CompleteTyping() {
 	var effectAmount int
 	if s.battleEngine != nil && s.battleState != nil {
 		// コンボ対応版のモジュール効果適用（ps_combo_master）
-		effectAmount = s.battleEngine.ApplyModuleEffectWithCombo(s.battleState, agent, module, typingResult, s.comboCount)
+		effectAmount = s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, module, typingResult, s.comboCount)
 
 		// ps_echo_skill発動時は追加で効果を適用
 		for i := 1; i < echoSkillRepeat; i++ {
-			additionalEffect := s.battleEngine.ApplyModuleEffectWithCombo(s.battleState, agent, module, typingResult, s.comboCount)
+			additionalEffect := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, module, typingResult, s.comboCount)
 			effectAmount += additionalEffect
 		}
 
 		// DoubleCast発動時は2回目も適用
 		if doubleCastTriggered {
-			secondEffect := s.battleEngine.ApplyModuleEffectWithCombo(s.battleState, agent, module, typingResult, s.comboCount)
+			secondEffect := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, module, typingResult, s.comboCount)
 			effectAmount += secondEffect
 		}
 
@@ -651,7 +651,7 @@ func (s *BattleScreen) CompleteTyping() {
 }
 
 // formatEffectMessage は効果メッセージをフォーマットします。
-func (s *BattleScreen) formatEffectMessage(module *domain.ModuleModel, effectAmount int, result *typing.TypingResult, flags chain.ModuleEffectFlags) string {
+func (s *BattleScreen) formatEffectMessage(module *domain.SkillModel, effectAmount int, result *typing.TypingResult, flags chain.SkillEffectFlags) string {
 	var action string
 	if flags.HasDamage {
 		action = fmt.Sprintf("%dダメージを与えた！", effectAmount)
@@ -845,9 +845,9 @@ func (s *BattleScreen) getModuleIndicesForAgent(agentIdx int) []int {
 	return indices
 }
 
-// getModuleEffectFlags はモジュールが持つ効果の種別フラグを取得します。
-func getModuleEffectFlags(module *domain.ModuleModel) chain.ModuleEffectFlags {
-	flags := chain.ModuleEffectFlags{}
+// getSkillEffectFlags はモジュールが持つ効果の種別フラグを取得します。
+func getSkillEffectFlags(module *domain.SkillModel) chain.SkillEffectFlags {
+	flags := chain.SkillEffectFlags{}
 
 	for _, effect := range module.Type.Effects {
 		if effect.IsDamageEffect() {

@@ -4,64 +4,50 @@
 package domain
 
 // CoreInventory はコアをTypeIDごとに管理する構造体です。
-// 各TypeIDに対して取得済み最大レベルのみを保存します。
+// 各TypeIDの保有フラグのみを管理します（レベル概念なし）。
 type CoreInventory struct {
-	// cores はCoreTypeID → 取得済み最大レベルのマップ
-	cores map[string]int
+	// cores はCoreTypeID → 保有フラグのマップ
+	cores map[string]bool
 }
 
 // NewCoreInventory は新しいCoreInventoryを作成します。
 func NewCoreInventory() *CoreInventory {
 	return &CoreInventory{
-		cores: make(map[string]int),
+		cores: make(map[string]bool),
 	}
 }
 
-// AddCore はコアを追加し、レベル比較で更新判定を行います。
-// 新規TypeIDの場合、または既存の最大レベルより高い場合に更新します。
-// 更新された場合はtrue、更新されなかった場合はfalseを返します。
-// レベルが1未満の場合、またはTypeIDが空の場合はfalseを返します。
-func (inv *CoreInventory) AddCore(typeID string, level int) bool {
+// AddCore はコアを追加します。
+// 新規TypeIDの場合にtrueを返し、既に保有している場合はfalseを返します。
+// TypeIDが空の場合はfalseを返します。
+func (inv *CoreInventory) AddCore(typeID string) bool {
 	// 検証: TypeIDが空でないこと
 	if typeID == "" {
 		return false
 	}
 
-	// 検証: レベルが1以上の正整数であること
-	if level < 1 {
+	// 既に保有している場合はfalse
+	if inv.cores[typeID] {
 		return false
 	}
 
-	// 既存の最大レベルを取得
-	currentMax, exists := inv.cores[typeID]
-
-	// 新規TypeIDまたは既存最大レベルより高い場合のみ更新
-	if !exists || level > currentMax {
-		inv.cores[typeID] = level
-		return true
-	}
-
-	return false
+	// 新規追加
+	inv.cores[typeID] = true
+	return true
 }
 
-// GetMaxLevel は指定TypeIDの取得済み最大レベルを返します。
-// 未保有の場合は0を返します。
-func (inv *CoreInventory) GetMaxLevel(typeID string) int {
-	return inv.cores[typeID]
-}
-
-// GetOwnedCores は保有している全CoreTypeIDとその最大レベルを返します。
-// 返されるマップは内部状態のコピーです。
-func (inv *CoreInventory) GetOwnedCores() map[string]int {
-	result := make(map[string]int, len(inv.cores))
-	for typeID, level := range inv.cores {
-		result[typeID] = level
+// GetOwnedCores は保有している全CoreTypeIDを返します。
+// 返されるスライスは内部状態のコピーです。
+// 注意: 返されるスライスの順序は不定です。
+func (inv *CoreInventory) GetOwnedCores() []string {
+	result := make([]string, 0, len(inv.cores))
+	for typeID := range inv.cores {
+		result = append(result, typeID)
 	}
 	return result
 }
 
 // HasCore は指定TypeIDのコアを保有しているかを返します。
 func (inv *CoreInventory) HasCore(typeID string) bool {
-	_, exists := inv.cores[typeID]
-	return exists
+	return inv.cores[typeID]
 }

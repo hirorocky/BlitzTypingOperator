@@ -16,8 +16,8 @@ import (
 // createTestInventories はテスト用のインベントリを作成します。
 func createTestInventories() (*domain.CoreInventory, *domain.SkillInventory) {
 	coreInv := domain.NewCoreInventory()
-	coreInv.AddCore("all_rounder", 10)
-	coreInv.AddCore("attacker", 5)
+	coreInv.AddCore("all_rounder")
+	coreInv.AddCore("attacker")
 
 	skillInv := domain.NewSkillInventory()
 	skillInv.AddSkill("slash", "chain_fire")
@@ -52,7 +52,7 @@ func createTestMasterData() (map[string]domain.CoreType, map[string]domain.Skill
 			ID:   "slash",
 			Name: "スラッシュ",
 			Tags: []string{"physical"},
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetEnemy,
 					HPFormula:   &domain.HPFormula{Base: 10, StatCoef: 1.0, StatRef: "STR"},
@@ -64,7 +64,7 @@ func createTestMasterData() (map[string]domain.CoreType, map[string]domain.Skill
 			ID:   "heal",
 			Name: "ヒール",
 			Tags: []string{"heal"},
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetSelf,
 					HPFormula:   &domain.HPFormula{Base: 20, StatCoef: 1.0, StatRef: "WIL"},
@@ -76,7 +76,7 @@ func createTestMasterData() (map[string]domain.CoreType, map[string]domain.Skill
 			ID:   "fireball",
 			Name: "ファイアボール",
 			Tags: []string{"magic"},
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetEnemy,
 					HPFormula:   &domain.HPFormula{Base: 15, StatCoef: 1.5, StatRef: "INT"},
@@ -88,7 +88,7 @@ func createTestMasterData() (map[string]domain.CoreType, map[string]domain.Skill
 			ID:   "strike",
 			Name: "ストライク",
 			Tags: []string{"physical"},
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetEnemy,
 					HPFormula:   &domain.HPFormula{Base: 8, StatCoef: 0.8, StatRef: "STR"},
@@ -119,7 +119,7 @@ func TestBattleEngine_InitializeBattleWithSlotManager(t *testing.T) {
 	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, nil)
 
 	// スロット0にコアとスキルを設定
-	if err := slotManager.SetCore(0, "all_rounder", 5); err != nil {
+	if err := slotManager.SetCore(0, "all_rounder"); err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
 	if err := slotManager.SetSkill(0, 0, "slash", "chain_fire"); err != nil {
@@ -138,17 +138,15 @@ func TestBattleEngine_InitializeBattleWithSlotManager(t *testing.T) {
 	// バトルエンジンを作成
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 	engine := NewBattleEngine(enemyTypes)
 
 	// バトル初期化
-	state, err := engine.InitializeBattle(5, agents)
+	state, err := engine.initializeBattleForTest(5, agents)
 	if err != nil {
 		t.Fatalf("バトル初期化に失敗: %v", err)
 	}
@@ -163,9 +161,6 @@ func TestBattleEngine_InitializeBattleWithSlotManager(t *testing.T) {
 	if state.EquippedAgents[0].Core == nil {
 		t.Error("エージェントのコアがnil")
 	}
-	if state.EquippedAgents[0].Core.Level != 5 {
-		t.Errorf("エージェントレベル: 期待 5, 実際 %d", state.EquippedAgents[0].Core.Level)
-	}
 }
 
 // TestBattleEngine_BuildAgentsForBattle_EmptySlotExclusion は空スロット除外をテストします。
@@ -178,10 +173,10 @@ func TestBattleEngine_BuildAgentsForBattle_EmptySlotExclusion(t *testing.T) {
 	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, nil)
 
 	// スロット0と2のみ設定（スロット1は空）
-	if err := slotManager.SetCore(0, "all_rounder", 5); err != nil {
+	if err := slotManager.SetCore(0, "all_rounder"); err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
-	if err := slotManager.SetCore(2, "attacker", 3); err != nil {
+	if err := slotManager.SetCore(2, "attacker"); err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
 
@@ -196,17 +191,15 @@ func TestBattleEngine_BuildAgentsForBattle_EmptySlotExclusion(t *testing.T) {
 	// 敵タイプを準備
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 	engine := NewBattleEngine(enemyTypes)
 
 	// バトル初期化
-	state, err := engine.InitializeBattle(5, agents)
+	state, err := engine.initializeBattleForTest(5, agents)
 	if err != nil {
 		t.Fatalf("バトル初期化に失敗: %v", err)
 	}
@@ -235,17 +228,15 @@ func TestBattleEngine_AllSlotsEmpty(t *testing.T) {
 	// バトルエンジンを作成
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          50,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
 		},
 	}
 	engine := NewBattleEngine(enemyTypes)
 
 	// バトル初期化はエラーになるべき
-	_, err := engine.InitializeBattle(5, agents)
+	_, err := engine.initializeBattleForTest(5, agents)
 	if err == nil {
 		t.Error("空のエージェントリストでバトル初期化が成功した（エラーになるべき）")
 	}
@@ -263,7 +254,7 @@ func TestAgentSlotManager_LockDuringBattle(t *testing.T) {
 	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, nil)
 
 	// スロット0にコアを設定
-	if err := slotManager.SetCore(0, "all_rounder", 5); err != nil {
+	if err := slotManager.SetCore(0, "all_rounder"); err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
 
@@ -271,7 +262,7 @@ func TestAgentSlotManager_LockDuringBattle(t *testing.T) {
 	slotManager.Lock()
 
 	// ロック中はスロット変更ができないことを確認
-	err := slotManager.SetCore(1, "attacker", 3)
+	err := slotManager.SetCore(1, "attacker")
 	if err != slot.ErrSlotLocked {
 		t.Errorf("ロック中のコア設定: 期待 ErrSlotLocked, 実際 %v", err)
 	}
@@ -295,7 +286,7 @@ func TestAgentSlotManager_LockDuringBattle(t *testing.T) {
 	slotManager.Unlock()
 
 	// アンロック後は変更可能
-	err = slotManager.SetCore(1, "attacker", 3)
+	err = slotManager.SetCore(1, "attacker")
 	if err != nil {
 		t.Errorf("アンロック後のコア設定に失敗: %v", err)
 	}
@@ -337,7 +328,7 @@ func TestBattleIntegration_AgentModelConstruction(t *testing.T) {
 	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, nil)
 
 	// 3スロット全てにエージェントを設定
-	if err := slotManager.SetCore(0, "all_rounder", 10); err != nil {
+	if err := slotManager.SetCore(0, "all_rounder"); err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
 	if err := slotManager.SetSkill(0, 0, "slash", "chain_fire"); err != nil {
@@ -350,7 +341,7 @@ func TestBattleIntegration_AgentModelConstruction(t *testing.T) {
 		t.Fatalf("スキル設定に失敗: %v", err)
 	}
 
-	if err := slotManager.SetCore(1, "attacker", 5); err != nil {
+	if err := slotManager.SetCore(1, "attacker"); err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
 	if err := slotManager.SetSkill(1, 0, "strike", ""); err != nil {
@@ -372,9 +363,6 @@ func TestBattleIntegration_AgentModelConstruction(t *testing.T) {
 	if agent0.Core.Type.ID != "all_rounder" {
 		t.Errorf("エージェント0のコアTypeID: 期待 all_rounder, 実際 %s", agent0.Core.Type.ID)
 	}
-	if agent0.Core.Level != 10 {
-		t.Errorf("エージェント0のレベル: 期待 10, 実際 %d", agent0.Core.Level)
-	}
 	if len(agent0.Modules) != 3 {
 		t.Errorf("エージェント0のスキル数: 期待 3, 実際 %d", len(agent0.Modules))
 	}
@@ -383,9 +371,6 @@ func TestBattleIntegration_AgentModelConstruction(t *testing.T) {
 	agent1 := agents[1]
 	if agent1.Core.Type.ID != "attacker" {
 		t.Errorf("エージェント1のコアTypeID: 期待 attacker, 実際 %s", agent1.Core.Type.ID)
-	}
-	if agent1.Core.Level != 5 {
-		t.Errorf("エージェント1のレベル: 期待 5, 実際 %d", agent1.Core.Level)
 	}
 	if len(agent1.Modules) != 1 {
 		t.Errorf("エージェント1のスキル数: 期待 1, 実際 %d", len(agent1.Modules))
@@ -402,7 +387,7 @@ func TestBattleIntegration_BattleWithSlotAgents(t *testing.T) {
 	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, nil)
 
 	// スロット0にエージェントを設定
-	if err := slotManager.SetCore(0, "all_rounder", 10); err != nil {
+	if err := slotManager.SetCore(0, "all_rounder"); err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
 	if err := slotManager.SetSkill(0, 0, "slash", ""); err != nil {
@@ -419,16 +404,13 @@ func TestBattleIntegration_BattleWithSlotAgents(t *testing.T) {
 	// 敵タイプを準備
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "slime",
-			Name:            "スライム",
-			BaseHP:          100,
-			BaseAttackPower: 5,
-			AttackType:      "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 100,
 			ResolvedNormalActions: []domain.EnemyAction{
 				{
 					Name:           "通常攻撃",
 					ActionType:     domain.EnemyActionAttack,
-					AttackType:     "physical",
 					DamageBase:     10,
 					DamagePerLevel: 1,
 					ChargeTime:     2 * time.Second,
@@ -440,7 +422,7 @@ func TestBattleIntegration_BattleWithSlotAgents(t *testing.T) {
 	engine.SetPassiveSkills(passiveSkills)
 
 	// バトル初期化
-	state, err := engine.InitializeBattle(5, agents)
+	state, err := engine.initializeBattleForTest(5, agents)
 	if err != nil {
 		t.Fatalf("バトル初期化に失敗: %v", err)
 	}

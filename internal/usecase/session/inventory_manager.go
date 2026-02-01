@@ -8,7 +8,7 @@ import (
 // コアとスキルの管理を担当します。
 // エージェントの管理はAgentSlotManagerが一元的に行います。
 type InventoryManager struct {
-	// cores はコアインベントリです（TypeIDごとの最大レベル管理）。
+	// cores はコアインベントリです（TypeIDごとの保有フラグ管理）。
 	cores *domain.CoreInventory
 
 	// skills はスキルインベントリです（TypeIDごとの保有状態とチェイン効果管理）。
@@ -34,9 +34,9 @@ func (m *InventoryManager) Skills() *domain.SkillInventory {
 }
 
 // AddCore はコアをインベントリに追加します。
-// 同一TypeIDの場合、より高いレベルのみ保存されます。
-func (m *InventoryManager) AddCore(typeID string, level int) bool {
-	return m.cores.AddCore(typeID, level)
+// 新規TypeIDの場合にtrueを返し、既に保有している場合はfalseを返します。
+func (m *InventoryManager) AddCore(typeID string) bool {
+	return m.cores.AddCore(typeID)
 }
 
 // AddSkill はスキルをインベントリに追加します。
@@ -44,8 +44,8 @@ func (m *InventoryManager) AddSkill(typeID string, chainEffectID string) {
 	m.skills.AddSkill(typeID, chainEffectID)
 }
 
-// GetOwnedCores は保有しているコアのTypeIDとレベルのマップを返します。
-func (m *InventoryManager) GetOwnedCores() map[string]int {
+// GetOwnedCores は保有しているコアのTypeIDリストを返します。
+func (m *InventoryManager) GetOwnedCores() []string {
 	return m.cores.GetOwnedCores()
 }
 
@@ -62,9 +62,4 @@ func (m *InventoryManager) HasCore(typeID string) bool {
 // HasSkill は指定TypeIDのスキルを保有しているかを返します。
 func (m *InventoryManager) HasSkill(typeID string) bool {
 	return m.skills.HasSkill(typeID)
-}
-
-// GetCoreMaxLevel は指定TypeIDのコアの最大レベルを返します。
-func (m *InventoryManager) GetCoreMaxLevel(typeID string) int {
-	return m.cores.GetMaxLevel(typeID)
 }

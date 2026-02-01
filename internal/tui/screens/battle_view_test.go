@@ -14,7 +14,7 @@ import (
 // ==================== タスク9: バトル画面UI拡張テスト ====================
 
 // createTestAgentWithPassive はパッシブスキル付きテスト用エージェントを作成します。
-func createTestAgentWithPassive(passiveSkill domain.PassiveSkill, modules []*domain.ModuleModel) *domain.AgentModel {
+func createTestAgentWithPassive(passiveSkill domain.PassiveSkill, modules []*domain.SkillModel) *domain.AgentModel {
 	coreType := domain.CoreType{
 		ID:          "test_core_type",
 		Name:        "テストコア",
@@ -22,19 +22,19 @@ func createTestAgentWithPassive(passiveSkill domain.PassiveSkill, modules []*dom
 		AllowedTags: []string{"physical_low"},
 	}
 
-	core := domain.NewCore("test_core", "テストコア", 5, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("test_core", coreType, passiveSkill)
 	return domain.NewAgent("test_agent", core, modules)
 }
 
 // createTestModuleWithChain はチェイン効果付きテスト用モジュールを作成します。
-func createTestModuleWithChain(name string, chainEffect *domain.ChainEffect) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func createTestModuleWithChain(name string, chainEffect *domain.ChainEffect) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:          "test_module_" + name,
 		Name:        name,
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
 		Description: "テスト攻撃モジュール",
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 50.0, StatCoef: 1.0, StatRef: "STR"},
@@ -48,7 +48,7 @@ func createTestModuleWithChain(name string, chainEffect *domain.ChainEffect) *do
 // TestBattleScreen_RenderAgentAreaWithRecast はリキャスト状態表示のテストです。
 func TestBattleScreen_RenderAgentAreaWithRecast(t *testing.T) {
 	// テスト用エージェントとモジュール作成
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		createTestModuleWithChain("攻撃A", nil),
 		createTestModuleWithChain("攻撃B", nil),
 		createTestModuleWithChain("攻撃C", nil),
@@ -75,7 +75,7 @@ func TestBattleScreen_RenderAgentAreaWithRecast(t *testing.T) {
 func TestBattleScreen_RenderAgentAreaWithChainEffect(t *testing.T) {
 	// チェイン効果付きモジュール作成
 	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		createTestModuleWithChain("攻撃A", &chainEffect),
 		createTestModuleWithChain("攻撃B", nil),
 		createTestModuleWithChain("攻撃C", nil),
@@ -110,7 +110,7 @@ func TestBattleScreen_RenderAgentAreaWithPassiveSkill(t *testing.T) {
 		},
 	}
 
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		createTestModuleWithChain("攻撃A", nil),
 		createTestModuleWithChain("攻撃B", nil),
 		createTestModuleWithChain("攻撃C", nil),
@@ -132,7 +132,7 @@ func TestBattleScreen_RenderAgentAreaWithPassiveSkill(t *testing.T) {
 
 // TestBattleScreen_RecastStateAffectsModuleUsability はリキャスト状態によるモジュール使用可否のテストです。
 func TestBattleScreen_RecastStateAffectsModuleUsability(t *testing.T) {
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		createTestModuleWithChain("攻撃A", nil),
 		createTestModuleWithChain("攻撃B", nil),
 		createTestModuleWithChain("攻撃C", nil),
@@ -198,7 +198,7 @@ func TestGetPendingChainEffectForAgent(t *testing.T) {
 // TestRenderModuleWithChainEffectBadge はモジュール表示にチェイン効果バッジが含まれるかのテストです。
 func TestRenderModuleWithChainEffectBadge(t *testing.T) {
 	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		createTestModuleWithChain("攻撃A", &chainEffect),
 		createTestModuleWithChain("攻撃B", nil),
 		createTestModuleWithChain("攻撃C", nil),
@@ -217,7 +217,7 @@ func TestRenderModuleWithChainEffectBadge(t *testing.T) {
 
 // TestBattleScreen_RenderRecastProgress はリキャスト進捗表示のテストです。
 func TestBattleScreen_RenderRecastProgress(t *testing.T) {
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		createTestModuleWithChain("攻撃A", nil),
 		createTestModuleWithChain("攻撃B", nil),
 		createTestModuleWithChain("攻撃C", nil),
@@ -248,14 +248,14 @@ func TestBattleScreen_RenderRecastProgress(t *testing.T) {
 // TestBattleScreen_ChainEffectFeedback はチェイン効果発動フィードバックのテストです。
 func TestBattleScreen_ChainEffectFeedback(t *testing.T) {
 	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		createTestModuleWithChain("攻撃A", &chainEffect),
 		createTestModuleWithChain("攻撃B", nil),
 		createTestModuleWithChain("攻撃C", nil),
 		createTestModuleWithChain("攻撃D", nil),
 	}
 	agent0 := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
-	agent1 := createTestAgentWithPassive(domain.PassiveSkill{}, []*domain.ModuleModel{
+	agent1 := createTestAgentWithPassive(domain.PassiveSkill{}, []*domain.SkillModel{
 		createTestModuleWithChain("攻撃E", nil),
 		createTestModuleWithChain("攻撃F", nil),
 		createTestModuleWithChain("攻撃G", nil),
@@ -268,7 +268,7 @@ func TestBattleScreen_ChainEffectFeedback(t *testing.T) {
 	screen.chainEffectManager.RegisterChainEffect(0, &chainEffect, "test_module")
 
 	// エージェント1のモジュール使用でチェイン効果発動をチェック
-	triggered := screen.chainEffectManager.CheckAndTrigger(1, chain.ModuleEffectFlags{HasDamage: true})
+	triggered := screen.chainEffectManager.CheckAndTrigger(1, chain.SkillEffectFlags{HasDamage: true})
 
 	// チェイン効果が発動する
 	if len(triggered) != 1 {
@@ -286,7 +286,7 @@ func TestBattleScreen_ChainEffectFeedback(t *testing.T) {
 
 // TestBattleScreen_VoltageDisplay はボルテージ表示のテストです。
 func TestBattleScreen_VoltageDisplay(t *testing.T) {
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		createTestModuleWithChain("攻撃A", nil),
 	}
 	agent := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
@@ -310,7 +310,7 @@ func TestBattleScreen_VoltageDisplay(t *testing.T) {
 
 // TestBattleScreen_VoltageDisplayWithHighVoltage は高ボルテージ時の表示テストです。
 func TestBattleScreen_VoltageDisplayWithHighVoltage(t *testing.T) {
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		createTestModuleWithChain("攻撃A", nil),
 	}
 	agent := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
@@ -332,7 +332,7 @@ func TestBattleScreen_VoltageDisplayWithHighVoltage(t *testing.T) {
 
 // TestBattleScreen_VoltageDisplayWithDangerVoltage は危険レベルボルテージの表示テストです。
 func TestBattleScreen_VoltageDisplayWithDangerVoltage(t *testing.T) {
-	modules := []*domain.ModuleModel{
+	modules := []*domain.SkillModel{
 		createTestModuleWithChain("攻撃A", nil),
 	}
 	agent := createTestAgentWithPassive(domain.PassiveSkill{}, modules)

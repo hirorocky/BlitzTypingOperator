@@ -25,7 +25,7 @@ func NewGameStateForTest() *GameState {
 			Icon:        "⚔️",
 			Tags:        []string{"physical_low"},
 			Description: "テスト用モジュール",
-			Effects: []domain.ModuleEffect{
+			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetEnemy,
 					HPFormula:   &domain.HPFormula{Base: 0, StatCoef: 1.0, StatRef: "STR"},

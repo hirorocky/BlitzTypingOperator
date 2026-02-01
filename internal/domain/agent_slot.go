@@ -33,13 +33,10 @@ func (c *SkillSlotConfig) Clear() {
 const MaxSkillSlotCount = 4
 
 // AgentSlot はエージェントスロット1つの構成を表すドメインモデルです。
-// スロットはコア（TypeID+選択レベル）と最大4つのスキルで構成されます。
+// スロットはコア（TypeID）と最大4つのスキルで構成されます。
 type AgentSlot struct {
 	// CoreTypeID はコアTypeID（空の場合はスロット空）
 	CoreTypeID string
-
-	// CoreLevel は選択されたコアレベル
-	CoreLevel int
 
 	// Skills はスキルスロット構成（最大4つ）
 	Skills [MaxSkillSlotCount]SkillSlotConfig
@@ -49,7 +46,6 @@ type AgentSlot struct {
 func NewAgentSlot() *AgentSlot {
 	return &AgentSlot{
 		CoreTypeID: "",
-		CoreLevel:  0,
 		Skills:     [MaxSkillSlotCount]SkillSlotConfig{},
 	}
 }
@@ -75,7 +71,6 @@ func (s *AgentSlot) GetSkillCount() int {
 // コアとすべてのスキルが初期化されます。
 func (s *AgentSlot) Clear() {
 	s.CoreTypeID = ""
-	s.CoreLevel = 0
 	for i := range s.Skills {
 		s.Skills[i].Clear()
 	}
@@ -83,9 +78,8 @@ func (s *AgentSlot) Clear() {
 
 // SetCore はスロットにコアを設定します。
 // 検証は行いません。AgentSlotManagerを通じて設定してください。
-func (s *AgentSlot) SetCore(typeID string, level int) {
+func (s *AgentSlot) SetCore(typeID string) {
 	s.CoreTypeID = typeID
-	s.CoreLevel = level
 }
 
 // SetSkill はスロットのスキルを設定します。

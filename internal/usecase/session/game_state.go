@@ -13,17 +13,10 @@ import (
 // プレイヤー情報、インベントリ、統計、実績、設定などを含みます。
 // セーブ/ロード時にはこの構造体がJSON形式で永続化されます。
 type GameState struct {
-	// MaxLevelReached は到達した最高レベルを表します。
-	// 初期値は0で、レベル1クリア後に1になります。
-	// 挑戦可能な最大レベルは MaxLevelReached + 1 です。
-	MaxLevelReached int
-
 	// player はプレイヤーの状態です。
 	player *domain.PlayerModel
 
 	// inventory はゲーム全体のインベントリマネージャーです。
-	// 注意: v3.0.0以降は新しいinventory.InventoryManagerを使用するが、
-	// GameState内では旧システムとの後方互換性のため維持
 	inventory *InventoryManager
 
 	// statistics は統計情報を管理します。
@@ -47,9 +40,8 @@ type GameState struct {
 	// encounteredEnemies はエンカウントした敵のIDリストです（敵図鑑用）。
 	encounteredEnemies []string
 
-	// defeatedEnemies は撃破済み敵の情報を管理します。
-	// キーは敵タイプID、値は撃破した最高レベルです。
-	defeatedEnemies map[string]int
+	// enemyProgress は敵撃破状況を管理します。
+	enemyProgress *domain.EnemyProgress
 }
 
 // NewGameState はマスタデータを使用して新しいGameStateを作成します。
@@ -72,8 +64,7 @@ func NewGameState(
 	enemyGen := spawning.NewEnemyGenerator(nil)
 
 	return &GameState{
-		MaxLevelReached:  0,
-		player:           domain.NewPlayer(),
+		player:           domain.NewPlayerWithMaxHP(0),
 		inventory:        invManager,
 		statistics:       NewStatisticsManager(),
 		achievements:     achievementMgr,
@@ -81,7 +72,7 @@ func NewGameState(
 		rewardCalculator: rewardCalc,
 		tempStorage:      &rewarding.TempStorage{},
 		enemyGenerator:   enemyGen,
-		defeatedEnemies:  make(map[string]int),
+		enemyProgress:    domain.NewEnemyProgress(),
 	}
 }
 
@@ -94,10 +85,6 @@ func (g *GameState) Player() *domain.PlayerModel {
 func (g *GameState) Inventory() *InventoryManager {
 	return g.inventory
 }
-
-// AgentManager は削除されました。
-// v3.0.0以降は slot.AgentSlotManager を使用してください。
-// 後方互換性のため空の実装を維持していましたが、タスク11で完全に削除されました。
 
 // Statistics は統計マネージャーを返します。
 func (g *GameState) Statistics() *StatisticsManager {
@@ -135,19 +122,14 @@ func (g *GameState) UpdateRewardCalculator(coreTypes []domain.CoreType, moduleTy
 
 // RecordBattleVictory はバトル勝利を記録します。
 // selectedLevel は選択したレベル（統計記録用）、defaultLevel は敵のデフォルトレベル（MaxLevelReached更新用）です。
-func (g *GameState) RecordBattleVictory(selectedLevel int, defaultLevel int) {
+func (g *GameState) RecordBattleVictory(selectedLevel int, _ int) {
 	g.statistics.RecordBattleResult(true, selectedLevel)
-	if defaultLevel > g.MaxLevelReached {
-		g.MaxLevelReached = defaultLevel
-	}
-
-	// 実績チェック
 	g.checkAchievements()
 }
 
 // GetMaxLevelReached は到達最高レベルを返します。
 func (g *GameState) GetMaxLevelReached() int {
-	return g.MaxLevelReached
+	return g.GetMaxDefeatedLevel()
 }
 
 // RecordBattleDefeat はバトル敗北を記録します。
@@ -173,10 +155,9 @@ func (g *GameState) checkAchievements() {
 		g.statistics.GetAccuracyRate(),
 	)
 
-	// バトル実績をチェック
 	g.achievements.CheckBattleAchievements(
 		stats.Battle().TotalEnemiesDefeated,
-		g.MaxLevelReached,
+		g.GetMaxLevelReached(),
 		false,
 	)
 }
@@ -194,7 +175,7 @@ func (g *GameState) CheckBattleAchievementsWithNoDamage(noDamage bool) {
 	// バトル実績をチェック（ノーダメージ判定付き）
 	g.achievements.CheckBattleAchievements(
 		stats.Battle().TotalEnemiesDefeated,
-		g.MaxLevelReached,
+		g.GetMaxLevelReached(),
 		noDamage,
 	)
 }
@@ -219,13 +200,13 @@ func (g *GameState) GetEncounteredEnemies() []string {
 	return g.encounteredEnemies
 }
 
-// GetEquippedAgents は削除されました。
-// v3.0.0以降は slot.AgentSlotManager.BuildAgentsForBattle() を使用してください。
-
 // PreparePlayerForBattle はプレイヤーをバトル用に準備します。
 // agents: バトルに参加するエージェントのリスト（AgentSlotManager.BuildAgentsForBattle()から取得）
+// 注意: MaxHPは事前に設定されている必要があります（セーブデータロード時 or NewPlayerWithMaxHP）
 func (g *GameState) PreparePlayerForBattle(agents []*domain.AgentModel) {
-	g.player.RecalculateHP(agents)
+	if g.player.MaxHP == 0 && len(agents) > 0 {
+		g.player.InitializeHP(domain.InitialMaxHP)
+	}
 	g.player.PrepareForBattle()
 }
 
@@ -250,6 +231,20 @@ func (g *GameState) AddRewardsToInventory(result *rewarding.RewardResult) *rewar
 
 // ========== 撃破済み敵情報の管理 ==========
 
+// EnemyProgress は敵撃破状況のドメインモデルを返します。
+func (g *GameState) EnemyProgress() *domain.EnemyProgress {
+	return g.enemyProgress
+}
+
+// SetEnemyProgress は敵撃破状況を設定します（セーブデータロード用）。
+func (g *GameState) SetEnemyProgress(progress *domain.EnemyProgress) {
+	if progress == nil {
+		g.enemyProgress = domain.NewEnemyProgress()
+		return
+	}
+	g.enemyProgress = progress
+}
+
 // RecordEnemyDefeat は敵の撃破を記録します。
 // 既に記録されている敵の場合、より高いレベルで撃破した場合のみ更新します。
 func (g *GameState) RecordEnemyDefeat(enemyTypeID string, level int) {
@@ -257,70 +252,73 @@ func (g *GameState) RecordEnemyDefeat(enemyTypeID string, level int) {
 		return
 	}
 
-	if g.defeatedEnemies == nil {
-		g.defeatedEnemies = make(map[string]int)
+	if g.enemyProgress == nil {
+		g.enemyProgress = domain.NewEnemyProgress()
 	}
 
-	currentLevel, exists := g.defeatedEnemies[enemyTypeID]
-	if !exists || level > currentLevel {
-		g.defeatedEnemies[enemyTypeID] = level
-	}
+	// EnemyProgress.RecordDefeatを使用（HP増加は無視）
+	g.enemyProgress.RecordDefeat(enemyTypeID, level)
 }
 
 // GetDefeatedEnemies は撃破済み敵のマップを返します。
 // キーは敵タイプID、値は撃破した最高レベルです。
 func (g *GameState) GetDefeatedEnemies() map[string]int {
-	if g.defeatedEnemies == nil {
+	if g.enemyProgress == nil {
 		return make(map[string]int)
 	}
-	// 安全のためコピーを返す
+	// EnemyProgressのDefeatRecordsから変換
 	result := make(map[string]int)
-	for k, v := range g.defeatedEnemies {
-		result[k] = v
+	for id, record := range g.enemyProgress.DefeatRecords {
+		if record.Defeated {
+			result[id] = record.MaxDefeatedLevel
+		}
 	}
 	return result
 }
 
 // IsEnemyDefeated は指定した敵タイプが一度でも撃破されているかどうかを返します。
 func (g *GameState) IsEnemyDefeated(enemyTypeID string) bool {
-	if g.defeatedEnemies == nil {
+	if g.enemyProgress == nil {
 		return false
 	}
-	_, exists := g.defeatedEnemies[enemyTypeID]
-	return exists
+	return g.enemyProgress.IsDefeated(enemyTypeID)
 }
 
 // GetDefeatedLevel は指定した敵タイプの撃破最高レベルを返します。
 // 未撃破の場合は0を返します。
 func (g *GameState) GetDefeatedLevel(enemyTypeID string) int {
-	if g.defeatedEnemies == nil {
+	if g.enemyProgress == nil {
 		return 0
 	}
-	return g.defeatedEnemies[enemyTypeID]
+	return g.enemyProgress.GetMaxDefeatedLevel(enemyTypeID)
 }
 
 // SetDefeatedEnemies は撃破済み敵情報を設定します（セーブデータロード用）。
 func (g *GameState) SetDefeatedEnemies(defeated map[string]int) {
+	if g.enemyProgress == nil {
+		g.enemyProgress = domain.NewEnemyProgress()
+	}
+
 	if defeated == nil {
-		g.defeatedEnemies = make(map[string]int)
 		return
 	}
-	g.defeatedEnemies = make(map[string]int)
-	for k, v := range defeated {
-		g.defeatedEnemies[k] = v
+
+	// map[string]int形式からEnemyProgress形式に変換
+	for id, level := range defeated {
+		g.enemyProgress.RecordDefeat(id, level)
 	}
 }
 
 // GetMaxDefeatedLevel は全敵種類を通じた最高撃破レベル（到達Lv）を返します。
 // 一度も敵を撃破していない場合は0を返します。
 func (g *GameState) GetMaxDefeatedLevel() int {
-	if g.defeatedEnemies == nil {
+	if g.enemyProgress == nil {
 		return 0
 	}
 	maxLevel := 0
-	for _, level := range g.defeatedEnemies {
-		if level > maxLevel {
-			maxLevel = level
+	for _, record := range g.enemyProgress.DefeatRecords {
+		if record.Defeated && record.MaxDefeatedLevel > maxLevel {
+			maxLevel = record.MaxDefeatedLevel
 		}
 	}
 	return maxLevel

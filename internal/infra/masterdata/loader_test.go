@@ -443,8 +443,8 @@ func TestConvertToDomainCoreType(t *testing.T) {
 	}
 }
 
-// TestConvertToDomainModuleModel はモジュールデータからドメインモデルへの変換をテストします。
-func TestConvertToDomainModuleModel(t *testing.T) {
+// TestConvertToDomainSkillModel はモジュールデータからドメインモデルへの変換をテストします。
+func TestConvertToDomainSkillModel(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	modulesJSON := `{

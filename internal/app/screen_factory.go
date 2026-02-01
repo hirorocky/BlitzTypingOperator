@@ -14,7 +14,7 @@ import (
 // InventoryProvider は画面に必要なインベントリ操作を提供するインターフェースです。
 type InventoryProvider interface {
 	GetCores() []*domain.CoreModel
-	GetModules() []*domain.ModuleModel
+	GetModules() []*domain.SkillModel
 	GetAgents() []*domain.AgentModel
 	GetEquippedAgents() []*domain.AgentModel
 	AddAgent(agent *domain.AgentModel) error
@@ -57,6 +57,15 @@ func (f *ScreenFactory) CreateBattleSelectScreenCarousel(
 	defeatedProvider screens.DefeatedEnemyProvider,
 ) *screens.BattleSelectScreenCarousel {
 	return screens.NewBattleSelectScreenCarousel(invProvider, defeatedProvider, f.enemyGenerator)
+}
+
+// CreateBattleSelectScreenRankBased はランクベースのバトル選択画面を作成します。
+// 現在ランクの敵のみ表示され、ランク内全敵撃破でランクアップします。
+func (f *ScreenFactory) CreateBattleSelectScreenRankBased(
+	agentProvider screens.AgentProvider,
+	progressProvider screens.EnemyProgressProvider,
+) *screens.BattleSelectScreenRankBased {
+	return screens.NewBattleSelectScreenRankBased(agentProvider, progressProvider)
 }
 
 // CreateEncyclopediaScreen は図鑑画面を作成します。

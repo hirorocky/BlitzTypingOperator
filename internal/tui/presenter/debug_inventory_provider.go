@@ -9,7 +9,7 @@ import (
 )
 
 // DebugInventoryProvider はデバッグモード用のInventoryProviderです。
-// マスターデータから全CoreType/ModuleType/ChainEffectを提供し、
+// マスターデータから全CoreType/SkillType/ChainEffectを提供し、
 // 任意のパラメータでコア・モジュールを作成できます。
 type DebugInventoryProvider struct {
 	coreTypes     []masterdata.CoreTypeData
@@ -21,7 +21,7 @@ type DebugInventoryProvider struct {
 	agents         []*domain.AgentModel
 	equippedAgents [3]*domain.AgentModel
 
-	// v3.0.0: スロットマネージャーへの参照（装備エージェント取得用）
+	// スロットマネージャーへの参照（装備エージェント取得用）
 	slotManager *slot.AgentSlotManager
 }
 
@@ -42,7 +42,7 @@ func NewDebugInventoryProvider(
 }
 
 // SetSlotManager はスロットマネージャーを設定します。
-// v3.0.0: 装備エージェント取得でAgentSlotManagerを使用するために必要です。
+// 装備エージェント取得でAgentSlotManagerを使用するために必要です。
 func (p *DebugInventoryProvider) SetSlotManager(slotMgr *slot.AgentSlotManager) {
 	p.slotManager = slotMgr
 }
@@ -56,8 +56,8 @@ func (p *DebugInventoryProvider) GetCores() []*domain.CoreModel {
 }
 
 // GetModules はデバッグモードでは空のスライスを返します。
-// デバッグモードではModuleType選択UIを使用するため。
-func (p *DebugInventoryProvider) GetModules() []*domain.ModuleModel {
+// デバッグモードではSkillType選択UIを使用するため。
+func (p *DebugInventoryProvider) GetModules() []*domain.SkillModel {
 	return nil
 }
 
@@ -67,9 +67,9 @@ func (p *DebugInventoryProvider) GetAgents() []*domain.AgentModel {
 }
 
 // GetEquippedAgents は装備中のエージェント一覧を返します。
-// v3.0.0: slotManagerがある場合はそちらから取得します。
+// slotManagerがある場合はそちらから取得します。
 func (p *DebugInventoryProvider) GetEquippedAgents() []*domain.AgentModel {
-	// v3.0.0: slotManagerがある場合はそちらを優先
+	// slotManagerがある場合はそちらを優先
 	if p.slotManager != nil {
 		return p.slotManager.BuildAgentsForBattle()
 	}
@@ -125,8 +125,8 @@ func (p *DebugInventoryProvider) GetCoreTypes() []masterdata.CoreTypeData {
 	return p.coreTypes
 }
 
-// GetModuleTypes はすべてのModuleTypeを返します（デバッグモード専用）。
-func (p *DebugInventoryProvider) GetModuleTypes() []masterdata.ModuleDefinitionData {
+// GetSkillTypes はすべてのSkillTypeを返します（デバッグモード専用）。
+func (p *DebugInventoryProvider) GetSkillTypes() []masterdata.ModuleDefinitionData {
 	return p.moduleTypes
 }
 
@@ -135,24 +135,24 @@ func (p *DebugInventoryProvider) GetChainEffects() []masterdata.ChainEffectData 
 	return p.chainEffects
 }
 
-// CreateCoreFromType はCoreTypeとレベルからCoreModelを作成します。
-func (p *DebugInventoryProvider) CreateCoreFromType(typeID string, level int) *domain.CoreModel {
+// CreateCoreFromType はCoreTypeからCoreModelを作成します。
+func (p *DebugInventoryProvider) CreateCoreFromType(typeID string) *domain.CoreModel {
 	for _, ct := range p.coreTypes {
 		if ct.ID == typeID {
 			coreType := ct.ToDomain()
 			passiveSkill := p.passiveSkills[ct.PassiveSkillID]
-			return domain.NewCoreWithTypeID(typeID, level, coreType, passiveSkill)
+			return domain.NewCoreWithTypeID(typeID, coreType, passiveSkill)
 		}
 	}
 	return nil
 }
 
-// CreateModuleFromType はModuleTypeとChainEffectからModuleModelを作成します。
-func (p *DebugInventoryProvider) CreateModuleFromType(typeID string, chainEffect *domain.ChainEffect) *domain.ModuleModel {
+// CreateModuleFromType はSkillTypeとChainEffectからSkillModelを作成します。
+func (p *DebugInventoryProvider) CreateModuleFromType(typeID string, chainEffect *domain.ChainEffect) *domain.SkillModel {
 	for _, mt := range p.moduleTypes {
 		if mt.ID == typeID {
 			moduleType := mt.ToDomainType()
-			return domain.NewModuleFromType(moduleType, chainEffect)
+			return domain.NewSkillFromType(moduleType, chainEffect)
 		}
 	}
 	return nil

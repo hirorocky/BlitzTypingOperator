@@ -137,3 +137,109 @@ func TestASCIINumbersDigitWidthConsistency(t *testing.T) {
 		}
 	}
 }
+
+// ==================== 影付き数字レンダラーのテスト ====================
+
+// TestNewShadowNumbers はShadowNumberRendererの作成をテストします。
+func TestNewShadowNumbers(t *testing.T) {
+	renderer := NewShadowNumbers()
+	if renderer == nil {
+		t.Error("NewShadowNumbers()がnilを返しました")
+	}
+}
+
+// TestShadowNumbersRenderShadowNumber は影付き数字のレンダリングをテストします。
+func TestShadowNumbersRenderShadowNumber(t *testing.T) {
+	renderer := NewShadowNumbers()
+
+	tests := []int{0, 1, 5, 12, 99, 123}
+
+	for _, number := range tests {
+		result := renderer.RenderShadowNumber(number)
+		if result == "" {
+			t.Errorf("RenderShadowNumber(%d)が空文字列を返しました", number)
+			continue
+		}
+
+		// 6行（5行の本体 + 1行の下影）であることを確認
+		lines := strings.Split(result, "\n")
+		if len(lines) != 6 {
+			t.Errorf("RenderShadowNumber(%d)の行数が%dです（6行を想定）", number, len(lines))
+		}
+
+		// 各行に影文字（░）が含まれていることを確認
+		for i, line := range lines {
+			if !strings.Contains(line, "░") {
+				t.Errorf("RenderShadowNumber(%d)の%d行目に影文字が含まれていません", number, i)
+			}
+		}
+	}
+}
+
+// TestShadowNumbersRenderShadowNumberWithColors はカスタム色での描画をテストします。
+func TestShadowNumbersRenderShadowNumberWithColors(t *testing.T) {
+	renderer := NewShadowNumbers()
+
+	result := renderer.RenderShadowNumberWithColors(
+		42,
+		lipgloss.Color("51"), // シアン
+		lipgloss.Color("30"), // 暗いシアン
+	)
+
+	if result == "" {
+		t.Error("RenderShadowNumberWithColors()が空文字列を返しました")
+	}
+
+	// 出力が複数行であることを確認
+	lines := strings.Split(result, "\n")
+	if len(lines) != 6 {
+		t.Errorf("RenderShadowNumberWithColors()の行数が%dです（6行を想定）", len(lines))
+	}
+}
+
+// TestShadowNumbersNegativeNumber は負数の処理をテストします。
+func TestShadowNumbersNegativeNumber(t *testing.T) {
+	renderer := NewShadowNumbers()
+
+	resultNeg := renderer.RenderShadowNumber(-5)
+	resultZero := renderer.RenderShadowNumber(0)
+
+	// 負数は0として扱われることを確認
+	if resultNeg != resultZero {
+		t.Error("負数が0として扱われていません")
+	}
+}
+
+// TestShadowNumbersSingleDigit は1桁の数字の描画をテストします。
+func TestShadowNumbersSingleDigit(t *testing.T) {
+	renderer := NewShadowNumbers()
+
+	result := renderer.RenderShadowNumber(7)
+	lines := strings.Split(result, "\n")
+
+	// 最後の行（下影）にShadowCharBottomと同じ幅の影があることを確認
+	bottomLine := lines[len(lines)-1]
+	if !strings.Contains(bottomLine, "░") {
+		t.Error("下影行に影文字が含まれていません")
+	}
+}
+
+// TestShadowNumbersMultiDigit は複数桁の数字の描画をテストします。
+func TestShadowNumbersMultiDigit(t *testing.T) {
+	renderer := NewShadowNumbers()
+
+	result := renderer.RenderShadowNumber(123)
+	lines := strings.Split(result, "\n")
+
+	// 6行あることを確認
+	if len(lines) != 6 {
+		t.Errorf("3桁の数字で%d行（6行を想定）", len(lines))
+	}
+
+	// 下影行に複数の影があることを確認（3桁なので間隔を含めて複数の░がある）
+	bottomLine := lines[len(lines)-1]
+	shadowCount := strings.Count(bottomLine, "░")
+	if shadowCount < 3 {
+		t.Errorf("3桁の数字の下影で影文字が%d個しかありません", shadowCount)
+	}
+}

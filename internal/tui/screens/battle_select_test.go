@@ -2,6 +2,7 @@
 package screens
 
 import (
+	"sort"
 	"strings"
 	"testing"
 
@@ -11,15 +12,15 @@ import (
 )
 
 // newTestDamageModule はテスト用のダメージモジュールを作成するヘルパー関数です。
-func newTestDamageModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestDamageModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
 		Icon:            "⚔️",
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -36,15 +37,15 @@ func containsString(s, substr string) bool {
 }
 
 // newTestHealModule はテスト用の回復モジュールを作成するヘルパー関数です。
-func newTestHealModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestHealModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
 		Icon:            "💚",
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetSelf,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -56,15 +57,15 @@ func newTestHealModule(id, name string, tags []string, statCoef float64, statRef
 }
 
 // newTestBuffModule はテスト用のバフモジュールを作成するヘルパー関数です。
-func newTestBuffModule(id, name string, tags []string, description string) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestBuffModule(id, name string, tags []string, description string) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
 		Icon:            "⬆️",
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target: domain.TargetSelf,
 				ColumnSpec: &domain.EffectColumnSpec{
@@ -80,15 +81,15 @@ func newTestBuffModule(id, name string, tags []string, description string) *doma
 }
 
 // newTestModuleWithChainEffect はチェイン効果付きモジュールを作成するヘルパー関数です。
-func newTestModuleWithChainEffect(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.ModuleModel {
-	return domain.NewModuleFromType(domain.ModuleType{
+func newTestModuleWithChainEffect(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.SkillModel {
+	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
 		Icon:            "⚔️",
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: statCoef, StatRef: statRef},
@@ -201,8 +202,8 @@ func TestBattleSelectWithAgentEquipped(t *testing.T) {
 		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
 		AllowedTags: []string{"physical_low"},
 	}
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
-	modules := []*domain.ModuleModel{
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
+	modules := []*domain.SkillModel{
 		newTestDamageModule("m1", "モジュール1", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModule("m2", "モジュール2", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModule("m3", "モジュール3", []string{"physical_low"}, 1.0, "STR", ""),
@@ -229,8 +230,8 @@ func TestBattleSelectConfirmScreen(t *testing.T) {
 		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
 		AllowedTags: []string{"physical_low"},
 	}
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
-	modules := []*domain.ModuleModel{
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
+	modules := []*domain.SkillModel{
 		newTestDamageModule("m1", "モジュール1", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModule("m2", "モジュール2", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModule("m3", "モジュール3", []string{"physical_low"}, 1.0, "STR", ""),
@@ -336,18 +337,18 @@ func (m *mockEnemyTypeProvider) GetEnemyTypes() []domain.EnemyType {
 // 注: フィルタリングにより「到達Lv + 1」以下のデフォルトLvを持つ敵のみ表示される
 func createTestEnemyTypes() []domain.EnemyType {
 	return []domain.EnemyType{
-		{ID: "slime", Name: "スライム", DefaultLevel: 1, BaseHP: 50, AttackType: "physical"},
-		{ID: "goblin", Name: "ゴブリン", DefaultLevel: 2, BaseHP: 80, AttackType: "physical"},
-		{ID: "dragon", Name: "ドラゴン", DefaultLevel: 10, BaseHP: 500, AttackType: "magic"},
+		{ID: "slime", Name: "スライム", BaseHP: 50, Rank: 1},
+		{ID: "goblin", Name: "ゴブリン", BaseHP: 80, Rank: 1},
+		{ID: "dragon", Name: "ドラゴン", BaseHP: 500, Rank: 2},
 	}
 }
 
 // createTestEnemyTypesAllVisible は全敵が表示される設定です（全敵を撃破済みにする）。
 func createTestEnemyTypesAllVisible() ([]domain.EnemyType, map[string]int, int) {
 	enemyTypes := []domain.EnemyType{
-		{ID: "slime", Name: "スライム", DefaultLevel: 1, BaseHP: 50, AttackType: "physical"},
-		{ID: "goblin", Name: "ゴブリン", DefaultLevel: 2, BaseHP: 80, AttackType: "physical"},
-		{ID: "dragon", Name: "ドラゴン", DefaultLevel: 10, BaseHP: 500, AttackType: "magic"},
+		{ID: "slime", Name: "スライム", BaseHP: 50, Rank: 1},
+		{ID: "goblin", Name: "ゴブリン", BaseHP: 80, Rank: 1},
+		{ID: "dragon", Name: "ドラゴン", BaseHP: 500, Rank: 2},
 	}
 	// 全敵を撃破済みにして全敵を表示
 	defeated := map[string]int{"slime": 1, "goblin": 2, "dragon": 10}
@@ -450,19 +451,19 @@ func TestBattleSelectCarouselUndefeatedEnemy(t *testing.T) {
 		&mockEnemyTypeProvider{enemyTypes: enemyTypes},
 	)
 
-	// slime（撃破済み）とgoblin（未撃破で最小デフォルトLv）の2体が表示される
+	// slime（撃破済み）とgoblin（未撃破）の2体が表示される
 	// goblin（インデックス1）を選択
 	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyRight})
 
-	// 未撃破なのでデフォルトレベル（2）のみ選択可能
-	if screen.selectedLevel != 2 {
-		t.Errorf("未撃破敵のレベル: got %d, want 2", screen.selectedLevel)
+	// 未撃破なのでレベル1のみ選択可能
+	if screen.selectedLevel != 1 {
+		t.Errorf("未撃破敵のレベル: got %d, want 1", screen.selectedLevel)
 	}
 
 	// 上下キーを押してもレベルが変わらない
 	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyUp})
-	if screen.selectedLevel != 2 {
-		t.Errorf("上キー後のレベル（未撃破）: got %d, want 2", screen.selectedLevel)
+	if screen.selectedLevel != 1 {
+		t.Errorf("上キー後のレベル（未撃破）: got %d, want 1", screen.selectedLevel)
 	}
 }
 
@@ -511,8 +512,8 @@ func createTestAgent() *domain.AgentModel {
 		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
 		AllowedTags: []string{"physical_low"},
 	}
-	core := domain.NewCore("core1", "テストコア", 5, coreType, domain.PassiveSkill{})
-	modules := []*domain.ModuleModel{
+	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
+	modules := []*domain.SkillModel{
 		newTestDamageModule("m1", "モジュール1", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModule("m2", "モジュール2", []string{"physical_low"}, 1.0, "STR", ""),
 		newTestDamageModule("m3", "モジュール3", []string{"physical_low"}, 1.0, "STR", ""),
@@ -527,11 +528,10 @@ func createTestAgent() *domain.AgentModel {
 func TestBattleSelectCarouselEnemyInfoPanel(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:           "slime",
-			Name:         "スライム",
-			DefaultLevel: 1,
-			BaseHP:       50,
-			AttackType:   "physical",
+			ID:     "slime",
+			Name:   "スライム",
+			BaseHP: 50,
+			Rank:   1,
 			NormalPassive: &domain.EnemyPassiveSkill{
 				ID:          "slime_normal",
 				Name:        "ぷるぷるボディ",
@@ -645,12 +645,12 @@ func TestBattleSelectCarouselLevelConstraintUndefeated(t *testing.T) {
 		&mockEnemyTypeProvider{enemyTypes: enemyTypes},
 	)
 
-	// goblin（インデックス1）を選択 - goblinは未撃破だがデフォルトLv=2 >= MaxLevelReached+1=2 なので表示される
+	// goblin（インデックス1）を選択 - goblinは未撃破
 	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyRight})
 
-	// デフォルトレベルが設定されていること（goblinはデフォルトLv=2）
-	if screen.selectedLevel != 2 {
-		t.Errorf("デフォルトレベル: got %d, want 2", screen.selectedLevel)
+	// 未撃破なのでレベル1のみ選択可能
+	if screen.selectedLevel != 1 {
+		t.Errorf("デフォルトレベル: got %d, want 1", screen.selectedLevel)
 	}
 
 	// goblinは未撃破なので min == max であること（固定）
@@ -686,7 +686,7 @@ func TestBattleSelectCarouselLevelConstraintDefeated(t *testing.T) {
 // TestBattleSelectCarouselLevelConstraintMaxLevel は最大レベル100の制約をテストします。
 func TestBattleSelectCarouselLevelConstraintMaxLevel(t *testing.T) {
 	enemyTypes := []domain.EnemyType{
-		{ID: "boss", Name: "ボス", DefaultLevel: 50, BaseHP: 1000},
+		{ID: "boss", Name: "ボス", BaseHP: 1000, Rank: 1},
 	}
 	// レベル100で撃破済み、MaxLevelReached=100（または100を超える値でテスト）
 	defeated := map[string]int{"boss": 100}
@@ -715,10 +715,10 @@ func TestBattleSelectCarouselStartBattleWithEnemyTypeID(t *testing.T) {
 		&mockEnemyTypeProvider{enemyTypes: enemyTypes},
 	)
 
-	// goblin（インデックス1）を選択
+	// goblin（インデックス1）を選択 - 撃破済み
 	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyRight})
 
-	// レベルを3に設定（デフォルトLv=2から上キーで3に）
+	// 撃破済みなのでレベル選択可能。初期レベル1から上キーで2に
 	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyUp})
 
 	// Enterでバトル開始
@@ -739,8 +739,447 @@ func TestBattleSelectCarouselStartBattleWithEnemyTypeID(t *testing.T) {
 		t.Errorf("敵タイプID: got %s, want goblin", startBattleMsg.EnemyTypeID)
 	}
 
-	// レベルが3であること
-	if startBattleMsg.Level != 3 {
-		t.Errorf("レベル: got %d, want 3", startBattleMsg.Level)
+	// レベルが2であること（1から上キーで2に）
+	if startBattleMsg.Level != 2 {
+		t.Errorf("レベル: got %d, want 2", startBattleMsg.Level)
+	}
+}
+
+// ==================== ランクベースの敵表示テスト ====================
+
+// mockEnemyProgressProvider はテスト用のEnemyProgressProvider実装です。
+type mockEnemyProgressProvider struct {
+	currentRank     int
+	defeatRecords   map[string]defeatRecord
+	enemyTypesCache map[string]domain.EnemyType
+}
+
+type defeatRecord struct {
+	defeated         bool
+	maxDefeatedLevel int
+}
+
+func (m *mockEnemyProgressProvider) GetCurrentRank() int {
+	return m.currentRank
+}
+
+func (m *mockEnemyProgressProvider) GetMaxUnlockedRank() int {
+	return m.currentRank
+}
+
+func (m *mockEnemyProgressProvider) IsDefeated(enemyTypeID string) bool {
+	record, exists := m.defeatRecords[enemyTypeID]
+	return exists && record.defeated
+}
+
+func (m *mockEnemyProgressProvider) GetMaxDefeatedLevel(enemyTypeID string) int {
+	record, exists := m.defeatRecords[enemyTypeID]
+	if !exists {
+		return 0
+	}
+	return record.maxDefeatedLevel
+}
+
+func (m *mockEnemyProgressProvider) GetSelectableLevelRange(enemyTypeID string) (min, max int) {
+	if !m.IsDefeated(enemyTypeID) {
+		// 未撃破: レベル1のみ
+		return 1, 1
+	}
+	// 撃破済み: 1 から (最大撃破レベル + 5) まで
+	maxDefeatedLevel := m.GetMaxDefeatedLevel(enemyTypeID)
+	return 1, maxDefeatedLevel + 5
+}
+
+func (m *mockEnemyProgressProvider) GetDropItemName(category, typeID string) string {
+	return typeID
+}
+
+func (m *mockEnemyProgressProvider) GetCurrentRankEnemies() []domain.EnemyType {
+	return m.GetEnemiesByRank(m.currentRank)
+}
+
+func (m *mockEnemyProgressProvider) GetEnemiesByRank(rank int) []domain.EnemyType {
+	enemies := make([]domain.EnemyType, 0)
+	for _, et := range m.enemyTypesCache {
+		if et.Rank == rank {
+			enemies = append(enemies, et)
+		}
+	}
+	// IDでソートして順序を固定
+	sort.Slice(enemies, func(i, j int) bool {
+		return enemies[i].ID < enemies[j].ID
+	})
+	return enemies
+}
+
+// createTestEnemyTypesWithRank はランク付きのテスト用敵タイプリストを作成します。
+func createTestEnemyTypesWithRank() []domain.EnemyType {
+	return []domain.EnemyType{
+		{ID: "slime", Name: "スライム", BaseHP: 50, Rank: 1},
+		{ID: "goblin", Name: "ゴブリン", BaseHP: 80, Rank: 1},
+		{ID: "orc", Name: "オーク", BaseHP: 200, Rank: 2},
+		{ID: "dragon", Name: "ドラゴン", BaseHP: 500, Rank: 3},
+	}
+}
+
+func createEnemyTypeMap(enemyTypes []domain.EnemyType) map[string]domain.EnemyType {
+	m := make(map[string]domain.EnemyType)
+	for _, et := range enemyTypes {
+		m[et.ID] = et
+	}
+	return m
+}
+
+// TestBattleSelectRankBasedFiltering はランクベースの敵フィルタリングをテストします。
+func TestBattleSelectRankBasedFiltering(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+
+	// ランク1のみ解放済み
+	provider := &mockEnemyProgressProvider{
+		currentRank:     1,
+		defeatRecords:   map[string]defeatRecord{},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{},
+		provider,
+	)
+
+	// ランク1の敵のみ表示される（slime, goblin）
+	if len(screen.enemyTypes) != 2 {
+		t.Errorf("ランク1の敵数: got %d, want 2", len(screen.enemyTypes))
+	}
+
+	// 表示される敵がランク1のものであることを確認
+	for _, et := range screen.enemyTypes {
+		if et.Rank != 1 {
+			t.Errorf("ランク1以外の敵が表示されています: %s (rank=%d)", et.ID, et.Rank)
+		}
+	}
+}
+
+// TestBattleSelectRankProgressDisplay は現在ランクと進行状況の表示をテストします。
+func TestBattleSelectRankProgressDisplay(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+
+	// ランク1でslimeのみ撃破済み
+	provider := &mockEnemyProgressProvider{
+		currentRank: 1,
+		defeatRecords: map[string]defeatRecord{
+			"slime": {defeated: true, maxDefeatedLevel: 3},
+		},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{},
+		provider,
+	)
+
+	screen.width = 120
+	screen.height = 40
+
+	view := screen.View()
+
+	// 進行状況表示があること（撃破: 1/2）
+	if !containsString(view, "撃破: 1/2") {
+		t.Error("進行状況表示がありません")
+	}
+}
+
+// TestBattleSelectDefeatedStatusPerEnemy は敵ごとの撃破状況表示をテストします。
+func TestBattleSelectDefeatedStatusPerEnemy(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+
+	// ランク1でslimeのみ撃破済み
+	provider := &mockEnemyProgressProvider{
+		currentRank: 1,
+		defeatRecords: map[string]defeatRecord{
+			"slime": {defeated: true, maxDefeatedLevel: 5},
+		},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{},
+		provider,
+	)
+
+	screen.width = 120
+	screen.height = 40
+
+	// slimeを選択（IDでソートされるのでgoblin=0, slime=1）
+	for i, et := range screen.enemyTypes {
+		if et.ID == "slime" {
+			screen.selectedTypeIdx = i
+			screen.updateLevelRange()
+			break
+		}
+	}
+
+	// slime（撃破済み）を選択した状態で描画
+	view := screen.View()
+
+	// 撃破済み敵の撃破レベル表示があること（現在の実装では「Lv.X撃破済み」形式）
+	if !containsString(view, "Lv.5撃破済み") {
+		t.Error("撃破レベル表示がありません")
+	}
+}
+
+// TestBattleSelectLevelSelectionForDefeatedEnemy は撃破済み敵のレベル選択をテストします。
+func TestBattleSelectLevelSelectionForDefeatedEnemy(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+
+	// slimeをレベル5で撃破済み
+	provider := &mockEnemyProgressProvider{
+		currentRank: 1,
+		defeatRecords: map[string]defeatRecord{
+			"slime": {defeated: true, maxDefeatedLevel: 5},
+		},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{},
+		provider,
+	)
+
+	// slimeを選択（IDでソートされるのでgoblin=0, slime=1）
+	for i, et := range screen.enemyTypes {
+		if et.ID == "slime" {
+			screen.selectedTypeIdx = i
+			screen.updateLevelRange()
+			break
+		}
+	}
+
+	// 撃破済みなので、レベル1〜10（5+5）まで選択可能
+	if screen.minSelectableLevel != 1 {
+		t.Errorf("最小選択可能レベル: got %d, want 1", screen.minSelectableLevel)
+	}
+
+	if screen.maxSelectableLevel != 10 {
+		t.Errorf("最大選択可能レベル: got %d, want 10 (5+5)", screen.maxSelectableLevel)
+	}
+}
+
+// TestBattleSelectLevelFixedForUndefeatedEnemy は未撃破敵のレベル固定をテストします。
+func TestBattleSelectLevelFixedForUndefeatedEnemy(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+
+	// 未撃破状態
+	provider := &mockEnemyProgressProvider{
+		currentRank:     1,
+		defeatRecords:   map[string]defeatRecord{},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{},
+		provider,
+	)
+
+	// 未撃破なのでレベル1のみ選択可能
+	expectedLevel := 1
+	if screen.selectedLevel != expectedLevel {
+		t.Errorf("選択レベル: got %d, want %d (デフォルトレベル)", screen.selectedLevel, expectedLevel)
+	}
+
+	// min == max であること（固定）
+	if screen.minSelectableLevel != screen.maxSelectableLevel {
+		t.Errorf("未撃破敵のレベル範囲が固定でありません: min=%d, max=%d",
+			screen.minSelectableLevel, screen.maxSelectableLevel)
+	}
+}
+
+// TestBattleSelectRankNavigation はランク上下移動をテストします。
+func TestBattleSelectRankNavigation(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+
+	// ランク3まで解放済み
+	provider := &mockEnemyProgressProvider{
+		currentRank:     3,
+		defeatRecords:   map[string]defeatRecord{},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{},
+		provider,
+	)
+
+	// 初期状態: ランク3（最大解放ランク）
+	if screen.selectedRank != 3 {
+		t.Errorf("初期ランク: got %d, want 3", screen.selectedRank)
+	}
+
+	// 下キーでランク2へ
+	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyDown})
+	if screen.selectedRank != 2 {
+		t.Errorf("ランク下降後: got %d, want 2", screen.selectedRank)
+	}
+
+	// 敵リストがランク2のものに更新されていること
+	if len(screen.enemyTypes) != 1 || screen.enemyTypes[0].ID != "orc" {
+		t.Errorf("ランク2の敵リストが正しくありません: %v", screen.enemyTypes)
+	}
+
+	// 下キーでランク1へ
+	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyDown})
+	if screen.selectedRank != 1 {
+		t.Errorf("ランク下降後: got %d, want 1", screen.selectedRank)
+	}
+
+	// 下限を超えない
+	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyDown})
+	if screen.selectedRank != 1 {
+		t.Errorf("ランク下限を超えています: got %d, want 1", screen.selectedRank)
+	}
+
+	// 上キーでランク2へ
+	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyUp})
+	if screen.selectedRank != 2 {
+		t.Errorf("ランク上昇後: got %d, want 2", screen.selectedRank)
+	}
+}
+
+// TestBattleSelectLevelModal はモーダル開閉をテストします。
+func TestBattleSelectLevelModal(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+	agent := createTestAgent()
+
+	// goblinとslime両方撃破済みにする（IDソート順: goblin < slime なのでgoblinが最初）
+	provider := &mockEnemyProgressProvider{
+		currentRank: 1,
+		defeatRecords: map[string]defeatRecord{
+			"goblin": {defeated: true, maxDefeatedLevel: 5},
+			"slime":  {defeated: true, maxDefeatedLevel: 3},
+		},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{agents: []*domain.AgentModel{agent}},
+		provider,
+	)
+
+	// 初期状態: 敵選択状態
+	if screen.state != StateEnemySelect {
+		t.Errorf("初期状態: got %d, want StateEnemySelect", screen.state)
+	}
+
+	// 初期選択敵を確認（IDソート順でgoblinが最初）
+	if screen.enemyTypes[0].ID != "goblin" {
+		t.Logf("初期選択敵: %s", screen.enemyTypes[0].ID)
+	}
+
+	// Enterでモーダルを開く
+	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyEnter})
+	if screen.state != StateLevelModal {
+		t.Errorf("Enter後の状態: got %d, want StateLevelModal", screen.state)
+	}
+
+	// モーダル内で初期値が最高レベルになっていること
+	expectedMaxLevel := 10 // 5 + 5
+	if screen.modalLevel != expectedMaxLevel {
+		t.Errorf("モーダル内レベル初期値: got %d, want %d", screen.modalLevel, expectedMaxLevel)
+	}
+
+	// Escでモーダルを閉じる（ホームには戻らない）
+	model, cmd := screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyEsc})
+	if screen.state != StateEnemySelect {
+		t.Errorf("Esc後の状態: got %d, want StateEnemySelect", screen.state)
+	}
+	// cmdがnilであることを確認（ChangeSceneMsgが送られていない）
+	if cmd != nil {
+		t.Error("モーダル内EscでChangeSceneMsgが送られています")
+	}
+	_ = model
+}
+
+// TestBattleSelectLevelModalStartBattle はモーダル内でバトル開始をテストします。
+func TestBattleSelectLevelModalStartBattle(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+	agent := createTestAgent()
+
+	// goblin撃破済み（IDソート順でgoblinが最初）
+	provider := &mockEnemyProgressProvider{
+		currentRank: 1,
+		defeatRecords: map[string]defeatRecord{
+			"goblin": {defeated: true, maxDefeatedLevel: 5},
+		},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{agents: []*domain.AgentModel{agent}},
+		provider,
+	)
+
+	// モーダルを開く
+	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyEnter})
+
+	// レベルを下げる（初期値: 10 = 5 + 5）
+	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyDown})
+	expectedLevel := 9 // 10 - 1
+	if screen.modalLevel != expectedLevel {
+		t.Errorf("レベル下降後: got %d, want %d", screen.modalLevel, expectedLevel)
+	}
+
+	// Enterでバトル開始
+	_, cmd := screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyEnter})
+	if cmd == nil {
+		t.Fatal("バトル開始コマンドがnilです")
+	}
+
+	msg := cmd()
+	startBattleMsg, ok := msg.(StartBattleMsg)
+	if !ok {
+		t.Fatalf("StartBattleMsgではありません: %T", msg)
+	}
+
+	if startBattleMsg.Level != expectedLevel {
+		t.Errorf("バトルレベル: got %d, want %d", startBattleMsg.Level, expectedLevel)
+	}
+	// IDソート順でgoblinが最初
+	if startBattleMsg.EnemyTypeID != "goblin" {
+		t.Errorf("敵タイプID: got %s, want goblin", startBattleMsg.EnemyTypeID)
+	}
+}
+
+// TestBattleSelectModalNoAgent は装備なし時にモーダルが開かないことをテストします。
+func TestBattleSelectModalNoAgent(t *testing.T) {
+	enemyTypes := createTestEnemyTypesWithRank()
+	enemyTypeMap := createEnemyTypeMap(enemyTypes)
+
+	provider := &mockEnemyProgressProvider{
+		currentRank:     1,
+		defeatRecords:   map[string]defeatRecord{},
+		enemyTypesCache: enemyTypeMap,
+	}
+
+	screen := NewBattleSelectScreenRankBased(
+		&mockAgentProvider{agents: []*domain.AgentModel{}}, // 装備なし
+		provider,
+	)
+
+	// Enterを押してもモーダルが開かない
+	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyEnter})
+	if screen.state != StateEnemySelect {
+		t.Errorf("装備なし時にモーダルが開いています: state=%d", screen.state)
+	}
+
+	// エラーメッセージが設定されていること
+	if screen.error == "" {
+		t.Error("エラーメッセージが設定されていません")
 	}
 }

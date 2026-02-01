@@ -8,8 +8,8 @@ import (
 	"hirorocky/type-battle/internal/domain"
 )
 
-// ModuleEffectFlags はモジュールが持つ効果の種別を表します。
-type ModuleEffectFlags struct {
+// SkillEffectFlags はモジュールが持つ効果の種別を表します。
+type SkillEffectFlags struct {
 	// HasDamage はダメージ効果を持つかを表します。
 	HasDamage bool
 
@@ -85,7 +85,7 @@ func (m *ChainEffectManager) RegisterChainEffect(agentIndex int, effect *domain.
 // usingAgentIndexはモジュールを使用したエージェントのインデックスです。
 // effectFlagsは使用したモジュールが持つ効果の種別です。
 // 発動した効果のリストを返します。
-func (m *ChainEffectManager) CheckAndTrigger(usingAgentIndex int, effectFlags ModuleEffectFlags) []TriggeredChainEffect {
+func (m *ChainEffectManager) CheckAndTrigger(usingAgentIndex int, effectFlags SkillEffectFlags) []TriggeredChainEffect {
 	triggered := make([]TriggeredChainEffect, 0)
 	expiredAgents := make([]int, 0)
 
@@ -121,7 +121,7 @@ func (m *ChainEffectManager) CheckAndTrigger(usingAgentIndex int, effectFlags Mo
 }
 
 // isEffectTriggeredBy はチェイン効果がモジュールの効果種別によって発動するかを判定します。
-func (m *ChainEffectManager) isEffectTriggeredBy(effectType domain.ChainEffectType, flags ModuleEffectFlags) bool {
+func (m *ChainEffectManager) isEffectTriggeredBy(effectType domain.ChainEffectType, flags SkillEffectFlags) bool {
 	effectCategory := effectType.Category()
 
 	switch effectCategory {

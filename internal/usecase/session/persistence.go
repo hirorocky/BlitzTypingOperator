@@ -15,32 +15,20 @@ import (
 // DomainDataSources はセーブデータ復元時に使用するドメイン型データソースです。
 type DomainDataSources struct {
 	CoreTypes              []domain.CoreType
-	ModuleTypes            []rewarding.ModuleDropInfo
+	SkillTypes             []rewarding.ModuleDropInfo
 	EnemyTypes             []domain.EnemyType
 	PassiveSkills          map[string]domain.PassiveSkill
 	ChainEffectDefinitions []rewarding.ChainEffectDefinition
 }
 
 // ToSaveData はGameStateをセーブデータに変換します。
-// v3.0.0形式: ユニークインベントリ + エージェントスロットシステム
-// 注意: 旧形式(AgentInstances, CoreInstances, ModuleInstances)は後方互換性のため空で保存
 func (g *GameState) ToSaveData() *savedata.SaveData {
 	saveData := savedata.NewSaveData()
 
-	// 最高到達レベル
-	saveData.Statistics.MaxLevelReached = g.MaxLevelReached
+	saveData.Statistics.MaxLevelReached = g.GetMaxLevelReached()
 
-	// v3.0.0: 旧形式は空で保存（後方互換性）
-	saveData.Inventory.CoreInstances = []savedata.CoreInstanceSave{}
-	saveData.Inventory.ModuleInstances = []savedata.ModuleInstanceSave{}
-	saveData.Inventory.AgentInstances = []savedata.AgentInstanceSave{}
-
-	// v3.0.0: 新システムでは容量制限なし（後方互換性のため固定値を設定）
-	saveData.Inventory.MaxCoreSlots = 100
-	saveData.Inventory.MaxModuleSlots = 200
-
-	// v3.0.0: EquippedAgentIDsは空（AgentSlotsを使用）
-	saveData.Player.EquippedAgentIDs = [3]string{}
+	// プレイヤーのMaxHPを保存
+	saveData.Player.MaxHP = g.player.MaxHP
 
 	// 統計
 	stats := g.statistics
@@ -59,14 +47,19 @@ func (g *GameState) ToSaveData() *savedata.SaveData {
 	// 設定
 	saveData.Settings.KeyBindings = g.settings.Keybinds()
 
-	// 撃破済み敵情報を保存
-	saveData.Statistics.DefeatedEnemies = g.GetDefeatedEnemies()
+	// 敵進行データを保存
+	saveData.EnemyProgress.CurrentRank = g.enemyProgress.CurrentRank
+	for id, record := range g.enemyProgress.DefeatRecords {
+		saveData.EnemyProgress.DefeatRecords[id] = savedata.DefeatRecordSave{
+			Defeated:         record.Defeated,
+			MaxDefeatedLevel: record.MaxDefeatedLevel,
+		}
+	}
 
 	return saveData
 }
 
 // GameStateFromSaveData はセーブデータからGameStateを生成します。
-// v3.0.0形式のセーブデータからオブジェクトを再構築します。
 // sourcesにはマスタデータから変換されたドメイン型データを渡す必要があります。
 // 注意: エージェントスロットの復元はRootModel側で行います（AgentSlotManagerへの依存を避けるため）
 func GameStateFromSaveData(data *savedata.SaveData, sources *DomainDataSources) *GameState {
@@ -77,18 +70,21 @@ func GameStateFromSaveData(data *savedata.SaveData, sources *DomainDataSources) 
 
 	// マスタデータを取得（ドメイン型）
 	coreTypes := sources.CoreTypes
-	moduleTypes := sources.ModuleTypes
+	moduleTypes := sources.SkillTypes
 	passiveSkills := sources.PassiveSkills
 	enemyTypes := sources.EnemyTypes
 
 	// インベントリマネージャーを作成
 	invManager := NewInventoryManager()
 
-	// v3.0.0: 旧形式のコア/モジュールはスキップ（後方互換性のためデータは読み飛ばす）
-	// 新形式のUniqueCores/UniqueSkillsはRootModel側で別途ロード
+	// UniqueCores/UniqueSkillsはinternal/app.RootModel側で別途ロード
 
-	// プレイヤーを作成
-	player := domain.NewPlayer()
+	// プレイヤーを作成（MaxHPをセーブデータから復元）
+	maxHP := domain.InitialMaxHP
+	if data.Player != nil && data.Player.MaxHP > 0 {
+		maxHP = data.Player.MaxHP
+	}
+	player := domain.NewPlayerWithMaxHP(maxHP)
 
 	// 実績マネージャーを作成（セーブデータ型からドメイン型に変換してロード）
 	achievementMgr := achievement.NewAchievementManager()
@@ -133,18 +129,40 @@ func GameStateFromSaveData(data *savedata.SaveData, sources *DomainDataSources) 
 	// EnemyGeneratorを作成
 	enemyGen := spawning.NewEnemyGenerator(enemyTypes)
 
-	// 最高到達レベル、エンカウント敵リスト、撃破済み敵情報を取得
-	maxLevelReached := 0
 	var encounteredEnemies []string
 	var defeatedEnemies map[string]int
 	if data.Statistics != nil {
-		maxLevelReached = data.Statistics.MaxLevelReached
 		encounteredEnemies = data.Statistics.EncounteredEnemies
 		defeatedEnemies = data.Statistics.DefeatedEnemies
 	}
 
+	// EnemyProgressを復元
+	enemyProgress := domain.NewEnemyProgress()
+	if data.EnemyProgress != nil && len(data.EnemyProgress.DefeatRecords) > 0 {
+		// EnemyProgressセクションから復元
+		enemyProgress.CurrentRank = data.EnemyProgress.CurrentRank
+		if enemyProgress.CurrentRank < 1 {
+			enemyProgress.CurrentRank = 1
+		}
+		for id, record := range data.EnemyProgress.DefeatRecords {
+			enemyProgress.DefeatRecords[id] = domain.EnemyDefeatRecord{
+				Defeated:         record.Defeated,
+				MaxDefeatedLevel: record.MaxDefeatedLevel,
+			}
+		}
+	} else if len(defeatedEnemies) > 0 {
+		// EnemyProgressセクションがない場合、Statisticsから撃破記録を復元
+		for id, level := range defeatedEnemies {
+			enemyProgress.DefeatRecords[id] = domain.EnemyDefeatRecord{
+				Defeated:         true,
+				MaxDefeatedLevel: level,
+			}
+		}
+		// ランク情報がない場合はランク1から開始（次回勝利時に正しく更新される）
+		enemyProgress.CurrentRank = 1
+	}
+
 	gs := &GameState{
-		MaxLevelReached:    maxLevelReached,
 		player:             player,
 		inventory:          invManager,
 		statistics:         statsMgr,
@@ -154,12 +172,7 @@ func GameStateFromSaveData(data *savedata.SaveData, sources *DomainDataSources) 
 		tempStorage:        &rewarding.TempStorage{},
 		enemyGenerator:     enemyGen,
 		encounteredEnemies: encounteredEnemies,
-		defeatedEnemies:    make(map[string]int),
-	}
-
-	// 撃破済み敵情報を復元
-	if defeatedEnemies != nil {
-		gs.SetDefeatedEnemies(defeatedEnemies)
+		enemyProgress:      enemyProgress,
 	}
 
 	return gs

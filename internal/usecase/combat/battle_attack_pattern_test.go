@@ -20,14 +20,14 @@ func TestBattleState_SameAttackCount_Track(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_adaptive_shield", Name: "アダプティブシールド"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:   "test_attack",
 		Name: "テスト攻撃",
 		Icon: "⚔️",
 		Tags: []string{"physical_low"},
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: 1.0, StatRef: "STR"},
@@ -36,24 +36,23 @@ func TestBattleState_SameAttackCount_Track(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          1000,
-			BaseAttackPower: 50,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 1000,
+			Rank:   1,
 		},
 	}
 
 	engine := NewBattleEngine(enemyTypes)
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 
 	// Act: 物理攻撃を3回
 	engine.RecordAttackType(state, "physical")
@@ -79,14 +78,14 @@ func TestBattleState_SameAttackCount_Reset(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_adaptive_shield", Name: "アダプティブシールド"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:   "test_attack",
 		Name: "テスト攻撃",
 		Icon: "⚔️",
 		Tags: []string{"physical_low"},
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: 1.0, StatRef: "STR"},
@@ -95,24 +94,23 @@ func TestBattleState_SameAttackCount_Reset(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          1000,
-			BaseAttackPower: 50,
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 1000,
+			Rank:   1,
 		},
 	}
 
 	engine := NewBattleEngine(enemyTypes)
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 
 	// Act: 物理2回 → 魔法1回
 	engine.RecordAttackType(state, "physical")
@@ -155,14 +153,14 @@ func TestBattleEngine_AdaptiveShield(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	passiveSkill := domain.PassiveSkill{ID: "ps_adaptive_shield", Name: "アダプティブシールド"}
-	core := domain.NewCore("core_001", "テストコア", 10, coreType, passiveSkill)
+	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.ModuleType{
+	moduleType := domain.SkillType{
 		ID:   "test_attack",
 		Name: "テスト攻撃",
 		Icon: "⚔️",
 		Tags: []string{"physical_low"},
-		Effects: []domain.ModuleEffect{
+		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
 				HPFormula:   &domain.HPFormula{Base: 0, StatCoef: 1.0, StatRef: "STR"},
@@ -171,17 +169,16 @@ func TestBattleEngine_AdaptiveShield(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewModuleFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.ModuleModel{module})
+	module := domain.NewSkillFromType(moduleType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
 		{
-			ID:              "test_enemy",
-			Name:            "テスト敵",
-			BaseHP:          10000,
-			BaseAttackPower: 100, // 100ダメージ
-			AttackType:      "physical",
+			ID:     "test_enemy",
+			Name:   "テスト敵",
+			BaseHP: 10000,
+			Rank:   1,
 		},
 	}
 
@@ -189,7 +186,7 @@ func TestBattleEngine_AdaptiveShield(t *testing.T) {
 	engine.SetPassiveSkills(passiveSkillDefs)
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
-	state, _ := engine.InitializeBattle(1, agents)
+	state, _ := engine.initializeBattleForTest(1, agents)
 	engine.RegisterPassiveSkills(state, agents)
 
 	// 1-2回目の物理攻撃（まだ軽減なし）

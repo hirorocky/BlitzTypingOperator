@@ -2,11 +2,9 @@
 // コア、モジュール、エージェント、敵、プレイヤーなどのエンティティとそのビジネスルールを含みます。
 package domain
 
-import "fmt"
-
 // BaseStatValue はステータス計算で使用する基礎値です。
-// ステータス = 基礎値 × レベル × 重み
-const BaseStatValue = 10
+// ステータス = 基礎値 × 重み
+const BaseStatValue = 100
 
 // Stats はゲーム内のステータス値を表す構造体です。
 // 各ステータスはコアのレベルと特性の重みによって計算されます。
@@ -61,30 +59,25 @@ type CoreType struct {
 }
 
 // CoreModel はゲーム内のコアエンティティを表す構造体です。
-// コアはエージェント合成時の中核となる素材で、レベルとステータスを持ちます。
-// コアのレベルはドロップ時に固定され、成長/アップグレードはできません。
-// TypeIDとLevelの組み合わせで同一性が判定されます。
+// コアはエージェント合成時の中核となる素材で、特性と固定ステータスを持ちます。
+// TypeIDのみで同一性が判定されます。
 type CoreModel struct {
 	// ID はコアインスタンスの一意識別子です。
-	// 後方互換性のために残されています。新規コードではTypeIDを使用してください。
+	// TypeIDと同じ値が設定されます。
 	ID string
 
 	// TypeID はコア特性ID（マスタデータ参照用）です。
-	// セーブデータにはTypeIDとLevelのみが保存されます。
+	// セーブデータにはTypeIDのみが保存されます。
 	TypeID string
 
 	// Name はコアの表示名です。
 	Name string
 
-	// Level はコアのレベルです（ドロップ時に決定、変更不可）。
-	// エージェントのレベル = コアのレベルとなります。
-	Level int
-
 	// Type はコアの特性（タイプ）です。
 	Type CoreType
 
 	// Stats はコアのステータス値です。
-	// レベルと特性の重みから計算されます。
+	// 特性の重みから計算されます（100 × 重み）。
 	Stats Stats
 
 	// PassiveSkill はこのコアに紐づくパッシブスキルです。
@@ -96,56 +89,32 @@ type CoreModel struct {
 }
 
 // Equals はコアの同一性を判定します。
-// TypeIDとLevelの組み合わせが同じ場合に等価とみなします。
+// TypeIDが同じ場合に等価とみなします。
 func (c *CoreModel) Equals(other *CoreModel) bool {
 	if other == nil {
 		return false
 	}
-	return c.TypeID == other.TypeID && c.Level == other.Level
+	return c.TypeID == other.TypeID
 }
 
-// CalculateStats はコアレベルとコア特性からステータス値を計算します。
-// STR, INT, WIL: 基礎値(10) × レベル × ステータス重み
-// LUK: 基礎値(10) × ステータス重み（レベルに依存しない）
+// CalculateStats はコア特性からステータス値を計算します。
+// 各ステータス: 基礎値(100) × ステータス重み
 // 結果は整数に切り捨てられます。
-func CalculateStats(level int, coreType CoreType) Stats {
-	// 各ステータスの重みを取得（未設定の場合はデフォルト1.0）
+func CalculateStats(coreType CoreType) Stats {
+	// 各ステータスの重みを取得（未設定の場合はmapのゼロ値で0.0）
 	strWeight := coreType.StatWeights["STR"]
 	intWeight := coreType.StatWeights["INT"]
 	wilWeight := coreType.StatWeights["WIL"]
 	lukWeight := coreType.StatWeights["LUK"]
 
-	// 計算式: 基礎値 × レベル × 重み（STR, INT, WIL）
-	baseValue := float64(BaseStatValue * level)
+	// 計算式: 基礎値(100) × 重み
+	baseValue := float64(BaseStatValue)
 
 	return Stats{
 		STR: int(baseValue * strWeight),
 		INT: int(baseValue * intWeight),
 		WIL: int(baseValue * wilWeight),
-		// LUKはレベルに依存せず、基礎値10 × 重みで計算
-		LUK: int(float64(BaseStatValue) * lukWeight),
-	}
-}
-
-// NewCore は指定されたパラメータからCoreModelを作成します。
-// ステータスはレベルと特性から自動計算されます。
-// AllowedTagsはCoreTypeからコピーされます。
-func NewCore(id, name string, level int, coreType CoreType, passiveSkill PassiveSkill) *CoreModel {
-	// ステータスを自動計算
-	stats := CalculateStats(level, coreType)
-
-	// AllowedTagsをコピー（スライスの参照共有を避ける）
-	allowedTags := make([]string, len(coreType.AllowedTags))
-	copy(allowedTags, coreType.AllowedTags)
-
-	return &CoreModel{
-		ID:           id,
-		Name:         name,
-		Level:        level,
-		Type:         coreType,
-		Stats:        stats,
-		PassiveSkill: passiveSkill,
-		AllowedTags:  allowedTags,
+		LUK: int(baseValue * lukWeight),
 	}
 }
 
@@ -160,34 +129,27 @@ func (c *CoreModel) IsTagAllowed(tag string) bool {
 	return false
 }
 
-// NewCoreWithTypeID はTypeIDとLevelベースでCoreModelを作成します。
-// ステータスはTypeIDから取得したCoreTypeとLevelから自動計算されます。
-// Nameは "Type.Name Lv.Level" 形式で自動生成されます。
-// IDは後方互換性のためにTypeIDと同じ値が設定されますが、新規コードでは使用しないでください。
-func NewCoreWithTypeID(typeID string, level int, coreType CoreType, passiveSkill PassiveSkill) *CoreModel {
-	// ステータスを自動計算
-	stats := CalculateStats(level, coreType)
+// NewCoreWithTypeID はTypeIDベースでCoreModelを作成します。
+// ステータスはコア特性の重みから自動計算されます（100 × 重み）。
+// NameはType.Name形式で自動生成されます。
+func NewCoreWithTypeID(typeID string, coreType CoreType, passiveSkill PassiveSkill) *CoreModel {
+	// ステータスを重みベースで自動計算
+	stats := CalculateStats(coreType)
 
 	// AllowedTagsをコピー（スライスの参照共有を避ける）
 	allowedTags := make([]string, len(coreType.AllowedTags))
 	copy(allowedTags, coreType.AllowedTags)
 
-	// Nameを自動生成
-	name := coreType.Name + " Lv." + formatLevel(level)
+	// Nameを自動生成（コア特性名のみ）
+	name := coreType.Name
 
 	return &CoreModel{
-		ID:           typeID, // 後方互換性のため
+		ID:           typeID,
 		TypeID:       typeID,
 		Name:         name,
-		Level:        level,
 		Type:         coreType,
 		Stats:        stats,
 		PassiveSkill: passiveSkill,
 		AllowedTags:  allowedTags,
 	}
-}
-
-// formatLevel はレベルを文字列にフォーマットします。
-func formatLevel(level int) string {
-	return fmt.Sprintf("%d", level)
 }
