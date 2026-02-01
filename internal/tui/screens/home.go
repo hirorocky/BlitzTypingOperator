@@ -23,7 +23,7 @@ type AgentProvider interface {
 }
 
 // SlotReadinessProvider はエージェントスロットの準備状態を提供するインターフェースです。
-// AgentSlotManagerで実装されます。
+// internal/usecase/slot.AgentSlotManagerで実装されます。
 type SlotReadinessProvider interface {
 	// GetReadySlotCount はバトルに使用可能なスロット数を返します。
 	GetReadySlotCount() int

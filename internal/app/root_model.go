@@ -579,7 +579,7 @@ func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 		}
 	}
 	ownedCores := m.invManager.Cores().GetOwnedCores()
-	saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores, ownedCores...)
+	saveData.Inventory.UniqueCores.Cores = ownedCores
 
 	// UniqueSkillsを追加（SkillTypeID → チェイン効果IDリスト）
 	if saveData.Inventory.UniqueSkills == nil {

@@ -77,7 +77,7 @@ func GameStateFromSaveData(data *savedata.SaveData, sources *DomainDataSources) 
 	// インベントリマネージャーを作成
 	invManager := NewInventoryManager()
 
-	// UniqueCores/UniqueSkillsはRootModel側で別途ロード
+	// UniqueCores/UniqueSkillsはinternal/app.RootModel側で別途ロード
 
 	// プレイヤーを作成（MaxHPをセーブデータから復元）
 	maxHP := domain.InitialMaxHP

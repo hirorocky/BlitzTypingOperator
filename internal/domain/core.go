@@ -101,7 +101,7 @@ func (c *CoreModel) Equals(other *CoreModel) bool {
 // 各ステータス: 基礎値(100) × ステータス重み
 // 結果は整数に切り捨てられます。
 func CalculateStats(coreType CoreType) Stats {
-	// 各ステータスの重みを取得（未設定の場合は0.0扱い）
+	// 各ステータスの重みを取得（未設定の場合はmapのゼロ値で0.0）
 	strWeight := coreType.StatWeights["STR"]
 	intWeight := coreType.StatWeights["INT"]
 	wilWeight := coreType.StatWeights["WIL"]

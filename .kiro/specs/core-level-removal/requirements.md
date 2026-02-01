@@ -98,7 +98,7 @@
 
 #### Acceptance Criteria
 
-1. When 新記録レベルで敵を撃破する, the Player System shall 最大HPを「(新記録レベル - 1) x 10」だけ増加させる
+1. When 新記録レベルで敵を撃破する, the Player System shall 最大HPを「(新記録レベル - 過去の最大撃破レベル) x 10」だけ増加させる
 2. While 過去に撃破したレベル以下で敵を倒す, the Player System shall 最大HPを増加させない
 3. The Save Data System shall 敵ごとの撃破済み最大レベルを更新する
 

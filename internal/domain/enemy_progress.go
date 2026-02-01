@@ -76,7 +76,7 @@ func (p *EnemyProgress) GetSelectableLevelRange(enemyTypeID string, defaultLevel
 }
 
 // RecordDefeat は撃破を記録し、HP増加量を返します。
-// HP適用はEnemyProgressManagerが担当します。
+// HP適用は呼び出し側が担当します。
 //
 // HP増加ルール:
 //   - 初撃破: +10
@@ -85,7 +85,7 @@ func (p *EnemyProgress) GetSelectableLevelRange(enemyTypeID string, defaultLevel
 //
 // 返り値:
 //   - hpGain: 獲得HP増加量
-//   - rankUnlocked: 新ランク解放フラグ（現在は常にfalse、EnemyProgressManagerで判定）
+//   - rankUnlocked: 新ランク解放フラグ（現在は常にfalse、呼び出し側で判定）
 func (p *EnemyProgress) RecordDefeat(enemyTypeID string, level int) (hpGain int, rankUnlocked bool) {
 	record, exists := p.DefeatRecords[enemyTypeID]
 

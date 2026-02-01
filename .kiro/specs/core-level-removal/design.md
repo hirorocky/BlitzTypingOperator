@@ -51,11 +51,14 @@ graph TB
     subgraph Usecase
         SlotManager[AgentSlotManager<br>Level引数削除]
         RewardCalc[RewardCalculator<br>HP成長報酬追加]
-        ProgressManager[EnemyProgressManager<br>新規: 進行管理]
+    end
+
+    subgraph App
+        ProgressAdapter[EnemyProgressAdapter<br>EnemyProgressProvider実装]
     end
 
     subgraph Infra
-        SaveData[SaveData<br>新構造v4.0.0]
+        SaveData[SaveData<br>新構造v0.0.1]
     end
 
     subgraph TUI
@@ -66,9 +69,9 @@ graph TB
     SlotManager --> CoreModel
     SlotManager --> CoreInventory
     RewardCalc --> PlayerModel
-    RewardCalc --> ProgressManager
-    ProgressManager --> EnemyProgress
-    BattleSelect --> ProgressManager
+    RewardCalc --> EnemyProgress
+    ProgressAdapter --> EnemyProgress
+    BattleSelect --> ProgressAdapter
     BattleSelect --> EnemyType
     SaveData --> CoreInventory
     SaveData --> EnemyProgress
@@ -77,9 +80,9 @@ graph TB
 **Architecture Integration**:
 - **Selected pattern**: 既存の5層レイヤードアーキテクチャを維持
 - **Domain boundaries**: EnemyProgressを新規ドメインモデルとして追加、PlayerModelに成長ロジックを追加
-- **Existing patterns preserved**: Managerパターン（新規EnemyProgressManager）、ユニークインベントリパターン
+- **Existing patterns preserved**: Adapterパターン（EnemyProgressAdapter）、ユニークインベントリパターン
 - **New components rationale**: EnemyProgressは敵撃破状況という独立したドメイン概念を表現
-- **Steering compliance**: domain層の独立性、usecase層でのManager配置を維持
+- **Steering compliance**: domain層の独立性、UI層はProviderインターフェース経由
 
 ### GameState統合方針
 
@@ -88,7 +91,7 @@ graph TB
 **変更方針**:
 1. `GameState.defeatedEnemies` フィールドを削除
 2. `GameState` に `EnemyProgress *domain.EnemyProgress` フィールドを追加
-3. 既存の `DefeatedEnemyProvider` インターフェースは `EnemyProgressManager` に置換
+3. 既存の `DefeatedEnemyProvider` インターフェースは `EnemyProgressProvider` に置換（App層でEnemyProgressAdapterを提供）
 
 ```go
 // 変更前
@@ -115,7 +118,7 @@ type GameState struct {
 | Layer | Choice / Version | Role in Feature | Notes |
 |-------|------------------|-----------------|-------|
 | Backend / Services | Go 1.25+ | 全てのロジック変更 | 既存スタック維持 |
-| Data / Storage | JSON (savedata) | v4.0.0セーブ形式 | 後方互換性なし |
+| Data / Storage | JSON (savedata) | v0.0.1セーブ形式 | 後方互換性なし |
 | Frontend / CLI | bubbletea, lipgloss | UI変更 | 既存スタック維持 |
 
 ## System Flows
@@ -126,13 +129,13 @@ type GameState struct {
 sequenceDiagram
     participant P as Player
     participant BS as BattleSelectScreen
-    participant PM as EnemyProgressManager
+    participant EP as EnemyProgress
     participant B as Battle
     participant R as RewardCalculator
 
     P->>BS: バトル選択画面表示
-    BS->>PM: 現在のランク・撃破状況取得
-    PM-->>BS: 解放済みランク、撃破済み敵リスト
+    BS->>EP: 現在のランク・撃破状況取得
+    EP-->>BS: 解放済みランク、撃破済み敵リスト
     BS-->>P: ランク内敵表示（撃破済み/未撃破）
 
     P->>BS: 敵選択（未撃破敵）
@@ -140,11 +143,11 @@ sequenceDiagram
     P->>B: バトル実行
     B-->>P: 勝利
     P->>R: 報酬計算
-    R->>PM: 初撃破記録
-    PM->>PM: 最大HP +10
-    PM->>PM: ランク内全撃破チェック
+    R->>EP: 初撃破記録
+    EP->>EP: 最大HP +10
+    EP->>EP: ランク内全撃破チェック
     alt ランク内全撃破
-        PM->>PM: 次ランク解放
+        EP->>EP: 次ランク解放
     end
 ```
 
@@ -154,20 +157,20 @@ sequenceDiagram
 sequenceDiagram
     participant P as Player
     participant BS as BattleSelectScreen
-    participant PM as EnemyProgressManager
+    participant EP as EnemyProgress
     participant R as RewardCalculator
 
     P->>BS: 撃破済み敵選択
-    BS->>PM: 撃破済み最大レベル取得
-    PM-->>BS: 最大撃破レベル
+    BS->>EP: 撃破済み最大レベル取得
+    EP-->>BS: 最大撃破レベル
     BS-->>P: レベル選択UI（1〜最大撃破Lv+5）
     P->>BS: レベルN選択
     Note over P,BS: バトル実行...勝利
     P->>R: 報酬計算（レベルN）
-    R->>PM: 撃破レベル更新
+    R->>EP: 撃破レベル更新
     alt 新記録レベル
-        PM->>PM: 最大HP += (新記録Lv - 1) x 10
-        PM->>PM: 選択可能最大レベル更新
+        EP->>EP: 最大HP += (新記録Lv - 旧記録Lv) x 10
+        EP->>EP: 選択可能最大レベル更新
     end
 ```
 
@@ -180,10 +183,10 @@ sequenceDiagram
 | 3.1-3.5 | レベル関連機能削除 | AgentSlotManager, AgentCustomization, RewardCalculator, SaveData, Encyclopedia | 各種UI/データ操作 | - |
 | 4.1-4.2 | 最大HP初期化 | PlayerModel, SaveData | NewPlayer(), NewSaveData() | - |
 | 5.1-5.2 | 敵レベル初期化 | EnemyType, EnemyGenerator | NewEnemy() | - |
-| 6.1-6.5 | 敵ランクシステム | EnemyType, EnemyProgress, EnemyProgressManager, BattleSelectScreen, SaveData | GetCurrentRank(), UnlockNextRank() | ランク進行 |
-| 7.1-7.3 | 初撃破HP増加 | EnemyProgressManager, PlayerModel, RewardCalculator | RecordFirstDefeat() | 初撃破報酬 |
+| 6.1-6.5 | 敵ランクシステム | EnemyType, EnemyProgress, BattleSelectScreen, SaveData | GetCurrentRank(), UnlockNextRank() | ランク進行 |
+| 7.1-7.3 | 初撃破HP増加 | EnemyProgress, PlayerModel, RewardCalculator | RecordFirstDefeat() | 初撃破報酬 |
 | 8.1-8.4 | 撃破済みレベル選択 | BattleSelectScreen, EnemyProgress, SaveData | GetSelectableLevelRange() | 高レベル挑戦 |
-| 9.1-9.3 | 高レベル撃破HP増加 | EnemyProgressManager, PlayerModel, RewardCalculator | RecordHighLevelDefeat() | 高レベル報酬 |
+| 9.1-9.3 | 高レベル撃破HP増加 | EnemyProgress, PlayerModel, RewardCalculator | RecordHighLevelDefeat() | 高レベル報酬 |
 | 10.1-10.3 | 進行状況表示 | BattleSelectScreen | renderEnemyInfoPanel() | - |
 | 11.1-11.3 | 後方互換性破棄 | SaveData | ValidateSaveVersion() | - |
 
@@ -198,10 +201,11 @@ sequenceDiagram
 | EnemyType | domain | ランク情報追加 | 6.4 | - | State |
 | AgentSlotManager | usecase/slot | レベルなしスロット管理 | 1.1, 3.1 | CoreInventory, CoreModel | Service |
 | EnemyProgressManager | usecase | 敵進行・HP成長管理 | 6.1-6.5, 7.1-7.3, 8.1-8.4, 9.1-9.3 | EnemyProgress, PlayerModel | Service |
-| RewardCalculator | usecase/rewarding | HP成長報酬計算 | 7.1, 9.1 | EnemyProgressManager | Service |
-| SaveData | infra/savedata | v4.0.0新形式 | 1.4, 4.2, 6.5, 7.2, 8.4, 9.3, 11.1-11.3 | - | State |
+| RewardCalculator | usecase/rewarding | HP成長報酬計算 | 7.1, 9.1 | EnemyProgress, PlayerModel, enemyTypes | Service |
+| EnemyProgressAdapter | app | EnemyProgressProvider実装 | 6.2-6.3, 8.1-8.3, 10.1-10.3 | EnemyProgress, EnemyType | Service |
+| SaveData | infra/savedata | v0.0.1新形式 | 1.4, 4.2, 6.5, 7.2, 8.4, 9.3, 11.1-11.3 | - | State |
 | AgentCustomizationScreen | tui/screens | レベル選択UI削除 | 3.1, 3.2 | AgentSlotManager | - |
-| BattleSelectScreenCarousel | tui/screens | ランク+レベル選択UI | 6.2-6.3, 8.1-8.3, 10.1-10.3 | EnemyProgressManager | - |
+| BattleSelectScreenCarousel | tui/screens | ランク+レベル選択UI | 6.2-6.3, 8.1-8.3, 10.1-10.3 | EnemyProgressProvider（EnemyProgressAdapter） | - |
 
 ### Domain Layer
 
@@ -296,7 +300,7 @@ func (inv *CoreInventory) GetOwnedCores() []string
 - 敵撃破時のHP成長ロジック
 
 **Dependencies**
-- Inbound: EnemyProgressManager (P0)
+- Inbound: RewardCalculator (P0)
 
 **Contracts**: State [x]
 
@@ -339,7 +343,7 @@ func (p *PlayerModel) IncreaseMaxHP(amount int)
 - **注意**: HP成長の計算のみを担当し、PlayerMaxHPは保持しない（Single Source of Truth: PlayerModel.MaxHP）
 
 **Dependencies**
-- Inbound: EnemyProgressManager (P0), SaveData (P1)
+- Inbound: RewardCalculator (P0), EnemyProgressAdapter (P1), SaveData (P1)
 
 **Contracts**: State [x]
 
@@ -365,7 +369,7 @@ func (p *EnemyProgress) IsDefeated(enemyTypeID string) bool
 func (p *EnemyProgress) GetMaxDefeatedLevel(enemyTypeID string) int
 func (p *EnemyProgress) GetSelectableLevelRange(enemyTypeID string, defaultLevel int) (min, max int)
 
-// RecordDefeat は撃破を記録し、HP増加量を返す（HP適用はEnemyProgressManagerが担当）
+// RecordDefeat は撃破を記録し、HP増加量を返す（HP適用は呼び出し側が担当）
 func (p *EnemyProgress) RecordDefeat(enemyTypeID string, level int) (hpGain int, rankUnlocked bool)
 ```
 
@@ -515,22 +519,24 @@ func (m *EnemyProgressManager) CheckRankComplete() bool
 | Requirements | 7.1, 9.1 |
 
 **Responsibilities & Constraints**
-- CalculateGuaranteedRewardでHP成長を計算
+- CalculateGuaranteedRewardWithProgressでHP成長/ランク解放を計算
 
 **Dependencies**
-- Outbound: EnemyProgressManager (P0)
+- Outbound: domain.EnemyProgress / domain.PlayerModel / enemyTypes map (P0)
 
 **Contracts**: Service [x]
 
 ##### Service Interface
 
 ```go
-// CalculateGuaranteedReward に HP成長を追加
-func (c *RewardCalculator) CalculateGuaranteedReward(
+// CalculateGuaranteedRewardWithProgress に HP成長/ランク解放を追加
+func (c *RewardCalculator) CalculateGuaranteedRewardWithProgress(
     stats *BattleStatistics,
     enemyLevel int,
     enemyType domain.EnemyType,
-    progressManager *EnemyProgressManager,
+    progress *domain.EnemyProgress,
+    player *domain.PlayerModel,
+    enemyTypes map[string]domain.EnemyType,
 ) *RewardResult
 
 type RewardResult struct {
@@ -541,7 +547,7 @@ type RewardResult struct {
 ```
 
 **Implementation Notes**
-- Integration: EnemyProgressManagerを依存として追加
+- Integration: EnemyProgress/PlayerModelを直接更新する
 
 ---
 
@@ -551,13 +557,13 @@ type RewardResult struct {
 
 | Field | Detail |
 |-------|--------|
-| Intent | v4.0.0 新セーブ形式 |
+| Intent | v0.0.1 新セーブ形式 |
 | Requirements | 1.4, 4.2, 6.5, 7.2, 8.4, 9.3, 11.1-11.3 |
 
 **Responsibilities & Constraints**
 - CoreLevelフィールド削除
 - EnemyProgress永続化追加
-- バージョンを4.0.0に更新
+- バージョンを0.0.1に更新
 - 旧バージョンは読み込み拒否
 
 **Contracts**: State [x]
@@ -565,7 +571,7 @@ type RewardResult struct {
 ##### State Management
 
 ```go
-const CurrentSaveDataVersion = "4.0.0"
+const CurrentSaveDataVersion = "0.0.1"
 
 // AgentSlotSave からCoreLevelを削除
 type AgentSlotSave struct {
@@ -606,7 +612,7 @@ type SaveData struct {
 
 // バージョンチェック
 func ValidateSaveVersion(version string) error {
-    if version != "4.0.0" {
+    if version != "0.0.1" {
         return ErrIncompatibleSaveVersion
     }
     return nil
@@ -710,10 +716,10 @@ func EnemyProgressFromSave(save *savedata.EnemyProgressSave) *domain.EnemyProgre
 - 未撃破敵はデフォルトレベル固定
 
 **Dependencies**
-- Outbound: EnemyProgressManager (P0)
+- Outbound: EnemyProgressProvider（EnemyProgressAdapter） (P0)
 
 **Implementation Notes**
-- Integration: DefeatedEnemyProviderをEnemyProgressManagerに置換
+- Integration: DefeatedEnemyProviderをEnemyProgressProviderに置換
 - 撃破状況と進行状況の表示を強化
 
 ## Data Models
@@ -723,8 +729,8 @@ func EnemyProgressFromSave(save *savedata.EnemyProgressSave) *domain.EnemyProgre
 ```mermaid
 erDiagram
     EnemyProgress ||--o{ EnemyDefeatRecord : contains
-    EnemyProgressManager ||--|| EnemyProgress : manages
-    EnemyProgressManager ||--|| PlayerModel : "updates MaxHP"
+    RewardCalculator ||--|| EnemyProgress : updates
+    RewardCalculator ||--|| PlayerModel : "updates MaxHP"
     EnemyType ||--o| EnemyDefeatRecord : "tracked by"
     CoreInventory ||--o{ CoreTypeID : contains
     AgentSlot ||--|| CoreTypeID : references
@@ -760,7 +766,7 @@ erDiagram
 
 **Entity Relationships**:
 - EnemyProgress 1:N EnemyDefeatRecord（敵タイプごとの撃破記録）
-- EnemyProgressManager → PlayerModel.MaxHP（HP成長を適用）
+- RewardCalculator → PlayerModel.MaxHP（HP成長を適用）
 - CoreInventory 1:N CoreTypeID（保有コアタイプ）
 
 **Consistency & Integrity**:
@@ -774,7 +780,7 @@ erDiagram
 
 ```json
 {
-  "version": "4.0.0",
+  "version": "0.0.1",
   "player": {
     "max_hp": 1150,
     "agent_slots": [
@@ -814,8 +820,8 @@ erDiagram
 
 ### Integration Tests
 - AgentSlotManager + CoreInventory: レベルなしでのコア設定フロー
-- RewardCalculator + EnemyProgressManager: 勝利時のHP成長とランク解放
-- SaveData: v4.0.0形式の保存・読み込み、旧バージョン拒否
+- RewardCalculator + EnemyProgress: 勝利時のHP成長とランク解放
+- SaveData: v0.0.1形式の保存・読み込み、旧バージョン拒否
 
 ### E2E/UI Tests
 - AgentCustomization: コア選択でレベル選択モードがスキップされることを確認
@@ -824,7 +830,7 @@ erDiagram
 ## Migration Strategy
 
 ### Phase 1: 後方互換性の破棄
-- CurrentSaveDataVersionを4.0.0に更新
+- CurrentSaveDataVersionを0.0.1に更新
 - LoadGameでバージョンチェックを追加
 - 旧バージョン検出時は新規ゲーム開始を案内
 
