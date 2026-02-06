@@ -1,24 +1,69 @@
-# AI-DLC and Spec-Driven Development
+# BlitzTypingOperator
 
-Kiro-style Spec Driven Development implementation on AI-DLC (AI Development Life Cycle)
+タイピング練習とRPGバトルを融合したターミナルベースのゲーム。
 
-## Project Context
+## プロジェクト知識
 
-### Paths
-- Steering: `.kiro/steering/`
-- Specs: `.kiro/specs/`
+### ドキュメント構成
+- `docs/specification/` — プロジェクト仕様（永続的。AIが実装に合わせて更新）
+- `docs/project/` — 開発中フィーチャーのドキュメント（一時的。完了時に削除）
+- `docs/emoji.md` — TUIで使用可能な絵文字リファレンス
 
-### Steering vs Specification
+### 仕様の参照
+開発時は `docs/specification/` 配下の仕様を参照すること:
+- `product.md`: プロダクト概要
+- `tech.md`: 技術スタック・アーキテクチャパターン
+- `structure.md`: プロジェクト構造・命名規則・レイヤー依存ルール
+- `battle.md`, `gameloop.md`, `agent.md`, `typing.md`, `enemy.md`, `collection.md`: 各ドメイン仕様
 
-**Steering** (`.kiro/steering/`) - Guide AI with project-wide rules and context
-**Specs** (`.kiro/specs/`) - Formalize development process for individual features
+## 開発ワークフロー（ATDD）
 
-### Active Specifications
-- Check `.kiro/specs/` for active specifications
-- Use `/kiro:spec-status [feature-name]` to check progress
+### サイクル
+
+```
+/dev:start "機能の説明"     → 計画作成 + codexレビュー → 【ユーザー承認】
+/dev:impl feature-name      → 受け入れテスト → TDD実装 → テスト結果報告
+/dev:complete feature-name   → codex実装レビュー → 【ユーザー承認】→ 仕様更新
+```
+
+随時: `/dev:consult "質問"` でcodexにアドホック相談
+
+### 受け入れテストの方針
+| テスト対象 | ツール | 場所 |
+|-----------|--------|------|
+| 画面表示・キー入力・遷移 | MCP tui-test (buffer mode) | セッション内で実行 |
+| ドメインロジック・計算 | Go test | `*_test.go`（同ディレクトリ） |
+| 複数層にまたがるフロー | Go test | `internal/integration_test/` |
+
+## docs/project テンプレート
+
+```markdown
+# {フィーチャー名}
+
+## 概要
+{何を作るか、なぜ作るか。2-3文。}
+
+## 受け入れ基準
+1. {テスト可能な基準}
+2. ...
+
+## 設計
+### 変更対象
+- {変更するファイル/パッケージと変更内容}
+
+### 新規作成
+- {新規作成するファイル/型/関数}
+
+### データフロー
+{処理の流れの概要}
+
+## メモ
+{設計判断、リスク、エッジケースなど。任意。}
+```
 
 ## Development Guidelines
-- Think in English, generate responses in Japanese. All Markdown content written to project files (e.g., requirements.md, design.md, tasks.md, research.md, validation reports) MUST be written in the target language configured for this specification (see spec.json.language).
+- 思考は英語、出力は日本語。プロジェクトファイル（ドキュメント含む）は日本語で記述
+- ユーザーの指示に従い、その範囲内で自律的に行動する
 
 ## Coding Style
 
@@ -67,30 +112,6 @@ type ModuleModel struct { ... }
 - 使用されていない古い形式のデータ構造
 - 新旧両方の実装が並存している状態
 
-## Minimal Workflow
-- Phase 0 (optional): `/kiro:steering`, `/kiro:steering-custom`
-- Phase 1 (Specification):
-  - `/kiro:spec-init "description"`
-  - `/kiro:spec-requirements {feature}`
-  - `/kiro:validate-gap {feature}` (optional: for existing codebase)
-  - `/kiro:spec-design {feature} [-y]`
-  - `/kiro:validate-design {feature}` (optional: design review)
-  - `/kiro:spec-tasks {feature} [-y]`
-- Phase 2 (Implementation): `/kiro:spec-impl {feature} [tasks]`
-  - `/kiro:validate-impl {feature}` (optional: after implementation)
-- Progress check: `/kiro:spec-status {feature}` (use anytime)
-
-## Development Rules
-- 3-phase approval workflow: Requirements → Design → Tasks → Implementation
-- Human review required each phase; use `-y` only for intentional fast-track
-- Keep steering current and verify alignment with `/kiro:spec-status`
-- Follow the user's instructions precisely, and within that scope act autonomously: gather the necessary context and complete the requested work end-to-end in this run, asking questions only when essential information is missing or the instructions are critically ambiguous.
-
-## Steering Configuration
-- Load entire `.kiro/steering/` as project memory
-- Default files: `product.md`, `tech.md`, `structure.md`
-- Custom files are supported (managed via `/kiro:steering-custom`)
-
 ## TUI Testing (MCP: tui-test)
 - 本プロジェクトは複雑なTUIを持つため、テスト時は必ず**バッファモード**を使用すること
 - `launch_tui`実行時に `mode: "buffer"` を指定する
@@ -116,4 +137,3 @@ send_keys("\x1b")   # ESC（戻る）
 ```
 
 ※ 初回起動時はコンパイルのため数秒かかる。delayを長め（2秒程度）に設定すると安定する。
-
