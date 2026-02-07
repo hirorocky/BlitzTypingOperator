@@ -51,9 +51,14 @@ func (m *SkillModel) CooldownSeconds() float64 {
 	return m.Type.CooldownSeconds
 }
 
-// Difficulty はタイピングの難易度レベルを返します。
-func (m *SkillModel) Difficulty() int {
-	return m.Type.Difficulty
+// GetDifficultyRate はタイピングの難易度を返します。
+func (m *SkillModel) GetDifficultyRate() DifficultyRate {
+	return DifficultyRate(m.Type.DifficultyRate)
+}
+
+// GetChallengeType はこのスキルに対応するチャレンジタイプIDを返します。
+func (m *SkillModel) GetChallengeType() ChallengeTypeID {
+	return m.Type.ChallengeType
 }
 
 // HasTag は指定されたタグがこのスキルに含まれているかを返します。

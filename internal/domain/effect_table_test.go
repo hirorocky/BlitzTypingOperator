@@ -393,6 +393,44 @@ func TestEffectTable_ExtendBuffs(t *testing.T) {
 	}
 }
 
+func TestEffectTable_Aggregate_TypingDifficulty(t *testing.T) {
+	table := NewEffectTableWithSeed(42)
+
+	// TypingDifficulty は AggMult（乗算集計）
+	table.AddEntry(EffectEntry{
+		SourceType: SourcePassive,
+		SourceID:   "typing_diff_1",
+		Name:       "難易度低下",
+		Values: map[EffectColumn]float64{
+			ColTypingDifficulty: 0.8, // 20%低下
+		},
+	})
+	table.AddEntry(EffectEntry{
+		SourceType: SourceBuff,
+		SourceID:   "typing_diff_2",
+		Name:       "難易度バフ",
+		Duration:   func() *float64 { d := 10.0; return &d }(),
+		Values: map[EffectColumn]float64{
+			ColTypingDifficulty: 0.9, // 10%低下
+		},
+	})
+
+	result := table.Aggregate(nil)
+
+	// 初期値1.0 × 0.8 × 0.9 = 0.72
+	expected := 0.72
+	if abs(result.TypingDifficulty-expected) > 0.001 {
+		t.Errorf("TypingDifficulty = %f, want %f", result.TypingDifficulty, expected)
+	}
+}
+
+func TestNewEffectResult_TypingDifficulty初期値(t *testing.T) {
+	result := NewEffectResult()
+	if result.TypingDifficulty != 1.0 {
+		t.Errorf("TypingDifficultyの初期値 = %f, want 1.0", result.TypingDifficulty)
+	}
+}
+
 // abs は浮動小数点の絶対値を返すヘルパー関数です。
 func abs(x float64) float64 {
 	if x < 0 {

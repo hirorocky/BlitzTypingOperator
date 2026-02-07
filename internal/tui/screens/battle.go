@@ -10,6 +10,7 @@ import (
 	"hirorocky/type-battle/internal/config"
 	"hirorocky/type-battle/internal/domain"
 	"hirorocky/type-battle/internal/tui/ascii"
+	"hirorocky/type-battle/internal/tui/challenges"
 	"hirorocky/type-battle/internal/tui/styles"
 	"hirorocky/type-battle/internal/usecase/combat"
 	"hirorocky/type-battle/internal/usecase/combat/chain"
@@ -82,20 +83,10 @@ type BattleScreen struct {
 	// エージェント選択状態（UI改善: 3エリアレイアウト用）
 	selectedAgentIdx int
 
-	// タイピング状態
-	isTyping             bool
-	typingText           string
-	typingIndex          int
-	typingMistakes       []int
-	typingStartTime      time.Time
-	typingTimeLimit      time.Duration
-	selectedModuleIdx    int
-	autoCorrectRemaining int // AutoCorrectによるミス無視残り回数
-
-	// タイピングシステム
-	challengeGenerator *typing.ChallengeGenerator
-	evaluator          *typing.Evaluator
-	typingState        *typing.ChallengeState
+	// チャレンジシステム
+	activeChallenge   challenges.ChallengeModel
+	selectedModuleIdx int
+	dictionary        []string // チャレンジ生成用辞書
 
 	// バトルエンジン
 	battleEngine *combat.BattleEngine
@@ -106,10 +97,8 @@ type BattleScreen struct {
 	chainEffectManager *chain.ChainEffectManager
 
 	// パッシブスキル関連
-	comboCount            int  // ミスなし連続タイピング回数
-	typoRecoveryUsed      bool // ps_typo_recovery使用済みフラグ（チャレンジ毎にリセット）
-	secondChanceUsed      bool // ps_second_chance使用済みフラグ（チャレンジ毎にリセット）
-	firstStrikeAgentIndex int  // ps_first_strike発動エージェント（-1は無効）
+	comboCount            int // ミスなし連続タイピング回数
+	firstStrikeAgentIndex int // ps_first_strike発動エージェント（-1は無効）
 
 	// ゲーム終了状態
 	gameOver      bool
@@ -139,21 +128,25 @@ func NewBattleScreen(enemy *domain.EnemyModel, player *domain.PlayerModel, agent
 		dictionary = createDefaultDictionary()
 	}
 
+	// 辞書を統合してフラットな[]stringにする
+	allWords := make([]string, 0)
+	allWords = append(allWords, dictionary.Easy...)
+	allWords = append(allWords, dictionary.Medium...)
+	allWords = append(allWords, dictionary.Hard...)
+
 	// 敵タイプリストを作成（BattleEngine用）
 	enemyTypes := []domain.EnemyType{enemy.Type}
 
 	gs := styles.NewGameStyles()
 	screen := &BattleScreen{
-		enemy:              enemy,
-		player:             player,
-		equippedAgents:     agents,
-		moduleSlots:        make([]ModuleSlot, 0),
-		selectedSlot:       0,
-		selectedAgentIdx:   0,
-		isTyping:           false,
-		challengeGenerator: typing.NewChallengeGenerator(dictionary),
-		evaluator:          typing.NewEvaluator(),
-		battleEngine:       combat.NewBattleEngine(enemyTypes),
+		enemy:            enemy,
+		player:           player,
+		equippedAgents:   agents,
+		moduleSlots:      make([]ModuleSlot, 0),
+		selectedSlot:     0,
+		selectedAgentIdx: 0,
+		dictionary:       allWords,
+		battleEngine:     combat.NewBattleEngine(enemyTypes),
 		// リキャスト・チェイン効果管理を初期化
 		recastManager:      recast.NewRecastManager(),
 		chainEffectManager: chain.NewChainEffectManager(),
@@ -279,6 +272,20 @@ func (s *BattleScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		return s.handleKeyMsg(msg)
+
+	default:
+		// チャレンジ固有のtickメッセージ（standardTickMsg, symbolStormTickMsg等）を転送
+		if s.activeChallenge != nil {
+			updated, cmd := s.activeChallenge.Update(msg)
+			s.activeChallenge = updated
+
+			// チャレンジ完了チェック
+			if result := s.activeChallenge.Result(); result != nil {
+				s.handleChallengeComplete(result)
+			}
+
+			return s, cmd
+		}
 	}
 
 	return s, nil
@@ -327,26 +334,10 @@ func (s *BattleScreen) handleTick() (tea.Model, tea.Cmd) {
 	s.playerHPBar.Update(deltaMS)
 	s.enemyHPBar.Update(deltaMS)
 
-	// タイピング中の時間切れチェック
-	if s.isTyping {
-		elapsed := time.Since(s.typingStartTime)
-		if elapsed >= s.typingTimeLimit {
-			// ps_second_chance: タイムアウト時に再挑戦（1回/チャレンジ）
-			if !s.secondChanceUsed && s.battleEngine != nil && s.battleState != nil {
-				slot := s.moduleSlots[s.selectedModuleIdx]
-				agent := slot.Agent
-				if s.battleEngine.EvaluateSecondChance(s.battleState, agent) {
-					s.secondChanceUsed = true
-					// タイピング状態をリセットして再挑戦
-					s.typingIndex = 0
-					s.typingMistakes = nil
-					s.typingStartTime = time.Now()
-					s.message = "[セカンドチャンス発動！ 再挑戦！]"
-					return s, s.tick()
-				}
-			}
-			s.CancelTyping()
-			s.message = "タイムアップ！"
+	// チャレンジ完了チェック（ChallengeModel.Result()で判定）
+	if s.activeChallenge != nil {
+		if result := s.activeChallenge.Result(); result != nil {
+			s.handleChallengeComplete(result)
 		}
 	}
 
@@ -364,7 +355,12 @@ func (s *BattleScreen) handleTick() (tea.Model, tea.Cmd) {
 
 	// 敵攻撃チェック（チャージ完了判定）
 	if s.enemy.IsChargeComplete(now) {
-		s.processEnemyAttack()
+		// ディフェンスチャレンジ中の場合、防御率を適用して攻撃解決後にチャレンジを自動終了
+		if dp, ok := s.activeChallenge.(challenges.DefenseProvider); ok {
+			s.processEnemyAttackWithDefense(dp)
+		} else {
+			s.processEnemyAttack()
+		}
 
 		// 攻撃後の敗北判定（結果表示状態に入る）
 		if s.checkGameOver() {
@@ -398,7 +394,7 @@ func (s *BattleScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return s.handleResultInput(msg)
 	}
 
-	if s.isTyping {
+	if s.activeChallenge != nil {
 		return s.handleTypingInput(msg)
 	}
 
@@ -445,17 +441,19 @@ func (s *BattleScreen) handleModuleSelection(msg tea.KeyMsg) (tea.Model, tea.Cmd
 	case "enter":
 		// モジュール使用可能チェック（クールダウンとリキャスト両方）
 		if len(s.moduleSlots) > 0 && s.isModuleUsable(s.selectedSlot) {
-			// モジュール選択 → タイピングチャレンジ開始
 			s.selectedModuleIdx = s.selectedSlot
 			module := s.moduleSlots[s.selectedSlot].Module
 
-			// モジュールの難易度に応じたタイピングチャレンジを生成
-			difficulty := typing.GetDifficultyForModuleLevel(module.Difficulty())
-			timeLimit := typing.GetDefaultTimeLimit(difficulty)
-			challenge := s.challengeGenerator.Generate(difficulty, timeLimit)
+			// ChallengeInput を構築してチャレンジを開始
+			cmd := s.startChallenge(module)
 
-			if challenge != nil {
-				s.StartTypingChallenge(challenge.Text, challenge.TimeLimit)
+			// スキル選択直後にクールダウンとリキャストを開始
+			slot := s.moduleSlots[s.selectedModuleIdx]
+			s.StartCooldown(s.selectedModuleIdx, slot.CooldownTotal)
+			s.startAgentRecast(slot.AgentIndex, module)
+
+			if cmd != nil {
+				return s, cmd
 			}
 		}
 	case "esc":
@@ -468,18 +466,20 @@ func (s *BattleScreen) handleModuleSelection(msg tea.KeyMsg) (tea.Model, tea.Cmd
 	return s, nil
 }
 
-// handleTypingInput はタイピング中のキー処理を行います。
+// handleTypingInput はチャレンジ中のキー処理を行います。
+// ChallengeModel.Update() に委譲します。
 func (s *BattleScreen) handleTypingInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "esc":
-		// タイピングをキャンセル
-		s.CancelTyping()
+	if s.activeChallenge == nil {
 		return s, nil
-	default:
-		if len(msg.Runes) == 1 {
-			s.ProcessTypingInput(msg.Runes[0])
-		}
 	}
 
-	return s, nil
+	updated, cmd := s.activeChallenge.Update(msg)
+	s.activeChallenge = updated
+
+	// チャレンジ完了チェック
+	if result := s.activeChallenge.Result(); result != nil {
+		s.handleChallengeComplete(result)
+	}
+
+	return s, cmd
 }

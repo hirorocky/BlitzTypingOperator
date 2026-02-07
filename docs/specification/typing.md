@@ -3,27 +3,60 @@
 ## 概要
 
 タイピングシステムはプレイヤーの入力評価を担当するドメインです。
-チャレンジテキストの生成、入力の正誤判定、WPM/正確性の計算を管理します。
+チャレンジタイプごとに専用のタイピングミニゲームを定義し、共通のI/F（入力: 難易度・辞書、出力: 正確性・スピード・成否）で統一します。
 
-**実装**: `/internal/typing/typing.go`
+**実装**:
+- ドメイン型: `/internal/domain/challenge.go`
+- チャレンジ基盤: `/internal/tui/challenges/challenge.go`
+- 各チャレンジ: `/internal/tui/challenges/standard.go`, `symbol_storm.go`, `defense.go`
 
 ## 要件
 
-### REQ-TYPING-1: チャレンジ生成
+### REQ-TYPING-1: チャレンジシステム基盤
 **種別**: Ubiquitous
 
-The typing system shall generate challenges with:
-- 難易度に応じたテキスト長
-- 英数字のみのテキスト
-- 連続同一テキスト回避
+The typing system shall provide a challenge framework with:
+- `ChallengeModel` インターフェース（型付きUpdate/View/Result）
+- `challenges.New(typeID, input)` によるファクトリ生成
+- 未知のtypeIDはスタンダードにフォールバック（warnログ出力）
+- 新タイプ追加は `challenges/` に1ファイル + init()でのRegister呼び出しで完了
 
 **受け入れ基準**:
-1. Easy: 3-6文字
-2. Medium: 7-11文字
-3. Hard: 12-20文字
-4. 同じテキストが連続しない
+1. ChallengeModelはInit/Update/View/Resultメソッドを持つ
+2. Update戻り値はChallengeModel型（型アサーション不要）
+3. Result()は完了時に非nilを返す
+4. 未知のtypeIDでもパニックせずスタンダードにフォールバック
 
-### REQ-TYPING-2: 入力評価
+### REQ-TYPING-2: 難易度システム
+**種別**: Ubiquitous
+
+The typing system shall use DifficultyRate for difficulty scaling:
+- DifficultyRate: 50-200（100=標準）。範囲外はClamp
+- 文字数: DifficultyRateに応じた連続関数で決定（低→短い、高→長い）
+- 制限時間: DifficultyRateに応じた連続関数で決定（低→長い、高→短い）
+- EffectTableの`ColTypingDifficulty`（乗算集計）でバフ/デバフから動的制御
+
+**受け入れ基準**:
+1. DifficultyRate=100で標準的な文字数・制限時間
+2. DifficultyRate=50で最も簡単（短い文字列、長い制限時間）
+3. DifficultyRate=200で最も難しい（長い文字列、短い制限時間）
+4. 範囲外の値はClampされる
+
+### REQ-TYPING-3: チャレンジステータス
+**種別**: Ubiquitous
+
+The typing system shall use a 3-state challenge status:
+- **Success**: 全文字入力完了（タイムアウトと同フレーム競合時は成功優先）
+- **Fail**: 制限時間超過（タイムアウト）
+- **Cancel**: ESCキーによるキャンセル
+
+**受け入れ基準**:
+1. Success時: 効果適用パイプライン実行
+2. Fail時: 効果なし
+3. Cancel時: 効果なし
+4. ディフェンスタイプはFail状態にならない（制限時間なし）
+
+### REQ-TYPING-4: 入力評価
 **種別**: State-Driven
 
 While タイピングチャレンジ進行中, the typing system shall:
@@ -36,7 +69,7 @@ While タイピングチャレンジ進行中, the typing system shall:
 2. 誤った入力は誤字としてカウント
 3. 進捗率を0.0〜1.0で計算
 
-### REQ-TYPING-3: WPM計算
+### REQ-TYPING-5: WPM計算
 **種別**: Ubiquitous
 
 The typing system shall calculate WPM as:
@@ -46,7 +79,7 @@ The typing system shall calculate WPM as:
 1. 標準的なWPM計算式に準拠
 2. 完了時間0の場合は0を返す
 
-### REQ-TYPING-4: 正確性計算
+### REQ-TYPING-6: 正確性計算
 **種別**: Ubiquitous
 
 The typing system shall calculate accuracy as:
@@ -56,7 +89,7 @@ The typing system shall calculate accuracy as:
 1. 0.0〜1.0の範囲で表現
 2. 入力なしの場合は1.0（ペナルティなし）
 
-### REQ-TYPING-5: 速度係数計算
+### REQ-TYPING-7: 速度係数計算
 **種別**: Ubiquitous
 
 The typing system shall calculate speed factor as:
@@ -68,77 +101,118 @@ The typing system shall calculate speed factor as:
 2. 上限2.0でキャップ
 3. モジュール効果の乗算に使用
 
-### REQ-TYPING-6: 制限時間
-**種別**: State-Driven
+## チャレンジタイプ
 
-While タイピングチャレンジ進行中, the typing system shall:
-- 残り時間をリアルタイム表示
-- タイムアウト時にチャレンジをキャンセル
+### スタンダード（standard）
 
-**受け入れ基準**:
-1. 難易度ごとのデフォルト制限時間
-2. Easy: 5秒, Medium: 8秒, Hard: 12秒
-3. タイムアウト時は効果なし
+物理攻撃スキル向けの基本タイピングチャレンジ。
+
+**動作**:
+- 英単語辞書からDifficultyRateに応じた文字数の単語を選択
+- 1文字ずつ正誤判定。AutoCorrect対応
+- 制限時間あり。DifficultyRateに応じた連続関数で決定
+- MistakeTimeExtendSec（ミス時の時間延長）対応
+- RetryOnTimeout（タイムアウト時の再挑戦）対応
+
+**評価**:
+- Accuracy: 正しい入力数 / 総入力数
+- SpeedFactor: 基準時間 / 実際完了時間（上限2.0）
+- WPM: パッシブスキル判定用
+
+### シンボルストーム（symbol_storm）
+
+魔法攻撃スキル向けの記号パターンチャレンジ。
+
+**動作**:
+- 記号や英数字を視覚的なパターン（炎形、雷形等）に配置した文字列を表示
+- パターンを上から順に1文字ずつ入力
+- DifficultyRateに応じてパターンの記号数・Shift+数字記号の割合が変動
+  - 低難易度: 4-6文字、基本記号中心（`<>{}()` 等）
+  - 高難易度: 10-16文字、Shift+数字記号含む（`!@#$%^&*` 等）
+- パターンテンプレートプールから難易度に応じた選択
+- 制限時間・AutoCorrect・パッシブスキルの動作はスタンダードと同一
+
+**評価**:
+- スタンダードと共通
+
+### ディフェンス（defense）
+
+防御スキル向けのリアルタイム防御チャレンジ。
+
+**動作**:
+- 英単語辞書から文字列を選択し、1文字ずつ入力（制限時間なし）
+- 正しい文字を入力するたびに防御率（0%→100%）が上昇
+- AutoCorrect発火時もミス無視として防御率が上昇（正しい入力と同等扱い）
+- DifficultyRateに応じて1文字あたりの防御率上昇量が変動（低難易度=大きい）
+- 全文字入力完了で次の単語が自動生成される（繰り返し）
+- 敵の攻撃を受けた時点の防御率でダメージ軽減
+  - 実効軽減率 = `damage_cut値 × DefenseRate`
+- 敵攻撃後にチャレンジが自動終了（Status=Success, Accuracy=攻撃時の防御率）
+- ESCキーでキャンセル可能（Status=Cancel、ダメージ軽減なし）
+
+**特殊仕様**:
+- 制限時間なし（Fail状態にならない）
+- TimeExtend/RetryOnTimeout/MistakeTimeExtendは無効
+- `DefenseProvider` インターフェースでバトル画面にリアルタイム防御率を公開
+- `CompleteByAttack()` で敵攻撃時にバトル画面がチャレンジを自動終了
 
 ## 仕様
 
-### ChallengeGenerator
+### ChallengeInput
 
-**責務**: 難易度に応じたタイピングチャレンジを生成
-
-**インターフェース**:
-- 入力: Difficulty, TimeLimit
-- 出力: Challenge
-
-**ルール**:
-1. 辞書から難易度に応じた単語を選択
-2. 最大10回のリトライで重複回避
-3. 辞書は外部から注入可能
-
-### Evaluator
-
-**責務**: タイピング入力の評価とスコア計算
-
-**インターフェース**:
-- 入力: Challenge, 入力文字
-- 出力: TypingResult
-
-**ルール**:
-1. StartChallengeで状態初期化
-2. ProcessInputで1文字ずつ評価
-3. CompleteChallengeで結果計算
-
-### ChallengeState
-
-**責務**: 進行中チャレンジの状態保持
-
-**状態遷移**:
-```mermaid
-stateDiagram-v2
-    [*] --> Started: StartChallenge
-    Started --> InProgress: 入力開始
-    InProgress --> InProgress: ProcessInput
-    InProgress --> Completed: 全文字入力
-    InProgress --> Timeout: 制限時間超過
-    Completed --> [*]
-    Timeout --> [*]
-```
-
-### TypingResult
-
-**責務**: タイピング評価結果を保持
+**責務**: チャレンジへの共通入力パラメータ
 
 **フィールド**:
-- Completed: チャレンジ完了フラグ
-- WPM: Words Per Minute
-- Accuracy: 正確性（0.0〜1.0）
+- Difficulty: DifficultyRate（50-200）
+- Words: 辞書（[]string、optional）
+- TimeExtendSec: バフによる時間延長（ディフェンスでは無視）
+- AutoCorrectCount: バフによるミス無視回数（全タイプで有効）
+- MistakeTimeExtendSec: ミス時の時間延長秒数（ps_typo_recovery。ディフェンスでは無視）
+- RetryOnTimeout: タイムアウト時の再挑戦許可（ps_second_chance。ディフェンスでは無視）
+- RetryTimeLimitMultiplier: 再挑戦時の制限時間倍率
+
+### ChallengeOutput
+
+**責務**: チャレンジの出力結果
+
+**フィールド**:
+- Accuracy: 正確性（0.0-1.0。ディフェンスでは最終防御率）
 - SpeedFactor: 速度係数（上限2.0）
-- AccuracyFactor: 正確性係数
+- WPM: Words Per Minute
 - CompletionTime: 完了時間
-- Timeout: タイムアウトフラグ
+- Status: ChallengeStatus（Success/Fail/Cancel）
+
+### ChallengeModel
+
+**責務**: チャレンジの共通インターフェース（tui層に配置）
+
+**インターフェース**:
+- `Init() tea.Cmd`
+- `Update(tea.Msg) (ChallengeModel, tea.Cmd)` — 型付き戻り値
+- `View() string`
+- `Result() *ChallengeOutput` — 完了時に非nil
+
+**設計**:
+- tea.Modelを埋め込まず、型付きメソッドで定義
+- 各チャレンジは独自のtea.Tickでタイマー管理（BattleTickMsgに依存しない）
+- ファクトリは`map[ChallengeTypeID]constructor`で管理
+- init()による自動登録
+
+### DefenseProvider
+
+**責務**: ディフェンスタイプ専用のオプショナルインターフェース
+
+**インターフェース**:
+- `DefenseRate() float64` — 現在の防御率（0.0-1.0）
+- `CompleteByAttack()` — 敵攻撃時にチャレンジを自動終了
+
+**使用方法**:
+- バトル画面が`activeChallenge.(DefenseProvider)`で型アサーション
+- 既に終了済み（Cancel含む）の場合、CompleteByAttack()はno-op
 
 ## 関連ドメイン
 
-- **Battle**: タイピング結果に基づくモジュール効果計算
+- **Battle**: タイピング結果に基づくモジュール効果計算、ディフェンス中の敵攻撃処理
 - **Game Loop**: タイピング統計の記録
 - **Collection**: WPM/正確性に基づく実績解除
+- **Agent**: SkillType.ChallengeType/DifficultyRateの参照

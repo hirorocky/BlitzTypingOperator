@@ -157,3 +157,48 @@ func (c *BalanceConfig) GetTimeLimit(difficulty int) int {
 	// デフォルト（Easy）
 	return 10000
 }
+
+// ==================================================
+// DifficultyRate ベースの連続関数（50-200スケール）
+// ==================================================
+
+// GetTextLengthForRate はDifficultyRate(50-200)に基づくテキスト長さ範囲を返します。
+// 線形補間: rate=50→3-6文字、rate=100→7-11文字、rate=200→12-20文字
+func GetTextLengthForRate(rate int) (min, max int) {
+	if rate <= 50 {
+		return 3, 6
+	}
+	if rate >= 200 {
+		return 12, 20
+	}
+
+	// 50-100: 線形補間（3-6 → 7-11）
+	if rate <= 100 {
+		t := float64(rate-50) / 50.0
+		minLen := 3.0 + t*(7.0-3.0)
+		maxLen := 6.0 + t*(11.0-6.0)
+		return int(minLen), int(maxLen)
+	}
+
+	// 100-200: 線形補間（7-11 → 12-20）
+	t := float64(rate-100) / 100.0
+	minLen := 7.0 + t*(12.0-7.0)
+	maxLen := 11.0 + t*(20.0-11.0)
+	return int(minLen), int(maxLen)
+}
+
+// GetTimeLimitForRate はDifficultyRate(50-200)に基づく制限時間をミリ秒で返します。
+// 線形補間: rate=50→12000ms、rate=100→8000ms、rate=200→4000ms
+func GetTimeLimitForRate(rate int) int {
+	if rate <= 50 {
+		return 12000
+	}
+	if rate >= 200 {
+		return 4000
+	}
+
+	// 50-200: 線形補間（12000ms → 4000ms）
+	t := float64(rate-50) / 150.0
+	limit := 12000.0 - t*(12000.0-4000.0)
+	return int(limit)
+}

@@ -42,11 +42,13 @@ While バトル進行中, the battle system shall:
 - 敵の攻撃間隔に基づいて自動攻撃を実行
 - 次回攻撃の予測ダメージと属性を表示
 - 防御バフによるダメージ軽減を適用
+- ディフェンスチャレンジ中の敵攻撃: `damage_cut値 × DefenseRate` でダメージ軽減を適用し、攻撃解決後にチャレンジを自動終了
 
 **受け入れ基準**:
 1. 攻撃ダメージ = 攻撃力 x (1 - ダメージ軽減率)
 2. 最低ダメージ1保証
 3. 残り時間をリアルタイム表示
+4. ディフェンスチャレンジ中: DefenseProvider.DefenseRate()で軽減率を取得し、攻撃後にCompleteByAttack()でチャレンジ終了
 
 ### REQ-BATTLE-4: フェーズ変化
 **種別**: Event-Driven
@@ -111,9 +113,21 @@ stateDiagram-v2
 2. プレイヤーデバフ持続時間: 8秒
 3. 行動予告を事前表示
 
+### チャレンジ完了時の効果適用
+
+**ChallengeStatusと効果適用の対応**:
+- **Success**: ChallengeOutputからTypingResultへ変換し、既存の効果適用パイプライン（ApplySkillEffectWithCombo）を実行。コンボ・パッシブ判定も実行
+- **Fail**: 効果なし。タイムアウト時
+- **Cancel**: 効果なし。ESCキー押下時
+
+**ディフェンスタイプの特殊処理**:
+- チャレンジ終了後の効果適用パイプライン・コンボ・パッシブ判定はすべてスキップ
+- リアルタイム軽減（`damage_cut × DefenseRate`）が効果の全て
+- ESCキャンセル時もCD/リキャストは消費される（返却しない）
+
 ## 関連ドメイン
 
-- **Typing**: WPM/正確性に基づくダメージ計算
-- **Agent**: 装備エージェントのモジュールとステータス参照
+- **Typing**: チャレンジタイプに応じた入力評価、DefenseProviderによるリアルタイム防御率
+- **Agent**: 装備エージェントのモジュールとステータス参照、SkillType.ChallengeType/DifficultyRate
 - **Enemy**: 敵パラメータ（HP、攻撃力、間隔）参照
 - **Game Loop**: 報酬画面/ホームへのシーン遷移

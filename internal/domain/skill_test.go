@@ -16,7 +16,7 @@ func TestSkillType_フィールドの確認(t *testing.T) {
 		Tags:            []string{"magic_low"},
 		Description:     "炎の魔法で敵に魔法ダメージを与える",
 		CooldownSeconds: 10.0,
-		Difficulty:      1,
+		DifficultyRate:  100,
 		MinDropLevel:    1,
 		Effects: []SkillEffect{
 			{

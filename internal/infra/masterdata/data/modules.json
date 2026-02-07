@@ -7,7 +7,8 @@
       "tags": ["physical_low"],
       "description": "基本的な物理攻撃。敵に物理ダメージを与える。",
       "cooldown_seconds": 10.0,
-      "difficulty": 1,
+      "difficulty": 80,
+      "challenge_type": "standard",
       "min_drop_level": 1,
       "effects": [
         {
@@ -26,7 +27,8 @@
       "tags": ["physical_mid"],
       "description": "強化された物理攻撃。敵に中程度の物理ダメージを与える。",
       "cooldown_seconds": 15.0,
-      "difficulty": 2,
+      "difficulty": 120,
+      "challenge_type": "standard",
       "min_drop_level": 10,
       "effects": [
         {
@@ -45,7 +47,8 @@
       "tags": ["physical_high"],
       "description": "最強の物理攻撃。敵に大ダメージを与える。",
       "cooldown_seconds": 20.0,
-      "difficulty": 3,
+      "difficulty": 170,
+      "challenge_type": "standard",
       "min_drop_level": 20,
       "effects": [
         {
@@ -64,7 +67,8 @@
       "tags": ["magic_low"],
       "description": "炎の魔法弾を放つ。敵に魔法ダメージを与える。",
       "cooldown_seconds": 10.0,
-      "difficulty": 1,
+      "difficulty": 80,
+      "challenge_type": "symbol_storm",
       "min_drop_level": 1,
       "effects": [
         {
@@ -83,7 +87,8 @@
       "tags": ["magic_mid"],
       "description": "強力な炎の魔法弾。敵に中程度の魔法ダメージを与える。",
       "cooldown_seconds": 15.0,
-      "difficulty": 2,
+      "difficulty": 120,
+      "challenge_type": "symbol_storm",
       "min_drop_level": 10,
       "effects": [
         {
@@ -102,7 +107,8 @@
       "tags": ["magic_high"],
       "description": "灼熱の魔法弾。敵に大魔法ダメージを与える。",
       "cooldown_seconds": 20.0,
-      "difficulty": 3,
+      "difficulty": 170,
+      "challenge_type": "symbol_storm",
       "min_drop_level": 20,
       "effects": [
         {
@@ -121,7 +127,8 @@
       "tags": ["heal_low"],
       "description": "自身のHPを少量回復する。",
       "cooldown_seconds": 10.0,
-      "difficulty": 1,
+      "difficulty": 80,
+      "challenge_type": "standard",
       "min_drop_level": 1,
       "effects": [
         {
@@ -140,7 +147,8 @@
       "tags": ["heal_mid"],
       "description": "自身のHPを中程度回復する。",
       "cooldown_seconds": 15.0,
-      "difficulty": 2,
+      "difficulty": 120,
+      "challenge_type": "standard",
       "min_drop_level": 10,
       "effects": [
         {
@@ -159,7 +167,8 @@
       "tags": ["heal_high"],
       "description": "自身のHPを大きく回復する。",
       "cooldown_seconds": 20.0,
-      "difficulty": 3,
+      "difficulty": 170,
+      "challenge_type": "standard",
       "min_drop_level": 20,
       "effects": [
         {
@@ -178,7 +187,8 @@
       "tags": ["buff_low"],
       "description": "一時的にSTRを上昇させる。",
       "cooldown_seconds": 10.0,
-      "difficulty": 1,
+      "difficulty": 80,
+      "challenge_type": "standard",
       "min_drop_level": 1,
       "effects": [
         {
@@ -208,7 +218,8 @@
       "tags": ["buff_low"],
       "description": "一時的に受けるダメージを軽減する。",
       "cooldown_seconds": 10.0,
-      "difficulty": 1,
+      "difficulty": 80,
+      "challenge_type": "defense",
       "min_drop_level": 1,
       "effects": [
         {
@@ -231,7 +242,8 @@
       "tags": ["buff_mid"],
       "description": "STRを大きく上昇させる。",
       "cooldown_seconds": 10.0,
-      "difficulty": 2,
+      "difficulty": 120,
+      "challenge_type": "standard",
       "min_drop_level": 10,
       "effects": [
         {
@@ -254,7 +266,8 @@
       "tags": ["buff_mid"],
       "description": "受けるダメージを大きく軽減する。",
       "cooldown_seconds": 15.0,
-      "difficulty": 2,
+      "difficulty": 120,
+      "challenge_type": "defense",
       "min_drop_level": 10,
       "effects": [
         {
@@ -277,7 +290,8 @@
       "tags": ["buff_high"],
       "description": "STRを大幅に上昇させる。",
       "cooldown_seconds": 20.0,
-      "difficulty": 3,
+      "difficulty": 170,
+      "challenge_type": "standard",
       "min_drop_level": 20,
       "effects": [
         {
@@ -300,7 +314,8 @@
       "tags": ["debuff_low"],
       "description": "敵の攻撃力を一時的に低下させる。",
       "cooldown_seconds": 10.0,
-      "difficulty": 1,
+      "difficulty": 80,
+      "challenge_type": "standard",
       "min_drop_level": 1,
       "effects": [
         {
@@ -323,7 +338,8 @@
       "tags": ["debuff_low"],
       "description": "敵の防御力を一時的に低下させる。",
       "cooldown_seconds": 10.0,
-      "difficulty": 1,
+      "difficulty": 80,
+      "challenge_type": "standard",
       "min_drop_level": 1,
       "effects": [
         {
@@ -346,7 +362,8 @@
       "tags": ["debuff_mid"],
       "description": "敵の攻撃力を大きく低下させる。",
       "cooldown_seconds": 15.0,
-      "difficulty": 2,
+      "difficulty": 120,
+      "challenge_type": "standard",
       "min_drop_level": 10,
       "effects": [
         {
@@ -369,7 +386,8 @@
       "tags": ["debuff_high"],
       "description": "敵の攻撃力を大幅に低下させる。",
       "cooldown_seconds": 20.0,
-      "difficulty": 3,
+      "difficulty": 170,
+      "challenge_type": "standard",
       "min_drop_level": 20,
       "effects": [
         {

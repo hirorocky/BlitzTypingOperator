@@ -167,7 +167,8 @@ type SkillDefinitionData struct {
 	Tags            []string          `json:"tags"`
 	Description     string            `json:"description"`
 	CooldownSeconds float64           `json:"cooldown_seconds"`
-	Difficulty      int               `json:"difficulty"`
+	DifficultyRate  int               `json:"difficulty"`
+	ChallengeType   string            `json:"challenge_type"`
 	MinDropLevel    int               `json:"min_drop_level"`
 	Effects         []SkillEffectData `json:"effects"`
 }
@@ -216,7 +217,8 @@ func (m *SkillDefinitionData) ToDomainType() domain.SkillType {
 		Tags:            tagsCopy,
 		Description:     m.Description,
 		CooldownSeconds: m.CooldownSeconds,
-		Difficulty:      m.Difficulty,
+		DifficultyRate:  m.DifficultyRate,
+		ChallengeType:   domain.ChallengeTypeID(m.ChallengeType),
 		MinDropLevel:    m.MinDropLevel,
 		Effects:         effects,
 	}

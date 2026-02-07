@@ -163,6 +163,84 @@ func TestModulesPerAgent(t *testing.T) {
 	}
 }
 
+// === DifficultyRate ベース連続関数テスト ===
+
+func TestGetTextLengthForRate(t *testing.T) {
+	tests := []struct {
+		name    string
+		rate    int
+		wantMin int
+		wantMax int
+	}{
+		{"最低難易度", 50, 3, 6},
+		{"標準難易度", 100, 7, 11},
+		{"最高難易度", 200, 12, 20},
+		{"低難易度(75)", 75, 5, 8},
+		{"高難易度(150)", 150, 9, 15},
+		{"範囲下限未満", 30, 3, 6},
+		{"範囲上限超過", 250, 12, 20},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			minLen, maxLen := GetTextLengthForRate(tt.rate)
+			if minLen != tt.wantMin {
+				t.Errorf("min = %d, want %d", minLen, tt.wantMin)
+			}
+			if maxLen != tt.wantMax {
+				t.Errorf("max = %d, want %d", maxLen, tt.wantMax)
+			}
+		})
+	}
+}
+
+func TestGetTextLengthForRate_単調増加(t *testing.T) {
+	prevMin, prevMax := GetTextLengthForRate(50)
+	for rate := 60; rate <= 200; rate += 10 {
+		min, max := GetTextLengthForRate(rate)
+		if min < prevMin {
+			t.Errorf("rate=%d: min(%d) < prevMin(%d)、単調増加でない", rate, min, prevMin)
+		}
+		if max < prevMax {
+			t.Errorf("rate=%d: max(%d) < prevMax(%d)、単調増加でない", rate, max, prevMax)
+		}
+		prevMin, prevMax = min, max
+	}
+}
+
+func TestGetTimeLimitForRate(t *testing.T) {
+	tests := []struct {
+		name   string
+		rate   int
+		wantMS int
+	}{
+		{"最低難易度", 50, 12000},
+		{"最高難易度", 200, 4000},
+		{"範囲下限未満", 30, 12000},
+		{"範囲上限超過", 250, 4000},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetTimeLimitForRate(tt.rate)
+			if got != tt.wantMS {
+				t.Errorf("GetTimeLimitForRate(%d) = %d, want %d", tt.rate, got, tt.wantMS)
+			}
+		})
+	}
+}
+
+func TestGetTimeLimitForRate_単調減少(t *testing.T) {
+	prevLimit := GetTimeLimitForRate(50)
+	for rate := 60; rate <= 200; rate += 10 {
+		limit := GetTimeLimitForRate(rate)
+		if limit > prevLimit {
+			t.Errorf("rate=%d: limit(%d) > prevLimit(%d)、単調減少でない", rate, limit, prevLimit)
+		}
+		prevLimit = limit
+	}
+}
+
 func TestBalanceConfigCustomization(t *testing.T) {
 	// 設定のカスタマイズが可能であること
 	config := NewBalanceConfig(

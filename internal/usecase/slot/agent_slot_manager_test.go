@@ -32,7 +32,7 @@ func createTestSkillType(id string, tags []string) domain.SkillType {
 		Tags:            tags,
 		Description:     "テスト用スキル",
 		CooldownSeconds: 5.0,
-		Difficulty:      1,
+		DifficultyRate:  100,
 		MinDropLevel:    1,
 		Effects:         []domain.SkillEffect{},
 	}

@@ -164,6 +164,9 @@ type EffectResult struct {
 	// AutoCorrect はミス無視回数です。
 	AutoCorrect int
 
+	// TypingDifficulty はタイピング難易度の乗算修正値です（1.0が基準）。
+	TypingDifficulty float64
+
 	// ========== リキャスト系 ==========
 
 	// CooldownReduce はCD短縮率です。
@@ -222,6 +225,7 @@ func NewEffectResult() EffectResult {
 	return EffectResult{
 		DamageMultiplier: 1.0,
 		HealMultiplier:   1.0,
+		TypingDifficulty: 1.0, // 乗算の初期値
 		// ステータス系Multiplierは増加率として扱う（0.0 = +0%、0.25 = +25%）
 		STRMultiplier: 0.0,
 		INTMultiplier: 0.0,
