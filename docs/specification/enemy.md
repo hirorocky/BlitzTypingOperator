@@ -5,7 +5,7 @@
 敵システムはバトルにおける敵キャラクターを管理するドメインです。
 敵の生成、ステータス計算、行動パターン実行、フェーズ管理、報酬ドロップを担当します。
 
-**実装**: `/internal/domain/enemy.go`, `/internal/usecase/combat/battle.go`, `/internal/usecase/rewarding/reward.go`
+**実装**: `/internal/domain/enemy.go`, `/internal/domain/enemy_progress.go`, `/internal/usecase/combat/battle.go`, `/internal/usecase/rewarding/reward.go`
 
 ## 要件
 
@@ -13,31 +13,30 @@
 **種別**: Ubiquitous
 
 The enemy system shall define enemy types with:
-- 基礎HP、攻撃力、攻撃間隔
-- 攻撃属性（physical/magic）
-- ASCIIアート（外観）
-- デフォルトレベル（1〜100）
+- 基礎HP
+- ランク（同一ランクの全敵撃破で次ランク解放）
 - 行動パターン（通常/強化）
 - パッシブスキル（通常/強化）
 - ドロップアイテム設定
+- ボルテージ上昇率
 
 **受け入れ基準**:
 1. 外部JSONファイルで定義（enemies.json, enemy_actions.json）
-2. 同じレベルでも複数バリエーション
-3. 各タイプに固有の名前と外観
+2. ランクで敵グループを分類
+3. 各タイプに固有の名前
 
-### REQ-ENEMY-2: レベルスケーリング
+### REQ-ENEMY-2: 行動ベースダメージ計算
 **種別**: Ubiquitous
 
-The enemy system shall scale enemy stats by level:
-- HP = 基礎HP x レベル
-- 攻撃力 = 基礎攻撃力 + (レベル x 2)
-- 攻撃間隔 = 基礎間隔 - (レベル x 50ms)、最低500ms
+The enemy system shall calculate damage per action:
+- ダメージ = DamageBase + Level × DamagePerLevel
+- 各行動（EnemyAction）が独自のダメージパラメータを持つ
+- 行動ごとにチャージタイム（実行までの待機時間）を設定
 
 **受け入れ基準**:
-1. 高レベルほど強い敵
-2. 攻撃間隔は最低値でキャップ
-3. 表示名に「Lv.X」を含む
+1. ダメージは行動単位で定義（EnemyType全体の攻撃力ではない）
+2. レベルによりダメージがスケーリング
+3. 最低ダメージ1保証
 
 ### REQ-ENEMY-3: フェーズ変化
 **種別**: Event-Driven
@@ -62,7 +61,7 @@ When 敵を撃破する, the enemy system shall:
 - 敵タイプのDropItemTypeIDで指定されたタイプを生成
 
 **受け入れ基準**:
-1. コア: レベルは敵レベル以下でランダム（高レベル寄りの重み付け）
+1. コア: 指定TypeIDのコアをドロップ（レベル概念なし）
 2. モジュール: 敵レベルに応じたチェイン効果を付与
 3. ドロップ設定がない場合は既存確率ドロップにフォールバック
 
@@ -140,11 +139,7 @@ The enemy system shall apply passive skills:
 - ID: 一意識別子
 - Name: 表示名
 - BaseHP: 基礎HP
-- BaseAttackPower: 基礎攻撃力
-- BaseAttackInterval: 基礎攻撃間隔
-- AttackType: 攻撃属性
-- ASCIIArt: 外観
-- DefaultLevel: デフォルトレベル（1〜100）
+- Rank: ランク（1以上。同ランクの全敵撃破で次ランク解放）
 - NormalActionPatternIDs: 通常行動パターンID配列
 - EnhancedActionPatternIDs: 強化行動パターンID配列
 - ResolvedNormalActions: 解決済み通常行動パターン
@@ -153,14 +148,15 @@ The enemy system shall apply passive skills:
 - EnhancedPassive: 強化パッシブスキル
 - DropItemCategory: ドロップカテゴリ（"core" / "module"）
 - DropItemTypeID: ドロップアイテムTypeID
+- VoltageRisePer10s: 10秒あたりのボルテージ上昇量
 
 ### EnemyModel
 
 **責務**: バトル中の敵インスタンスを表現
 
 **インターフェース**:
-- 入力: EnemyType, Level
-- 出力: HP, AttackPower, Phase, EffectTable, WaitMode
+- 入力: EnemyType, Level（プレイヤー選択）
+- 出力: HP, Phase, EffectTable, WaitMode, Voltage
 
 **フィールド（行動管理）**:
 - ActionIndex: 現在の行動パターンインデックス
@@ -280,15 +276,46 @@ damage = DamageBase + Level × DamagePerLevel
 
 **確定ドロップ**:
 1. 敵タイプのDropItemCategoryとDropItemTypeIDに基づいて決定
-2. コア: レベルは敵レベル以下（高レベル寄り重み付け）
+2. コア: 指定TypeIDのコアをドロップ（レベル概念なし）
 3. モジュール: 敵レベルに応じたチェイン効果を付与
 
 **フォールバック**:
 - ドロップ設定がない場合は既存の確率ドロップを使用
 
+### EnemyProgress
+
+**責務**: 敵撃破記録・ランク進行・HP成長を管理
+
+**フィールド**:
+- CurrentRank: 現在解放済みランク（1から開始）
+- DefeatRecords: 敵タイプIDごとの撃破記録（EnemyDefeatRecord）
+
+**ルール**:
+1. 初期ランクは1
+2. 同ランクの全敵を撃破すると次ランクが解放される
+3. 撃破記録に基づいて選択可能レベル範囲を決定
+
+### EnemyDefeatRecord
+
+**責務**: 敵1体の撃破記録を表す
+
+**フィールド**:
+- Defeated: 撃破済みフラグ
+- MaxDefeatedLevel: 撃破済み最大レベル（未撃破なら0）
+
+**HP成長ルール**:
+1. 初撃破: +10 HP
+2. 新記録レベル更新: +(新記録レベル - 旧最大レベル) × 10 HP
+3. 同レベル以下の再撃破: HP増加なし
+
+**選択可能レベル範囲**:
+- 未撃破: デフォルトレベルのみ
+- 撃破済み: 1 〜 (最大撃破レベル + 5)
+
 ## 関連ドメイン
 
 - **Battle**: 敵パラメータの参照、ダメージ処理、行動実行
-- **Game Loop**: エンカウント敵リストの更新
+- **Game Loop**: 敵進行状態の永続化
 - **Collection**: 敵図鑑への登録
 - **EffectTable**: バフ/デバフ/パッシブ効果の管理
+- **Player**: HP成長（撃破報酬）

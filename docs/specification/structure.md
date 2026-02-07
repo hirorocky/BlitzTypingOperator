@@ -56,7 +56,7 @@ config       ← 横断的関心事（全層から参照可能）
 - **エンティティ**: core.go, skill.go, agent.go, enemy.go, player.go
 - **スロットシステム**: agent_slot.go（AgentSlot、SkillSlotConfig）- 3スロットのエージェント構成管理
 - **インベントリ**:
-  - core_inventory.go: コアのユニーク管理（TypeID + 最大レベル）
+  - core_inventory.go: コアの保有管理（TypeIDの保有フラグ）
   - skill_inventory.go: スキルのユニーク管理（TypeID + チェイン効果バリエーション）
 - **敵進行システム**: enemy_progress.go - 敵撃破記録・ランク進行・選択可能レベル範囲
 - **効果システム**: effect_table.go, effect_column.go, effect_context.go, effect_entry.go
@@ -69,7 +69,7 @@ config       ← 横断的関心事（全層から参照可能）
 
 **サブパッケージ**:
 - `/internal/domain/service/` - ドメインサービス
-  - `stats_service.go`: ステータス計算（CoreType×Level→Stats）
+  - `stats_service.go`: ステータス計算（CoreType→Stats、基礎値100×重み）
 
 ### usecase層 - ユースケース
 **場所**: `/internal/usecase/`

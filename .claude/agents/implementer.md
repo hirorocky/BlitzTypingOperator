@@ -31,6 +31,7 @@ Red-Green-Refactorサイクルに従ってテストファースト開発を行�
 ## タスク管理
 
 ClaudeのTask機能で進捗を追跡する:
+
 - `TaskCreate`: サブタスクを登録（最大10タスク）
 - `TaskUpdate`: 開始時に `in_progress`、完了時に `completed` に更新
 - `TaskList`: 残タスクを確認して次のタスクへ進む
@@ -47,7 +48,7 @@ ClaudeのTask機能で進捗を追跡する:
 ### 🟢 GREEN: [実装説明]
 [実装コード]
 
-### 🔵 REFACTOR: [改善内容]（必要時のみ）
+### 🔵 REFACTOR: [改善内容]
 
 ### ✅ VERIFY
 [テスト実行結果]

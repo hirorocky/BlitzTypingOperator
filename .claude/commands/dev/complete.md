@@ -7,7 +7,7 @@ argument-hint: <feature-name>
 # 完了レビュー
 
 ## 概要
-実装をcodexにレビューさせ、問題がなければ仕様を更新してフィーチャーを完了する。
+4つの観点別エキスパートエージェントを並列起動して実装をレビューし、問題がなければ仕様を更新してフィーチャーを完了する。
 ユーザーの承認なしにファイル削除や仕様更新は行わない。
 
 ## 実行ステップ
@@ -24,28 +24,106 @@ git diff main...HEAD
 ```
 mainブランチからの全変更を収集する。
 
-### 3. codex実装レビュー依頼
-変更内容とフィーチャードキュメントをcodexに送り、レビューを依頼する:
+### 3. エキスパートエージェントに実装レビューを依頼
 
-```bash
-codex exec --full-auto "以下の実装をレビューしてください。フィーチャー要件: $(cat docs/project/$ARGUMENTS.md)\n\n変更差分:\n$(git diff main...HEAD)\n\n以下の観点でレビューしてください:\n1. 受け入れ基準が全て満たされているか\n2. テストカバレッジは十分か\n3. 既存コードとの整合性\n4. パフォーマンスやセキュリティの問題\n5. 不足している機能や見落とし"
+フィーチャードキュメントと変更差分を、4つのエキスパートエージェントにTask toolで**1つのメッセージで並列起動**してレビューを依頼する:
+
+```
+Task(subagent_type="spec-compliance", prompt="
+MODE: review
+REVIEW_TARGET:
+{git diff main...HEAD の全文}
+
+FEATURE_DOC:
+{docs/project/$ARGUMENTS.md の内容}
+")
+
+Task(subagent_type="architecture", prompt="
+MODE: review
+REVIEW_TARGET:
+{git diff main...HEAD の全文}
+
+FEATURE_DOC:
+{docs/project/$ARGUMENTS.md の内容}
+")
+
+Task(subagent_type="go-expert", prompt="
+MODE: review
+REVIEW_TARGET:
+{git diff main...HEAD の全文}
+
+FEATURE_DOC:
+{docs/project/$ARGUMENTS.md の内容}
+")
+
+Task(subagent_type="test-quality", prompt="
+MODE: review
+REVIEW_TARGET:
+{git diff main...HEAD の全文}
+
+FEATURE_DOC:
+{docs/project/$ARGUMENTS.md の内容}
+")
 ```
 
-### 4. レビュー結果の提示
+### 4. レビュー結果に基づく修正とユーザーへの報告
+
+#### 4a. レビュー結果の分析と自律修正
+
+各エキスパートの指摘を重要度別に分類し、以下のルールで対応する:
+
+| 重要度 | 対応 |
+|--------|------|
+| **MUST** | 自分で修正する。修正方法が判断できない場合はユーザーへの相談事項に回す |
+| **SHOULD** | 修正が明確なものは自分で修正する。判断に迷うものはユーザーへの相談事項に回す |
+| **NICE** | 修正しない。報告のみ |
+| **GOOD** | 報告のみ |
+
+修正後、テストを再実行して全テストが通過することを確認する:
+```bash
+go test ./...
+```
+
+#### 4b. ユーザーへの報告
+
 以下をユーザーに提示する:
-- codexのレビュー結果
-- 問題点があれば修正提案
+
+```
+## コードレビュー結果
+
+### 修正済み
+{自分で修正した指摘の一覧（重要度・対象・内容・修正内容）}
+
+### 相談事項
+{判断できなかった指摘の一覧（重要度・対象・内容・判断に迷った理由）}
+
+### その他の指摘
+{NICE・GOODの指摘の一覧}
+```
+
+- 「相談事項」がある場合はユーザーの判断を仰ぐ
+- 「相談事項」がない場合でも、修正内容の確認のためユーザーの承認を待つ
 
 **重要**: ユーザーの承認を待つ。
 
 ### 5. 承認後の処理
+
 ユーザーが承認したら:
 
-1. **仕様更新**: ドメインに変更があった場合、`docs/specification/` の関連ファイルを更新
+1. **仕様更新**: spec-complianceエージェントにupdateモードで仕様の最新化を依頼する
+
+```
+Task(subagent_type="spec-compliance", prompt="
+MODE: update
+CHANGES:
+{git diff main...HEAD の全文}
+
+FEATURE_DOC:
+{docs/project/$ARGUMENTS.md の内容}
+")
+```
+
+エージェントが返した更新内容を確認し、`docs/specification/` のファイルに反映する。
+
 2. **フィーチャードキュメント削除**: `docs/project/$ARGUMENTS.md` を削除
 3. 完了メッセージを表示
-
-## 出力形式
-- codexフィードバックを引用形式で提示
-- 修正が必要な場合は具体的なアクションを提案
-- 仕様更新が必要な箇所を明示

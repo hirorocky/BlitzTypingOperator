@@ -7,7 +7,7 @@ argument-hint: <feature-description>
 # フィーチャー開始
 
 ## 概要
-codexに調査・検討を依頼しながら、受け入れ基準と設計の全体像を含むフィーチャードキュメントを作成する。
+観点別エキスパートエージェントを活用しながら、受け入れ基準と設計の全体像を含むフィーチャードキュメントを作成する。
 ユーザーの承認なしに実装には進まない。
 
 ## 実行ステップ
@@ -19,30 +19,46 @@ codexに調査・検討を依頼しながら、受け入れ基準と設計の全
 ### 2. 仕様の確認
 `docs/specification/` から関連するドメイン仕様を読み、フィーチャーに必要な背景知識を得る。
 
-### 3. codexに調査・検討を依頼
-関連仕様と機能説明をcodexに送り、受け入れ基準と設計の提案を依頼する:
+### 3. エキスパートエージェントに設計提案を依頼
 
-```bash
-codex exec --full-auto "以下のフィーチャーについて調査・検討してください。
+4つのエキスパートエージェントをTask toolで**1つのメッセージで並列起動**し、各観点から設計提案を得る:
 
-## フィーチャー
+```
+Task(subagent_type="spec-compliance", prompt="
+MODE: propose
+FEATURE_DESCRIPTION:
 $ARGUMENTS
 
-## 関連仕様
-{読み込んだ仕様の内容}
+{読み込んだ関連仕様の内容}
+")
 
-## 依頼内容
-1. **受け入れ基準の提案**: このフィーチャーで検証すべき受け入れ基準を、テスト可能な形で具体的に列挙してください。網羅性を重視し、正常系・異常系・エッジケースを含めてください。
-2. **設計の提案**: 以下の観点で設計の全体像を提案してください:
-   - 変更が必要なファイル・パッケージ
-   - 新規作成するファイル・型・関数
-   - 既存コードへの影響範囲
-   - データフローの概要
-3. **リスク・懸念点**: 実装上の注意点や既存仕様との衝突リスクがあれば指摘してください。"
+Task(subagent_type="architecture", prompt="
+MODE: propose
+FEATURE_DESCRIPTION:
+$ARGUMENTS
+
+{読み込んだ関連仕様の内容}
+")
+
+Task(subagent_type="go-expert", prompt="
+MODE: propose
+FEATURE_DESCRIPTION:
+$ARGUMENTS
+
+{読み込んだ関連仕様の内容}
+")
+
+Task(subagent_type="test-quality", prompt="
+MODE: propose
+FEATURE_DESCRIPTION:
+$ARGUMENTS
+
+{読み込んだ関連仕様の内容}
+")
 ```
 
 ### 4. フィーチャードキュメントの作成
-codexの提案と自分の分析を総合して、`docs/project/{feature-name}.md` を作成する:
+エキスパートエージェントの提案と自分の分析を総合して、`docs/project/{feature-name}.md` を作成する:
 
 ```markdown
 # {フィーチャー名}
@@ -69,24 +85,47 @@ codexの提案と自分の分析を総合して、`docs/project/{feature-name}.m
 ```
 
 - 受け入れ基準は具体的かつテスト可能にする。各基準は Go テストまたは TUI テストで検証できるように書く。
-- 設計はcodexの提案を鵜呑みにせず、自分の分析と比較検討した上で記述する。
+- 各エキスパートの提案を鵜呑みにせず、自分の分析と比較検討した上で記述する。
 
-### 5. codexに設計レビューを依頼
-作成したフィーチャードキュメントの全文をcodexに送り、最終レビューを依頼する:
+### 5. エキスパートエージェントに設計レビューを依頼
 
-```bash
-codex exec --full-auto "以下のフィーチャー計画と設計をレビューしてください。受け入れ基準の網羅性、設計の妥当性、既存仕様との整合性を確認し、問題点や改善提案があれば指摘してください。\n\n$(cat docs/project/{feature-name}.md)"
+作成したフィーチャードキュメントの全文をレビュー対象として、4つのエキスパートエージェントをTask toolで**1つのメッセージで並列起動**する:
+
+```
+Task(subagent_type="spec-compliance", prompt="
+MODE: review
+REVIEW_TARGET:
+{フィーチャードキュメントの全文}
+")
+
+Task(subagent_type="architecture", prompt="
+MODE: review
+REVIEW_TARGET:
+{フィーチャードキュメントの全文}
+")
+
+Task(subagent_type="go-expert", prompt="
+MODE: review
+REVIEW_TARGET:
+{フィーチャードキュメントの全文}
+")
+
+Task(subagent_type="test-quality", prompt="
+MODE: review
+REVIEW_TARGET:
+{フィーチャードキュメントの全文}
+")
 ```
 
 ### 6. 結果の提示
 以下をユーザーに提示する:
 - 作成したフィーチャードキュメントの内容
-- codexのレビュー結果
+- 各エキスパートのレビュー結果
 - 次のステップ: `/dev:impl {feature-name}`
 
 **重要**: ユーザーの承認を待つ。承認なしに実装に進まない。
 
 ## 出力形式
 - フィーチャー名とファイルパスを明示
-- codexフィードバックを引用形式で提示
+- 各エキスパートのフィードバックを観点ごとに引用形式で提示
 - 次のコマンドをコードブロックで提示

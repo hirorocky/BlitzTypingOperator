@@ -17,23 +17,21 @@ The agent system shall construct agents from:
 - 最大4つのスキル（Skill）
 
 **受け入れ基準**:
-1. エージェントレベル = 選択されたコアレベル
-2. 基礎ステータス = コアステータス
-3. スキルスロット数 = 4（固定）
+1. 基礎ステータス = コアステータス（特性の重みから固定算出）
+2. スキルスロット数 = 4（固定）
 
 ### REQ-AGENT-2: コアシステム
 **種別**: Ubiquitous
 
 The agent system shall manage cores with:
 - 特性（CoreType）: ステータス重み、許可タグ、パッシブスキル
-- レベル: 1から取得済み最大レベルまで任意選択可能
-- ステータス計算: 基礎値(10) x レベル x 重み
+- ステータス計算: 基礎値(100) × 重み（レベル概念なし）
 
 **受け入れ基準**:
 1. STR/INT/WIL/LUKの4ステータス
 2. 特性ごとに異なるステータス重み
 3. 許可タグでスキル互換性を制限
-4. LUKはレベルに依存せず、基礎値10 × 重みで計算
+4. 全ステータスが同一の計算式（100 × 重み）
 
 ### REQ-AGENT-3: スキルシステム
 **種別**: Ubiquitous
@@ -81,7 +79,7 @@ The agent system shall validate skill-core compatibility:
 **責務**: 1つのエージェントスロット構成を表現する値オブジェクト
 
 **インターフェース**:
-- 入力: CoreTypeID, CoreLevel, Skills[4]
+- 入力: CoreTypeID, Skills[4]
 - 出力: IsEmpty, GetSkillCount
 
 **ルール**:
@@ -94,7 +92,7 @@ The agent system shall validate skill-core compatibility:
 **責務**: 3つのエージェントスロットを管理するユースケース
 
 **機能**:
-1. SetCore: スロットにコアを設定（レベル選択可能）
+1. SetCore: スロットにコアを設定
 2. SetSkill: スロットにスキルを設定（互換性・重複チェック）
 3. ClearCore/ClearSkill: 設定のクリア
 4. BuildAgentsForBattle: バトル用AgentModel構築
@@ -113,9 +111,9 @@ stateDiagram-v2
 **責務**: コアの保有状態をTypeIDごとにユニーク管理
 
 **ルール**:
-1. TypeIDと取得済み最大レベルを保持
-2. 新規取得時は最大レベルを更新
-3. 低レベル取得は無視
+1. TypeIDの保有フラグ（bool）を保持
+2. 新規TypeIDの追加時にtrueを返す
+3. 既に保有しているTypeIDの追加は無視（falseを返す）
 
 ### SkillInventory
 

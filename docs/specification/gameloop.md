@@ -31,8 +31,9 @@ The game loop shall manage scene transitions between:
 **種別**: Ubiquitous
 
 The game loop shall maintain GameState including:
-- プレイヤー情報（HP、装備エージェント）
+- プレイヤー情報（MaxHP、装備エージェント）
 - インベントリ（コア、モジュール）
+- 敵進行状態（EnemyProgress: ランク・撃破記録）
 - 統計情報（バトル/タイピング統計）
 - 実績状態
 - 設定
@@ -41,6 +42,7 @@ The game loop shall maintain GameState including:
 1. 各サブシステムはマネージャーを通じてアクセス
 2. 外部データ（JSON）の読み込みをサポート
 3. エンカウント済み敵リストを追跡
+4. 敵進行状態を追跡（ランク解放・撃破記録）
 
 ### REQ-GAMELOOP-3: セーブ/ロード
 **種別**: Event-Driven
@@ -50,22 +52,25 @@ When ゲームを終了する or 特定のタイミング, the game loop shall:
 - ID化最適化によりファイルサイズを削減
 
 **受け入れ基準**:
-1. コアはID+レベル+特性IDで保存
+1. コアはTypeIDのみで保存（レベル概念なし）
 2. モジュールはID+カウントで保存
 3. エージェントはコア情報埋め込み+モジュールIDリストで保存
 4. 装備はスロット番号順にエージェントIDを保存
+5. 敵進行状態（CurrentRank、DefeatRecords）を保存
 
 ### REQ-GAMELOOP-4: バトル結果処理
 **種別**: Event-Driven
 
 When バトルが終了する, the game loop shall:
-- 勝利: 統計更新、最高レベル更新、実績チェック、報酬画面へ遷移
+- 勝利: 統計更新、撃破記録更新、HP成長、ランク解放チェック、実績チェック、報酬画面へ遷移
 - 敗北: 統計更新、ホーム画面へ直接遷移
 
 **受け入れ基準**:
-1. 勝利時に到達最高レベルを更新（必要に応じて）
-2. タイピング結果を統計に反映
-3. 実績達成条件を自動チェック
+1. 勝利時に撃破記録を更新（EnemyProgress）
+2. 撃破によるHP成長を適用（PlayerModel.MaxHP増加）
+3. 同ランク全敵撃破時に次ランクを解放
+4. タイピング結果を統計に反映
+5. 実績達成条件を自動チェック
 
 ## 仕様
 
@@ -96,8 +101,8 @@ const (
 - 出力: SaveData（永続化用）
 
 **ルール**:
-1. 初期MaxLevelReached = 0（レベル1から開始）
-2. 挑戦可能最大レベル = MaxLevelReached + 1
+1. 敵進行はEnemyProgressで管理（初期ランク1）
+2. 挑戦可能な敵は現在ランク以下のランクに属する敵
 3. 各マネージャーへのアクセサを提供
 
 ### RootModel
