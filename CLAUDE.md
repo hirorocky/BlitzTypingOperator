@@ -21,9 +21,12 @@
 ### サイクル
 
 ```
-/dev:start "機能の説明"     → 計画作成 + codexレビュー → 【ユーザー承認】
-/dev:impl feature-name      → 受け入れテスト → TDD実装 → テスト結果報告
-/dev:complete feature-name   → codex実装レビュー → 【ユーザー承認】→ 仕様更新
+/dev:start "機能の説明"       → feature.md作成 + codexレビュー → 【ユーザー承認】
+  ↕ /dev:refine feature-name  → フィードバック反映（繰り返し可）
+/impl:plan feature-name       → 受け入れテスト + plan.md作成 → 【ユーザー承認】
+/impl:exec feature-name       → plan.mdに沿ってTDD実装 → 進捗報告
+/impl:review feature-name     → 受け入れテスト実行 + フィードバック対応 → 【ユーザー承認】
+/dev:complete feature-name    → codex実装レビュー → 【ユーザー承認】→ 仕様更新
 ```
 
 随時: `/dev:consult "質問"` でcodexにアドホック相談
@@ -36,6 +39,12 @@
 | 複数層にまたがるフロー | Go test | `internal/integration_test/` |
 
 ## docs/project テンプレート
+
+フィーチャーごとに `docs/project/{feature-name}/` ディレクトリを作成し、以下のファイルを配置する:
+- `feature.md` — フィーチャードキュメント（`/dev:start` で作成）
+- `plan.md` — 実装計画（`/impl:plan` で作成）
+
+### feature.md
 
 ```markdown
 # {フィーチャー名}

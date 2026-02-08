@@ -7,21 +7,26 @@ argument-hint: <feature-name>
 # 完了レビュー
 
 ## 概要
+
 4つの観点別エキスパートエージェントを並列起動して実装をレビューし、問題がなければ仕様を更新してフィーチャーを完了する。
 ユーザーの承認なしにファイル削除や仕様更新は行わない。
 
 ## 実行ステップ
 
 ### 1. テスト確認
+
 ```bash
 go test ./...
 ```
+
 全テストが通過することを確認する。失敗がある場合はレビューに進まない。
 
 ### 2. 変更内容の収集
+
 ```bash
 git diff main...HEAD
 ```
+
 mainブランチからの全変更を収集する。
 
 ### 3. エキスパートエージェントに実装レビューを依頼
@@ -35,7 +40,7 @@ REVIEW_TARGET:
 {git diff main...HEAD の全文}
 
 FEATURE_DOC:
-{docs/project/$ARGUMENTS.md の内容}
+{docs/project/$ARGUMENTS/feature.md の内容}
 ")
 
 Task(subagent_type="architecture", prompt="
@@ -44,7 +49,7 @@ REVIEW_TARGET:
 {git diff main...HEAD の全文}
 
 FEATURE_DOC:
-{docs/project/$ARGUMENTS.md の内容}
+{docs/project/$ARGUMENTS/feature.md の内容}
 ")
 
 Task(subagent_type="go-expert", prompt="
@@ -53,7 +58,7 @@ REVIEW_TARGET:
 {git diff main...HEAD の全文}
 
 FEATURE_DOC:
-{docs/project/$ARGUMENTS.md の内容}
+{docs/project/$ARGUMENTS/feature.md の内容}
 ")
 
 Task(subagent_type="test-quality", prompt="
@@ -62,7 +67,7 @@ REVIEW_TARGET:
 {git diff main...HEAD の全文}
 
 FEATURE_DOC:
-{docs/project/$ARGUMENTS.md の内容}
+{docs/project/$ARGUMENTS/feature.md の内容}
 ")
 ```
 
@@ -72,14 +77,15 @@ FEATURE_DOC:
 
 各エキスパートの指摘を重要度別に分類し、以下のルールで対応する:
 
-| 重要度 | 対応 |
-|--------|------|
-| **MUST** | 自分で修正する。修正方法が判断できない場合はユーザーへの相談事項に回す |
+| 重要度     | 対応                                                                         |
+| ---------- | ---------------------------------------------------------------------------- |
+| **MUST**   | 自分で修正する。修正方法が判断できない場合はユーザーへの相談事項に回す       |
 | **SHOULD** | 修正が明確なものは自分で修正する。判断に迷うものはユーザーへの相談事項に回す |
-| **NICE** | 修正しない。報告のみ |
-| **GOOD** | 報告のみ |
+| **NICE**   | 修正しない。報告のみ                                                         |
+| **GOOD**   | 報告のみ                                                                     |
 
 修正後、テストを再実行して全テストが通過することを確認する:
+
 ```bash
 go test ./...
 ```
@@ -119,11 +125,11 @@ CHANGES:
 {git diff main...HEAD の全文}
 
 FEATURE_DOC:
-{docs/project/$ARGUMENTS.md の内容}
+{docs/project/$ARGUMENTS/feature.md の内容}
 ")
 ```
 
 エージェントが返した更新内容を確認し、`docs/specification/` のファイルに反映する。
 
-2. **フィーチャードキュメント削除**: `docs/project/$ARGUMENTS.md` を削除
-3. 完了メッセージを表示
+2. 完了メッセージを表示
+   `docs/project/$ARGUMENTS/` ディレクトリを削除できることをユーザーに伝える。

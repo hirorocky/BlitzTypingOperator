@@ -304,11 +304,11 @@ func (c *symbolStormChallenge) View() string {
 		}
 
 		if textIdx < c.currentIndex {
-			fmt.Fprintf(&b, "\033[35m%c\033[0m", ch) // マゼンタ: 入力済み
+			fmt.Fprintf(&b, "%s%c%s", ColorCorrect, ch, ColorReset)
 		} else if textIdx == c.currentIndex {
-			fmt.Fprintf(&b, "\033[7;35m%c\033[0m", ch) // 反転マゼンタ: 現在位置
+			fmt.Fprintf(&b, "%s%c%s", ColorCursor, ch, ColorReset)
 		} else {
-			fmt.Fprintf(&b, "\033[90m%c\033[0m", ch) // グレー: 未入力
+			fmt.Fprintf(&b, "%s%c%s", ColorUntyped, ch, ColorReset)
 		}
 		textIdx++
 	}

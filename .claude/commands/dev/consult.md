@@ -15,7 +15,7 @@ argument-hint: <question>
 相談内容に関連するコンテキストを自動収集する:
 - `git diff` で現在の作業中の変更
 - 関連するソースファイルの内容
-- `docs/project/` に進行中のフィーチャーがあればその内容
+- `docs/project/*/feature.md` に進行中のフィーチャーがあればその内容
 
 ### 2. codexに相談
 収集したコンテキストと質問をcodexに送る:
