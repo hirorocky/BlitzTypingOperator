@@ -37,6 +37,21 @@ type DefenseProvider interface {
 	CompleteByAttack()
 }
 
+// チャレンジ共通の文字色定義。
+// 新規チャレンジ作成時はこれらの定数を使用してView()の文字色を統一すること。
+const (
+	// ColorUntyped は未入力文字の色（白文字黒背景）
+	ColorUntyped = "\033[37;40m"
+	// ColorCorrect は正しく入力済みの文字の色（緑文字黒背景）
+	ColorCorrect = "\033[32;40m"
+	// ColorMiss はミス入力文字の色（赤文字黒背景）
+	ColorMiss = "\033[31;40m"
+	// ColorCursor は現在入力位置の文字の色（黒文字白背景）
+	ColorCursor = "\033[30;47m"
+	// ColorReset はANSIエスケープのリセット
+	ColorReset = "\033[0m"
+)
+
 // constructor はチャレンジモデルのコンストラクタ関数型です。
 type constructor func(input domain.ChallengeInput) ChallengeModel
 

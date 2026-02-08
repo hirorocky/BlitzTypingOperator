@@ -189,11 +189,11 @@ func (c *defenseChallenge) View() string {
 	// テキスト表示
 	for i, ch := range c.text {
 		if i < c.currentIndex {
-			fmt.Fprintf(&b, "\033[36m%c\033[0m", ch) // シアン: 入力済み
+			fmt.Fprintf(&b, "%s%c%s", ColorCorrect, ch, ColorReset)
 		} else if i == c.currentIndex {
-			fmt.Fprintf(&b, "\033[7;36m%c\033[0m", ch) // 反転シアン: 現在位置
+			fmt.Fprintf(&b, "%s%c%s", ColorCursor, ch, ColorReset)
 		} else {
-			fmt.Fprintf(&b, "\033[90m%c\033[0m", ch) // グレー: 未入力
+			fmt.Fprintf(&b, "%s%c%s", ColorUntyped, ch, ColorReset)
 		}
 	}
 	b.WriteString("\n")

@@ -233,11 +233,11 @@ func (c *standardChallenge) View() string {
 	// テキスト表示: 入力済み / 現在位置 / 未入力
 	for i, ch := range c.text {
 		if i < c.currentIndex {
-			b.WriteString(fmt.Sprintf("\033[32m%c\033[0m", ch)) // 緑: 入力済み
+			fmt.Fprintf(&b, "%s%c%s", ColorCorrect, ch, ColorReset)
 		} else if i == c.currentIndex {
-			b.WriteString(fmt.Sprintf("\033[7m%c\033[0m", ch)) // 反転: 現在位置
+			fmt.Fprintf(&b, "%s%c%s", ColorCursor, ch, ColorReset)
 		} else {
-			b.WriteString(fmt.Sprintf("\033[90m%c\033[0m", ch)) // グレー: 未入力
+			fmt.Fprintf(&b, "%s%c%s", ColorUntyped, ch, ColorReset)
 		}
 	}
 	b.WriteString("\n")
