@@ -41,7 +41,8 @@ The agent system shall manage skills with:
 - hp_formula: base + stat_coef × STAT でHP変化量を計算
 - タグ: コア特性との互換性判定に使用
 - チェイン効果バリエーション: スキルごとに複数のチェイン効果を取得可能
-- ChallengeType: チャレンジ種別（standard / symbol_storm / defense）
+- ChallengeType: チャレンジ種別（standard / shape / defense）
+- ChallengeOptions: チャレンジ固有設定（shapeの場合: `{"shape": "flame"}`等）
 - DifficultyRate: タイピング難易度（50-200, 100=標準）
 
 **受け入れ基準**:

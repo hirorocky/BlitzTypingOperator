@@ -23,10 +23,10 @@ type defenseChallenge struct {
 	currentIndex int
 
 	// 防御率（0.0-1.0）
-	defenseRate  float64
-	ratePerChar  float64 // 1文字あたりの防御率上昇量
-	totalCorrect     int // 正解入力数の合計（統計用）
-	totalInputs      int // 総入力数（統計用）
+	defenseRate      float64
+	ratePerChar      float64 // 1文字あたりの防御率上昇量
+	totalCorrect     int     // 正解入力数の合計（統計用）
+	totalInputs      int     // 総入力数（統計用）
 	lastMistake      bool
 	mistakePositions map[int]bool
 

@@ -8,7 +8,8 @@
 **実装**:
 - ドメイン型: `/internal/domain/challenge.go`
 - チャレンジ基盤: `/internal/tui/challenges/challenge.go`
-- 各チャレンジ: `/internal/tui/challenges/standard.go`, `symbol_storm.go`, `defense.go`
+- 各チャレンジ: `/internal/tui/challenges/standard/`, `shape/`, `defense/`
+- 共通部品: `/internal/tui/challenges/commons/`（テンプレート配置・文字セット生成）
 
 ## 要件
 
@@ -19,7 +20,7 @@ The typing system shall provide a challenge framework with:
 - `ChallengeModel` インターフェース（型付きUpdate/View/Result）
 - `challenges.New(typeID, input)` によるファクトリ生成
 - 未知のtypeIDはスタンダードにフォールバック（warnログ出力）
-- 新タイプ追加は `challenges/` に1ファイル + init()でのRegister呼び出しで完了
+- 新タイプ追加は `challenges/` にサブパッケージ + init()でのRegister呼び出し + blank importで完了
 
 **受け入れ基準**:
 1. ChallengeModelはInit/Update/View/Resultメソッドを持つ
@@ -61,7 +62,8 @@ The typing system shall use a 3-state challenge status:
 
 While タイピングチャレンジ進行中, the typing system shall:
 - 各入力文字の正誤判定
-- 正解で進捗更新、誤りで誤字記録
+- 正解で進捗更新（緑文字表示）、誤りで誤字記録（カーソルが赤文字白背景に変化）
+- ミスした位置は正解後も赤文字で表示（ミス履歴の可視化）
 - リアルタイム進捗表示
 
 **受け入れ基準**:
@@ -119,18 +121,26 @@ The typing system shall calculate speed factor as:
 - SpeedFactor: 基準時間 / 実際完了時間（上限2.0）
 - WPM: パッシブスキル判定用
 
-### シンボルストーム（symbol_storm）
+### シェイプ（shape）
 
-魔法攻撃スキル向けの記号パターンチャレンジ。
+魔法攻撃スキル向けのパターンチャレンジ。共通文字セットと形状テンプレートを使用してASCIIアートパターンを表示する。
 
 **動作**:
-- 記号や英数字を視覚的なパターン（炎形、雷形等）に配置した文字列を表示
-- パターンを上から順に1文字ずつ入力
-- DifficultyRateに応じてパターンの記号数・Shift+数字記号の割合が変動
-  - 低難易度: 4-6文字、基本記号中心（`<>{}()` 等）
-  - 高難易度: 10-16文字、Shift+数字記号含む（`!@#$%^&*` 等）
-- パターンテンプレートプールから難易度に応じた選択
+- DifficultyRateに応じた4段階の文字セットから文字を生成（commons/charset.go）
+  - 50-74: ホームポジション（`asdfghjkl;`）
+  - 75-99: キーボード英字（`a-z`）
+  - 100-149: 英数字（`a-z`, `0-9`）
+  - 150-200: 記号込み（基本記号 + Shift+数字記号）
+- 文字数もDifficultyRateに連動（低→4-6文字、高→10-16文字）
+- `ChallengeOptions["shape"]`で形状を指定（デフォルト: "flame"）
+- 形状テンプレート（`#`スロット・空白・改行で構成）に文字を配置（commons/template.go）
+- 文字数3以下はテンプレートを使わずスペース区切りの1行表示にフォールバック
+- テンプレートの走査順は上→下、各行は左→右で固定
 - 制限時間・AutoCorrect・パッシブスキルの動作はスタンダードと同一
+
+**テンプレート**:
+- 炎形テンプレート（shape/flame.go）: 小（4-7文字）・中（8-12文字）・大（13+文字）
+- 新形状はshapeパッケージ内にファイル追加で拡張可能
 
 **評価**:
 - スタンダードと共通
@@ -170,6 +180,7 @@ The typing system shall calculate speed factor as:
 - MistakeTimeExtendSec: ミス時の時間延長秒数（ps_typo_recovery。ディフェンスでは無視）
 - RetryOnTimeout: タイムアウト時の再挑戦許可（ps_second_chance。ディフェンスでは無視）
 - RetryTimeLimitMultiplier: 再挑戦時の制限時間倍率
+- ChallengeOptions: チャレンジ固有設定（map[string]string。shapeの場合: `{"shape": "flame"}`）
 
 ### ChallengeOutput
 
@@ -196,7 +207,7 @@ The typing system shall calculate speed factor as:
 - tea.Modelを埋め込まず、型付きメソッドで定義
 - 各チャレンジは独自のtea.Tickでタイマー管理（BattleTickMsgに依存しない）
 - ファクトリは`map[ChallengeTypeID]constructor`で管理
-- init()による自動登録
+- 各サブパッケージのinit()による自動登録（blank importはscreens/challenge_imports.goに集約）
 
 ### DefenseProvider
 
@@ -215,4 +226,4 @@ The typing system shall calculate speed factor as:
 - **Battle**: タイピング結果に基づくモジュール効果計算、ディフェンス中の敵攻撃処理
 - **Game Loop**: タイピング統計の記録
 - **Collection**: WPM/正確性に基づく実績解除
-- **Agent**: SkillType.ChallengeType/DifficultyRateの参照
+- **Agent**: SkillType.ChallengeType/DifficultyRate/ChallengeOptionsの参照
