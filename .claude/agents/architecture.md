@@ -50,7 +50,7 @@ codex exec --full-auto "$(cat <<'EOF'
 {CLAUDE.md のCoding Styleセクション}
 
 ## レビュー観点
-1. **レイヤー依存ルール違反**: structure.mdに定義された5層レイヤー依存ルール（domain, infra, usecase, tui, app, config）が守られているか
+1. **レイヤー依存ルール違反**: structure.mdに定義されたプロジェクトのレイヤー依存ルール（domain, infra, usecase, tui, app, config）が守られているか
 2. **命名規則**: ファイル名（snake_case）、構造体名（PascalCase）が規約に沿っているか
 3. **ディレクトリ配置**: 新規ファイルが適切なレイヤー/ディレクトリに配置されているか
 4. **コーディングスタイル**:

@@ -24,7 +24,7 @@ go test ./...
 ### 2. 変更内容の収集
 
 ```bash
-git diff main...HEAD
+git diff main HEAD
 ```
 
 mainブランチからの全変更を収集する。
@@ -37,7 +37,7 @@ mainブランチからの全変更を収集する。
 Task(subagent_type="spec-compliance", prompt="
 MODE: review
 REVIEW_TARGET:
-{git diff main...HEAD の全文}
+{git diff main HEAD の全文}
 
 FEATURE_DOC:
 {docs/project/$ARGUMENTS/feature.md の内容}
@@ -46,7 +46,7 @@ FEATURE_DOC:
 Task(subagent_type="architecture", prompt="
 MODE: review
 REVIEW_TARGET:
-{git diff main...HEAD の全文}
+{git diff main HEAD の全文}
 
 FEATURE_DOC:
 {docs/project/$ARGUMENTS/feature.md の内容}
@@ -55,7 +55,7 @@ FEATURE_DOC:
 Task(subagent_type="go-expert", prompt="
 MODE: review
 REVIEW_TARGET:
-{git diff main...HEAD の全文}
+{git diff main HEAD の全文}
 
 FEATURE_DOC:
 {docs/project/$ARGUMENTS/feature.md の内容}
@@ -64,7 +64,7 @@ FEATURE_DOC:
 Task(subagent_type="test-quality", prompt="
 MODE: review
 REVIEW_TARGET:
-{git diff main...HEAD の全文}
+{git diff main HEAD の全文}
 
 FEATURE_DOC:
 {docs/project/$ARGUMENTS/feature.md の内容}
@@ -122,7 +122,7 @@ go test ./...
 Task(subagent_type="spec-compliance", prompt="
 MODE: update
 CHANGES:
-{git diff main...HEAD の全文}
+{git diff main HEAD の全文}
 
 FEATURE_DOC:
 {docs/project/$ARGUMENTS/feature.md の内容}

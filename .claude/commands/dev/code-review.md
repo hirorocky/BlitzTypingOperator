@@ -17,14 +17,14 @@ argument-hint: [<branch> | <commit1>..<commit2> | --staged]
 
 `$ARGUMENTS` を解析してdiffを取得する:
 
-- 引数なし → `git diff main...HEAD`
+- 引数なし → `git diff main HEAD`
 - `--staged` → `git diff --cached`
 - `<commit1>..<commit2>` 形式 → `git diff <commit1>..<commit2>`
-- その他 → `git diff $ARGUMENTS...HEAD`（ブランチ名として扱う）
+- その他 → `git diff $ARGUMENTS HEAD`（ブランチ名として扱う）
 
 ```bash
 # diffを取得
-DIFF=$(git diff main...HEAD)  # 引数に応じて変更
+DIFF=$(git diff main HEAD)  # 引数に応じて変更
 ```
 
 ### 2. フィーチャードキュメントの検出
