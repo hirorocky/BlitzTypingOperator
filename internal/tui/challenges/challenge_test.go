@@ -1,9 +1,15 @@
-package challenges
+package challenges_test
 
 import (
 	"testing"
 
 	"hirorocky/type-battle/internal/domain"
+	"hirorocky/type-battle/internal/tui/challenges"
+
+	// サブパッケージのinit()でRegisterを実行
+	_ "hirorocky/type-battle/internal/tui/challenges/defense"
+	_ "hirorocky/type-battle/internal/tui/challenges/shape"
+	_ "hirorocky/type-battle/internal/tui/challenges/standard"
 )
 
 func TestNew_スタンダードタイプの生成(t *testing.T) {
@@ -13,7 +19,7 @@ func TestNew_スタンダードタイプの生成(t *testing.T) {
 		AutoCorrectCount: 0,
 	}
 
-	challenge := New(domain.ChallengeTypeStandard, input)
+	challenge := challenges.New(domain.ChallengeTypeStandard, input)
 	if challenge == nil {
 		t.Fatal("ChallengeModelがnilです")
 	}
@@ -31,7 +37,7 @@ func TestNew_未知のtypeIDはスタンダードにフォールバック(t *tes
 		AutoCorrectCount: 0,
 	}
 
-	challenge := New("unknown_type", input)
+	challenge := challenges.New("unknown_type", input)
 	if challenge == nil {
 		t.Fatal("未知のtypeIDでChallengeModelがnilです")
 	}
@@ -45,7 +51,7 @@ func TestNew_未知のtypeIDはスタンダードにフォールバック(t *tes
 func TestNew_全3タイプが生成可能(t *testing.T) {
 	types := []domain.ChallengeTypeID{
 		domain.ChallengeTypeStandard,
-		domain.ChallengeTypeSymbolStorm,
+		domain.ChallengeTypeShape,
 		domain.ChallengeTypeDefense,
 	}
 
@@ -57,7 +63,7 @@ func TestNew_全3タイプが生成可能(t *testing.T) {
 				AutoCorrectCount: 0,
 			}
 
-			challenge := New(typeID, input)
+			challenge := challenges.New(typeID, input)
 			if challenge == nil {
 				t.Fatalf("typeID=%s でChallengeModelがnilです", typeID)
 			}
@@ -73,9 +79,9 @@ func TestChallengeModel_インターフェース準拠(t *testing.T) {
 	}
 
 	// ChallengeModel インターフェースを満たすことを型レベルで確認
-	var _ ChallengeModel = New(domain.ChallengeTypeStandard, input)
-	var _ ChallengeModel = New(domain.ChallengeTypeSymbolStorm, input)
-	var _ ChallengeModel = New(domain.ChallengeTypeDefense, input)
+	var _ challenges.ChallengeModel = challenges.New(domain.ChallengeTypeStandard, input)
+	var _ challenges.ChallengeModel = challenges.New(domain.ChallengeTypeShape, input)
+	var _ challenges.ChallengeModel = challenges.New(domain.ChallengeTypeDefense, input)
 }
 
 func TestDefenseProvider_ディフェンスタイプのみ実装(t *testing.T) {
@@ -86,8 +92,8 @@ func TestDefenseProvider_ディフェンスタイプのみ実装(t *testing.T) {
 	}
 
 	// ディフェンスタイプはDefenseProviderを実装
-	defenseChallenge := New(domain.ChallengeTypeDefense, input)
-	dp, ok := defenseChallenge.(DefenseProvider)
+	defenseChallenge := challenges.New(domain.ChallengeTypeDefense, input)
+	dp, ok := defenseChallenge.(challenges.DefenseProvider)
 	if !ok {
 		t.Fatal("ディフェンスタイプがDefenseProviderを実装していません")
 	}
@@ -98,15 +104,15 @@ func TestDefenseProvider_ディフェンスタイプのみ実装(t *testing.T) {
 	}
 
 	// スタンダードはDefenseProviderを実装しない
-	standardChallenge := New(domain.ChallengeTypeStandard, input)
-	if _, ok := standardChallenge.(DefenseProvider); ok {
+	standardChallenge := challenges.New(domain.ChallengeTypeStandard, input)
+	if _, ok := standardChallenge.(challenges.DefenseProvider); ok {
 		t.Error("スタンダードタイプがDefenseProviderを実装すべきではありません")
 	}
 
-	// シンボルストームもDefenseProviderを実装しない
-	symbolStormChallenge := New(domain.ChallengeTypeSymbolStorm, input)
-	if _, ok := symbolStormChallenge.(DefenseProvider); ok {
-		t.Error("シンボルストームタイプがDefenseProviderを実装すべきではありません")
+	// シェイプもDefenseProviderを実装しない
+	shapeChallenge := challenges.New(domain.ChallengeTypeShape, input)
+	if _, ok := shapeChallenge.(challenges.DefenseProvider); ok {
+		t.Error("シェイプタイプがDefenseProviderを実装すべきではありません")
 	}
 }
 
@@ -117,8 +123,8 @@ func TestDefenseProvider_CompleteByAttack(t *testing.T) {
 		AutoCorrectCount: 0,
 	}
 
-	challenge := New(domain.ChallengeTypeDefense, input)
-	dp := challenge.(DefenseProvider)
+	challenge := challenges.New(domain.ChallengeTypeDefense, input)
+	dp := challenge.(challenges.DefenseProvider)
 
 	// 完了前はResult()がnil
 	if challenge.Result() != nil {

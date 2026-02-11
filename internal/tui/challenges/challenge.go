@@ -44,8 +44,10 @@ const (
 	ColorUntyped = "\033[37;40m"
 	// ColorCorrect は正しく入力済みの文字の色（緑文字黒背景）
 	ColorCorrect = "\033[32;40m"
-	// ColorMiss はミス入力文字の色（赤文字黒背景）
-	ColorMiss = "\033[31;40m"
+	// ColorMissed はミスした文字の色（赤文字黒背景）
+	ColorMissed = "\033[31;40m"
+	// ColorMissCursor はミス入力時のカーソル色（赤文字白背景）
+	ColorMissCursor = "\033[31;47m"
 	// ColorCursor は現在入力位置の文字の色（黒文字白背景）
 	ColorCursor = "\033[30;47m"
 	// ColorReset はANSIエスケープのリセット

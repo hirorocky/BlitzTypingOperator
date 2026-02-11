@@ -113,7 +113,7 @@ func ConvertSkillTypes(types []masterdata.ModuleDefinitionData) []rewarding.Modu
 			CooldownSeconds: t.CooldownSeconds,
 			MinDropLevel:    t.MinDropLevel,
 			DifficultyRate:  t.DifficultyRate,
-			ChallengeType:   domain.ChallengeTypeID(t.ChallengeType),
+			ChallengeType:   domain.ChallengeTypeID(t.Challenge.Type),
 			Effects:         moduleType.Effects,
 		}
 	}

@@ -459,6 +459,7 @@ func (s *BattleScreen) startChallenge(module *domain.SkillModel) tea.Cmd {
 		MistakeTimeExtendSec:     mistakeTimeExtendSec,
 		RetryOnTimeout:           retryOnTimeout,
 		RetryTimeLimitMultiplier: retryTimeLimitMultiplier,
+		ChallengeOptions:         module.Type.ChallengeOptions,
 	}
 
 	challengeType := module.GetChallengeType()

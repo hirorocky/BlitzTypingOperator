@@ -1,4 +1,4 @@
-package challenges
+package standard
 
 import (
 	"testing"

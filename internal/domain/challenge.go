@@ -13,8 +13,8 @@ const (
 	// ChallengeTypeStandard は逐次入力型のスタンダードタイプです（物理攻撃スキル向け）。
 	ChallengeTypeStandard ChallengeTypeID = "standard"
 
-	// ChallengeTypeSymbolStorm は記号パターン入力型のシンボルストームタイプです（魔法攻撃スキル向け）。
-	ChallengeTypeSymbolStorm ChallengeTypeID = "symbol_storm"
+	// ChallengeTypeShape は形状パターン入力型のシェイプタイプです（魔法攻撃スキル向け）。
+	ChallengeTypeShape ChallengeTypeID = "shape"
 
 	// ChallengeTypeDefense はリアルタイム防御型のディフェンスタイプです（防御スキル向け）。
 	ChallengeTypeDefense ChallengeTypeID = "defense"
@@ -66,6 +66,10 @@ type ChallengeInput struct {
 
 	// Words は辞書（optional）です。
 	Words []string
+
+	// ChallengeOptions はチャレンジ固有のオプションです。
+	// 各チャレンジタイプが独自に解釈します（例: shapeタイプの"shape"キー）。
+	ChallengeOptions map[string]string
 
 	// TimeExtendSec はバフによる時間延長秒数です。ディフェンスタイプでは無視されます。
 	TimeExtendSec float64

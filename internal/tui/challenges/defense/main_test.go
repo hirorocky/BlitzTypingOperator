@@ -1,9 +1,10 @@
-package challenges
+package defense
 
 import (
 	"testing"
 
 	"hirorocky/type-battle/internal/domain"
+	"hirorocky/type-battle/internal/tui/challenges"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -15,7 +16,7 @@ func TestDefense_正しい入力で防御率が上昇(t *testing.T) {
 	}
 
 	c := newDefenseChallengeForTest(input, 42)
-	dp := c.(DefenseProvider)
+	dp := c.(challenges.DefenseProvider)
 
 	// 初期防御率は0
 	if dp.DefenseRate() != 0.0 {
@@ -24,7 +25,7 @@ func TestDefense_正しい入力で防御率が上昇(t *testing.T) {
 
 	// 'a'を入力
 	c, _ = c.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-	dp = c.(DefenseProvider)
+	dp = c.(challenges.DefenseProvider)
 	if dp.DefenseRate() <= 0.0 {
 		t.Errorf("入力後の防御率 = %f, want > 0.0", dp.DefenseRate())
 	}
@@ -81,12 +82,12 @@ func TestDefense_CompleteByAttackで自動終了(t *testing.T) {
 	}
 
 	c := newDefenseChallengeForTest(input, 42)
-	_ = c.(DefenseProvider)
+	_ = c.(challenges.DefenseProvider)
 
 	// いくつか文字を入力して防御率を上げる
 	c, _ = c.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 	c, _ = c.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
-	dp := c.(DefenseProvider)
+	dp := c.(challenges.DefenseProvider)
 	defenseRate := dp.DefenseRate()
 
 	// 敵攻撃で自動終了
@@ -112,11 +113,11 @@ func TestDefense_AutoCorrectでも防御率が上昇(t *testing.T) {
 	}
 
 	c := newDefenseChallengeForTest(input, 42)
-	_ = c.(DefenseProvider)
+	_ = c.(challenges.DefenseProvider)
 
 	// 誤入力（AutoCorrectで無視→防御率上昇）
 	c, _ = c.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
-	dp := c.(DefenseProvider)
+	dp := c.(challenges.DefenseProvider)
 	if dp.DefenseRate() <= 0.0 {
 		t.Errorf("AutoCorrect後の防御率 = %f, want > 0.0", dp.DefenseRate())
 	}
@@ -129,7 +130,7 @@ func TestDefense_防御率は最大1_0(t *testing.T) {
 	}
 
 	c := newDefenseChallengeForTest(input, 42)
-	dp := c.(DefenseProvider)
+	dp := c.(challenges.DefenseProvider)
 
 	// 大量に入力
 	for i := 0; i < 100; i++ {
@@ -137,7 +138,7 @@ func TestDefense_防御率は最大1_0(t *testing.T) {
 		if dc.currentIndex < len(dc.text) {
 			ch := rune(dc.text[dc.currentIndex])
 			c, _ = c.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{ch}})
-			dp = c.(DefenseProvider)
+			dp = c.(challenges.DefenseProvider)
 		}
 	}
 
@@ -165,8 +166,8 @@ func TestDefense_DifficultyRateで上昇量が変動(t *testing.T) {
 	cLow, _ = cLow.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 	cHigh, _ = cHigh.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
-	dpLow := cLow.(DefenseProvider)
-	dpHigh := cHigh.(DefenseProvider)
+	dpLow := cLow.(challenges.DefenseProvider)
+	dpHigh := cHigh.(challenges.DefenseProvider)
 
 	if dpLow.DefenseRate() <= dpHigh.DefenseRate() {
 		t.Errorf("低難易度(%f) <= 高難易度(%f)、低難易度の方が上昇量が大きいはず",

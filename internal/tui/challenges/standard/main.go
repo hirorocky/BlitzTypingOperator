@@ -1,4 +1,4 @@
-package challenges
+package standard
 
 import (
 	"fmt"
@@ -8,33 +8,29 @@ import (
 
 	"hirorocky/type-battle/internal/config"
 	"hirorocky/type-battle/internal/domain"
+	"hirorocky/type-battle/internal/tui/challenges"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// symbolStormTickMsg はシンボルストームチャレンジ専用のtickメッセージです。
-type symbolStormTickMsg struct{}
+// standardTickMsg はスタンダードチャレンジ専用のtickメッセージです。
+type standardTickMsg struct{}
 
-// 基本記号（Shift不要）
-var basicSymbols = []rune{'<', '>', '(', ')', '[', ']', '{', '}', '-', '+', '=', '.', ',', '/', '\\', '|', '_'}
-
-// Shift+数字記号（高難易度で割合が増える）
-var shiftSymbols = []rune{'!', '@', '#', '$', '%', '^', '&', '*'}
-
-// symbolStormChallenge はシンボルストームタイプ（魔法攻撃スキル向け）のチャレンジです。
-type symbolStormChallenge struct {
+// standardChallenge はスタンダードタイプ（物理攻撃スキル向け）のチャレンジです。
+type standardChallenge struct {
 	input  domain.ChallengeInput
 	result *domain.ChallengeOutput
 
 	// テキストと進捗
 	text         string
-	pattern      string // ASCIIアート表示用パターン
 	currentIndex int
 
 	// 入力統計
-	correctCount    int
-	totalInputCount int
-	mistakeCount    int
+	correctCount     int
+	totalInputCount  int
+	mistakeCount     int
+	lastMistake      bool
+	mistakePositions map[int]bool
 
 	// 時間管理
 	startTime time.Time
@@ -56,29 +52,33 @@ type symbolStormChallenge struct {
 }
 
 func init() {
-	Register(domain.ChallengeTypeSymbolStorm, newSymbolStormChallenge)
+	challenges.Register(domain.ChallengeTypeStandard, newStandardChallenge)
 }
 
-func newSymbolStormChallenge(input domain.ChallengeInput) ChallengeModel {
-	return newSymbolStormChallengeWithRng(input, rand.New(rand.NewSource(time.Now().UnixNano())))
+func newStandardChallenge(input domain.ChallengeInput) challenges.ChallengeModel {
+	return newStandardChallengeWithRng(input, rand.New(rand.NewSource(time.Now().UnixNano())))
 }
 
-// newSymbolStormChallengeForTest はテスト用にシードを指定してチャレンジを生成します。
-func newSymbolStormChallengeForTest(input domain.ChallengeInput, seed int64) ChallengeModel {
-	return newSymbolStormChallengeWithRng(input, rand.New(rand.NewSource(seed)))
+// newStandardChallengeForTest はテスト用にシードを指定してチャレンジを生成します。
+func newStandardChallengeForTest(input domain.ChallengeInput, seed int64) challenges.ChallengeModel {
+	return newStandardChallengeWithRng(input, rand.New(rand.NewSource(seed)))
 }
 
-func newSymbolStormChallengeWithRng(input domain.ChallengeInput, rng *rand.Rand) ChallengeModel {
+func newStandardChallengeWithRng(input domain.ChallengeInput, rng *rand.Rand) challenges.ChallengeModel {
 	diffRate := int(input.Difficulty.Clamp())
+	minLen, maxLen := config.GetTextLengthForRate(diffRate)
 	timeLimitMS := config.GetTimeLimitForRate(diffRate)
+
+	// 時間延長を適用
 	timeLimit := time.Duration(timeLimitMS)*time.Millisecond + time.Duration(input.TimeExtendSec*float64(time.Second))
 
-	text, pattern := generateSymbolPattern(diffRate, rng)
+	// 単語選択
+	text := selectWord(input.Words, minLen, maxLen, rng)
 
-	return &symbolStormChallenge{
+	return &standardChallenge{
 		input:                    input,
 		text:                     text,
-		pattern:                  pattern,
+		mistakePositions:         make(map[int]bool),
 		startTime:                time.Now(),
 		timeLimit:                timeLimit,
 		autoCorrectRemaining:     input.AutoCorrectCount,
@@ -89,78 +89,13 @@ func newSymbolStormChallengeWithRng(input domain.ChallengeInput, rng *rand.Rand)
 	}
 }
 
-// generateSymbolPattern はDifficultyRateに応じた記号パターンを生成します。
-func generateSymbolPattern(diffRate int, rng *rand.Rand) (text string, pattern string) {
-	// 文字数を決定: rate=50→4-6, rate=100→6-8, rate=200→10-16
-	var minLen, maxLen int
-	if diffRate <= 50 {
-		minLen, maxLen = 4, 6
-	} else if diffRate <= 100 {
-		t := float64(diffRate-50) / 50.0
-		minLen = 4 + int(t*2)
-		maxLen = 6 + int(t*2)
-	} else if diffRate <= 200 {
-		t := float64(diffRate-100) / 100.0
-		minLen = 6 + int(t*4)
-		maxLen = 8 + int(t*8)
-	} else {
-		minLen, maxLen = 10, 16
-	}
-
-	length := minLen + rng.Intn(maxLen-minLen+1)
-
-	// Shift記号の割合: rate=50→10%, rate=100→25%, rate=200→50%
-	shiftRatio := 0.1
-	if diffRate > 50 {
-		shiftRatio = 0.1 + float64(diffRate-50)/150.0*0.4
-	}
-	if shiftRatio > 0.5 {
-		shiftRatio = 0.5
-	}
-
-	// 記号列を生成
-	chars := make([]rune, length)
-	for i := range chars {
-		if rng.Float64() < shiftRatio {
-			chars[i] = shiftSymbols[rng.Intn(len(shiftSymbols))]
-		} else {
-			chars[i] = basicSymbols[rng.Intn(len(basicSymbols))]
-		}
-	}
-
-	text = string(chars)
-	pattern = formatAsPattern(chars)
-	return
-}
-
-// formatAsPattern は記号列をASCIIアートパターン風に整形します。
-func formatAsPattern(chars []rune) string {
-	var b strings.Builder
-	lineLen := 4
-	if len(chars) > 10 {
-		lineLen = 5
-	}
-
-	for i, ch := range chars {
-		if i > 0 && i%lineLen == 0 {
-			b.WriteRune('\n')
-		}
-		// 記号間にスペースを入れて見やすくする
-		if i%lineLen != 0 {
-			b.WriteRune(' ')
-		}
-		b.WriteRune(ch)
-	}
-	return b.String()
-}
-
-func (c *symbolStormChallenge) Init() tea.Cmd {
+func (c *standardChallenge) Init() tea.Cmd {
 	return tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
-		return symbolStormTickMsg{}
+		return standardTickMsg{}
 	})
 }
 
-func (c *symbolStormChallenge) Update(msg tea.Msg) (ChallengeModel, tea.Cmd) {
+func (c *standardChallenge) Update(msg tea.Msg) (challenges.ChallengeModel, tea.Cmd) {
 	if c.result != nil {
 		return c, nil
 	}
@@ -168,14 +103,14 @@ func (c *symbolStormChallenge) Update(msg tea.Msg) (ChallengeModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		return c.handleKeyInput(msg)
-	case symbolStormTickMsg:
+	case standardTickMsg:
 		return c.handleTick()
 	}
 
 	return c, nil
 }
 
-func (c *symbolStormChallenge) handleKeyInput(msg tea.KeyMsg) (ChallengeModel, tea.Cmd) {
+func (c *standardChallenge) handleKeyInput(msg tea.KeyMsg) (challenges.ChallengeModel, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyEsc:
 		c.result = &domain.ChallengeOutput{
@@ -189,12 +124,15 @@ func (c *symbolStormChallenge) handleKeyInput(msg tea.KeyMsg) (ChallengeModel, t
 			return c, nil
 		}
 		return c.processCharInput(msg.Runes[0])
+
+	case tea.KeySpace:
+		return c.processCharInput(' ')
 	}
 
 	return c, nil
 }
 
-func (c *symbolStormChallenge) processCharInput(input rune) (ChallengeModel, tea.Cmd) {
+func (c *standardChallenge) processCharInput(input rune) (challenges.ChallengeModel, tea.Cmd) {
 	if c.currentIndex >= len(c.text) {
 		return c, nil
 	}
@@ -205,14 +143,20 @@ func (c *symbolStormChallenge) processCharInput(input rune) (ChallengeModel, tea
 	if input == expected {
 		c.correctCount++
 		c.currentIndex++
+		c.lastMistake = false
 	} else {
+		// AutoCorrect: ミスを無視して次に進む
 		if c.autoCorrectRemaining > 0 {
 			c.autoCorrectRemaining--
-			c.correctCount++
+			c.correctCount++ // AutoCorrectは正解扱い
 			c.currentIndex++
+			c.lastMistake = false
 		} else {
 			c.mistakeCount++
+			c.lastMistake = true
+			c.mistakePositions[c.currentIndex] = true
 
+			// MistakeTimeExtend: 初回ミス時に時間延長（1回/チャレンジ）
 			if c.mistakeTimeExtendSec > 0 && !c.mistakeTimeExtendUsed {
 				c.timeLimit += time.Duration(c.mistakeTimeExtendSec * float64(time.Second))
 				c.mistakeTimeExtendUsed = true
@@ -220,6 +164,7 @@ func (c *symbolStormChallenge) processCharInput(input rune) (ChallengeModel, tea
 		}
 	}
 
+	// 全文字入力完了チェック（タイムアウトと同フレーム時に成功を優先）
 	if c.currentIndex >= len(c.text) {
 		c.complete(domain.ChallengeSuccess)
 		return c, nil
@@ -228,10 +173,11 @@ func (c *symbolStormChallenge) processCharInput(input rune) (ChallengeModel, tea
 	return c, nil
 }
 
-func (c *symbolStormChallenge) handleTick() (ChallengeModel, tea.Cmd) {
+func (c *standardChallenge) handleTick() (challenges.ChallengeModel, tea.Cmd) {
 	elapsed := time.Since(c.startTime)
 
 	if elapsed >= c.timeLimit {
+		// RetryOnTimeout: 再挑戦
 		if c.retryOnTimeout {
 			c.retryOnTimeout = false
 			c.currentIndex = 0
@@ -243,7 +189,7 @@ func (c *symbolStormChallenge) handleTick() (ChallengeModel, tea.Cmd) {
 			c.mistakeTimeExtendUsed = false
 
 			return c, tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
-				return symbolStormTickMsg{}
+				return standardTickMsg{}
 			})
 		}
 
@@ -252,11 +198,11 @@ func (c *symbolStormChallenge) handleTick() (ChallengeModel, tea.Cmd) {
 	}
 
 	return c, tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
-		return symbolStormTickMsg{}
+		return standardTickMsg{}
 	})
 }
 
-func (c *symbolStormChallenge) complete(status domain.ChallengeStatus) {
+func (c *standardChallenge) complete(status domain.ChallengeStatus) {
 	completionTime := time.Since(c.startTime)
 
 	accuracy := 1.0
@@ -288,29 +234,30 @@ func (c *symbolStormChallenge) complete(status domain.ChallengeStatus) {
 	}
 }
 
-func (c *symbolStormChallenge) View() string {
+func (c *standardChallenge) View() string {
 	if c.result != nil {
 		return ""
 	}
 
 	var b strings.Builder
 
-	// パターン表示（入力済みの文字は色分け）
-	textIdx := 0
-	for _, ch := range c.pattern {
-		if ch == '\n' || ch == ' ' {
-			b.WriteRune(ch)
-			continue
-		}
-
-		if textIdx < c.currentIndex {
-			fmt.Fprintf(&b, "%s%c%s", ColorCorrect, ch, ColorReset)
-		} else if textIdx == c.currentIndex {
-			fmt.Fprintf(&b, "%s%c%s", ColorCursor, ch, ColorReset)
+	// テキスト表示: 入力済み / 現在位置 / 未入力
+	for i, ch := range c.text {
+		if i < c.currentIndex {
+			if c.mistakePositions[i] {
+				fmt.Fprintf(&b, "%s%c%s", challenges.ColorMissed, ch, challenges.ColorReset)
+			} else {
+				fmt.Fprintf(&b, "%s%c%s", challenges.ColorCorrect, ch, challenges.ColorReset)
+			}
+		} else if i == c.currentIndex {
+			if c.lastMistake {
+				fmt.Fprintf(&b, "%s%c%s", challenges.ColorMissCursor, ch, challenges.ColorReset)
+			} else {
+				fmt.Fprintf(&b, "%s%c%s", challenges.ColorCursor, ch, challenges.ColorReset)
+			}
 		} else {
-			fmt.Fprintf(&b, "%s%c%s", ColorUntyped, ch, ColorReset)
+			fmt.Fprintf(&b, "%s%c%s", challenges.ColorUntyped, ch, challenges.ColorReset)
 		}
-		textIdx++
 	}
 	b.WriteString("\n")
 
@@ -328,6 +275,7 @@ func (c *symbolStormChallenge) View() string {
 	fmt.Fprintf(&b, "] %.1fs", remaining.Seconds())
 	b.WriteString("\n")
 
+	// AutoCorrect残り
 	if c.autoCorrectRemaining > 0 {
 		fmt.Fprintf(&b, "ミス無視: %d回", c.autoCorrectRemaining)
 		b.WriteString("\n")
@@ -336,6 +284,29 @@ func (c *symbolStormChallenge) View() string {
 	return b.String()
 }
 
-func (c *symbolStormChallenge) Result() *domain.ChallengeOutput {
+func (c *standardChallenge) Result() *domain.ChallengeOutput {
 	return c.result
+}
+
+// selectWord は辞書から指定文字数範囲の単語を選択します。
+// 候補がなければ最も近い長さの単語を選択します。
+func selectWord(words []string, minLen, maxLen int, rng *rand.Rand) string {
+	if len(words) == 0 {
+		return "default"
+	}
+
+	// 範囲内の候補を収集
+	var candidates []string
+	for _, w := range words {
+		if len(w) >= minLen && len(w) <= maxLen {
+			candidates = append(candidates, w)
+		}
+	}
+
+	if len(candidates) > 0 {
+		return candidates[rng.Intn(len(candidates))]
+	}
+
+	// 候補がなければ全単語から選択
+	return words[rng.Intn(len(words))]
 }

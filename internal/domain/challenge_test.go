@@ -172,16 +172,16 @@ func TestChallengeTypeIDConstants(t *testing.T) {
 	if ChallengeTypeStandard == "" {
 		t.Error("ChallengeTypeStandard が空文字列")
 	}
-	if ChallengeTypeSymbolStorm == "" {
-		t.Error("ChallengeTypeSymbolStorm が空文字列")
+	if ChallengeTypeShape == "" {
+		t.Error("ChallengeTypeShape が空文字列")
 	}
 	if ChallengeTypeDefense == "" {
 		t.Error("ChallengeTypeDefense が空文字列")
 	}
 
 	// それぞれ異なる値であること
-	if ChallengeTypeStandard == ChallengeTypeSymbolStorm {
-		t.Error("Standard と SymbolStorm が同じ値")
+	if ChallengeTypeStandard == ChallengeTypeShape {
+		t.Error("Standard と Shape が同じ値")
 	}
 	if ChallengeTypeStandard == ChallengeTypeDefense {
 		t.Error("Standard と Defense が同じ値")

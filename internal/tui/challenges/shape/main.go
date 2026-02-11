@@ -1,4 +1,4 @@
-package challenges
+package shape
 
 import (
 	"fmt"
@@ -8,26 +8,32 @@ import (
 
 	"hirorocky/type-battle/internal/config"
 	"hirorocky/type-battle/internal/domain"
+	"hirorocky/type-battle/internal/tui/challenges"
+	"hirorocky/type-battle/internal/tui/challenges/commons"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// standardTickMsg はスタンダードチャレンジ専用のtickメッセージです。
-type standardTickMsg struct{}
+// shapeTickMsg はシェイプチャレンジ専用のtickメッセージです。
+type shapeTickMsg struct{}
 
-// standardChallenge はスタンダードタイプ（物理攻撃スキル向け）のチャレンジです。
-type standardChallenge struct {
+// shapeChallenge はシェイプタイプ（魔法攻撃スキル向け）のチャレンジです。
+// 共通文字セットと形状テンプレートを使用してASCIIアートパターンを表示します。
+type shapeChallenge struct {
 	input  domain.ChallengeInput
 	result *domain.ChallengeOutput
 
 	// テキストと進捗
 	text         string
+	pattern      string // ASCIIアート表示用パターン
 	currentIndex int
 
 	// 入力統計
-	correctCount    int
-	totalInputCount int
-	mistakeCount    int
+	correctCount     int
+	totalInputCount  int
+	mistakeCount     int
+	lastMistake      bool
+	mistakePositions map[int]bool
 
 	// 時間管理
 	startTime time.Time
@@ -49,32 +55,44 @@ type standardChallenge struct {
 }
 
 func init() {
-	Register(domain.ChallengeTypeStandard, newStandardChallenge)
+	challenges.Register(domain.ChallengeTypeShape, newShapeChallenge)
 }
 
-func newStandardChallenge(input domain.ChallengeInput) ChallengeModel {
-	return newStandardChallengeWithRng(input, rand.New(rand.NewSource(time.Now().UnixNano())))
+func newShapeChallenge(input domain.ChallengeInput) challenges.ChallengeModel {
+	return newShapeChallengeWithRng(input, rand.New(rand.NewSource(time.Now().UnixNano())))
 }
 
-// newStandardChallengeForTest はテスト用にシードを指定してチャレンジを生成します。
-func newStandardChallengeForTest(input domain.ChallengeInput, seed int64) ChallengeModel {
-	return newStandardChallengeWithRng(input, rand.New(rand.NewSource(seed)))
+// newShapeChallengeForTest はテスト用にシードを指定してチャレンジを生成します。
+func newShapeChallengeForTest(input domain.ChallengeInput, seed int64) challenges.ChallengeModel {
+	return newShapeChallengeWithRng(input, rand.New(rand.NewSource(seed)))
 }
 
-func newStandardChallengeWithRng(input domain.ChallengeInput, rng *rand.Rand) ChallengeModel {
+func newShapeChallengeWithRng(input domain.ChallengeInput, rng *rand.Rand) challenges.ChallengeModel {
 	diffRate := int(input.Difficulty.Clamp())
-	minLen, maxLen := config.GetTextLengthForRate(diffRate)
 	timeLimitMS := config.GetTimeLimitForRate(diffRate)
-
-	// 時間延長を適用
 	timeLimit := time.Duration(timeLimitMS)*time.Millisecond + time.Duration(input.TimeExtendSec*float64(time.Second))
 
-	// 単語選択
-	text := selectWord(input.Words, minLen, maxLen, rng)
+	// 共通文字セットから文字を生成
+	chars := commons.GenerateChars(diffRate, rng)
 
-	return &standardChallenge{
+	// オプションから形状名を取得（デフォルト: flame）
+	shapeName := "flame"
+	if input.ChallengeOptions != nil {
+		if s, ok := input.ChallengeOptions["shape"]; ok && s != "" {
+			shapeName = s
+		}
+	}
+
+	// テンプレート選択とパターン生成
+	tmpl := selectTemplate(shapeName, len(chars))
+	pattern := commons.FormatAsPattern(tmpl, chars)
+	text := string(chars)
+
+	return &shapeChallenge{
 		input:                    input,
 		text:                     text,
+		pattern:                  pattern,
+		mistakePositions:         make(map[int]bool),
 		startTime:                time.Now(),
 		timeLimit:                timeLimit,
 		autoCorrectRemaining:     input.AutoCorrectCount,
@@ -85,13 +103,24 @@ func newStandardChallengeWithRng(input domain.ChallengeInput, rng *rand.Rand) Ch
 	}
 }
 
-func (c *standardChallenge) Init() tea.Cmd {
+// selectTemplate は形状名と文字数に応じたテンプレートを返します。
+func selectTemplate(shapeName string, charCount int) string {
+	switch shapeName {
+	case "flame":
+		return selectFlameTemplate(charCount)
+	default:
+		// 未知の形状はflameにフォールバック
+		return selectFlameTemplate(charCount)
+	}
+}
+
+func (c *shapeChallenge) Init() tea.Cmd {
 	return tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
-		return standardTickMsg{}
+		return shapeTickMsg{}
 	})
 }
 
-func (c *standardChallenge) Update(msg tea.Msg) (ChallengeModel, tea.Cmd) {
+func (c *shapeChallenge) Update(msg tea.Msg) (challenges.ChallengeModel, tea.Cmd) {
 	if c.result != nil {
 		return c, nil
 	}
@@ -99,14 +128,14 @@ func (c *standardChallenge) Update(msg tea.Msg) (ChallengeModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		return c.handleKeyInput(msg)
-	case standardTickMsg:
+	case shapeTickMsg:
 		return c.handleTick()
 	}
 
 	return c, nil
 }
 
-func (c *standardChallenge) handleKeyInput(msg tea.KeyMsg) (ChallengeModel, tea.Cmd) {
+func (c *shapeChallenge) handleKeyInput(msg tea.KeyMsg) (challenges.ChallengeModel, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyEsc:
 		c.result = &domain.ChallengeOutput{
@@ -120,12 +149,15 @@ func (c *standardChallenge) handleKeyInput(msg tea.KeyMsg) (ChallengeModel, tea.
 			return c, nil
 		}
 		return c.processCharInput(msg.Runes[0])
+
+	case tea.KeySpace:
+		return c.processCharInput(' ')
 	}
 
 	return c, nil
 }
 
-func (c *standardChallenge) processCharInput(input rune) (ChallengeModel, tea.Cmd) {
+func (c *shapeChallenge) processCharInput(input rune) (challenges.ChallengeModel, tea.Cmd) {
 	if c.currentIndex >= len(c.text) {
 		return c, nil
 	}
@@ -136,16 +168,18 @@ func (c *standardChallenge) processCharInput(input rune) (ChallengeModel, tea.Cm
 	if input == expected {
 		c.correctCount++
 		c.currentIndex++
+		c.lastMistake = false
 	} else {
-		// AutoCorrect: ミスを無視して次に進む
 		if c.autoCorrectRemaining > 0 {
 			c.autoCorrectRemaining--
-			c.correctCount++ // AutoCorrectは正解扱い
+			c.correctCount++
 			c.currentIndex++
+			c.lastMistake = false
 		} else {
 			c.mistakeCount++
+			c.lastMistake = true
+			c.mistakePositions[c.currentIndex] = true
 
-			// MistakeTimeExtend: 初回ミス時に時間延長（1回/チャレンジ）
 			if c.mistakeTimeExtendSec > 0 && !c.mistakeTimeExtendUsed {
 				c.timeLimit += time.Duration(c.mistakeTimeExtendSec * float64(time.Second))
 				c.mistakeTimeExtendUsed = true
@@ -153,7 +187,6 @@ func (c *standardChallenge) processCharInput(input rune) (ChallengeModel, tea.Cm
 		}
 	}
 
-	// 全文字入力完了チェック（タイムアウトと同フレーム時に成功を優先）
 	if c.currentIndex >= len(c.text) {
 		c.complete(domain.ChallengeSuccess)
 		return c, nil
@@ -162,11 +195,10 @@ func (c *standardChallenge) processCharInput(input rune) (ChallengeModel, tea.Cm
 	return c, nil
 }
 
-func (c *standardChallenge) handleTick() (ChallengeModel, tea.Cmd) {
+func (c *shapeChallenge) handleTick() (challenges.ChallengeModel, tea.Cmd) {
 	elapsed := time.Since(c.startTime)
 
 	if elapsed >= c.timeLimit {
-		// RetryOnTimeout: 再挑戦
 		if c.retryOnTimeout {
 			c.retryOnTimeout = false
 			c.currentIndex = 0
@@ -178,7 +210,7 @@ func (c *standardChallenge) handleTick() (ChallengeModel, tea.Cmd) {
 			c.mistakeTimeExtendUsed = false
 
 			return c, tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
-				return standardTickMsg{}
+				return shapeTickMsg{}
 			})
 		}
 
@@ -187,11 +219,11 @@ func (c *standardChallenge) handleTick() (ChallengeModel, tea.Cmd) {
 	}
 
 	return c, tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
-		return standardTickMsg{}
+		return shapeTickMsg{}
 	})
 }
 
-func (c *standardChallenge) complete(status domain.ChallengeStatus) {
+func (c *shapeChallenge) complete(status domain.ChallengeStatus) {
 	completionTime := time.Since(c.startTime)
 
 	accuracy := 1.0
@@ -223,22 +255,37 @@ func (c *standardChallenge) complete(status domain.ChallengeStatus) {
 	}
 }
 
-func (c *standardChallenge) View() string {
+func (c *shapeChallenge) View() string {
 	if c.result != nil {
 		return ""
 	}
 
 	var b strings.Builder
 
-	// テキスト表示: 入力済み / 現在位置 / 未入力
-	for i, ch := range c.text {
-		if i < c.currentIndex {
-			fmt.Fprintf(&b, "%s%c%s", ColorCorrect, ch, ColorReset)
-		} else if i == c.currentIndex {
-			fmt.Fprintf(&b, "%s%c%s", ColorCursor, ch, ColorReset)
-		} else {
-			fmt.Fprintf(&b, "%s%c%s", ColorUntyped, ch, ColorReset)
+	// パターン表示（入力済みの文字は色分け）
+	textIdx := 0
+	for _, ch := range c.pattern {
+		if ch == '\n' || ch == ' ' {
+			b.WriteRune(ch)
+			continue
 		}
+
+		if textIdx < c.currentIndex {
+			if c.mistakePositions[textIdx] {
+				fmt.Fprintf(&b, "%s%c%s", challenges.ColorMissed, ch, challenges.ColorReset)
+			} else {
+				fmt.Fprintf(&b, "%s%c%s", challenges.ColorCorrect, ch, challenges.ColorReset)
+			}
+		} else if textIdx == c.currentIndex {
+			if c.lastMistake {
+				fmt.Fprintf(&b, "%s%c%s", challenges.ColorMissCursor, ch, challenges.ColorReset)
+			} else {
+				fmt.Fprintf(&b, "%s%c%s", challenges.ColorCursor, ch, challenges.ColorReset)
+			}
+		} else {
+			fmt.Fprintf(&b, "%s%c%s", challenges.ColorUntyped, ch, challenges.ColorReset)
+		}
+		textIdx++
 	}
 	b.WriteString("\n")
 
@@ -253,41 +300,17 @@ func (c *standardChallenge) View() string {
 	b.WriteString("[")
 	b.WriteString(strings.Repeat("█", filled))
 	b.WriteString(strings.Repeat("░", barWidth-filled))
-	b.WriteString(fmt.Sprintf("] %.1fs", remaining.Seconds()))
+	fmt.Fprintf(&b, "] %.1fs", remaining.Seconds())
 	b.WriteString("\n")
 
-	// AutoCorrect残り
 	if c.autoCorrectRemaining > 0 {
-		b.WriteString(fmt.Sprintf("ミス無視: %d回", c.autoCorrectRemaining))
+		fmt.Fprintf(&b, "ミス無視: %d回", c.autoCorrectRemaining)
 		b.WriteString("\n")
 	}
 
 	return b.String()
 }
 
-func (c *standardChallenge) Result() *domain.ChallengeOutput {
+func (c *shapeChallenge) Result() *domain.ChallengeOutput {
 	return c.result
-}
-
-// selectWord は辞書から指定文字数範囲の単語を選択します。
-// 候補がなければ最も近い長さの単語を選択します。
-func selectWord(words []string, minLen, maxLen int, rng *rand.Rand) string {
-	if len(words) == 0 {
-		return "default"
-	}
-
-	// 範囲内の候補を収集
-	var candidates []string
-	for _, w := range words {
-		if len(w) >= minLen && len(w) <= maxLen {
-			candidates = append(candidates, w)
-		}
-	}
-
-	if len(candidates) > 0 {
-		return candidates[rng.Intn(len(candidates))]
-	}
-
-	// 候補がなければ全単語から選択
-	return words[rng.Intn(len(words))]
 }

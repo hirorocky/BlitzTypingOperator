@@ -33,6 +33,9 @@ type SkillType struct {
 	// ChallengeType はこのスキルに対応するチャレンジタイプのIDです。
 	ChallengeType ChallengeTypeID
 
+	// ChallengeOptions はチャレンジ固有のオプションです。
+	ChallengeOptions map[string]string
+
 	// MinDropLevel はこのスキルがドロップする最低敵レベルです。
 	MinDropLevel int
 

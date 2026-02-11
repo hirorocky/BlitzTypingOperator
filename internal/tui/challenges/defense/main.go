@@ -1,4 +1,4 @@
-package challenges
+package defense
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"hirorocky/type-battle/internal/domain"
+	"hirorocky/type-battle/internal/tui/challenges"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -24,8 +25,10 @@ type defenseChallenge struct {
 	// 防御率（0.0-1.0）
 	defenseRate  float64
 	ratePerChar  float64 // 1文字あたりの防御率上昇量
-	totalCorrect int     // 正解入力数の合計（統計用）
-	totalInputs  int     // 総入力数（統計用）
+	totalCorrect     int // 正解入力数の合計（統計用）
+	totalInputs      int // 総入力数（統計用）
+	lastMistake      bool
+	mistakePositions map[int]bool
 
 	// AutoCorrect
 	autoCorrectRemaining int
@@ -39,19 +42,19 @@ type defenseChallenge struct {
 }
 
 func init() {
-	Register(domain.ChallengeTypeDefense, newDefenseChallenge)
+	challenges.Register(domain.ChallengeTypeDefense, newDefenseChallenge)
 }
 
-func newDefenseChallenge(input domain.ChallengeInput) ChallengeModel {
+func newDefenseChallenge(input domain.ChallengeInput) challenges.ChallengeModel {
 	return newDefenseChallengeWithRng(input, rand.New(rand.NewSource(time.Now().UnixNano())))
 }
 
 // newDefenseChallengeForTest はテスト用にシードを指定してチャレンジを生成します。
-func newDefenseChallengeForTest(input domain.ChallengeInput, seed int64) ChallengeModel {
+func newDefenseChallengeForTest(input domain.ChallengeInput, seed int64) challenges.ChallengeModel {
 	return newDefenseChallengeWithRng(input, rand.New(rand.NewSource(seed)))
 }
 
-func newDefenseChallengeWithRng(input domain.ChallengeInput, rng *rand.Rand) ChallengeModel {
+func newDefenseChallengeWithRng(input domain.ChallengeInput, rng *rand.Rand) challenges.ChallengeModel {
 	diffRate := int(input.Difficulty.Clamp())
 
 	// 1文字あたりの防御率上昇量: 低難易度は大きく、高難易度は小さい
@@ -69,6 +72,7 @@ func newDefenseChallengeWithRng(input domain.ChallengeInput, rng *rand.Rand) Cha
 		input:                input,
 		text:                 text,
 		ratePerChar:          ratePerChar,
+		mistakePositions:     make(map[int]bool),
 		autoCorrectRemaining: input.AutoCorrectCount,
 		startTime:            time.Now(),
 		rng:                  rng,
@@ -95,7 +99,7 @@ func (c *defenseChallenge) Init() tea.Cmd {
 	return nil
 }
 
-func (c *defenseChallenge) Update(msg tea.Msg) (ChallengeModel, tea.Cmd) {
+func (c *defenseChallenge) Update(msg tea.Msg) (challenges.ChallengeModel, tea.Cmd) {
 	if c.result != nil {
 		return c, nil
 	}
@@ -108,7 +112,7 @@ func (c *defenseChallenge) Update(msg tea.Msg) (ChallengeModel, tea.Cmd) {
 	return c, nil
 }
 
-func (c *defenseChallenge) handleKeyInput(msg tea.KeyMsg) (ChallengeModel, tea.Cmd) {
+func (c *defenseChallenge) handleKeyInput(msg tea.KeyMsg) (challenges.ChallengeModel, tea.Cmd) {
 	switch msg.Type {
 	case tea.KeyEsc:
 		c.result = &domain.ChallengeOutput{
@@ -122,12 +126,15 @@ func (c *defenseChallenge) handleKeyInput(msg tea.KeyMsg) (ChallengeModel, tea.C
 			return c, nil
 		}
 		return c.processCharInput(msg.Runes[0])
+
+	case tea.KeySpace:
+		return c.processCharInput(' ')
 	}
 
 	return c, nil
 }
 
-func (c *defenseChallenge) processCharInput(input rune) (ChallengeModel, tea.Cmd) {
+func (c *defenseChallenge) processCharInput(input rune) (challenges.ChallengeModel, tea.Cmd) {
 	if c.currentIndex >= len(c.text) {
 		return c, nil
 	}
@@ -139,6 +146,7 @@ func (c *defenseChallenge) processCharInput(input rune) (ChallengeModel, tea.Cmd
 		c.totalCorrect++
 		c.currentIndex++
 		c.increaseDefenseRate()
+		c.lastMistake = false
 	} else {
 		// AutoCorrect: ミスを無視して防御率も上昇する
 		if c.autoCorrectRemaining > 0 {
@@ -146,8 +154,11 @@ func (c *defenseChallenge) processCharInput(input rune) (ChallengeModel, tea.Cmd
 			c.totalCorrect++
 			c.currentIndex++
 			c.increaseDefenseRate()
+			c.lastMistake = false
+		} else {
+			c.lastMistake = true
+			c.mistakePositions[c.currentIndex] = true
 		}
-		// AutoCorrectなしの場合は防御率上昇なし
 	}
 
 	// 全文字入力完了で次の単語を生成（ディフェンスタイプは敵攻撃まで継続）
@@ -167,6 +178,8 @@ func (c *defenseChallenge) increaseDefenseRate() {
 
 func (c *defenseChallenge) nextWord() {
 	c.currentIndex = 0
+	c.lastMistake = false
+	c.mistakePositions = make(map[int]bool)
 	c.text = c.words[c.rng.Intn(len(c.words))]
 }
 
@@ -189,11 +202,19 @@ func (c *defenseChallenge) View() string {
 	// テキスト表示
 	for i, ch := range c.text {
 		if i < c.currentIndex {
-			fmt.Fprintf(&b, "%s%c%s", ColorCorrect, ch, ColorReset)
+			if c.mistakePositions[i] {
+				fmt.Fprintf(&b, "%s%c%s", challenges.ColorMissed, ch, challenges.ColorReset)
+			} else {
+				fmt.Fprintf(&b, "%s%c%s", challenges.ColorCorrect, ch, challenges.ColorReset)
+			}
 		} else if i == c.currentIndex {
-			fmt.Fprintf(&b, "%s%c%s", ColorCursor, ch, ColorReset)
+			if c.lastMistake {
+				fmt.Fprintf(&b, "%s%c%s", challenges.ColorMissCursor, ch, challenges.ColorReset)
+			} else {
+				fmt.Fprintf(&b, "%s%c%s", challenges.ColorCursor, ch, challenges.ColorReset)
+			}
 		} else {
-			fmt.Fprintf(&b, "%s%c%s", ColorUntyped, ch, ColorReset)
+			fmt.Fprintf(&b, "%s%c%s", challenges.ColorUntyped, ch, challenges.ColorReset)
 		}
 	}
 	b.WriteString("\n")

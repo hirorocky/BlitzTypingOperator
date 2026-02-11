@@ -8,7 +8,7 @@
       "description": "基本的な物理攻撃。敵に物理ダメージを与える。",
       "cooldown_seconds": 10.0,
       "difficulty": 80,
-      "challenge_type": "standard",
+      "challenge": { "type": "standard" },
       "min_drop_level": 1,
       "effects": [
         {
@@ -28,7 +28,7 @@
       "description": "強化された物理攻撃。敵に中程度の物理ダメージを与える。",
       "cooldown_seconds": 15.0,
       "difficulty": 120,
-      "challenge_type": "standard",
+      "challenge": { "type": "standard" },
       "min_drop_level": 10,
       "effects": [
         {
@@ -48,7 +48,7 @@
       "description": "最強の物理攻撃。敵に大ダメージを与える。",
       "cooldown_seconds": 20.0,
       "difficulty": 170,
-      "challenge_type": "standard",
+      "challenge": { "type": "standard" },
       "min_drop_level": 20,
       "effects": [
         {
@@ -62,13 +62,13 @@
     },
     {
       "id": "fireball_lv1",
-      "name": "初級攻撃魔法",
+      "name": "初級火炎魔法",
       "icon": "💥",
       "tags": ["magic_low"],
       "description": "炎の魔法弾を放つ。敵に魔法ダメージを与える。",
       "cooldown_seconds": 10.0,
       "difficulty": 80,
-      "challenge_type": "symbol_storm",
+      "challenge": { "type": "shape", "options": { "shape": "flame" } },
       "min_drop_level": 1,
       "effects": [
         {
@@ -82,13 +82,13 @@
     },
     {
       "id": "fireball_lv2",
-      "name": "中級攻撃魔法",
+      "name": "中級火炎魔法",
       "icon": "💥",
       "tags": ["magic_mid"],
       "description": "強力な炎の魔法弾。敵に中程度の魔法ダメージを与える。",
       "cooldown_seconds": 15.0,
       "difficulty": 120,
-      "challenge_type": "symbol_storm",
+      "challenge": { "type": "shape", "options": { "shape": "flame" } },
       "min_drop_level": 10,
       "effects": [
         {
@@ -102,13 +102,13 @@
     },
     {
       "id": "fireball_lv3",
-      "name": "上級攻撃魔法",
+      "name": "上級火炎魔法",
       "icon": "💥",
       "tags": ["magic_high"],
       "description": "灼熱の魔法弾。敵に大魔法ダメージを与える。",
       "cooldown_seconds": 20.0,
       "difficulty": 170,
-      "challenge_type": "symbol_storm",
+      "challenge": { "type": "shape", "options": { "shape": "flame" } },
       "min_drop_level": 20,
       "effects": [
         {
@@ -128,7 +128,7 @@
       "description": "自身のHPを少量回復する。",
       "cooldown_seconds": 10.0,
       "difficulty": 80,
-      "challenge_type": "standard",
+      "challenge": { "type": "standard" },
       "min_drop_level": 1,
       "effects": [
         {
@@ -148,7 +148,7 @@
       "description": "自身のHPを中程度回復する。",
       "cooldown_seconds": 15.0,
       "difficulty": 120,
-      "challenge_type": "standard",
+      "challenge": { "type": "standard" },
       "min_drop_level": 10,
       "effects": [
         {
@@ -168,7 +168,7 @@
       "description": "自身のHPを大きく回復する。",
       "cooldown_seconds": 20.0,
       "difficulty": 170,
-      "challenge_type": "standard",
+      "challenge": { "type": "standard" },
       "min_drop_level": 20,
       "effects": [
         {
@@ -188,7 +188,7 @@
       "description": "一時的にSTRを上昇させる。",
       "cooldown_seconds": 10.0,
       "difficulty": 80,
-      "challenge_type": "standard",
+      "challenge": { "type": "standard" },
       "min_drop_level": 1,
       "effects": [
         {
@@ -219,7 +219,7 @@
       "description": "一時的に受けるダメージを軽減する。",
       "cooldown_seconds": 10.0,
       "difficulty": 80,
-      "challenge_type": "defense",
+      "challenge": { "type": "defense" },
       "min_drop_level": 1,
       "effects": [
         {
@@ -243,7 +243,7 @@
       "description": "STRを大きく上昇させる。",
       "cooldown_seconds": 10.0,
       "difficulty": 120,
-      "challenge_type": "standard",
+      "challenge": { "type": "standard" },
       "min_drop_level": 10,
       "effects": [
         {
@@ -267,7 +267,7 @@
       "description": "受けるダメージを大きく軽減する。",
       "cooldown_seconds": 15.0,
       "difficulty": 120,
-      "challenge_type": "defense",
+      "challenge": { "type": "defense" },
       "min_drop_level": 10,
       "effects": [
         {
@@ -291,7 +291,7 @@
       "description": "STRを大幅に上昇させる。",
       "cooldown_seconds": 20.0,
       "difficulty": 170,
-      "challenge_type": "standard",
+      "challenge": { "type": "standard" },
       "min_drop_level": 20,
       "effects": [
         {
@@ -315,7 +315,7 @@
       "description": "敵の攻撃力を一時的に低下させる。",
       "cooldown_seconds": 10.0,
       "difficulty": 80,
-      "challenge_type": "standard",
+      "challenge": { "type": "standard" },
       "min_drop_level": 1,
       "effects": [
         {
@@ -339,7 +339,7 @@
       "description": "敵の防御力を一時的に低下させる。",
       "cooldown_seconds": 10.0,
       "difficulty": 80,
-      "challenge_type": "standard",
+      "challenge": { "type": "standard" },
       "min_drop_level": 1,
       "effects": [
         {
@@ -363,7 +363,7 @@
       "description": "敵の攻撃力を大きく低下させる。",
       "cooldown_seconds": 15.0,
       "difficulty": 120,
-      "challenge_type": "standard",
+      "challenge": { "type": "standard" },
       "min_drop_level": 10,
       "effects": [
         {
@@ -387,7 +387,7 @@
       "description": "敵の攻撃力を大幅に低下させる。",
       "cooldown_seconds": 20.0,
       "difficulty": 170,
-      "challenge_type": "standard",
+      "challenge": { "type": "standard" },
       "min_drop_level": 20,
       "effects": [
         {
