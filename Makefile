@@ -1,5 +1,4 @@
 # BlitzTypingOperator Makefile
-# Requirement 21: 拡張性 - データファイル埋め込みビルド
 
 .PHONY: build build-release clean test run lint help
 

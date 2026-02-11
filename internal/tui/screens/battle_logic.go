@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"hirorocky/type-battle/internal/domain"
+	"hirorocky/type-battle/internal/tui/challenges"
 	"hirorocky/type-battle/internal/tui/styles"
 	"hirorocky/type-battle/internal/usecase/combat"
 	"hirorocky/type-battle/internal/usecase/combat/chain"
@@ -409,119 +410,93 @@ func (s *BattleScreen) registerChainEffectToTable(effect *chain.TriggeredChainEf
 	s.player.EffectTable.AddEntry(entry)
 }
 
-// ==================== ゲームロジック: タイピング ====================
+// ==================== ゲームロジック: チャレンジ ====================
 
-// StartTypingChallenge はタイピングチャレンジを開始します。
-// EffectTableからTimeExtendとAutoCorrectを取得して適用します。
-func (s *BattleScreen) StartTypingChallenge(text string, timeLimit time.Duration) {
-	s.isTyping = true
-	s.typingText = text
-	s.typingIndex = 0
-	s.typingMistakes = make([]int, 0)
-	s.typingStartTime = time.Now()
-	// パッシブスキル使用フラグをリセット（チャレンジ毎）
-	s.typoRecoveryUsed = false
-	s.secondChanceUsed = false
-
-	// EffectTableからTimeExtendとAutoCorrectを取得
-	finalTimeLimit := timeLimit
-	autoCorrect := 0
+// startChallenge はChallengeInputを構築してチャレンジを開始します。
+// EffectTableからTimeExtend、AutoCorrect、TypingDifficultyを取得して適用します。
+func (s *BattleScreen) startChallenge(module *domain.SkillModel) tea.Cmd {
+	// EffectTableから効果を取得
+	var effects domain.EffectResult
 	if s.player != nil && s.player.EffectTable != nil {
 		ctx := domain.NewEffectContext(s.player.HP, s.player.MaxHP, 0, 0)
 		if s.enemy != nil {
 			ctx = domain.NewEffectContext(s.player.HP, s.player.MaxHP, s.enemy.HP, s.enemy.MaxHP)
 		}
-		effects := s.player.EffectTable.Aggregate(ctx)
+		effects = s.player.EffectTable.Aggregate(ctx)
+	} else {
+		effects = domain.NewEffectResult()
+	}
 
-		// TimeExtend を適用（正負どちらも可能）
-		if effects.TimeExtend != 0 {
-			extension := time.Duration(effects.TimeExtend * float64(time.Second))
-			finalTimeLimit = timeLimit + extension
-			// 最低1秒を保証
-			if finalTimeLimit < time.Second {
-				finalTimeLimit = time.Second
-			}
+	// 基礎DifficultyRateにTypingDifficulty修正を適用
+	baseDifficulty := float64(module.GetDifficultyRate())
+	adjustedDifficulty := baseDifficulty * effects.TypingDifficulty
+	difficultyRate := domain.DifficultyRate(int(adjustedDifficulty)).Clamp()
+
+	// パッシブスキル: ps_typo_recovery（ミス時の時間延長）
+	mistakeTimeExtendSec := 0.0
+	if s.battleEngine != nil && s.battleState != nil {
+		slot := s.moduleSlots[s.selectedModuleIdx]
+		agent := slot.Agent
+		mistakeTimeExtendSec = s.battleEngine.EvaluateTypoRecovery(s.battleState, agent)
+	}
+
+	// パッシブスキル: ps_second_chance（タイムアウト時の再挑戦）
+	retryOnTimeout := false
+	retryTimeLimitMultiplier := 0.5
+	if s.battleEngine != nil && s.battleState != nil {
+		slot := s.moduleSlots[s.selectedModuleIdx]
+		agent := slot.Agent
+		if s.battleEngine.EvaluateSecondChance(s.battleState, agent) {
+			retryOnTimeout = true
 		}
-
-		// AutoCorrect を取得
-		autoCorrect = effects.AutoCorrect
 	}
 
-	s.typingTimeLimit = finalTimeLimit
-	s.autoCorrectRemaining = autoCorrect
-
-	// Evaluator用のチャレンジ状態を初期化
-	challenge := &typing.Challenge{
-		Text:      text,
-		TimeLimit: finalTimeLimit,
+	input := domain.ChallengeInput{
+		Difficulty:               difficultyRate,
+		Words:                    s.dictionary,
+		TimeExtendSec:            effects.TimeExtend,
+		AutoCorrectCount:         effects.AutoCorrect,
+		MistakeTimeExtendSec:     mistakeTimeExtendSec,
+		RetryOnTimeout:           retryOnTimeout,
+		RetryTimeLimitMultiplier: retryTimeLimitMultiplier,
+		ChallengeOptions:         module.Type.ChallengeOptions,
 	}
-	s.typingState = s.evaluator.StartChallenge(challenge)
+
+	challengeType := module.GetChallengeType()
+	s.activeChallenge = challenges.New(challengeType, input)
+
+	if s.activeChallenge != nil {
+		return s.activeChallenge.Init()
+	}
+	return nil
 }
 
-// ProcessTypingInput はタイピング入力を処理します。
-// AutoCorrectが有効な場合、ミスを無視します。
-// ps_typo_recoveryが発動した場合、時間を延長します。
-func (s *BattleScreen) ProcessTypingInput(r rune) {
-	if s.typingIndex >= len(s.typingText) {
+// handleChallengeComplete はチャレンジ完了時の処理を行います。
+// ChallengeOutputをTypingResultに変換し、モジュール効果パイプラインを実行します。
+func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
+	// チャレンジをクリア
+	s.activeChallenge = nil
+
+	// キャンセル時は効果を適用しない
+	if result.Status == domain.ChallengeCancel {
+		s.message = "タイピングキャンセル"
 		return
 	}
 
-	// Evaluator経由で入力を処理
-	if s.typingState != nil {
-		s.typingState = s.evaluator.ProcessInput(s.typingState, r)
+	// 失敗時は効果を適用しない
+	if result.Status == domain.ChallengeFail {
+		s.message = "タイムアウト！"
+		return
 	}
 
-	expected := rune(s.typingText[s.typingIndex])
-	if r == expected {
-		s.typingIndex++
-		// 完了チェック
-		if s.typingIndex >= len(s.typingText) {
-			s.CompleteTyping()
-		}
-	} else {
-		// 誤入力
-		// AutoCorrectが残っている場合はミスを無視
-		if s.autoCorrectRemaining > 0 {
-			s.autoCorrectRemaining--
-			// ミスを記録しない、インデックスも進めない
-			return
-		}
-		s.typingMistakes = append(s.typingMistakes, s.typingIndex)
-
-		// ps_typo_recovery: ミス時に時間延長（1回/チャレンジ）
-		if !s.typoRecoveryUsed && s.battleEngine != nil && s.battleState != nil {
-			slot := s.moduleSlots[s.selectedModuleIdx]
-			agent := slot.Agent
-			timeExtension := s.battleEngine.EvaluateTypoRecovery(s.battleState, agent)
-			if timeExtension > 0 {
-				s.typoRecoveryUsed = true
-				s.typingTimeLimit += time.Duration(timeExtension * float64(time.Second))
-				s.message = fmt.Sprintf("[タイポリカバリー発動！ +%.0f秒]", timeExtension)
-			}
-		}
-	}
-}
-
-// CompleteTyping はタイピングを完了します。
-// パッシブスキル（ps_combo_master, ps_echo_skill, ps_miracle_heal）を統合。
-// DoubleCastが有効な場合、確率判定を行い成功すれば効果を2回適用します。
-func (s *BattleScreen) CompleteTyping() {
-	s.isTyping = false
-	s.typoRecoveryUsed = false // チャレンジ完了時にリセット
-
-	// タイピング結果を評価
-	var typingResult *typing.TypingResult
-	if s.typingState != nil {
-		typingResult = s.evaluator.CompleteChallenge(s.typingState)
-	} else {
-		// フォールバック用のデフォルト結果
-		typingResult = &typing.TypingResult{
-			Completed:      true,
-			WPM:            60.0,
-			Accuracy:       1.0,
-			SpeedFactor:    1.0,
-			AccuracyFactor: 1.0,
-		}
+	// ChallengeOutput → TypingResult に変換
+	typingResult := &typing.TypingResult{
+		Completed:      true,
+		WPM:            result.WPM,
+		Accuracy:       result.Accuracy,
+		SpeedFactor:    result.SpeedFactor,
+		AccuracyFactor: result.Accuracy,
+		CompletionTime: result.CompletionTime,
 	}
 
 	// コンボカウントの更新（ps_combo_master用）
@@ -557,7 +532,6 @@ func (s *BattleScreen) CompleteTyping() {
 		}
 		effects := s.player.EffectTable.Aggregate(ctx)
 		if effects.DoubleCast > 0 {
-			// 確率判定（乱数を使用）
 			if randFloat() < effects.DoubleCast {
 				doubleCastTriggered = true
 			}
@@ -584,36 +558,30 @@ func (s *BattleScreen) CompleteTyping() {
 
 	var effectAmount int
 	if s.battleEngine != nil && s.battleState != nil {
-		// コンボ対応版のモジュール効果適用（ps_combo_master）
 		effectAmount = s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, module, typingResult, s.comboCount)
 
-		// ps_echo_skill発動時は追加で効果を適用
 		for i := 1; i < echoSkillRepeat; i++ {
 			additionalEffect := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, module, typingResult, s.comboCount)
 			effectAmount += additionalEffect
 		}
 
-		// DoubleCast発動時は2回目も適用
 		if doubleCastTriggered {
 			secondEffect := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, module, typingResult, s.comboCount)
 			effectAmount += secondEffect
 		}
 
-		// ps_miracle_heal発動時はHP全回復
 		if miracleHealTriggered {
 			s.player.HP = s.player.MaxHP
 			s.playerHPBar.SetTarget(s.player.HP)
 		}
 	}
 
-	// UI改善: フローティングダメージ/回復とHPアニメーション
+	// フローティングダメージ/回復とHPアニメーション
 	if effectAmount > 0 {
 		if effectFlags.HasDamage {
-			// 敵へのダメージ
 			s.floatingDamageManager.AddDamage(effectAmount, "enemy")
 			s.enemyHPBar.SetTarget(s.enemy.HP)
 		} else if effectFlags.HasHeal {
-			// プレイヤーへの回復
 			s.floatingDamageManager.AddHeal(effectAmount, "player")
 			s.playerHPBar.SetTarget(s.player.HP)
 		}
@@ -634,20 +602,44 @@ func (s *BattleScreen) CompleteTyping() {
 		s.message += " [ダブルキャスト発動！]"
 	}
 
-	// クールダウンを開始
-	s.StartCooldown(s.selectedModuleIdx, slot.CooldownTotal)
-
-	// エージェントのリキャストを開始し、チェイン効果を登録
-	s.startAgentRecast(agentIndex, module)
-
 	// フェーズ変化をチェック
 	if s.battleEngine != nil && s.battleState != nil {
 		if s.battleEngine.CheckPhaseTransition(s.battleState) {
-			// 敵のパッシブを強化パッシブに切り替え
 			s.battleEngine.SwitchEnemyPassive(s.battleState)
 			s.message += " [敵が強化フェーズに突入！]"
 		}
 	}
+}
+
+// processEnemyAttackWithDefense はディフェンスチャレンジ中の敵攻撃を処理します。
+// 防御率を適用してダメージを軽減し、チャレンジを自動終了させます。
+func (s *BattleScreen) processEnemyAttackWithDefense(dp challenges.DefenseProvider) {
+	// 防御率を取得してチャレンジを自動終了
+	defenseRate := dp.DefenseRate()
+	dp.CompleteByAttack()
+	s.activeChallenge = nil
+
+	if s.battleEngine == nil || s.battleState == nil {
+		return
+	}
+
+	// 通常の敵ターン処理を実行
+	result := s.battleEngine.ProcessEnemyTurn(s.battleState)
+
+	// 攻撃ダメージに防御率を適用（DamageCutとして機能）
+	if result.ActionType == domain.EnemyActionAttack && result.Damage > 0 && defenseRate > 0 {
+		// 防御率分のダメージを軽減（既に適用済みのダメージを修正）
+		reducedDamage := int(float64(result.Damage) * defenseRate)
+		s.player.HP += reducedDamage // ProcessEnemyTurnで減らされた分を戻す
+		if s.player.HP > s.player.MaxHP {
+			s.player.HP = s.player.MaxHP
+		}
+		result.Damage -= reducedDamage
+		result.Message += fmt.Sprintf(" (防御率%.0f%%で%d軽減)", defenseRate*100, reducedDamage)
+	}
+
+	// UI更新
+	s.updateUIAfterEnemyTurn(result)
 }
 
 // formatEffectMessage は効果メッセージをフォーマットします。
@@ -666,13 +658,6 @@ func (s *BattleScreen) formatEffectMessage(module *domain.SkillModel, effectAmou
 	}
 
 	return fmt.Sprintf("%s (WPM:%.0f 正確性:%.0f%%)", action, result.WPM, result.Accuracy*100)
-}
-
-// CancelTyping はタイピングをキャンセルします。
-func (s *BattleScreen) CancelTyping() {
-	s.isTyping = false
-	s.typingState = nil
-	s.message = "タイピングキャンセル"
 }
 
 // ==================== ゲームロジック: 行動表示 ====================

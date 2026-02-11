@@ -27,8 +27,14 @@ type SkillType struct {
 	// CooldownSeconds はスキルのクールダウン時間（秒）です。
 	CooldownSeconds float64
 
-	// Difficulty はタイピングの難易度レベルです。
-	Difficulty int
+	// DifficultyRate はタイピングの難易度です（50-200、100=標準）。
+	DifficultyRate int
+
+	// ChallengeType はこのスキルに対応するチャレンジタイプのIDです。
+	ChallengeType ChallengeTypeID
+
+	// ChallengeOptions はチャレンジ固有のオプションです。
+	ChallengeOptions map[string]string
 
 	// MinDropLevel はこのスキルがドロップする最低敵レベルです。
 	MinDropLevel int

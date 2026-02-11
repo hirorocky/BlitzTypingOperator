@@ -278,7 +278,8 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 				Tags:            mt.Tags,
 				Description:     mt.Description,
 				CooldownSeconds: mt.CooldownSeconds,
-				Difficulty:      mt.Difficulty,
+				DifficultyRate:  mt.DifficultyRate,
+				ChallengeType:   mt.ChallengeType,
 				MinDropLevel:    mt.MinDropLevel,
 				Effects:         mt.Effects,
 			}

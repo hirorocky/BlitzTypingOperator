@@ -260,8 +260,11 @@ type ModuleDropInfo struct {
 	// CooldownSeconds はモジュールのクールダウン時間（秒）です。
 	CooldownSeconds float64
 
-	// Difficulty はタイピングの難易度レベルです。
-	Difficulty int
+	// DifficultyRate はタイピングの難易度です（50-200、100=標準）。
+	DifficultyRate int
+
+	// ChallengeType はチャレンジタイプのIDです。
+	ChallengeType domain.ChallengeTypeID
 
 	// MinDropLevel はこのモジュールがドロップする最低敵レベルです。
 	MinDropLevel int
@@ -287,7 +290,8 @@ func (m *ModuleDropInfo) ToSkillType() domain.SkillType {
 		Tags:            tagsCopy,
 		Description:     m.Description,
 		CooldownSeconds: m.CooldownSeconds,
-		Difficulty:      m.Difficulty,
+		DifficultyRate:  m.DifficultyRate,
+		ChallengeType:   m.ChallengeType,
 		MinDropLevel:    m.MinDropLevel,
 		Effects:         effectsCopy,
 	}

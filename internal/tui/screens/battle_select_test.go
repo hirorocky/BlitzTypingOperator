@@ -20,6 +20,8 @@ func newTestDamageModule(id, name string, tags []string, statCoef float64, statR
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
+		DifficultyRate:  100,
+		ChallengeType:   domain.ChallengeTypeStandard,
 		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
@@ -45,6 +47,8 @@ func newTestHealModule(id, name string, tags []string, statCoef float64, statRef
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
+		DifficultyRate:  100,
+		ChallengeType:   domain.ChallengeTypeStandard,
 		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetSelf,
@@ -65,6 +69,8 @@ func newTestBuffModule(id, name string, tags []string, description string) *doma
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
+		DifficultyRate:  100,
+		ChallengeType:   domain.ChallengeTypeStandard,
 		Effects: []domain.SkillEffect{
 			{
 				Target: domain.TargetSelf,
@@ -89,6 +95,8 @@ func newTestModuleWithChainEffect(id, name string, tags []string, statCoef float
 		Tags:            tags,
 		Description:     description,
 		CooldownSeconds: 3.0, // リキャストテスト用に設定
+		DifficultyRate:  100,
+		ChallengeType:   domain.ChallengeTypeStandard,
 		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,

@@ -53,6 +53,9 @@ const (
 	// ColAutoCorrect はミス無視回数を表します。
 	ColAutoCorrect EffectColumn = "auto_correct"
 
+	// ColTypingDifficulty はタイピング難易度の乗算修正値を表します。
+	ColTypingDifficulty EffectColumn = "typing_difficulty"
+
 	// ========== リキャスト系 ==========
 
 	// ColCooldownReduce はCD短縮率（%）を表します。
@@ -138,8 +141,9 @@ var ColumnAggregation = map[EffectColumn]AggregationType{
 	ColOverheal:       AggOr,   // 1つでも true なら有効
 
 	// タイピング系
-	ColTimeExtend:  AggAdd, // 延長時間は加算
-	ColAutoCorrect: AggAdd, // ミス無視回数は加算
+	ColTimeExtend:       AggAdd,  // 延長時間は加算
+	ColAutoCorrect:      AggAdd,  // ミス無視回数は加算
+	ColTypingDifficulty: AggMult, // 難易度倍率は乗算
 
 	// リキャスト系
 	ColCooldownReduce: AggMax, // 最大の短縮率を採用

@@ -115,6 +115,8 @@ func describeColumn(col EffectColumn, value float64) string {
 		return fmt.Sprintf("時間%.1f秒", value)
 	case ColAutoCorrect:
 		return fmt.Sprintf("ミス無視%.0f回", value)
+	case ColTypingDifficulty:
+		return formatMultiplier("難易度", value)
 
 	// リキャスト系
 	case ColCooldownReduce:

@@ -145,6 +145,8 @@ func (t *EffectTable) aggregateValue(result *EffectResult, col EffectColumn, val
 		result.TimeExtend += val
 	case ColAutoCorrect:
 		result.AutoCorrect += int(val)
+	case ColTypingDifficulty:
+		result.TypingDifficulty *= val
 	case ColCooldownReduce:
 		// 加算集計（正=短縮、負=延長）
 		result.CooldownReduce += val

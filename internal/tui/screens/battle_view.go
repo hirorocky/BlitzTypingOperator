@@ -32,10 +32,10 @@ func (s *BattleScreen) View() string {
 		// 結果表示（WIN/LOSE ASCIIアート）
 		resultArea := s.renderResultArea()
 		builder.WriteString(resultArea)
-	} else if s.isTyping {
-		// タイピングチャレンジ
-		typingArea := s.renderTypingArea()
-		builder.WriteString(typingArea)
+	} else if s.activeChallenge != nil {
+		// タイピングチャレンジ（ChallengeModelのViewに委譲）
+		challengeArea := s.renderChallengeArea()
+		builder.WriteString(challengeArea)
 	} else {
 		// エージェントエリア（3体横並びカード）
 		agentArea := s.renderAgentArea()
@@ -67,7 +67,7 @@ func (s *BattleScreen) View() string {
 	var hint string
 	if s.showingResult {
 		hint = "Enter: 続ける"
-	} else if s.isTyping {
+	} else if s.activeChallenge != nil {
 		hint = "タイピング中...  Esc: キャンセル"
 	} else {
 		hint = "←/→: エージェント切替  ↑/↓: モジュール選択  Enter: 使用  Esc: 中断"
@@ -489,108 +489,29 @@ func (s *BattleScreen) renderResultArea() string {
 	return areaStyle.Render(centeredArt)
 }
 
-// renderTypingArea はタイピングエリアを描画します。
-
-// UI改善: 残り時間をプログレスバー形式で表示
-func (s *BattleScreen) renderTypingArea() string {
-	var builder strings.Builder
-
-	// 制限時間計算
-	elapsed := time.Since(s.typingStartTime)
-	remaining := s.typingTimeLimit - elapsed
-	if remaining < 0 {
-		remaining = 0
+// renderChallengeArea はチャレンジ中のタイピングエリアを描画します。
+// ChallengeModelのView()に委譲し、ボックスで囲みます。
+func (s *BattleScreen) renderChallengeArea() string {
+	if s.activeChallenge == nil {
+		return ""
 	}
 
-	// UI改善: 残り時間プログレスバー（バー内に秒数表示）
-	timeRatio := remaining.Seconds() / s.typingTimeLimit.Seconds()
-	builder.WriteString(s.renderTimeProgressBar(remaining.Seconds(), timeRatio))
-	builder.WriteString("\n\n")
+	challengeView := s.activeChallenge.View()
 
-	// タイピングテキスト
-	typingDisplay := s.styles.RenderTypingChallenge(s.typingText, s.typingIndex, s.typingMistakes)
-
-	typingBox := lipgloss.NewStyle().
+	// チャレンジViewをボックスで囲む
+	challengeBox := lipgloss.NewStyle().
 		Border(lipgloss.DoubleBorder()).
 		BorderForeground(styles.ColorPrimary).
 		Padding(1, 2).
-		Render(typingDisplay)
-
-	builder.WriteString(typingBox)
-	builder.WriteString("\n\n")
-
-	// 進捗表示
-	progress := float64(s.typingIndex) / float64(len(s.typingText)) * 100
-	progressStr := fmt.Sprintf("進捗: %d/%d (%.0f%%)", s.typingIndex, len(s.typingText), progress)
-	progressStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorSubtle)
-
-	builder.WriteString(progressStyle.Render(progressStr))
+		Render(challengeView)
 
 	return lipgloss.NewStyle().
 		Align(lipgloss.Center).
 		Width(s.width).
-		Render(builder.String())
+		Render(challengeBox)
 }
 
 // ==================== プログレスバーレンダリング ====================
-
-// renderTimeProgressBar は残り時間をプログレスバー形式で描画します。
-// UI改善: バー内に秒数を表示、時間に応じて色を変化
-func (s *BattleScreen) renderTimeProgressBar(remainingSeconds float64, ratio float64) string {
-	barWidth := 30
-	timeText := fmt.Sprintf("%.1fs", remainingSeconds)
-
-	// 色を時間割合に応じて決定
-	var barColor lipgloss.Color
-	if ratio > 0.5 {
-		barColor = styles.ColorHPHigh // 緑
-	} else if ratio > 0.25 {
-		barColor = styles.ColorHPMedium // 黄
-	} else {
-		barColor = styles.ColorHPLow // 赤
-	}
-
-	// 塗りつぶし部分の計算
-	filledWidth := int(float64(barWidth) * ratio)
-	if filledWidth < 0 {
-		filledWidth = 0
-	}
-	if filledWidth > barWidth {
-		filledWidth = barWidth
-	}
-
-	// プログレスバー文字列を構築
-	filled := strings.Repeat("█", filledWidth)
-	empty := strings.Repeat("░", barWidth-filledWidth)
-
-	// バー全体を結合
-	bar := filled + empty
-
-	// 中央に秒数を挿入
-	// バーの中央位置を計算
-	textStart := (barWidth - len(timeText)) / 2
-	if textStart < 0 {
-		textStart = 0
-	}
-
-	// バーにテキストを重ねる
-	barRunes := []rune(bar)
-	for i, c := range timeText {
-		pos := textStart + i
-		if pos < len(barRunes) {
-			barRunes[pos] = c
-		}
-	}
-	barWithText := string(barRunes)
-
-	// スタイル適用
-	barStyle := lipgloss.NewStyle().
-		Foreground(barColor).
-		Bold(true)
-
-	return barStyle.Render("[" + barWithText + "]")
-}
 
 // renderEnemyActionBar は敵の次回行動までのプログレスバーを描画します。
 func (s *BattleScreen) renderEnemyActionBar(remainingSeconds float64, ratio float64, barColor lipgloss.Color) string {

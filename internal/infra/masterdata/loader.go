@@ -159,6 +159,13 @@ type SkillEffectData struct {
 	Icon         string            `json:"icon"`
 }
 
+// ChallengeData はチャレンジ設定のJSONデータ構造体です。
+// typeでチャレンジ種別を指定し、optionsで種別固有のパラメータを渡します。
+type ChallengeData struct {
+	Type    string            `json:"type"`
+	Options map[string]string `json:"options,omitempty"`
+}
+
 // SkillDefinitionData はskills.json（またはmodules.json）から読み込むスキル定義データの構造体です。
 type SkillDefinitionData struct {
 	ID              string            `json:"id"`
@@ -167,7 +174,8 @@ type SkillDefinitionData struct {
 	Tags            []string          `json:"tags"`
 	Description     string            `json:"description"`
 	CooldownSeconds float64           `json:"cooldown_seconds"`
-	Difficulty      int               `json:"difficulty"`
+	DifficultyRate  int               `json:"difficulty"`
+	Challenge       ChallengeData     `json:"challenge"`
 	MinDropLevel    int               `json:"min_drop_level"`
 	Effects         []SkillEffectData `json:"effects"`
 }
@@ -209,16 +217,27 @@ func (m *SkillDefinitionData) ToDomainType() domain.SkillType {
 		effects[i] = e.ToDomain()
 	}
 
+	// ChallengeOptionsをコピー
+	var challengeOptions map[string]string
+	if len(m.Challenge.Options) > 0 {
+		challengeOptions = make(map[string]string, len(m.Challenge.Options))
+		for k, v := range m.Challenge.Options {
+			challengeOptions[k] = v
+		}
+	}
+
 	return domain.SkillType{
-		ID:              m.ID,
-		Name:            m.Name,
-		Icon:            m.Icon,
-		Tags:            tagsCopy,
-		Description:     m.Description,
-		CooldownSeconds: m.CooldownSeconds,
-		Difficulty:      m.Difficulty,
-		MinDropLevel:    m.MinDropLevel,
-		Effects:         effects,
+		ID:               m.ID,
+		Name:             m.Name,
+		Icon:             m.Icon,
+		Tags:             tagsCopy,
+		Description:      m.Description,
+		CooldownSeconds:  m.CooldownSeconds,
+		DifficultyRate:   m.DifficultyRate,
+		ChallengeType:    domain.ChallengeTypeID(m.Challenge.Type),
+		ChallengeOptions: challengeOptions,
+		MinDropLevel:     m.MinDropLevel,
+		Effects:          effects,
 	}
 }
 
