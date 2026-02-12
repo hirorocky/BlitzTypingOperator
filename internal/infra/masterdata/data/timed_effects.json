@@ -1,0 +1,102 @@
+{
+  "timed_effects": [
+    {
+      "id": "st_str_buff_lv1",
+      "name": "STR25%UP",
+      "description": "STRを25%上昇させる",
+      "effect_column": "str_mult",
+      "value": 0.25
+    },
+    {
+      "id": "st_defense_buff_lv1",
+      "name": "被ダメ10%軽減",
+      "description": "受けるダメージを10%軽減する",
+      "effect_column": "damage_cut",
+      "value": 0.1
+    },
+    {
+      "id": "st_str_buff_lv2",
+      "name": "STR50%UP",
+      "description": "STRを50%上昇させる",
+      "effect_column": "str_mult",
+      "value": 0.5
+    },
+    {
+      "id": "st_defense_buff_lv2",
+      "name": "被ダメ20%軽減",
+      "description": "受けるダメージを20%軽減する",
+      "effect_column": "damage_cut",
+      "value": 0.2
+    },
+    {
+      "id": "st_str_buff_lv3",
+      "name": "STR75%UP",
+      "description": "STRを75%上昇させる",
+      "effect_column": "str_mult",
+      "value": 0.75
+    },
+    {
+      "id": "st_attack_debuff_lv1",
+      "name": "攻撃10%ダウン",
+      "description": "敵の攻撃力を10%低下させる",
+      "effect_column": "damage_mult",
+      "value": 0.9
+    },
+    {
+      "id": "st_defense_debuff_lv1",
+      "name": "防御10%ダウン",
+      "description": "敵の防御力を10%低下させる",
+      "effect_column": "damage_cut",
+      "value": -0.1
+    },
+    {
+      "id": "st_attack_debuff_lv2",
+      "name": "攻撃20%ダウン",
+      "description": "敵の攻撃力を20%低下させる",
+      "effect_column": "damage_mult",
+      "value": 0.8
+    },
+    {
+      "id": "st_attack_debuff_lv3",
+      "name": "攻撃35%ダウン",
+      "description": "敵の攻撃力を35%低下させる",
+      "effect_column": "damage_mult",
+      "value": 0.65
+    },
+    {
+      "id": "st_goblin_rage",
+      "name": "怒り",
+      "description": "ゴブリンの攻撃力が上昇する",
+      "effect_column": "damage_mult",
+      "value": 1.3
+    },
+    {
+      "id": "st_goblin_slow",
+      "name": "妨害",
+      "description": "プレイヤーのクールダウンが延長される",
+      "effect_column": "cooldown_reduce",
+      "value": -0.2
+    },
+    {
+      "id": "st_skeleton_bone_dust",
+      "name": "骨粉",
+      "description": "プレイヤーの防御力が低下する",
+      "effect_column": "damage_cut",
+      "value": -0.15
+    },
+    {
+      "id": "st_bat_acceleration",
+      "name": "加速",
+      "description": "コウモリの攻撃速度が上昇する",
+      "effect_column": "damage_mult",
+      "value": 1.5
+    },
+    {
+      "id": "st_counter_charge",
+      "name": "カウンターチャージ",
+      "description": "次の攻撃のダメージが倍増する",
+      "effect_column": "damage_mult",
+      "value": 2.0
+    }
+  ]
+}

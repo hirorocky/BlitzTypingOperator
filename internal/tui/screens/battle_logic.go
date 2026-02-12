@@ -695,12 +695,12 @@ func (s *BattleScreen) getActionDisplay() (icon string, text string, color lipgl
 
 	case domain.EnemyActionBuff:
 		// 自己バフ予告（黄色）- 効果内容を表示
-		effectDesc := domain.DescribeSingleEffect(action.EffectType, action.EffectValue)
+		effectDesc := domain.DescribeSingleEffect(action.EffectColumn, action.EffectValue)
 		return "💪", effectDesc, styles.ColorWarning
 
 	case domain.EnemyActionDebuff:
 		// プレイヤーデバフ予告（青色）- 効果内容を表示
-		effectDesc := domain.DescribeSingleEffect(action.EffectType, action.EffectValue)
+		effectDesc := domain.DescribeSingleEffect(action.EffectColumn, action.EffectValue)
 		return "💀", effectDesc, styles.ColorInfo
 	}
 
@@ -720,10 +720,10 @@ func (s *BattleScreen) getChargingActionDisplay() (icon string, text string, col
 			}
 			return "⚔️", fmt.Sprintf("物理ダメージ%d", expectedDamage), styles.ColorDamage
 		case domain.EnemyActionBuff:
-			effectDesc := domain.DescribeSingleEffect(action.EffectType, action.EffectValue)
+			effectDesc := domain.DescribeSingleEffect(action.EffectColumn, action.EffectValue)
 			return "💪", effectDesc, styles.ColorWarning
 		case domain.EnemyActionDebuff:
-			effectDesc := domain.DescribeSingleEffect(action.EffectType, action.EffectValue)
+			effectDesc := domain.DescribeSingleEffect(action.EffectColumn, action.EffectValue)
 			return "💀", effectDesc, styles.ColorInfo
 		default:
 			return "?", action.Name, styles.ColorSubtle

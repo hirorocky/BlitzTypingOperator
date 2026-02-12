@@ -165,6 +165,57 @@ func ConvertPassiveSkills(skills []masterdata.PassiveSkillData) map[string]domai
 	return result
 }
 
+// ConvertTimedEffects はmasterdata.TimedEffectDataのスライスをdomain.TimedEffectのマップに変換します。
+// キーは時限効果のIDです。
+func ConvertTimedEffects(types []masterdata.TimedEffectData) map[string]domain.TimedEffect {
+	result := make(map[string]domain.TimedEffect, len(types))
+	for _, t := range types {
+		result[t.ID] = domain.TimedEffect{
+			ID:          t.ID,
+			Name:        t.Name,
+			Description: t.Description,
+			Column:      domain.EffectColumn(t.EffectColumn),
+			Value:       t.Value,
+		}
+	}
+	return result
+}
+
+// ResolveModuleTimedEffects はモジュールのEffectColumnSpecにTimedEffectからColumn/Valueを解決します。
+func ResolveModuleTimedEffects(modules []rewarding.ModuleDropInfo, timedEffects map[string]domain.TimedEffect) {
+	for i := range modules {
+		for j := range modules[i].Effects {
+			spec := modules[i].Effects[j].ColumnSpec
+			if spec != nil && spec.TimedEffectID != "" {
+				if te, ok := timedEffects[spec.TimedEffectID]; ok {
+					modules[i].Effects[j].ColumnSpec.Column = te.Column
+					modules[i].Effects[j].ColumnSpec.Value = te.Value
+				}
+			}
+		}
+	}
+}
+
+// ResolveEnemyActionTimedEffects は敵行動のバフ/デバフにTimedEffectからEffectColumn/EffectValueを解決します。
+func ResolveEnemyActionTimedEffects(enemyTypes []domain.EnemyType, timedEffects map[string]domain.TimedEffect) {
+	for i := range enemyTypes {
+		resolveActionsTimedEffects(enemyTypes[i].ResolvedNormalActions, timedEffects)
+		resolveActionsTimedEffects(enemyTypes[i].ResolvedEnhancedActions, timedEffects)
+	}
+}
+
+// resolveActionsTimedEffects は行動リストのTimedEffectを解決するヘルパーです。
+func resolveActionsTimedEffects(actions []domain.EnemyAction, timedEffects map[string]domain.TimedEffect) {
+	for i := range actions {
+		if actions[i].TimedEffectID != "" {
+			if te, ok := timedEffects[actions[i].TimedEffectID]; ok {
+				actions[i].EffectColumn = te.Column
+				actions[i].EffectValue = te.Value
+			}
+		}
+	}
+}
+
 // ConvertChainEffectsToMap はmasterdata.ChainEffectDataのスライスをdomain.ChainEffectのマップに変換します。
 // キーはチェイン効果のIDです。画面表示用に使用します。
 func ConvertChainEffectsToMap(effects []masterdata.ChainEffectData) map[string]domain.ChainEffect {

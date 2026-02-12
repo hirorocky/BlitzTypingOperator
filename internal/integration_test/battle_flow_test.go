@@ -379,7 +379,7 @@ func TestBattleFlow_BuffDebuffInteraction(t *testing.T) {
 	state := initBattleForTest(engine, 1, agents, enemyTypes)
 
 	// プレイヤーに防御バフを付与
-	state.Player.EffectTable.AddBuff("防御UP", 10.0, map[domain.EffectColumn]float64{
+	state.Player.EffectTable.AddBuff("防御UP", "防御UP", 10.0, map[domain.EffectColumn]float64{
 		domain.ColDamageCut: 0.5, // 50%軽減
 	})
 
@@ -465,13 +465,13 @@ func createTestEnemyTypesWithPatterns() []domain.EnemyType {
 			ChargeTime:     500 * time.Millisecond,
 		},
 		{
-			ID:          "power_up",
-			Name:        "パワーアップ",
-			ActionType:  domain.EnemyActionBuff,
-			EffectType:  "damage_mult",
-			EffectValue: 1.5,
-			Duration:    10.0,
-			ChargeTime:  300 * time.Millisecond,
+			ID:           "power_up",
+			Name:         "パワーアップ",
+			ActionType:   domain.EnemyActionBuff,
+			EffectColumn: domain.ColDamageMultiplier,
+			EffectValue:  1.5,
+			Duration:     10.0,
+			ChargeTime:   300 * time.Millisecond,
 		},
 	}
 	enhancedActions := []domain.EnemyAction{
@@ -829,20 +829,20 @@ func TestBattleFlow_BuffDebuffPattern(t *testing.T) {
 			Rank:   1,
 			ResolvedNormalActions: []domain.EnemyAction{
 				{
-					ID:          "self_buff",
-					Name:        "自己強化",
-					ActionType:  domain.EnemyActionBuff,
-					EffectType:  "damage_mult",
-					EffectValue: 2.0,
-					Duration:    10.0,
+					ID:           "self_buff",
+					Name:         "自己強化",
+					ActionType:   domain.EnemyActionBuff,
+					EffectColumn: domain.ColDamageMultiplier,
+					EffectValue:  2.0,
+					Duration:     10.0,
 				},
 				{
-					ID:          "slow_curse",
-					Name:        "スロウの呪い",
-					ActionType:  domain.EnemyActionDebuff,
-					EffectType:  "cooldown_reduce",
-					EffectValue: -0.3,
-					Duration:    8.0,
+					ID:           "slow_curse",
+					Name:         "スロウの呪い",
+					ActionType:   domain.EnemyActionDebuff,
+					EffectColumn: domain.ColCooldownReduce,
+					EffectValue:  -0.3,
+					Duration:     8.0,
 				},
 			},
 		},

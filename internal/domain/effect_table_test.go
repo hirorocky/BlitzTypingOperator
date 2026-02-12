@@ -123,7 +123,7 @@ func TestEffectTable_AddBuff(t *testing.T) {
 	values := map[EffectColumn]float64{
 		ColDamageMultiplier: 1.2,
 	}
-	table.AddBuff("攻撃力UP", 10.0, values)
+	table.AddBuff("攻撃力UP", "攻撃力UP", 10.0, values)
 
 	if len(table.Entries) != 1 {
 		t.Errorf("バフ追加後のエントリ数が1ではありません: got %d", len(table.Entries))
@@ -143,7 +143,7 @@ func TestEffectTable_AddDebuff(t *testing.T) {
 	values := map[EffectColumn]float64{
 		ColTimeExtend: -2.0,
 	}
-	table.AddDebuff("タイピング時間短縮", 8.0, values)
+	table.AddDebuff("タイピング時間短縮", "タイピング時間短縮", 8.0, values)
 
 	if len(table.Entries) != 1 {
 		t.Errorf("デバフ追加後のエントリ数が1ではありません: got %d", len(table.Entries))
@@ -157,8 +157,8 @@ func TestEffectTable_AddDebuff(t *testing.T) {
 func TestEffectTable_エントリの削除(t *testing.T) {
 	table := NewEffectTable()
 
-	table.AddBuff("buff_001", 5.0, map[EffectColumn]float64{ColDamageBonus: 10})
-	table.AddBuff("buff_002", 3.0, map[EffectColumn]float64{ColDamageBonus: 5})
+	table.AddBuff("buff_001", "buff_001", 5.0, map[EffectColumn]float64{ColDamageBonus: 10})
+	table.AddBuff("buff_002", "buff_002", 3.0, map[EffectColumn]float64{ColDamageBonus: 5})
 
 	if len(table.Entries) != 2 {
 		t.Errorf("エントリ追加後のエントリ数が2ではありません: got %d", len(table.Entries))
@@ -178,8 +178,8 @@ func TestEffectTable_エントリの削除(t *testing.T) {
 func TestEffectTable_時限更新(t *testing.T) {
 	table := NewEffectTable()
 
-	table.AddBuff("buff_001", 5.0, map[EffectColumn]float64{ColDamageBonus: 10})
-	table.AddBuff("buff_002", 2.0, map[EffectColumn]float64{ColDamageBonus: 5})
+	table.AddBuff("buff_001", "buff_001", 5.0, map[EffectColumn]float64{ColDamageBonus: 10})
+	table.AddBuff("buff_002", "buff_002", 2.0, map[EffectColumn]float64{ColDamageBonus: 5})
 	table.AddEntry(EffectEntry{
 		SourceType: SourcePassive,
 		SourceID:   "passive_001",
@@ -208,8 +208,8 @@ func TestEffectTable_時限更新(t *testing.T) {
 func TestEffectTable_期限切れ削除(t *testing.T) {
 	table := NewEffectTable()
 
-	table.AddBuff("buff_001", 5.0, map[EffectColumn]float64{ColDamageBonus: 10})
-	table.AddBuff("buff_002", 1.0, map[EffectColumn]float64{ColDamageBonus: 5})
+	table.AddBuff("buff_001", "buff_001", 5.0, map[EffectColumn]float64{ColDamageBonus: 10})
+	table.AddBuff("buff_002", "buff_002", 1.0, map[EffectColumn]float64{ColDamageBonus: 5})
 
 	// 2秒経過（buff_002は期限切れ）
 	table.Tick(2.0)
@@ -226,8 +226,8 @@ func TestEffectTable_期限切れ削除(t *testing.T) {
 func TestEffectTable_Aggregate_加算効果(t *testing.T) {
 	table := NewEffectTableWithSeed(42)
 
-	table.AddBuff("buff_001", 5.0, map[EffectColumn]float64{ColDamageBonus: 10})
-	table.AddBuff("buff_002", 5.0, map[EffectColumn]float64{ColDamageBonus: 5})
+	table.AddBuff("buff_001", "buff_001", 5.0, map[EffectColumn]float64{ColDamageBonus: 10})
+	table.AddBuff("buff_002", "buff_002", 5.0, map[EffectColumn]float64{ColDamageBonus: 5})
 
 	ctx := NewEffectContext(100, 100, 50, 100)
 	result := table.Aggregate(ctx)
@@ -242,8 +242,8 @@ func TestEffectTable_Aggregate_加算効果(t *testing.T) {
 func TestEffectTable_Aggregate_乗算効果(t *testing.T) {
 	table := NewEffectTableWithSeed(42)
 
-	table.AddBuff("buff_001", 5.0, map[EffectColumn]float64{ColDamageMultiplier: 1.2})
-	table.AddBuff("buff_002", 5.0, map[EffectColumn]float64{ColDamageMultiplier: 1.5})
+	table.AddBuff("buff_001", "buff_001", 5.0, map[EffectColumn]float64{ColDamageMultiplier: 1.2})
+	table.AddBuff("buff_002", "buff_002", 5.0, map[EffectColumn]float64{ColDamageMultiplier: 1.5})
 
 	ctx := NewEffectContext(100, 100, 50, 100)
 	result := table.Aggregate(ctx)
@@ -259,8 +259,8 @@ func TestEffectTable_Aggregate_乗算効果(t *testing.T) {
 func TestEffectTable_Aggregate_最大値効果(t *testing.T) {
 	table := NewEffectTableWithSeed(42)
 
-	table.AddBuff("buff_001", 5.0, map[EffectColumn]float64{ColDamageCut: 0.2})
-	table.AddBuff("buff_002", 5.0, map[EffectColumn]float64{ColDamageCut: 0.3})
+	table.AddBuff("buff_001", "buff_001", 5.0, map[EffectColumn]float64{ColDamageCut: 0.2})
+	table.AddBuff("buff_002", "buff_002", 5.0, map[EffectColumn]float64{ColDamageCut: 0.3})
 
 	ctx := NewEffectContext(100, 100, 50, 100)
 	result := table.Aggregate(ctx)
@@ -276,12 +276,12 @@ func TestEffectTable_Aggregate_最大値効果(t *testing.T) {
 func TestEffectTable_Aggregate_複合効果(t *testing.T) {
 	table := NewEffectTableWithSeed(42)
 
-	table.AddBuff("buff_001", 5.0, map[EffectColumn]float64{
+	table.AddBuff("buff_001", "buff_001", 5.0, map[EffectColumn]float64{
 		ColDamageBonus:      10,
 		ColDamageMultiplier: 1.2,
 		ColDamageCut:        0.2,
 	})
-	table.AddBuff("buff_002", 5.0, map[EffectColumn]float64{
+	table.AddBuff("buff_002", "buff_002", 5.0, map[EffectColumn]float64{
 		ColDamageBonus:    5,
 		ColCooldownReduce: 0.1,
 	})
@@ -329,9 +329,9 @@ func TestEffectTable_ソース種別でフィルタ(t *testing.T) {
 	table := NewEffectTable()
 
 	table.AddEntry(EffectEntry{SourceType: SourcePassive, SourceID: "passive_001", Duration: nil})
-	table.AddBuff("buff_001", 5.0, map[EffectColumn]float64{ColDamageBonus: 10})
-	table.AddBuff("buff_002", 5.0, map[EffectColumn]float64{ColDamageBonus: 5})
-	table.AddDebuff("debuff_001", 5.0, map[EffectColumn]float64{ColTimeExtend: -2})
+	table.AddBuff("buff_001", "buff_001", 5.0, map[EffectColumn]float64{ColDamageBonus: 10})
+	table.AddBuff("buff_002", "buff_002", 5.0, map[EffectColumn]float64{ColDamageBonus: 5})
+	table.AddDebuff("debuff_001", "debuff_001", 5.0, map[EffectColumn]float64{ColTimeExtend: -2})
 
 	buffs := table.FindBySourceType(SourceBuff)
 	if len(buffs) != 2 {
@@ -375,8 +375,8 @@ func TestEffectResult_CalculateDamageReceived(t *testing.T) {
 func TestEffectTable_ExtendBuffs(t *testing.T) {
 	table := NewEffectTable()
 
-	table.AddBuff("buff_001", 5.0, map[EffectColumn]float64{ColDamageBonus: 10})
-	table.AddDebuff("debuff_001", 5.0, map[EffectColumn]float64{ColTimeExtend: -2})
+	table.AddBuff("buff_001", "buff_001", 5.0, map[EffectColumn]float64{ColDamageBonus: 10})
+	table.AddDebuff("debuff_001", "debuff_001", 5.0, map[EffectColumn]float64{ColTimeExtend: -2})
 
 	table.ExtendBuffs(3.0)
 

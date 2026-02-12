@@ -41,19 +41,17 @@
       "id": "act_goblin_buff_attack",
       "name": "怒り",
       "action_type": "buff",
-      "effect_type": "damage_mult",
-      "effect_value": 1.3,
       "duration_seconds": 10.0,
-      "charge_time_ms": 2000
+      "charge_time_ms": 2000,
+      "timed_effect_id": "st_goblin_rage"
     },
     {
       "id": "act_goblin_debuff_slow",
       "name": "妨害",
       "action_type": "debuff",
-      "effect_type": "cooldown_reduce",
-      "effect_value": -0.2,
       "duration_seconds": 8.0,
-      "charge_time_ms": 2500
+      "charge_time_ms": 2500,
+      "timed_effect_id": "st_goblin_slow"
     },
     {
       "id": "act_skeleton_attack_phys",
@@ -78,10 +76,9 @@
       "id": "act_skeleton_debuff_defense",
       "name": "骨粉",
       "action_type": "debuff",
-      "effect_type": "damage_cut",
-      "effect_value": -0.15,
       "duration_seconds": 6.0,
-      "charge_time_ms": 3000
+      "charge_time_ms": 3000,
+      "timed_effect_id": "st_skeleton_bone_dust"
     },
     {
       "id": "act_bat_attack_phys",
@@ -114,10 +111,9 @@
       "id": "act_bat_buff_speed",
       "name": "加速",
       "action_type": "buff",
-      "effect_type": "attack_speed",
-      "effect_value": 1.5,
       "duration_seconds": 8.0,
-      "charge_time_ms": 1500
+      "charge_time_ms": 1500,
+      "timed_effect_id": "st_bat_acceleration"
     }
   ]
 }

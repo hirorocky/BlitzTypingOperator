@@ -74,9 +74,8 @@ func createTestExternalData() *masterdata.ExternalData {
 					{
 						Target: "self",
 						EffectColumn: &masterdata.EffectColumnData{
-							Column:   "damage_bonus",
-							Value:    10.0,
-							Duration: 10.0,
+							Duration:      10.0,
+							TimedEffectID: "st_str_buff_lv1",
 						},
 						Probability: 1.0,
 					},

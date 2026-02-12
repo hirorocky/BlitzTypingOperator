@@ -4,6 +4,8 @@ package domain
 import (
 	"math/rand"
 	"time"
+
+	"hirorocky/type-battle/internal/config"
 )
 
 // EffectTable は効果の表全体を管理します。
@@ -41,11 +43,20 @@ func (t *EffectTable) AddEntry(entry EffectEntry) {
 }
 
 // AddBuff はバフをエントリとして追加します。
-func (t *EffectTable) AddBuff(name string, duration float64, values map[EffectColumn]float64) {
+// 同一IDかつ同一SourceTypeのエントリが存在する場合、Duration加算（上限99.9秒）を行います。
+func (t *EffectTable) AddBuff(id, name string, duration float64, values map[EffectColumn]float64) {
+	if existing := t.findBySourceIDAndType(id, SourceBuff); existing != nil && existing.Duration != nil {
+		newDuration := *existing.Duration + duration
+		if newDuration > config.MaxStatusDuration {
+			newDuration = config.MaxStatusDuration
+		}
+		*existing.Duration = newDuration
+		return
+	}
 	d := duration
 	t.AddEntry(EffectEntry{
 		SourceType: SourceBuff,
-		SourceID:   name,
+		SourceID:   id,
 		Name:       name,
 		Duration:   &d,
 		Values:     values,
@@ -53,15 +64,34 @@ func (t *EffectTable) AddBuff(name string, duration float64, values map[EffectCo
 }
 
 // AddDebuff はデバフをエントリとして追加します。
-func (t *EffectTable) AddDebuff(name string, duration float64, values map[EffectColumn]float64) {
+// 同一IDかつ同一SourceTypeのエントリが存在する場合、Duration加算（上限99.9秒）を行います。
+func (t *EffectTable) AddDebuff(id, name string, duration float64, values map[EffectColumn]float64) {
+	if existing := t.findBySourceIDAndType(id, SourceDebuff); existing != nil && existing.Duration != nil {
+		newDuration := *existing.Duration + duration
+		if newDuration > config.MaxStatusDuration {
+			newDuration = config.MaxStatusDuration
+		}
+		*existing.Duration = newDuration
+		return
+	}
 	d := duration
 	t.AddEntry(EffectEntry{
 		SourceType: SourceDebuff,
-		SourceID:   name,
+		SourceID:   id,
 		Name:       name,
 		Duration:   &d,
 		Values:     values,
 	})
+}
+
+// findBySourceIDAndType はSourceIDとSourceTypeで既存エントリを検索します。
+func (t *EffectTable) findBySourceIDAndType(id string, st EffectSourceType) *EffectEntry {
+	for i := range t.Entries {
+		if t.Entries[i].SourceID == id && t.Entries[i].SourceType == st {
+			return &t.Entries[i]
+		}
+	}
+	return nil
 }
 
 // ========== 集計メソッド ==========

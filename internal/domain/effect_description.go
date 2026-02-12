@@ -7,29 +7,14 @@ import (
 	"strings"
 )
 
-// DescribeSingleEffect はeffect_typeとeffect_valueから効果説明を生成します。
+// DescribeSingleEffect はEffectColumnとvalueから効果説明を生成します。
 // 敵の行動予測表示などで使用されます。
-func DescribeSingleEffect(effectType string, value float64) string {
-	switch effectType {
-	case "damage_mult":
-		return formatMultiplier("ダメージ", value)
-	case "attack_speed":
-		return formatMultiplier("攻撃速度", value)
-	case "cooldown_reduce":
-		return formatCooldownEffect(value)
-	case "damage_cut":
-		return formatDamageCutEffect(value)
-	case "attack_up":
-		return fmt.Sprintf("攻撃+%.0f", value)
-	case "defense_up":
-		return fmt.Sprintf("被ダメ%.0f%%軽減", value*100)
-	case "speed_down":
-		return fmt.Sprintf("CD%.0f%%延長", value*100)
-	case "defense_down":
-		return fmt.Sprintf("被ダメ%.0f%%増加", value*100)
-	default:
+func DescribeSingleEffect(col EffectColumn, value float64) string {
+	desc := describeColumn(col, value)
+	if desc == "" {
 		return "効果"
 	}
+	return desc
 }
 
 // DescribeEffectValues は効果マップから説明文を生成します。

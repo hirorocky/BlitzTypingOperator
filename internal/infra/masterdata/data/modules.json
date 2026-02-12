@@ -201,9 +201,8 @@
         {
           "target": "self",
           "effect_column": {
-            "column": "str_mult",
-            "value": 0.25,
-            "duration": 10.0
+            "duration": 10.0,
+            "timed_effect_id": "st_str_buff_lv1"
           },
           "probability": 1.0,
           "luk_factor": 0,
@@ -225,9 +224,8 @@
         {
           "target": "self",
           "effect_column": {
-            "column": "damage_cut",
-            "value": 0.1,
-            "duration": 10.0
+            "duration": 10.0,
+            "timed_effect_id": "st_defense_buff_lv1"
           },
           "probability": 1.0,
           "luk_factor": 0,
@@ -249,9 +247,8 @@
         {
           "target": "self",
           "effect_column": {
-            "column": "str_mult",
-            "value": 0.5,
-            "duration": 10.0
+            "duration": 10.0,
+            "timed_effect_id": "st_str_buff_lv2"
           },
           "probability": 1.0,
           "luk_factor": 0,
@@ -273,9 +270,8 @@
         {
           "target": "self",
           "effect_column": {
-            "column": "damage_cut",
-            "value": 0.2,
-            "duration": 10.0
+            "duration": 10.0,
+            "timed_effect_id": "st_defense_buff_lv2"
           },
           "probability": 1.0,
           "luk_factor": 0,
@@ -297,9 +293,8 @@
         {
           "target": "self",
           "effect_column": {
-            "column": "str_mult",
-            "value": 0.75,
-            "duration": 15.0
+            "duration": 15.0,
+            "timed_effect_id": "st_str_buff_lv3"
           },
           "probability": 1.0,
           "luk_factor": 0,
@@ -321,9 +316,8 @@
         {
           "target": "enemy",
           "effect_column": {
-            "column": "damage_mult",
-            "value": 0.9,
-            "duration": 10.0
+            "duration": 10.0,
+            "timed_effect_id": "st_attack_debuff_lv1"
           },
           "probability": 1.0,
           "luk_factor": 0,
@@ -345,9 +339,8 @@
         {
           "target": "enemy",
           "effect_column": {
-            "column": "damage_cut",
-            "value": -0.1,
-            "duration": 10.0
+            "duration": 10.0,
+            "timed_effect_id": "st_defense_debuff_lv1"
           },
           "probability": 1.0,
           "luk_factor": 0,
@@ -369,9 +362,8 @@
         {
           "target": "enemy",
           "effect_column": {
-            "column": "damage_mult",
-            "value": 0.8,
-            "duration": 10.0
+            "duration": 10.0,
+            "timed_effect_id": "st_attack_debuff_lv2"
           },
           "probability": 1.0,
           "luk_factor": 0,
@@ -393,9 +385,8 @@
         {
           "target": "enemy",
           "effect_column": {
-            "column": "damage_mult",
-            "value": 0.65,
-            "duration": 15.0
+            "duration": 15.0,
+            "timed_effect_id": "st_attack_debuff_lv3"
           },
           "probability": 1.0,
           "luk_factor": 0,

@@ -321,7 +321,7 @@ func TestEnemyModel_EffectTable操作(t *testing.T) {
 	enemy := NewEnemy("enemy_001", "テスト敵", 5, 100, 15, EnemyType{ID: "test"})
 
 	// バフを追加
-	enemy.EffectTable.AddBuff("攻撃力UP", 5.0, map[EffectColumn]float64{
+	enemy.EffectTable.AddBuff("攻撃力UP", "攻撃力UP", 5.0, map[EffectColumn]float64{
 		ColDamageBonus: 10,
 	})
 
@@ -435,17 +435,17 @@ func TestEnemyAction_攻撃行動のフィールド(t *testing.T) {
 // TestEnemyAction_バフ行動のフィールド は自己バフ行動のフィールドが正しく設定されることを確認します。
 func TestEnemyAction_バフ行動のフィールド(t *testing.T) {
 	buff := EnemyAction{
-		ActionType:  EnemyActionBuff,
-		EffectType:  "attackUp",
-		EffectValue: 0.3,
-		Duration:    10.0,
+		ActionType:   EnemyActionBuff,
+		EffectColumn: EffectColumn("attackUp"),
+		EffectValue:  0.3,
+		Duration:     10.0,
 	}
 
 	if buff.ActionType != EnemyActionBuff {
 		t.Error("ActionTypeがSelfBuffであるべきです")
 	}
-	if buff.EffectType != "attackUp" {
-		t.Errorf("EffectTypeが期待値と異なります: got %s, want attackUp", buff.EffectType)
+	if buff.EffectColumn != EffectColumn("attackUp") {
+		t.Errorf("EffectColumnが期待値と異なります: got %s, want attackUp", buff.EffectColumn)
 	}
 	if buff.EffectValue != 0.3 {
 		t.Errorf("EffectValueが期待値と異なります: got %f, want 0.3", buff.EffectValue)
@@ -458,17 +458,17 @@ func TestEnemyAction_バフ行動のフィールド(t *testing.T) {
 // TestEnemyAction_デバフ行動のフィールド はデバフ行動のフィールドが正しく設定されることを確認します。
 func TestEnemyAction_デバフ行動のフィールド(t *testing.T) {
 	debuff := EnemyAction{
-		ActionType:  EnemyActionDebuff,
-		EffectType:  "defenseDown",
-		EffectValue: 0.2,
-		Duration:    5.0,
+		ActionType:   EnemyActionDebuff,
+		EffectColumn: EffectColumn("defenseDown"),
+		EffectValue:  0.2,
+		Duration:     5.0,
 	}
 
 	if debuff.ActionType != EnemyActionDebuff {
 		t.Error("ActionTypeがDebuffであるべきです")
 	}
-	if debuff.EffectType != "defenseDown" {
-		t.Errorf("EffectTypeが期待値と異なります: got %s, want defenseDown", debuff.EffectType)
+	if debuff.EffectColumn != EffectColumn("defenseDown") {
+		t.Errorf("EffectColumnが期待値と異なります: got %s, want defenseDown", debuff.EffectColumn)
 	}
 	if debuff.EffectValue != 0.2 {
 		t.Errorf("EffectValueが期待値と異なります: got %f, want 0.2", debuff.EffectValue)
@@ -690,10 +690,10 @@ func TestEnemyType_拡張フィールドの確認(t *testing.T) {
 		AttackType: "physical",
 	}
 	enhancedAction := EnemyAction{
-		ActionType:  EnemyActionBuff,
-		EffectType:  "attackUp",
-		EffectValue: 0.3,
-		Duration:    10.0,
+		ActionType:   EnemyActionBuff,
+		EffectColumn: EffectColumn("attackUp"),
+		EffectValue:  0.3,
+		Duration:     10.0,
 	}
 
 	enemyType := EnemyType{
@@ -827,7 +827,7 @@ func TestEnemyModel_行動管理フィールドの確認(t *testing.T) {
 	enemyType := EnemyType{
 		ResolvedNormalActions: []EnemyAction{
 			{ActionType: EnemyActionAttack, AttackType: "physical"},
-			{ActionType: EnemyActionBuff, EffectType: "attackUp", EffectValue: 0.3, Duration: 10.0},
+			{ActionType: EnemyActionBuff, EffectColumn: EffectColumn("attackUp"), EffectValue: 0.3, Duration: 10.0},
 		},
 		ResolvedEnhancedActions: []EnemyAction{
 			{ActionType: EnemyActionAttack, AttackType: "magic"},
@@ -852,7 +852,7 @@ func TestEnemyModel_GetCurrentAction(t *testing.T) {
 	enemyType := EnemyType{
 		ResolvedNormalActions: []EnemyAction{
 			{ActionType: EnemyActionAttack, AttackType: "physical"},
-			{ActionType: EnemyActionBuff, EffectType: "attackUp"},
+			{ActionType: EnemyActionBuff, EffectColumn: EffectColumn("attackUp")},
 		},
 	}
 
@@ -993,10 +993,10 @@ func TestEnemyModel_行動パターン空の場合のGetCurrentAction(t *testing
 // TestEnemyAction_JSONシリアライズ はEnemyActionのJSONシリアライズを確認します。
 func TestEnemyAction_JSONシリアライズ(t *testing.T) {
 	action := EnemyAction{
-		ActionType:  EnemyActionBuff,
-		EffectType:  "attackUp",
-		EffectValue: 0.3,
-		Duration:    10.0,
+		ActionType:   EnemyActionBuff,
+		EffectColumn: EffectColumn("attackUp"),
+		EffectValue:  0.3,
+		Duration:     10.0,
 	}
 
 	// シリアライズ
@@ -1015,8 +1015,8 @@ func TestEnemyAction_JSONシリアライズ(t *testing.T) {
 	if restored.ActionType != action.ActionType {
 		t.Errorf("ActionTypeが一致しません: got %v, want %v", restored.ActionType, action.ActionType)
 	}
-	if restored.EffectType != action.EffectType {
-		t.Errorf("EffectTypeが一致しません: got %s, want %s", restored.EffectType, action.EffectType)
+	if restored.EffectColumn != action.EffectColumn {
+		t.Errorf("EffectColumnが一致しません: got %s, want %s", restored.EffectColumn, action.EffectColumn)
 	}
 	if restored.EffectValue != action.EffectValue {
 		t.Errorf("EffectValueが一致しません: got %f, want %f", restored.EffectValue, action.EffectValue)
@@ -1073,7 +1073,7 @@ func TestEnemyType拡張フィールド_JSONシリアライズ(t *testing.T) {
 		},
 		ResolvedEnhancedActions: []EnemyAction{
 			{ActionType: EnemyActionAttack, AttackType: "physical"},
-			{ActionType: EnemyActionBuff, EffectType: "attackUp", EffectValue: 0.3, Duration: 10.0},
+			{ActionType: EnemyActionBuff, EffectColumn: EffectColumn("attackUp"), EffectValue: 0.3, Duration: 10.0},
 		},
 		NormalPassive: &EnemyPassiveSkill{
 			ID:   "slime_normal",

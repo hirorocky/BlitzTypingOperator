@@ -153,6 +153,10 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 		// 敵行動パターンを解決（IDからEnemyActionオブジェクトへ）
 		enemyActions := ConvertEnemyActions(externalData.EnemyActions)
 		ResolveEnemyTypeActions(enemyTypes, enemyActions)
+		// 時限効果の解決（TimedEffectIDからColumn/Valueへ）
+		timedEffects := ConvertTimedEffects(externalData.TimedEffects)
+		ResolveModuleTimedEffects(moduleTypes, timedEffects)
+		ResolveEnemyActionTimedEffects(enemyTypes, timedEffects)
 		passiveSkills = ConvertPassiveSkills(externalData.PassiveSkills)
 		chainEffectDefs := ConvertChainEffects(chainEffects)
 		domainSources = &gamestate.DomainDataSources{

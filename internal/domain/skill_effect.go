@@ -41,6 +41,10 @@ type EffectColumnSpec struct {
 
 	// Duration は持続時間（秒）です。0の場合は即時効果です。
 	Duration float64
+
+	// TimedEffectID は時限効果のIDです。
+	// 重複判定に使用されます（同一IDのバフ/デバフはDuration加算）。
+	TimedEffectID string
 }
 
 // BaseLUK はLUK補正の基準値です。
