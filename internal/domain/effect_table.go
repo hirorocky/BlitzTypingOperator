@@ -45,28 +45,18 @@ func (t *EffectTable) AddEntry(entry EffectEntry) {
 // AddBuff はバフをエントリとして追加します。
 // 同一IDかつ同一SourceTypeのエントリが存在する場合、Duration加算（上限99.9秒）を行います。
 func (t *EffectTable) AddBuff(id, name string, duration float64, values map[EffectColumn]float64) {
-	if existing := t.findBySourceIDAndType(id, SourceBuff); existing != nil && existing.Duration != nil {
-		newDuration := *existing.Duration + duration
-		if newDuration > config.MaxStatusDuration {
-			newDuration = config.MaxStatusDuration
-		}
-		*existing.Duration = newDuration
-		return
-	}
-	d := duration
-	t.AddEntry(EffectEntry{
-		SourceType: SourceBuff,
-		SourceID:   id,
-		Name:       name,
-		Duration:   &d,
-		Values:     values,
-	})
+	t.addTimedEffect(SourceBuff, id, name, duration, values)
 }
 
 // AddDebuff はデバフをエントリとして追加します。
 // 同一IDかつ同一SourceTypeのエントリが存在する場合、Duration加算（上限99.9秒）を行います。
 func (t *EffectTable) AddDebuff(id, name string, duration float64, values map[EffectColumn]float64) {
-	if existing := t.findBySourceIDAndType(id, SourceDebuff); existing != nil && existing.Duration != nil {
+	t.addTimedEffect(SourceDebuff, id, name, duration, values)
+}
+
+// addTimedEffect は時限効果（バフ/デバフ）を追加または更新します。
+func (t *EffectTable) addTimedEffect(st EffectSourceType, id, name string, duration float64, values map[EffectColumn]float64) {
+	if existing := t.findBySourceIDAndType(id, st); existing != nil && existing.Duration != nil {
 		newDuration := *existing.Duration + duration
 		if newDuration > config.MaxStatusDuration {
 			newDuration = config.MaxStatusDuration
@@ -76,7 +66,7 @@ func (t *EffectTable) AddDebuff(id, name string, duration float64, values map[Ef
 	}
 	d := duration
 	t.AddEntry(EffectEntry{
-		SourceType: SourceDebuff,
+		SourceType: st,
 		SourceID:   id,
 		Name:       name,
 		Duration:   &d,
