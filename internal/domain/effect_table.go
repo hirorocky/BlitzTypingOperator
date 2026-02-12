@@ -4,6 +4,8 @@ package domain
 import (
 	"math/rand"
 	"time"
+
+	"hirorocky/type-battle/internal/config"
 )
 
 // EffectTable は効果の表全体を管理します。
@@ -41,27 +43,45 @@ func (t *EffectTable) AddEntry(entry EffectEntry) {
 }
 
 // AddBuff はバフをエントリとして追加します。
-func (t *EffectTable) AddBuff(name string, duration float64, values map[EffectColumn]float64) {
+// 同一IDかつ同一SourceTypeのエントリが存在する場合、Duration加算（上限99.9秒）を行います。
+func (t *EffectTable) AddBuff(id, name string, duration float64, values map[EffectColumn]float64) {
+	t.addTimedEffect(SourceBuff, id, name, duration, values)
+}
+
+// AddDebuff はデバフをエントリとして追加します。
+// 同一IDかつ同一SourceTypeのエントリが存在する場合、Duration加算（上限99.9秒）を行います。
+func (t *EffectTable) AddDebuff(id, name string, duration float64, values map[EffectColumn]float64) {
+	t.addTimedEffect(SourceDebuff, id, name, duration, values)
+}
+
+// addTimedEffect は時限効果（バフ/デバフ）を追加または更新します。
+func (t *EffectTable) addTimedEffect(st EffectSourceType, id, name string, duration float64, values map[EffectColumn]float64) {
+	if existing := t.findBySourceIDAndType(id, st); existing != nil && existing.Duration != nil {
+		newDuration := *existing.Duration + duration
+		if newDuration > config.MaxStatusDuration {
+			newDuration = config.MaxStatusDuration
+		}
+		*existing.Duration = newDuration
+		return
+	}
 	d := duration
 	t.AddEntry(EffectEntry{
-		SourceType: SourceBuff,
-		SourceID:   name,
+		SourceType: st,
+		SourceID:   id,
 		Name:       name,
 		Duration:   &d,
 		Values:     values,
 	})
 }
 
-// AddDebuff はデバフをエントリとして追加します。
-func (t *EffectTable) AddDebuff(name string, duration float64, values map[EffectColumn]float64) {
-	d := duration
-	t.AddEntry(EffectEntry{
-		SourceType: SourceDebuff,
-		SourceID:   name,
-		Name:       name,
-		Duration:   &d,
-		Values:     values,
-	})
+// findBySourceIDAndType はSourceIDとSourceTypeで既存エントリを検索します。
+func (t *EffectTable) findBySourceIDAndType(id string, st EffectSourceType) *EffectEntry {
+	for i := range t.Entries {
+		if t.Entries[i].SourceID == id && t.Entries[i].SourceType == st {
+			return &t.Entries[i]
+		}
+	}
+	return nil
 }
 
 // ========== 集計メソッド ==========

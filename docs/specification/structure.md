@@ -44,7 +44,10 @@ config       ← 横断的関心事（全層から参照可能）
 - `screen_factory.go`: 画面インスタンスの生成
 - `screen_map.go`: シーンと画面のマッピング
 - `message_handlers.go`: Bubbleteaメッセージハンドリング
-- `masterdata_converter.go`: masterdata→domain型変換ヘルパー
+- `masterdata_converter.go`: masterdata→domain型変換ヘルパー。以下の変換関数を提供：
+  - `ConvertTimedEffects`: timed_effects.jsonの時限効果定義をマップに変換
+  - `ResolveModuleTimedEffects`: モジュールのEffectColumnSpec.Column/ValueをTimedEffectから解決
+  - `ResolveEnemyActionTimedEffects`: 敵行動のEffectColumn/EffectValueをTimedEffectから解決
 - `*_adapter.go`: 層間データ変換アダプター（例: enemy_progress_adapter.go）
 
 ### domain層 - ドメインモデル
@@ -62,10 +65,12 @@ config       ← 横断的関心事（全層から参照可能）
 - **効果システム**: effect_table.go, effect_column.go, effect_context.go, effect_entry.go
   - EffectTableパターン: バフ、デバフ、パッシブ、チェイン効果を統一的に管理
   - 列指向設計: 効果種別を EffectColumn として定義
+  - AddBuff/AddDebuff: 同一TimedEffectID時の重複判定・Duration加算（上限99.9秒）
+- **時限効果**: timed_effect.go - マスタデータで定義される一時ステータス（バフ/デバフ）。ID、効果列、効果値を保持
 - **効果説明**: effect_description.go（EffectColumn/効果値からUI向け説明テキストを生成）
 - **チェイン効果**: chain_effect.go（スキル使用後のリキャスト中に発動する追加効果）
 - **パッシブスキル**: passive_skill.go（トリガー/効果タイプ定義）, passive_evaluator.go（条件判定・効果適用）
-- **敵行動システム**: enemy.go 内に行動パターン（EnemyAction）、フェーズ遷移、チャージ/ディフェンス状態管理を含む
+- **敵行動システム**: enemy.go 内に行動パターン（EnemyAction）、フェーズ遷移、チャージ/ディフェンス状態管理を含む。バフ/デバフ行動の効果は時限効果IDで参照
 
 **サブパッケージ**:
 - `/internal/domain/service/` - ドメインサービス
@@ -94,6 +99,9 @@ config       ← 横断的関心事（全層から参照可能）
 **サブパッケージ**:
 - `infra/savedata/`: セーブ/ロード永続化
 - `infra/masterdata/`: JSONマスタデータローダー＋埋め込みデータ（Go embed.FS）
+  - timed_effects.json: 時限効果定義（ID、名前、説明、効果列、効果値）
+  - modules.json: モジュール定義（各effect_columnにtimed_effect_idを参照）
+  - enemy_actions.json: 敵行動定義（各バフ/デバフ行動にtimed_effect_idを参照）
 - `infra/errorhandler/`: エラーハンドリング
 - `infra/startup/`: 起動処理
 - `infra/terminal/`: ターミナル環境検証
@@ -119,7 +127,7 @@ config       ← 横断的関心事（全層から参照可能）
 **場所**: `/internal/config/`
 **目的**: マジックナンバーを一元管理。バトル設定、効果持続時間、インベントリ設定等
 **含まれるファイル**:
-- `constants.go`: 定数（`BattleTickInterval`, `DefaultModuleCooldown`, `MaxAgentEquipSlots` など）
+- `constants.go`: 定数（`BattleTickInterval`, `DefaultModuleCooldown`, `MaxAgentEquipSlots`, `MaxStatusDuration` など）
 - `balance.go`: ゲームバランス設定（旧usecase/balance）
 
 ### integration_test - 統合テスト
@@ -161,12 +169,13 @@ import (
 
 1. **ドメイン層の独立性**: `/internal/domain/`は他の内部パッケージに依存しない
 2. **ドメインサービスの分離**: 複数ドメインオブジェクトの組み合わせロジックは`domain/service/`に配置
-3. **画面の自己完結性**: 各画面は独立して動作可能。RootModelがルーティングを担当
-4. **外部データ駆動**: ゲームコンテンツ（コア、モジュール、敵）はJSONファイルで定義
-5. **テストの同居**: テストファイルは実装と同じディレクトリに配置
-6. **プレゼンター層の活用**: UI向けデータ変換は`tui/presenter/`で実装
-7. **定数の一元管理**: マジックナンバーはconfigパッケージに集約
-8. **ハンドラーマップパターン**: シーン遷移・メッセージ処理はマップ駆動で分岐
+3. **App層での型変換**: infra→domain型変換、データ解決はapp層で実施し、usecase層のinfra依存を排除
+4. **画面の自己完結性**: 各画面は独立して動作可能。RootModelがルーティングを担当
+5. **外部データ駆動**: ゲームコンテンツ（コア、モジュール、敵、時限効果）はJSONファイルで定義
+6. **テストの同居**: テストファイルは実装と同じディレクトリに配置
+7. **プレゼンター層の活用**: UI向けデータ変換は`tui/presenter/`で実装
+8. **定数の一元管理**: マジックナンバーはconfigパッケージに集約
+9. **ハンドラーマップパターン**: シーン遷移・メッセージ処理はマップ駆動で分岐
 
 ## ドメイン別仕様
 

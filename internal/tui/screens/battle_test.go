@@ -63,7 +63,7 @@ func TestBattleScreenPlayerInfo(t *testing.T) {
 	player.MaxHP = 100
 
 	// バフを追加
-	player.EffectTable.AddBuff("攻撃UP", 5.0, map[domain.EffectColumn]float64{
+	player.EffectTable.AddBuff("攻撃UP", "攻撃UP", 5.0, map[domain.EffectColumn]float64{
 		domain.ColDamageBonus: 10,
 	})
 
@@ -843,7 +843,7 @@ func TestBattleScreenEffectDuration(t *testing.T) {
 	agents := createTestAgents()
 
 	// プレイヤーにバフを追加
-	player.EffectTable.AddBuff("テストバフ", 5.0, map[domain.EffectColumn]float64{
+	player.EffectTable.AddBuff("テストバフ", "テストバフ", 5.0, map[domain.EffectColumn]float64{
 		domain.ColDamageBonus: 10,
 	})
 
@@ -1295,7 +1295,7 @@ func TestTimeExtend_PassedToChallengeInput(t *testing.T) {
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
 	// TimeExtend効果を追加（3秒延長）
-	player.EffectTable.AddBuff("タイム延長", 10.0, map[domain.EffectColumn]float64{
+	player.EffectTable.AddBuff("タイム延長", "タイム延長", 10.0, map[domain.EffectColumn]float64{
 		domain.ColTimeExtend: 3.0,
 	})
 
@@ -1328,7 +1328,7 @@ func TestTimeExtend_NegativeValue(t *testing.T) {
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
 	// TimeExtend効果を追加（-2秒、デバフ）
-	player.EffectTable.AddDebuff("タイム短縮", 10.0, map[domain.EffectColumn]float64{
+	player.EffectTable.AddDebuff("タイム短縮", "タイム短縮", 10.0, map[domain.EffectColumn]float64{
 		domain.ColTimeExtend: -2.0,
 	})
 
@@ -1365,7 +1365,7 @@ func TestCooldownReduce_ShortensInitialCooldown(t *testing.T) {
 	}
 
 	// CooldownReduce効果を追加（30%短縮）
-	player.EffectTable.AddBuff("クールダウン短縮", 10.0, map[domain.EffectColumn]float64{
+	player.EffectTable.AddBuff("クールダウン短縮", "クールダウン短縮", 10.0, map[domain.EffectColumn]float64{
 		domain.ColCooldownReduce: 0.3,
 	})
 
@@ -1400,7 +1400,7 @@ func TestCooldownReduce_NegativeValue(t *testing.T) {
 	}
 
 	// CooldownReduce効果を追加（-30%、つまり延長）
-	player.EffectTable.AddDebuff("クールダウン延長", 10.0, map[domain.EffectColumn]float64{
+	player.EffectTable.AddDebuff("クールダウン延長", "クールダウン延長", 10.0, map[domain.EffectColumn]float64{
 		domain.ColCooldownReduce: -0.3,
 	})
 
@@ -1429,7 +1429,7 @@ func TestCooldownReduce_MinimumLimit(t *testing.T) {
 	}
 
 	// CooldownReduce効果を追加（95%短縮 → 下限10%適用）
-	player.EffectTable.AddBuff("超クールダウン短縮", 10.0, map[domain.EffectColumn]float64{
+	player.EffectTable.AddBuff("超クールダウン短縮", "超クールダウン短縮", 10.0, map[domain.EffectColumn]float64{
 		domain.ColCooldownReduce: 0.95,
 	})
 
@@ -1473,7 +1473,7 @@ func TestDoubleCast_DoublesDamageEffect(t *testing.T) {
 	screen2 := NewBattleScreen(enemy2, player2, agents2, nil)
 
 	// DoubleCast効果を追加（100%確率で2回発動）
-	player2.EffectTable.AddBuff("ダブルキャスト", 10.0, map[domain.EffectColumn]float64{
+	player2.EffectTable.AddBuff("ダブルキャスト", "ダブルキャスト", 10.0, map[domain.EffectColumn]float64{
 		domain.ColDoubleCast: 1.0, // 100%
 	})
 
@@ -1619,7 +1619,7 @@ func TestAutoCorrect_PassedToChallengeInput(t *testing.T) {
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
 	// AutoCorrect効果を追加（2回分）
-	player.EffectTable.AddBuff("オートコレクト", 10.0, map[domain.EffectColumn]float64{
+	player.EffectTable.AddBuff("オートコレクト", "オートコレクト", 10.0, map[domain.EffectColumn]float64{
 		domain.ColAutoCorrect: 2.0,
 	})
 

@@ -5,7 +5,7 @@
 バトルシステムはリアルタイム戦闘を管理するドメインです。
 タイピング入力に基づくモジュール効果計算、敵の自動攻撃処理、勝敗判定を担当します。
 
-**実装**: `/internal/battle/battle.go`
+**実装**: `/internal/usecase/combat/battle.go`
 
 ## 要件
 
@@ -104,6 +104,31 @@ stateDiagram-v2
     Defeat --> [*]
 ```
 
+### EffectTable と時限効果（TimedEffect）
+
+**責務**: バフ/デバフ/パッシブ/チェイン効果の統一管理。
+
+**TimedEffect（時限効果）**:
+- **定義**: マスタデータ（timed_effects.json）で定義される一時ステータス（バフ/デバフ）
+- **フィールド**:
+  - ID: 時限効果の一意識別子（例: "st_str_buff_lv1"）
+  - Name: 表示名
+  - Description: 説明文
+  - Column: 効果列（EffectColumn）
+  - Value: 効果値
+
+**AddBuff/AddDebuff の重複処理**:
+1. `AddBuff(id, name, duration, values)` / `AddDebuff(id, name, duration, values)` でバフ/デバフを追加
+2. 同一ID（TimedEffectID）かつ同一SourceTypeのエントリが既に存在する場合：
+   - 新規追加せず、既存エントリのDurationを加算
+   - Duration加算後、最大値99.9秒でクランプ
+3. 異なるIDのバフ/デバフは別エントリとして共存
+
+**ルール**:
+1. パッシブスキル（SourcePassive）とチェイン効果（SourceChain）は重複判定の対象外
+2. パッシブ由来のバフ付与（ps_counter_charge等）にもtimed_effect_idが適用される
+3. Duration加算の上限は99.9秒（MaxStatusDuration）
+
 ### 敵特殊行動
 
 **責務**: 強化フェーズでの敵の特殊行動（自己バフ/プレイヤーデバフ）
@@ -129,5 +154,5 @@ stateDiagram-v2
 
 - **Typing**: チャレンジタイプに応じた入力評価、DefenseProviderによるリアルタイム防御率
 - **Agent**: 装備エージェントのモジュールとステータス参照、SkillType.ChallengeType/DifficultyRate
-- **Enemy**: 敵パラメータ（HP、攻撃力、間隔）参照
+- **Enemy**: 敵パラメータ（HP、攻撃力、間隔）参照、敵行動パターンと時限効果の参照
 - **Game Loop**: 報酬画面/ホームへのシーン遷移

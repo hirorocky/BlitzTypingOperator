@@ -289,7 +289,7 @@ func (e *BattleEngine) applyPostDamagePassives(state *BattleState) {
 						domain.ColDamageMultiplier: def.EffectValue,
 					}
 					description := domain.DescribeEffectValues(values)
-					state.Player.EffectTable.AddBuff(description, duration, values)
+					state.Player.EffectTable.AddBuff("st_counter_charge", description, duration, values)
 				}
 			}
 		}
@@ -684,12 +684,13 @@ func (e *BattleEngine) ApplySkillEffect(
 				duration = config.BuffDuration
 			}
 
+			statusID := effect.ColumnSpec.TimedEffectID
 			description := domain.DescribeEffectValues(values)
 			switch effect.Target {
 			case domain.TargetSelf:
-				state.Player.EffectTable.AddBuff(description, duration, values)
+				state.Player.EffectTable.AddBuff(statusID, description, duration, values)
 			case domain.TargetEnemy:
-				state.Enemy.EffectTable.AddDebuff(description, duration, values)
+				state.Enemy.EffectTable.AddDebuff(statusID, description, duration, values)
 			}
 		}
 	}
@@ -1154,44 +1155,20 @@ func (e *BattleEngine) ExecutePatternAttack(state *BattleState, action domain.En
 
 // ApplyPatternBuff はパターンベースのバフを適用します。
 func (e *BattleEngine) ApplyPatternBuff(state *BattleState, action domain.EnemyAction) {
-	values := make(map[domain.EffectColumn]float64)
-
-	switch action.EffectType {
-	case "damage_mult":
-		values[domain.ColDamageMultiplier] = action.EffectValue
-	case "attack_up":
-		values[domain.ColDamageBonus] = action.EffectValue
-	case "defense_up":
-		values[domain.ColDamageCut] = action.EffectValue
-	case "cooldown_reduce":
-		values[domain.ColCooldownReduce] = action.EffectValue
-	case "attack_speed":
-		values[domain.ColDamageMultiplier] = action.EffectValue
+	values := map[domain.EffectColumn]float64{
+		action.EffectColumn: action.EffectValue,
 	}
-
 	description := domain.DescribeEffectValues(values)
-	state.Enemy.EffectTable.AddBuff(description, action.Duration, values)
+	state.Enemy.EffectTable.AddBuff(action.TimedEffectID, description, action.Duration, values)
 }
 
 // ApplyPatternDebuff はパターンベースのデバフを適用します。
 func (e *BattleEngine) ApplyPatternDebuff(state *BattleState, action domain.EnemyAction) {
-	values := make(map[domain.EffectColumn]float64)
-
-	switch action.EffectType {
-	case "damage_mult":
-		values[domain.ColDamageMultiplier] = action.EffectValue
-	case "speed_down":
-		values[domain.ColCooldownReduce] = -action.EffectValue
-	case "defense_down":
-		values[domain.ColDamageCut] = -action.EffectValue
-	case "cooldown_reduce":
-		values[domain.ColCooldownReduce] = action.EffectValue
-	case "damage_cut":
-		values[domain.ColDamageCut] = action.EffectValue
+	values := map[domain.EffectColumn]float64{
+		action.EffectColumn: action.EffectValue,
 	}
-
 	description := domain.DescribeEffectValues(values)
-	state.Player.EffectTable.AddDebuff(description, action.Duration, values)
+	state.Player.EffectTable.AddDebuff(action.TimedEffectID, description, action.Duration, values)
 }
 
 // CheckDebuffEvasion はデバフ回避を判定します。

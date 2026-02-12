@@ -556,14 +556,20 @@ type EnemyAction struct {
 
 	// ========== バフ/デバフ行動用フィールド ==========
 
-	// EffectType はバフ/デバフ行動時の効果種別です（例: "damage_mult", "cooldown_reduce"）。
-	EffectType string
+	// EffectColumn はバフ/デバフ行動時の効果列です。
+	// 時限効果（TimedEffect）から解決されます。
+	EffectColumn EffectColumn
 
 	// EffectValue はバフ/デバフ行動時の効果値です。
+	// 時限効果（TimedEffect）から解決されます。
 	EffectValue float64
 
 	// Duration はバフ/デバフ/ディフェンスの持続時間（秒）です。
 	Duration float64
+
+	// TimedEffectID は時限効果のIDです。
+	// バフ/デバフ行動で重複判定に使用されます。
+	TimedEffectID string
 
 	// ========== ディフェンス行動用フィールド ==========
 

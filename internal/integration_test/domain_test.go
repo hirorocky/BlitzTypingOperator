@@ -268,12 +268,12 @@ func TestEffectTable_Aggregate(t *testing.T) {
 	table := domain.NewEffectTable()
 
 	// バフを追加
-	table.AddBuff("攻撃UP", 5.0, map[domain.EffectColumn]float64{
+	table.AddBuff("攻撃UP", "攻撃UP", 5.0, map[domain.EffectColumn]float64{
 		domain.ColDamageBonus: 10,
 	})
 
 	// 乗算バフを追加
-	table.AddBuff("攻撃UP×", 5.0, map[domain.EffectColumn]float64{
+	table.AddBuff("攻撃UP×", "攻撃UP×", 5.0, map[domain.EffectColumn]float64{
 		domain.ColDamageMultiplier: 1.2,
 	})
 
@@ -293,7 +293,7 @@ func TestEffectTable_UpdateDurations(t *testing.T) {
 	// 効果テーブルの時間経過テスト
 	table := domain.NewEffectTable()
 
-	table.AddBuff("短時間バフ", 3.0, map[domain.EffectColumn]float64{
+	table.AddBuff("短時間バフ", "短時間バフ", 3.0, map[domain.EffectColumn]float64{
 		domain.ColDamageBonus: 10,
 	})
 

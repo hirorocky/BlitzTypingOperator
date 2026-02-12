@@ -76,6 +76,38 @@ type ExternalData struct {
 	ChainEffects       []ChainEffectData
 	TypingDictionary   *TypingDictionary
 	FirstAgents        []FirstAgentData
+	TimedEffects       []TimedEffectData
+}
+
+// ==================== 時限効果定義 ====================
+
+// TimedEffectData はtimed_effects.jsonから読み込む時限効果データの構造体です。
+type TimedEffectData struct {
+	ID           string  `json:"id"`
+	Name         string  `json:"name"`
+	Description  string  `json:"description"`
+	EffectColumn string  `json:"effect_column"`
+	Value        float64 `json:"value"`
+}
+
+// timedEffectsFileData はtimed_effects.jsonのルート構造です。
+type timedEffectsFileData struct {
+	TimedEffects []TimedEffectData `json:"timed_effects"`
+}
+
+// LoadTimedEffects はtimed_effects.jsonから時限効果定義を読み込みます。
+func (l *DataLoader) LoadTimedEffects() ([]TimedEffectData, error) {
+	data, err := l.readFile("timed_effects.json")
+	if err != nil {
+		return nil, fmt.Errorf("timed_effects.jsonの読み込みに失敗: %w", err)
+	}
+
+	var fileData timedEffectsFileData
+	if err := json.Unmarshal(data, &fileData); err != nil {
+		return nil, fmt.Errorf("timed_effects.jsonのパースに失敗: %w", err)
+	}
+
+	return fileData.TimedEffects, nil
 }
 
 // ==================== コア特性定義 ====================
@@ -144,9 +176,8 @@ type HPFormulaData struct {
 
 // EffectColumnData はEffectColumn効果のJSONデータ構造体です。
 type EffectColumnData struct {
-	Column   string  `json:"column"`
-	Value    float64 `json:"value"`
-	Duration float64 `json:"duration"`
+	Duration      float64 `json:"duration"`
+	TimedEffectID string  `json:"timed_effect_id,omitempty"`
 }
 
 // SkillEffectData はスキル効果のJSONデータ構造体です。
@@ -260,9 +291,8 @@ func (e *SkillEffectData) ToDomain() domain.SkillEffect {
 
 	if e.EffectColumn != nil {
 		effect.ColumnSpec = &domain.EffectColumnSpec{
-			Column:   domain.EffectColumn(e.EffectColumn.Column),
-			Value:    e.EffectColumn.Value,
-			Duration: e.EffectColumn.Duration,
+			Duration:      e.EffectColumn.Duration,
+			TimedEffectID: e.EffectColumn.TimedEffectID,
 		}
 	}
 
@@ -390,13 +420,12 @@ type EnemyActionData struct {
 	DamageBase     float64 `json:"damage_base,omitempty"`
 	DamagePerLevel float64 `json:"damage_per_level,omitempty"`
 	Element        string  `json:"element,omitempty"`
-	EffectType     string  `json:"effect_type,omitempty"`
-	EffectValue    float64 `json:"effect_value,omitempty"`
 	DefenseType    string  `json:"defense_type,omitempty"`
 	ReductionRate  float64 `json:"reduction_rate,omitempty"`
 	EvadeRate      float64 `json:"evade_rate,omitempty"`
 	DurationSec    float64 `json:"duration_seconds,omitempty"`
 	ChargeTimeMS   int64   `json:"charge_time_ms"`
+	TimedEffectID  string  `json:"timed_effect_id,omitempty"`
 }
 
 // enemyActionsFileData はenemy_actions.jsonのルート構造です。
@@ -420,6 +449,7 @@ func (l *DataLoader) LoadEnemyActions() ([]EnemyActionData, error) {
 }
 
 // ToDomain はEnemyActionDataをドメインモデルのEnemyActionに変換します。
+// EffectColumn/EffectValueはApp層でTimedEffectから解決されます。
 func (a *EnemyActionData) ToDomain() domain.EnemyAction {
 	action := domain.EnemyAction{
 		ID:             a.ID,
@@ -429,11 +459,10 @@ func (a *EnemyActionData) ToDomain() domain.EnemyAction {
 		DamageBase:     a.DamageBase,
 		DamagePerLevel: a.DamagePerLevel,
 		Element:        a.Element,
-		EffectType:     a.EffectType,
-		EffectValue:    a.EffectValue,
 		Duration:       a.DurationSec,
 		ReductionRate:  a.ReductionRate,
 		EvadeRate:      a.EvadeRate,
+		TimedEffectID:  a.TimedEffectID,
 	}
 
 	// ActionTypeの変換
@@ -963,6 +992,12 @@ func (l *DataLoader) LoadAllExternalData() (*ExternalData, error) {
 		return nil, fmt.Errorf("初期エージェントのロードに失敗: %w", err)
 	}
 
+	// 時限効果データのロード
+	timedEffects, err := l.LoadTimedEffects()
+	if err != nil {
+		return nil, fmt.Errorf("時限効果データのロードに失敗: %w", err)
+	}
+
 	return &ExternalData{
 		CoreTypes:          coreTypes,
 		ModuleDefinitions:  modules,
@@ -973,6 +1008,7 @@ func (l *DataLoader) LoadAllExternalData() (*ExternalData, error) {
 		ChainEffects:       chainEffects,
 		TypingDictionary:   dictionary,
 		FirstAgents:        firstAgents,
+		TimedEffects:       timedEffects,
 	}, nil
 }
 

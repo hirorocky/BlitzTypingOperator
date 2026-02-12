@@ -32,6 +32,10 @@ const (
 
 	// DebuffDuration はデバフのデフォルト持続時間（秒）です。
 	DebuffDuration = 8.0
+
+	// MaxStatusDuration は一時ステータスの最大継続時間（秒）です。
+	// Duration加算時にこの値を超えないようクランプされます。
+	MaxStatusDuration = 99.9
 )
 
 // インベントリ設定定数

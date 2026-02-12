@@ -382,6 +382,20 @@ func TestLoadAllExternalData(t *testing.T) {
 	}`
 	os.WriteFile(filepath.Join(tmpDir, "chain_effects.json"), []byte(chainEffectsJSON), 0644)
 
+	// timed_effects.json
+	timedEffectsJSON := `{
+		"timed_effects": [
+			{
+				"id": "st_str_buff_lv1",
+				"name": "STR25%UP",
+				"description": "STRを25%上昇させる",
+				"effect_column": "str_mult",
+				"value": 0.25
+			}
+		]
+	}`
+	os.WriteFile(filepath.Join(tmpDir, "timed_effects.json"), []byte(timedEffectsJSON), 0644)
+
 	loader := NewDataLoader(tmpDir)
 	externalData, err := loader.LoadAllExternalData()
 	if err != nil {
@@ -405,6 +419,9 @@ func TestLoadAllExternalData(t *testing.T) {
 	}
 	if len(externalData.FirstAgents) == 0 {
 		t.Error("FirstAgents should not be empty")
+	}
+	if len(externalData.TimedEffects) != 1 {
+		t.Errorf("TimedEffects: got %d, want 1", len(externalData.TimedEffects))
 	}
 }
 
@@ -993,5 +1010,189 @@ func TestEnemyTypeToDomainWithVoltage(t *testing.T) {
 	// ボルテージ上昇率が正しく変換されていることを検証
 	if domainEnemy.VoltageRisePer10s != 20.0 {
 		t.Errorf("VoltageRisePer10s: got %f, want 20.0", domainEnemy.VoltageRisePer10s)
+	}
+}
+
+// ==================== 時限効果テスト ====================
+
+// TestLoadTimedEffects は時限効果定義のロードをテストします（AC10）。
+func TestLoadTimedEffects(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	timedEffectsJSON := `{
+		"timed_effects": [
+			{
+				"id": "st_str_buff_lv1",
+				"name": "STR25%UP",
+				"description": "STRを25%上昇させる",
+				"effect_column": "str_mult",
+				"value": 0.25
+			},
+			{
+				"id": "st_defense_buff_lv1",
+				"name": "被ダメ10%軽減",
+				"description": "受けるダメージを10%軽減する",
+				"effect_column": "damage_cut",
+				"value": 0.1
+			}
+		]
+	}`
+
+	os.WriteFile(filepath.Join(tmpDir, "timed_effects.json"), []byte(timedEffectsJSON), 0644)
+
+	loader := NewDataLoader(tmpDir)
+	timedEffects, err := loader.LoadTimedEffects()
+	if err != nil {
+		t.Fatalf("時限効果のロードに失敗: %v", err)
+	}
+
+	if len(timedEffects) != 2 {
+		t.Fatalf("時限効果の数: got %d, want 2", len(timedEffects))
+	}
+
+	// STRバフの検証
+	if timedEffects[0].ID != "st_str_buff_lv1" {
+		t.Errorf("ID: got %s, want st_str_buff_lv1", timedEffects[0].ID)
+	}
+	if timedEffects[0].Name != "STR25%UP" {
+		t.Errorf("Name: got %s, want STR25%%UP", timedEffects[0].Name)
+	}
+	if timedEffects[0].EffectColumn != "str_mult" {
+		t.Errorf("EffectColumn: got %s, want str_mult", timedEffects[0].EffectColumn)
+	}
+	if timedEffects[0].Value != 0.25 {
+		t.Errorf("Value: got %f, want 0.25", timedEffects[0].Value)
+	}
+
+	// 防御バフの検証
+	if timedEffects[1].EffectColumn != "damage_cut" {
+		t.Errorf("EffectColumn: got %s, want damage_cut", timedEffects[1].EffectColumn)
+	}
+	if timedEffects[1].Value != 0.1 {
+		t.Errorf("Value: got %f, want 0.1", timedEffects[1].Value)
+	}
+}
+
+// TestLoadModulesWithTimedEffectID はmodules.jsonのtimed_effect_id読み込みをテストします（AC11）。
+func TestLoadModulesWithTimedEffectID(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	modulesJSON := `{
+		"module_types": [
+			{
+				"id": "str_buff_lv1",
+				"name": "気合い溜め",
+				"icon": "💪",
+				"tags": ["buff_low"],
+				"description": "一時的にSTRを上昇させる",
+				"cooldown_seconds": 10.0,
+				"difficulty": 80,
+				"challenge": { "type": "standard" },
+				"min_drop_level": 1,
+				"effects": [
+					{
+						"target": "self",
+						"effect_column": {
+							"duration": 10.0,
+							"timed_effect_id": "st_str_buff_lv1"
+						},
+						"probability": 1.0,
+						"luk_factor": 0,
+						"icon": "💪"
+					}
+				]
+			}
+		]
+	}`
+
+	os.WriteFile(filepath.Join(tmpDir, "modules.json"), []byte(modulesJSON), 0644)
+
+	loader := NewDataLoader(tmpDir)
+	modules, err := loader.LoadModuleDefinitions()
+	if err != nil {
+		t.Fatalf("モジュール定義のロードに失敗: %v", err)
+	}
+
+	// ToDomainで変換
+	effect := modules[0].Effects[0].ToDomain()
+
+	// ColumnSpecが設定されていること
+	if effect.ColumnSpec == nil {
+		t.Fatal("ColumnSpec should not be nil")
+	}
+
+	// TimedEffectIDが正しく設定されていること
+	if effect.ColumnSpec.TimedEffectID != "st_str_buff_lv1" {
+		t.Errorf("TimedEffectID: got %s, want st_str_buff_lv1", effect.ColumnSpec.TimedEffectID)
+	}
+
+	// Durationが正しく設定されていること
+	if effect.ColumnSpec.Duration != 10.0 {
+		t.Errorf("Duration: got %f, want 10.0", effect.ColumnSpec.Duration)
+	}
+
+	// Column/Valueはゼロ値（App層で解決される）
+	if effect.ColumnSpec.Column != "" {
+		t.Errorf("Column should be empty (resolved by App layer): got %s", effect.ColumnSpec.Column)
+	}
+	if effect.ColumnSpec.Value != 0 {
+		t.Errorf("Value should be 0 (resolved by App layer): got %f", effect.ColumnSpec.Value)
+	}
+}
+
+// TestLoadEnemyActionsWithTimedEffectID はenemy_actions.jsonのtimed_effect_id読み込みをテストします（AC12）。
+func TestLoadEnemyActionsWithTimedEffectID(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	enemyActionsJSON := `{
+		"enemy_actions": [
+			{
+				"id": "act_goblin_buff_attack",
+				"name": "怒り",
+				"action_type": "buff",
+				"duration_seconds": 10.0,
+				"charge_time_ms": 2000,
+				"timed_effect_id": "st_goblin_rage"
+			},
+			{
+				"id": "act_skeleton_debuff_defense",
+				"name": "骨粉",
+				"action_type": "debuff",
+				"duration_seconds": 6.0,
+				"charge_time_ms": 3000,
+				"timed_effect_id": "st_skeleton_bone_dust"
+			}
+		]
+	}`
+
+	os.WriteFile(filepath.Join(tmpDir, "enemy_actions.json"), []byte(enemyActionsJSON), 0644)
+
+	loader := NewDataLoader(tmpDir)
+	actions, err := loader.LoadEnemyActions()
+	if err != nil {
+		t.Fatalf("敵行動のロードに失敗: %v", err)
+	}
+
+	// バフ行動の検証
+	buffAction := actions[0].ToDomain()
+	if buffAction.TimedEffectID != "st_goblin_rage" {
+		t.Errorf("TimedEffectID: got %s, want st_goblin_rage", buffAction.TimedEffectID)
+	}
+	if buffAction.Duration != 10.0 {
+		t.Errorf("Duration: got %f, want 10.0", buffAction.Duration)
+	}
+
+	// EffectColumn/EffectValueはゼロ値（App層で解決される）
+	if buffAction.EffectColumn != "" {
+		t.Errorf("EffectColumn should be empty (resolved by App layer): got %s", buffAction.EffectColumn)
+	}
+	if buffAction.EffectValue != 0 {
+		t.Errorf("EffectValue should be 0 (resolved by App layer): got %f", buffAction.EffectValue)
+	}
+
+	// デバフ行動の検証
+	debuffAction := actions[1].ToDomain()
+	if debuffAction.TimedEffectID != "st_skeleton_bone_dust" {
+		t.Errorf("TimedEffectID: got %s, want st_skeleton_bone_dust", debuffAction.TimedEffectID)
 	}
 }

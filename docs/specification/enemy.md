@@ -85,6 +85,7 @@ The enemy system shall execute actions based on predefined patterns:
 - 攻撃（物理/魔法）、バフ、デバフ、ディフェンスの4タイプ
 - 各行動にチャージタイム（実行までの待機時間）を設定
 - 攻撃ダメージ計算: damage = a + Lv × b
+- バフ/デバフ行動の効果: 時限効果（TimedEffect）から解決
 
 **受け入れ基準**:
 1. 行動パターンは順番に実行しループ
@@ -234,9 +235,10 @@ stateDiagram-v2
 - Element: 攻撃属性（fire, water, dark等）
 
 **フィールド（バフ/デバフ用）**:
-- EffectType: 効果種別
+- EffectColumn: 効果列
 - EffectValue: 効果値
-- Duration: 持続時間
+- Duration: 持続時間（秒）
+- TimedEffectID: 時限効果のID（重複判定に使用）
 
 **フィールド（ディフェンス用）**:
 - DefenseType: ディフェンス種類
@@ -247,6 +249,10 @@ stateDiagram-v2
 ```
 damage = DamageBase + Level × DamagePerLevel
 ```
+
+**バフ/デバフの適用**:
+- EffectColumn と EffectValue は、マスタデータローダーの App層で TimedEffect から解決されます
+- バトル中: TimedEffectID をキーとして AddBuff/AddDebuff を呼び出し
 
 ### EnemyDefenseType
 
@@ -314,7 +320,7 @@ damage = DamageBase + Level × DamagePerLevel
 
 ## 関連ドメイン
 
-- **Battle**: 敵パラメータの参照、ダメージ処理、行動実行
+- **Battle**: 敵パラメータの参照、ダメージ処理、行動実行、時限効果の参照
 - **Game Loop**: 敵進行状態の永続化
 - **Collection**: 敵図鑑への登録
 - **EffectTable**: バフ/デバフ/パッシブ効果の管理

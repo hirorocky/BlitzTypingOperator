@@ -305,7 +305,7 @@ func TestEnemyAttack_WithDefenseBuff(t *testing.T) {
 	state, _ := engine.initializeBattleForTest(5, agents)
 
 	// 防御バフを追加（30%ダメージ軽減）
-	state.Player.EffectTable.AddBuff("防御バフ", 10.0, map[domain.EffectColumn]float64{
+	state.Player.EffectTable.AddBuff("防御バフ", "防御バフ", 10.0, map[domain.EffectColumn]float64{
 		domain.ColDamageCut: 0.3, // 30%軽減
 	})
 
@@ -403,12 +403,13 @@ func TestEnemySelfBuff(t *testing.T) {
 
 	// 敵に自己バフを付与（パターンベース）
 	buffAction := domain.EnemyAction{
-		ID:          "test_buff",
-		Name:        "攻撃力UP",
-		ActionType:  domain.EnemyActionBuff,
-		EffectType:  "damage_mult",
-		EffectValue: 1.3,
-		Duration:    5.0,
+		ID:            "test_buff",
+		Name:          "攻撃力UP",
+		ActionType:    domain.EnemyActionBuff,
+		EffectColumn:  domain.ColDamageMultiplier,
+		EffectValue:   1.3,
+		Duration:      5.0,
+		TimedEffectID: "test_buff",
 	}
 	engine.ApplyPatternBuff(state, buffAction)
 
@@ -451,12 +452,13 @@ func TestPlayerDebuff(t *testing.T) {
 
 	// プレイヤーにデバフを付与（パターンベース）
 	debuffAction := domain.EnemyAction{
-		ID:          "test_debuff",
-		Name:        "クールダウン延長",
-		ActionType:  domain.EnemyActionDebuff,
-		EffectType:  "cooldown_reduce",
-		EffectValue: -0.3,
-		Duration:    5.0,
+		ID:            "test_debuff",
+		Name:          "クールダウン延長",
+		ActionType:    domain.EnemyActionDebuff,
+		EffectColumn:  domain.ColCooldownReduce,
+		EffectValue:   -0.3,
+		Duration:      5.0,
+		TimedEffectID: "test_debuff",
 	}
 	engine.ApplyPatternDebuff(state, debuffAction)
 
@@ -1467,7 +1469,7 @@ func TestPassiveSkillIntegration_RecastPersistence(t *testing.T) {
 	}
 
 	// 時限バフを追加（これはリキャスト中に切れる想定）
-	state.Player.EffectTable.AddBuff("一時バフ", 3.0, map[domain.EffectColumn]float64{
+	state.Player.EffectTable.AddBuff("一時バフ", "一時バフ", 3.0, map[domain.EffectColumn]float64{
 		domain.ColDamageCut: 0.1, // 追加で10%軽減
 	})
 
@@ -1550,7 +1552,7 @@ func TestPassiveSkillIntegration_CombinedEffects(t *testing.T) {
 	}
 
 	// 追加バフを追加（さらに10%軽減）
-	state.Player.EffectTable.AddBuff("防御バフ", 10.0, map[domain.EffectColumn]float64{
+	state.Player.EffectTable.AddBuff("防御バフ2", "防御バフ", 10.0, map[domain.EffectColumn]float64{
 		domain.ColDamageCut: 0.1, // 追加で10%軽減
 	})
 
@@ -1984,13 +1986,14 @@ func TestBattleEngine_DetermineNextAction_PatternBased(t *testing.T) {
 			ChargeTime:     1 * time.Second,
 		},
 		{
-			ID:          "act_buff",
-			Name:        "気合い",
-			ActionType:  domain.EnemyActionBuff,
-			EffectType:  "damage_mult",
-			EffectValue: 1.5,
-			Duration:    5.0,
-			ChargeTime:  500 * time.Millisecond,
+			ID:            "act_buff",
+			Name:          "気合い",
+			ActionType:    domain.EnemyActionBuff,
+			EffectColumn:  domain.ColDamageMultiplier,
+			EffectValue:   1.5,
+			Duration:      5.0,
+			TimedEffectID: "act_buff",
+			ChargeTime:    500 * time.Millisecond,
 		},
 	}
 
@@ -2252,12 +2255,13 @@ func TestBattleEngine_ApplyPatternBuff(t *testing.T) {
 
 	// 敵の自己バフ行動を実行
 	buffAction := domain.EnemyAction{
-		ID:          "buff_attack_up",
-		Name:        "攻撃力強化",
-		ActionType:  domain.EnemyActionBuff,
-		EffectType:  "damage_mult",
-		EffectValue: 1.5,
-		Duration:    10.0,
+		ID:            "buff_attack_up",
+		Name:          "攻撃力強化",
+		ActionType:    domain.EnemyActionBuff,
+		EffectColumn:  domain.ColDamageMultiplier,
+		EffectValue:   1.5,
+		Duration:      10.0,
+		TimedEffectID: "buff_attack_up",
 	}
 	engine.ApplyPatternBuff(state, buffAction)
 
@@ -2310,12 +2314,13 @@ func TestBattleEngine_ApplyPatternDebuff(t *testing.T) {
 
 	// プレイヤーへのデバフ行動を実行
 	debuffAction := domain.EnemyAction{
-		ID:          "debuff_slow",
-		Name:        "スロウ",
-		ActionType:  domain.EnemyActionDebuff,
-		EffectType:  "cooldown_reduce",
-		EffectValue: -0.3,
-		Duration:    8.0,
+		ID:            "debuff_slow",
+		Name:          "スロウ",
+		ActionType:    domain.EnemyActionDebuff,
+		EffectColumn:  domain.ColCooldownReduce,
+		EffectValue:   -0.3,
+		Duration:      8.0,
+		TimedEffectID: "debuff_slow",
 	}
 	engine.ApplyPatternDebuff(state, debuffAction)
 
