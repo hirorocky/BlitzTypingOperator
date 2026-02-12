@@ -3,6 +3,8 @@
 package app
 
 import (
+	"log/slog"
+
 	"hirorocky/type-battle/internal/domain"
 	"hirorocky/type-battle/internal/infra/masterdata"
 	"hirorocky/type-battle/internal/usecase/rewarding"
@@ -190,6 +192,10 @@ func ResolveModuleTimedEffects(modules []rewarding.ModuleDropInfo, timedEffects 
 				if te, ok := timedEffects[spec.TimedEffectID]; ok {
 					modules[i].Effects[j].ColumnSpec.Column = te.Column
 					modules[i].Effects[j].ColumnSpec.Value = te.Value
+				} else {
+					slog.Error("マスタデータ不整合: モジュールの時限効果IDが見つかりません",
+						slog.String("timedEffectID", spec.TimedEffectID),
+						slog.String("moduleID", modules[i].ID))
 				}
 			}
 		}
@@ -211,6 +217,10 @@ func resolveActionsTimedEffects(actions []domain.EnemyAction, timedEffects map[s
 			if te, ok := timedEffects[actions[i].TimedEffectID]; ok {
 				actions[i].EffectColumn = te.Column
 				actions[i].EffectValue = te.Value
+			} else {
+				slog.Error("マスタデータ不整合: 敵行動の時限効果IDが見つかりません",
+					slog.String("timedEffectID", actions[i].TimedEffectID),
+					slog.String("actionID", actions[i].ID))
 			}
 		}
 	}

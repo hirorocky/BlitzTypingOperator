@@ -403,12 +403,13 @@ func TestEnemySelfBuff(t *testing.T) {
 
 	// 敵に自己バフを付与（パターンベース）
 	buffAction := domain.EnemyAction{
-		ID:           "test_buff",
-		Name:         "攻撃力UP",
-		ActionType:   domain.EnemyActionBuff,
-		EffectColumn: domain.ColDamageMultiplier,
-		EffectValue:  1.3,
-		Duration:     5.0,
+		ID:            "test_buff",
+		Name:          "攻撃力UP",
+		ActionType:    domain.EnemyActionBuff,
+		EffectColumn:  domain.ColDamageMultiplier,
+		EffectValue:   1.3,
+		Duration:      5.0,
+		TimedEffectID: "test_buff",
 	}
 	engine.ApplyPatternBuff(state, buffAction)
 
@@ -451,12 +452,13 @@ func TestPlayerDebuff(t *testing.T) {
 
 	// プレイヤーにデバフを付与（パターンベース）
 	debuffAction := domain.EnemyAction{
-		ID:           "test_debuff",
-		Name:         "クールダウン延長",
-		ActionType:   domain.EnemyActionDebuff,
-		EffectColumn: domain.ColCooldownReduce,
-		EffectValue:  -0.3,
-		Duration:     5.0,
+		ID:            "test_debuff",
+		Name:          "クールダウン延長",
+		ActionType:    domain.EnemyActionDebuff,
+		EffectColumn:  domain.ColCooldownReduce,
+		EffectValue:   -0.3,
+		Duration:      5.0,
+		TimedEffectID: "test_debuff",
 	}
 	engine.ApplyPatternDebuff(state, debuffAction)
 
@@ -1984,13 +1986,14 @@ func TestBattleEngine_DetermineNextAction_PatternBased(t *testing.T) {
 			ChargeTime:     1 * time.Second,
 		},
 		{
-			ID:           "act_buff",
-			Name:         "気合い",
-			ActionType:   domain.EnemyActionBuff,
-			EffectColumn: domain.ColDamageMultiplier,
-			EffectValue:  1.5,
-			Duration:     5.0,
-			ChargeTime:   500 * time.Millisecond,
+			ID:            "act_buff",
+			Name:          "気合い",
+			ActionType:    domain.EnemyActionBuff,
+			EffectColumn:  domain.ColDamageMultiplier,
+			EffectValue:   1.5,
+			Duration:      5.0,
+			TimedEffectID: "act_buff",
+			ChargeTime:    500 * time.Millisecond,
 		},
 	}
 
@@ -2252,12 +2255,13 @@ func TestBattleEngine_ApplyPatternBuff(t *testing.T) {
 
 	// 敵の自己バフ行動を実行
 	buffAction := domain.EnemyAction{
-		ID:           "buff_attack_up",
-		Name:         "攻撃力強化",
-		ActionType:   domain.EnemyActionBuff,
-		EffectColumn: domain.ColDamageMultiplier,
-		EffectValue:  1.5,
-		Duration:     10.0,
+		ID:            "buff_attack_up",
+		Name:          "攻撃力強化",
+		ActionType:    domain.EnemyActionBuff,
+		EffectColumn:  domain.ColDamageMultiplier,
+		EffectValue:   1.5,
+		Duration:      10.0,
+		TimedEffectID: "buff_attack_up",
 	}
 	engine.ApplyPatternBuff(state, buffAction)
 
@@ -2310,12 +2314,13 @@ func TestBattleEngine_ApplyPatternDebuff(t *testing.T) {
 
 	// プレイヤーへのデバフ行動を実行
 	debuffAction := domain.EnemyAction{
-		ID:           "debuff_slow",
-		Name:         "スロウ",
-		ActionType:   domain.EnemyActionDebuff,
-		EffectColumn: domain.ColCooldownReduce,
-		EffectValue:  -0.3,
-		Duration:     8.0,
+		ID:            "debuff_slow",
+		Name:          "スロウ",
+		ActionType:    domain.EnemyActionDebuff,
+		EffectColumn:  domain.ColCooldownReduce,
+		EffectValue:   -0.3,
+		Duration:      8.0,
+		TimedEffectID: "debuff_slow",
 	}
 	engine.ApplyPatternDebuff(state, debuffAction)
 
