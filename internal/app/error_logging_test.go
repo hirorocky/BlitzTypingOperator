@@ -39,7 +39,7 @@ func TestGameStateFromSaveDataLogsAddCoreError(t *testing.T) {
 			Cores: []string{"all_rounder"},
 		},
 		UniqueSkills: &savedata.SkillInventorySave{
-			Skills: make(map[string][]string),
+			Skills: make([]string, 0),
 		},
 	}
 
@@ -84,7 +84,7 @@ func TestGameStateFromSaveDataLogsAgentErrors(t *testing.T) {
 			Cores: []string{},
 		},
 		UniqueSkills: &savedata.SkillInventorySave{
-			Skills: make(map[string][]string),
+			Skills: make([]string, 0),
 		},
 	}
 	saveData.Player = &savedata.PlayerSaveData{

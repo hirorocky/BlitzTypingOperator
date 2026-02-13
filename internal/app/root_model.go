@@ -243,7 +243,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 
 		// UniqueSkillsを復元
 		if loadedSaveData.Inventory.UniqueSkills != nil && loadedSaveData.Inventory.UniqueSkills.Skills != nil {
-			for typeID := range loadedSaveData.Inventory.UniqueSkills.Skills {
+			for _, typeID := range loadedSaveData.Inventory.UniqueSkills.Skills {
 				invManager.AddSkill(typeID)
 			}
 		}
@@ -586,16 +586,18 @@ func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 	ownedCores := m.invManager.Cores().GetOwnedCores()
 	saveData.Inventory.UniqueCores.Cores = ownedCores
 
-	// UniqueSkillsを追加（SkillTypeID → チェイン効果IDリスト）
+	// UniqueSkillsを追加（TypeIDリスト形式）
 	if saveData.Inventory.UniqueSkills == nil {
 		saveData.Inventory.UniqueSkills = &savedata.SkillInventorySave{
-			Skills: make(map[string][]string),
+			Skills: make([]string, 0),
 		}
 	}
 	ownedSkills := m.invManager.Skills().GetOwnedSkills()
+	skillTypeIDs := make([]string, 0, len(ownedSkills))
 	for typeID := range ownedSkills {
-		saveData.Inventory.UniqueSkills.Skills[typeID] = []string{}
+		skillTypeIDs = append(skillTypeIDs, typeID)
 	}
+	saveData.Inventory.UniqueSkills.Skills = skillTypeIDs
 
 	// AgentSlotsを追加（3スロットの構成）
 	slots := m.slotManager.GetSlots()

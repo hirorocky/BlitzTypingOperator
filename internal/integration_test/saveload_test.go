@@ -68,8 +68,11 @@ func TestSaveLoadFlow_InventoryPersistence(t *testing.T) {
 	// ユニークコアを追加
 	saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores, "test_type")
 
-	// ユニークスキルを追加（チェイン効果付き）
-	saveData.Inventory.UniqueSkills.Skills["module_1"] = []string{"damage_bonus"}
+	// ユニークスキルを追加
+	saveData.Inventory.UniqueSkills.Skills = append(saveData.Inventory.UniqueSkills.Skills, "module_1")
+
+	// ユニークチェイン効果を追加
+	saveData.Inventory.UniqueChainEffects.ChainEffects = append(saveData.Inventory.UniqueChainEffects.ChainEffects, "damage_bonus")
 
 	// セーブ
 	err := io.SaveGame(saveData)
@@ -92,12 +95,19 @@ func TestSaveLoadFlow_InventoryPersistence(t *testing.T) {
 	}
 
 	// ユニークスキル確認
-	chains, ok := loadedData.Inventory.UniqueSkills.Skills["module_1"]
-	if !ok {
-		t.Fatal("module_1 スキルが見つかりません")
+	if len(loadedData.Inventory.UniqueSkills.Skills) != 1 {
+		t.Fatalf("ユニークスキル数 expected 1, got %d", len(loadedData.Inventory.UniqueSkills.Skills))
 	}
-	if len(chains) != 1 || chains[0] != "damage_bonus" {
-		t.Error("Skill ChainEffect not correctly restored")
+	if loadedData.Inventory.UniqueSkills.Skills[0] != "module_1" {
+		t.Errorf("Skill TypeID expected 'module_1', got '%s'", loadedData.Inventory.UniqueSkills.Skills[0])
+	}
+
+	// ユニークチェイン効果確認
+	if len(loadedData.Inventory.UniqueChainEffects.ChainEffects) != 1 {
+		t.Fatalf("ユニークチェイン効果数 expected 1, got %d", len(loadedData.Inventory.UniqueChainEffects.ChainEffects))
+	}
+	if loadedData.Inventory.UniqueChainEffects.ChainEffects[0] != "damage_bonus" {
+		t.Errorf("ChainEffect TypeID expected 'damage_bonus', got '%s'", loadedData.Inventory.UniqueChainEffects.ChainEffects[0])
 	}
 }
 

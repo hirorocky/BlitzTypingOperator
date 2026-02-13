@@ -344,15 +344,12 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 		saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores, c.TypeID)
 	}
 	for _, m := range rewards.DroppedModules {
-		chainID := ""
+		saveData.Inventory.UniqueSkills.Skills = append(
+			saveData.Inventory.UniqueSkills.Skills, m.TypeID)
 		if m.ChainEffect != nil {
-			chainID = string(m.ChainEffect.Type)
+			saveData.Inventory.UniqueChainEffects.ChainEffects = append(
+				saveData.Inventory.UniqueChainEffects.ChainEffects, m.ChainEffect.ID)
 		}
-		if saveData.Inventory.UniqueSkills.Skills[m.TypeID] == nil {
-			saveData.Inventory.UniqueSkills.Skills[m.TypeID] = []string{}
-		}
-		saveData.Inventory.UniqueSkills.Skills[m.TypeID] = append(
-			saveData.Inventory.UniqueSkills.Skills[m.TypeID], chainID)
 	}
 
 	// 統計更新
@@ -425,6 +422,7 @@ func TestE2E_AgentSynthesisFlow(t *testing.T) {
 
 	// スキルスロット構成を作成
 	var skillSlots [4]savedata.SkillSlotSaveCfg
+	var chainEffectSlots [4]savedata.ChainEffectSlotSaveCfg
 	for i, m := range newAgent.Modules {
 		if i >= 4 {
 			break
@@ -433,12 +431,15 @@ func TestE2E_AgentSynthesisFlow(t *testing.T) {
 			TypeID: m.TypeID,
 		}
 		if m.ChainEffect != nil {
-			skillSlots[i].ChainEffectID = string(m.ChainEffect.Type)
+			chainEffectSlots[i] = savedata.ChainEffectSlotSaveCfg{
+				TypeID: m.ChainEffect.ID,
+			}
 		}
 	}
 	saveData.Player.AgentSlots[slotIdx] = savedata.AgentSlotSave{
-		CoreTypeID: newAgent.Core.TypeID,
-		Skills:     skillSlots,
+		CoreTypeID:   newAgent.Core.TypeID,
+		Skills:       skillSlots,
+		ChainEffects: chainEffectSlots,
 	}
 
 	// セーブ

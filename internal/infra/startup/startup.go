@@ -179,9 +179,8 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 	// スキル：軽斬撃、応急手当、気合い溜め
 	saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores, "all_rounder")
 
-	saveData.Inventory.UniqueSkills.Skills["physical_strike_lv1"] = []string{}
-	saveData.Inventory.UniqueSkills.Skills["heal_lv1"] = []string{}
-	saveData.Inventory.UniqueSkills.Skills["str_buff_lv1"] = []string{}
+	saveData.Inventory.UniqueSkills.Skills = append(saveData.Inventory.UniqueSkills.Skills,
+		"physical_strike_lv1", "heal_lv1", "str_buff_lv1")
 
 	// 初期エージェントスロット構成
 	// 3スロットにオールラウンダー + 1スキルずつ分散
@@ -238,17 +237,17 @@ func (i *NewGameInitializer) CreateNewGameWithExtraItems() *savedata.SaveData {
 
 	// 追加のスキルをユニークスキルインベントリに追加
 	for _, skill := range extraAgent.Modules {
-		chainEffectID := ""
-		if skill.ChainEffect != nil {
-			chainEffectID = string(skill.ChainEffect.Type)
-		}
-		if saveData.Inventory.UniqueSkills.Skills[skill.TypeID] == nil {
-			saveData.Inventory.UniqueSkills.Skills[skill.TypeID] = []string{}
-		}
-		saveData.Inventory.UniqueSkills.Skills[skill.TypeID] = append(
-			saveData.Inventory.UniqueSkills.Skills[skill.TypeID],
-			chainEffectID,
+		saveData.Inventory.UniqueSkills.Skills = append(
+			saveData.Inventory.UniqueSkills.Skills,
+			skill.TypeID,
 		)
+		// チェイン効果がある場合はチェイン効果インベントリにも追加
+		if skill.ChainEffect != nil {
+			saveData.Inventory.UniqueChainEffects.ChainEffects = append(
+				saveData.Inventory.UniqueChainEffects.ChainEffects,
+				skill.ChainEffect.ID,
+			)
+		}
 	}
 
 	return saveData
