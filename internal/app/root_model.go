@@ -181,6 +181,12 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 	var statusMessage string
 	var loadedSaveData *savedata.SaveData
 
+	initNewGame := func() (*savedata.SaveData, *gamestate.GameState) {
+		initializer := startup.NewNewGameInitializer(externalData)
+		sd := initializer.InitializeNewGame()
+		return sd, gamestate.GameStateFromSaveData(sd, domainSources)
+	}
+
 	if saveFilePath != "" {
 		// 指定されたセーブファイルからロード
 		var loadErr error
@@ -192,9 +198,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		} else {
 			// ロード失敗時は新規ゲームにフォールバック
 			slog.Error("指定セーブファイルの読み込みに失敗", slog.String("path", saveFilePath), slog.Any("error", loadErr))
-			initializer := startup.NewNewGameInitializer(externalData)
-			loadedSaveData = initializer.InitializeNewGame()
-			gs = gamestate.GameStateFromSaveData(loadedSaveData, domainSources)
+			loadedSaveData, gs = initNewGame()
 			statusMessage = "セーブファイルの読み込みに失敗しました。新規ゲームを開始します"
 		}
 	} else if saveDataIO.Exists() {
@@ -205,16 +209,11 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 			statusMessage = "セーブデータをロードしました"
 		} else {
 			// セーブデータの読み込みに失敗した場合、新規ゲームを初期化
-			initializer := startup.NewNewGameInitializer(externalData)
-			loadedSaveData = initializer.InitializeNewGame()
-			gs = gamestate.GameStateFromSaveData(loadedSaveData, domainSources)
+			loadedSaveData, gs = initNewGame()
 			statusMessage = "セーブデータの読み込みに失敗しました。新規ゲームを開始します"
 		}
 	} else {
-		// セーブデータが存在しない場合、新規ゲームを初期化（マスタデータ参照）
-		initializer := startup.NewNewGameInitializer(externalData)
-		loadedSaveData = initializer.InitializeNewGame()
-		gs = gamestate.GameStateFromSaveData(loadedSaveData, domainSources)
+		loadedSaveData, gs = initNewGame()
 		statusMessage = "新規ゲームを開始します"
 	}
 

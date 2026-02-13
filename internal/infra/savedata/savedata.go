@@ -361,6 +361,11 @@ func (io *SaveDataIO) backupFileName(index int) string {
 
 // loadFromFile は指定されたファイルからセーブデータを読み込みます。
 func (io *SaveDataIO) loadFromFile(filePath string) (*SaveData, error) {
+	return loadAndParseSaveFile(filePath)
+}
+
+// loadAndParseSaveFile はファイルの読み込み、JSONパース、バージョン検証を行う共通処理です。
+func loadAndParseSaveFile(filePath string) (*SaveData, error) {
 	jsonData, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("ファイル読み込みに失敗: %w", err)
@@ -371,7 +376,6 @@ func (io *SaveDataIO) loadFromFile(filePath string) (*SaveData, error) {
 		return nil, fmt.Errorf("JSONパースに失敗: %w", err)
 	}
 
-	// バージョンチェック
 	if err := ValidateSaveVersion(data.Version); err != nil {
 		return nil, err
 	}
@@ -382,25 +386,16 @@ func (io *SaveDataIO) loadFromFile(filePath string) (*SaveData, error) {
 // LoadSaveDataFromFile は指定パスからセーブデータを読み込みます。
 // -saveフラグで指定されたテスト用セーブファイルのロードに使用します。
 func LoadSaveDataFromFile(filePath string) (*SaveData, error) {
-	jsonData, err := os.ReadFile(filePath)
+	data, err := loadAndParseSaveFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("ファイル読み込みに失敗: %w", err)
-	}
-
-	var data SaveData
-	if err := json.Unmarshal(jsonData, &data); err != nil {
-		return nil, fmt.Errorf("JSONパースに失敗: %w", err)
-	}
-
-	if err := ValidateSaveVersion(data.Version); err != nil {
 		return nil, err
 	}
 
-	if err := ValidateSaveData(&data); err != nil {
+	if err := ValidateSaveData(data); err != nil {
 		return nil, err
 	}
 
-	return &data, nil
+	return data, nil
 }
 
 // LoadFromBackup は指定したバックアップインデックスからセーブデータを読み込みます。

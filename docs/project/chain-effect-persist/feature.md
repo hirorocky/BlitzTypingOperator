@@ -47,15 +47,17 @@
   → 同エージェント次スキル使用（チェイン効果なし）: ClearEffectForAgent（削除）
 ```
 
-**handleChallengeComplete内の実行順序（変更なし）:**
+**スキル使用時の実行順序（変更なし）:**
 ```
-1. triggerChainEffects(agentIndex, effectFlags)  ← 他エージェントの待機中チェイン効果を発動
-2. スキル効果パイプライン実行
-3. startAgentRecast(agentIndex, module)           ← 新チェイン効果を登録（上書き）or 既存チェイン効果を削除
+1. startAgentRecast(agentIndex, module)           ← スキル選択直後: 新チェイン効果を登録（上書き）or 既存チェイン効果を削除
+2. タイピングチャレンジ実行
+3. handleChallengeComplete:
+   3a. triggerChainEffects(agentIndex, effectFlags) ← 他エージェントの待機中チェイン効果を発動
+   3b. スキル効果パイプライン実行
 ```
 
 ## メモ
 - `battle_view.go`のUI表示条件(`isChainActive`)は現在`pendingChain != nil && pendingChain.Effect.Type == slot.Module.ChainEffect.Type`であり、リキャスト状態をチェックしていない。そのため、`ExpireEffectsForAgent`呼び出しの削除だけで自然にUI表示が維持される
-- `handleChallengeComplete`内の順序は既に正しい（triggerChainEffects → startAgentRecast）ため、Issueの「次のスキル効果を計算するまでは前のチェイン効果が消えない」要件は自動的に満たされる
+- `startAgentRecast`はスキル選択直後（チャレンジ開始前）に呼ばれ、`triggerChainEffects`は`handleChallengeComplete`内で呼ばれる。`startAgentRecast`は使用エージェント自身のチェイン効果のみを操作し、`triggerChainEffects`は他エージェントのチェイン効果を発動するため、互いに干渉しない
 - `ClearAll()`はバトル終了時に呼ばれる既存処理のため影響なし
 - `UpdateRecasts()`で`completedAgents`変数が未使用になるコンパイルエラーに注意。戻り値を受け取らない形`s.recastManager.UpdateRecast(delta)`に変更する

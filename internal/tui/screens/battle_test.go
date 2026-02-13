@@ -1237,6 +1237,53 @@ func TestBattleScreenStartRecastClearsChainEffectForNoChainSkill(t *testing.T) {
 	}
 }
 
+// TestBattleScreenPendingChainEffectTriggersWhenOtherAgentUsesNonChainSkill は、
+// エージェントAがチェイン効果付きスキルを使用した後に、別のエージェントBが非チェインスキルを
+// 使用した際に、エージェントAの待機中チェイン効果が発動して消費されることを検証します。
+func TestBattleScreenPendingChainEffectTriggersWhenOtherAgentUsesNonChainSkill(t *testing.T) {
+	enemy := createTestEnemy()
+	player := createTestPlayer()
+	agents := createTestAgentsWithChainEffectMultiple()
+
+	screen := NewBattleScreen(enemy, player, agents, nil)
+
+	if len(screen.moduleSlots) < 6 {
+		t.Skip("モジュールスロットが足りません")
+	}
+
+	// エージェント0のチェイン効果付きスキル（slot 0: m1）を使用
+	screen.selectedModuleIdx = 0
+	slot0 := screen.moduleSlots[screen.selectedModuleIdx]
+	screen.StartCooldown(screen.selectedModuleIdx, slot0.CooldownTotal)
+	screen.startAgentRecast(slot0.AgentIndex, slot0.Module)
+	screen.handleChallengeComplete(&domain.ChallengeOutput{
+		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+	})
+
+	// チェイン効果が登録されていることを確認
+	if !screen.chainEffectManager.HasPendingEffect(0) {
+		t.Fatal("エージェント0のチェイン効果が登録されていません")
+	}
+
+	// リキャスト完了
+	screen.recastManager.CancelRecast(0)
+
+	// エージェント1の非チェインスキル（slot 5: m6 魔法攻撃2, ChainEffect=nil）を使用
+	screen.selectedModuleIdx = 5
+	screen.selectedAgentIdx = 1
+	slot1 := screen.moduleSlots[screen.selectedModuleIdx]
+	screen.StartCooldown(screen.selectedModuleIdx, slot1.CooldownTotal)
+	screen.startAgentRecast(slot1.AgentIndex, slot1.Module)
+	screen.handleChallengeComplete(&domain.ChallengeOutput{
+		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+	})
+
+	// エージェント0の待機中チェイン効果が発動して消費されていることを確認
+	if screen.chainEffectManager.HasPendingEffect(0) {
+		t.Error("別エージェントの非チェインスキル使用時にエージェント0の待機中チェイン効果が発動・消費されていません")
+	}
+}
+
 // ==================== Task 7.3: 統合フロー検証テスト ====================
 
 // TestBattleScreenModuleRecastChainFlowIntegration はモジュール使用→リキャスト開始→チェイン効果登録の一連フローを検証します。
