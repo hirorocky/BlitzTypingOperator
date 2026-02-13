@@ -69,7 +69,7 @@ func setupTestCustomizationScreen() (*AgentCustomizationScreen, *domain.CoreInve
 	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, chainEffects)
 
 	// インベントリマネージャーを作成
-	invManager := inventory.NewInventoryManagerWithInventories(coreInv, skillInv)
+	invManager := inventory.NewInventoryManagerWithInventories(coreInv, skillInv, nil)
 
 	// カスタマイズ画面を作成
 	screen := NewAgentCustomizationScreen(invManager, slotManager, coreTypes, skillTypes, passiveSkills, chainEffects)
@@ -202,8 +202,8 @@ func TestAgentCustomizationScreen_SkillSelectMode_ShowsCompatibleSkills(t *testi
 	slotManager.SetCore(0, "balance")
 
 	// スキルをインベントリに追加
-	skillInv.AddSkill("strike", "")   // physical タグ
-	skillInv.AddSkill("fireball", "") // magic タグ
+	skillInv.AddSkill("strike")   // physical タグ
+	skillInv.AddSkill("fireball") // magic タグ
 
 	// スキル選択モードに移行
 	screen.focusPosition = 1 // スキルスロット1にフォーカス
@@ -231,8 +231,8 @@ func TestAgentCustomizationScreen_SkillSelectMode_FiltersIncompatibleSkills(t *t
 	slotManager.SetCore(0, "attacker")
 
 	// スキルをインベントリに追加
-	skillInv.AddSkill("strike", "")   // physical タグ - 互換
-	skillInv.AddSkill("fireball", "") // magic タグ - 非互換
+	skillInv.AddSkill("strike")   // physical タグ - 互換
+	skillInv.AddSkill("fireball") // magic タグ - 非互換
 
 	// スキル選択モードに移行
 	screen.focusPosition = 1
@@ -267,7 +267,7 @@ func TestAgentCustomizationScreen_SkillSelectMode_SetsSkillToSlot(t *testing.T) 
 	slotManager.SetCore(0, "balance")
 
 	// スキルを追加
-	skillInv.AddSkill("strike", "")
+	skillInv.AddSkill("strike")
 
 	// スキル選択モードに移行
 	screen.selectedSlotIndex = 0
@@ -294,8 +294,8 @@ func TestAgentCustomizationScreen_SkillSelectMode_ChainEffectVariationSelection(
 	slotManager.SetCore(0, "balance")
 
 	// チェイン効果付きスキルを追加
-	skillInv.AddSkill("strike", "chain_damage_boost")
-	skillInv.AddSkill("strike", "chain_heal")
+	skillInv.AddSkill("strike")
+	skillInv.AddSkill("strike")
 
 	// スキル選択モードに移行
 	screen.selectedSlotIndex = 0
@@ -341,8 +341,8 @@ func TestAgentCustomizationScreen_ClearSkill(t *testing.T) {
 	// コアとスキルを設定
 	coreInv.AddCore("balance")
 	slotManager.SetCore(0, "balance")
-	skillInv.AddSkill("strike", "")
-	slotManager.SetSkill(0, 0, "strike", "")
+	skillInv.AddSkill("strike")
+	slotManager.SetSkill(0, 0, "strike")
 
 	// スキルスロット1にフォーカス
 	screen.selectedSlotIndex = 0
@@ -387,8 +387,8 @@ func TestAgentCustomizationScreen_ShowsCompatibilityIndicator(t *testing.T) {
 	slotManager.SetCore(0, "attacker")
 
 	// スキルを追加
-	skillInv.AddSkill("strike", "")   // 互換
-	skillInv.AddSkill("fireball", "") // 非互換（magicタグ）
+	skillInv.AddSkill("strike")   // 互換
+	skillInv.AddSkill("fireball") // 非互換（magicタグ）
 
 	// スキル選択モードに移行
 	screen.focusPosition = 1

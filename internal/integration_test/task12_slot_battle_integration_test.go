@@ -131,8 +131,8 @@ func TestSlotBattle_BuildAgentsForBattle_SingleAgent(t *testing.T) {
 
 	// コアとスキルを追加
 	invManager.AddCore("warrior")
-	invManager.AddSkill("slash", "")
-	invManager.AddSkill("heavy_strike", "")
+	invManager.AddSkill("slash")
+	invManager.AddSkill("heavy_strike")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -146,8 +146,8 @@ func TestSlotBattle_BuildAgentsForBattle_SingleAgent(t *testing.T) {
 
 	// スロット0にコアとスキルを設定
 	slotManager.SetCore(0, "warrior")
-	slotManager.SetSkill(0, 0, "slash", "")
-	slotManager.SetSkill(0, 1, "heavy_strike", "")
+	slotManager.SetSkill(0, 0, "slash")
+	slotManager.SetSkill(0, 1, "heavy_strike")
 
 	// バトル用エージェントを構築
 	agents := slotManager.BuildAgentsForBattle()
@@ -189,9 +189,9 @@ func TestSlotBattle_BuildAgentsForBattle_MultipleAgents(t *testing.T) {
 	invManager.AddCore("warrior")
 	invManager.AddCore("mage")
 	invManager.AddCore("support")
-	invManager.AddSkill("slash", "")
-	invManager.AddSkill("fire", "")
-	invManager.AddSkill("cure", "")
+	invManager.AddSkill("slash")
+	invManager.AddSkill("fire")
+	invManager.AddSkill("cure")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -205,13 +205,13 @@ func TestSlotBattle_BuildAgentsForBattle_MultipleAgents(t *testing.T) {
 
 	// 全スロットにコアとスキルを設定
 	slotManager.SetCore(0, "warrior")
-	slotManager.SetSkill(0, 0, "slash", "")
+	slotManager.SetSkill(0, 0, "slash")
 
 	slotManager.SetCore(1, "mage")
-	slotManager.SetSkill(1, 0, "fire", "")
+	slotManager.SetSkill(1, 0, "fire")
 
 	slotManager.SetCore(2, "support")
-	slotManager.SetSkill(2, 0, "cure", "")
+	slotManager.SetSkill(2, 0, "cure")
 
 	// バトル用エージェントを構築
 	agents := slotManager.BuildAgentsForBattle()
@@ -341,8 +341,8 @@ func TestSlotBattle_SlotUpdateReflectsOnBattle(t *testing.T) {
 	// コアとスキルを追加
 	invManager.AddCore("warrior")
 	invManager.AddCore("mage")
-	invManager.AddSkill("slash", "")
-	invManager.AddSkill("fire", "")
+	invManager.AddSkill("slash")
+	invManager.AddSkill("fire")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -356,7 +356,7 @@ func TestSlotBattle_SlotUpdateReflectsOnBattle(t *testing.T) {
 
 	// 初期設定：ウォーリアー
 	slotManager.SetCore(0, "warrior")
-	slotManager.SetSkill(0, 0, "slash", "")
+	slotManager.SetSkill(0, 0, "slash")
 
 	// バトル用エージェントを構築（初回）
 	agents1 := slotManager.BuildAgentsForBattle()
@@ -366,7 +366,7 @@ func TestSlotBattle_SlotUpdateReflectsOnBattle(t *testing.T) {
 
 	// スロット設定を変更：メイジに
 	slotManager.SetCore(0, "mage")
-	slotManager.SetSkill(0, 0, "fire", "")
+	slotManager.SetSkill(0, 0, "fire")
 
 	// バトル用エージェントを再構築
 	agents2 := slotManager.BuildAgentsForBattle()
@@ -430,8 +430,8 @@ func TestSlotBattle_SkillChangeReflectsOnBattle(t *testing.T) {
 
 	// コアとスキルを追加
 	invManager.AddCore("warrior")
-	invManager.AddSkill("slash", "")
-	invManager.AddSkill("heavy_strike", "")
+	invManager.AddSkill("slash")
+	invManager.AddSkill("heavy_strike")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -445,7 +445,7 @@ func TestSlotBattle_SkillChangeReflectsOnBattle(t *testing.T) {
 
 	// 初期設定：slashのみ
 	slotManager.SetCore(0, "warrior")
-	slotManager.SetSkill(0, 0, "slash", "")
+	slotManager.SetSkill(0, 0, "slash")
 
 	// バトル用エージェントを構築
 	agents1 := slotManager.BuildAgentsForBattle()
@@ -454,7 +454,7 @@ func TestSlotBattle_SkillChangeReflectsOnBattle(t *testing.T) {
 	}
 
 	// スキルを追加
-	slotManager.SetSkill(0, 1, "heavy_strike", "")
+	slotManager.SetSkill(0, 1, "heavy_strike")
 
 	// バトル用エージェントを再構築
 	agents2 := slotManager.BuildAgentsForBattle()
@@ -473,8 +473,9 @@ func TestSlotBattle_ClearSlotReflectsOnBattle(t *testing.T) {
 	skillTypes := createBattleTestSkillTypes()
 	passiveSkills := createBattleTestPassiveSkills()
 
-	// コアを追加
+	// 異なるコアを追加
 	invManager.AddCore("warrior")
+	invManager.AddCore("mage")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -486,9 +487,9 @@ func TestSlotBattle_ClearSlotReflectsOnBattle(t *testing.T) {
 		nil, // chainEffects
 	)
 
-	// 初期設定
+	// 異なるコアで初期設定
 	slotManager.SetCore(0, "warrior")
-	slotManager.SetCore(1, "warrior")
+	slotManager.SetCore(1, "mage")
 
 	// バトル用エージェントを構築
 	agents1 := slotManager.BuildAgentsForBattle()
@@ -521,8 +522,8 @@ func TestSlotBattle_LockDuringBattle(t *testing.T) {
 	// コアとスキルを追加
 	invManager.AddCore("warrior")
 	invManager.AddCore("mage")
-	invManager.AddSkill("slash", "")
-	invManager.AddSkill("fire", "")
+	invManager.AddSkill("slash")
+	invManager.AddSkill("fire")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -536,7 +537,7 @@ func TestSlotBattle_LockDuringBattle(t *testing.T) {
 
 	// 初期設定
 	slotManager.SetCore(0, "warrior")
-	slotManager.SetSkill(0, 0, "slash", "")
+	slotManager.SetSkill(0, 0, "slash")
 
 	// バトル開始：ロック
 	slotManager.Lock()
@@ -553,7 +554,7 @@ func TestSlotBattle_LockDuringBattle(t *testing.T) {
 	}
 
 	// ロック中のスキル設定はエラー
-	err = slotManager.SetSkill(0, 1, "fire", "")
+	err = slotManager.SetSkill(0, 1, "fire")
 	if err != slot.ErrSlotLocked {
 		t.Errorf("ロック中のSetSkillはErrSlotLockedを返すべき: got %v", err)
 	}

@@ -85,13 +85,11 @@ type CoreInventoryItem struct {
 
 // SkillInventoryItem はスキル一覧の表示アイテムです。
 type SkillInventoryItem struct {
-	TypeID          string
-	TypeName        string
-	Icon            string
-	ChainCount      int      // 利用可能なチェイン効果バリエーション数
-	ChainVariations []string // チェイン効果IDリスト
-	IsEquipped      bool     // いずれかのスロットに装備中か
-	EquippedSlots   []int    // 装備中のスロット番号リスト
+	TypeID        string
+	TypeName      string
+	Icon          string
+	IsEquipped    bool  // いずれかのスロットに装備中か
+	EquippedSlots []int // 装備中のスロット番号リスト
 }
 
 // NewInventoryScreen は新しいInventoryScreenを作成します。
@@ -278,8 +276,6 @@ func (s *InventoryScreen) updateSkillList() {
 
 	// リストを構築
 	for _, typeID := range typeIDs {
-		ownership := ownedSkills[typeID]
-
 		// スキルタイプ情報を取得
 		typeName := typeID
 		icon := "?"
@@ -288,20 +284,15 @@ func (s *InventoryScreen) updateSkillList() {
 			icon = skillType.Icon
 		}
 
-		// チェイン効果バリエーションを取得
-		chainVariations := ownership.GetChainVariations()
-
 		// 装備状況を確認
 		equippedSlots := equippedSkills[typeID]
 
 		item := SkillInventoryItem{
-			TypeID:          typeID,
-			TypeName:        typeName,
-			Icon:            icon,
-			ChainCount:      len(chainVariations),
-			ChainVariations: chainVariations,
-			IsEquipped:      len(equippedSlots) > 0,
-			EquippedSlots:   equippedSlots,
+			TypeID:        typeID,
+			TypeName:      typeName,
+			Icon:          icon,
+			IsEquipped:    len(equippedSlots) > 0,
+			EquippedSlots: equippedSlots,
 		}
 		s.skillList = append(s.skillList, item)
 	}
@@ -619,20 +610,9 @@ func (s *InventoryScreen) renderSkillListItems() string {
 			equipMark = fmt.Sprintf(" [E%s]", strings.Join(slots, ","))
 		}
 
-		// チェイン効果バリエーション数
-		chainInfo := ""
-		if skill.ChainCount > 0 {
-			chainInfo = fmt.Sprintf("(%d種)", skill.ChainCount)
-		}
-
-		// アイコン + スキル名 + チェイン情報 + 装備マーカーを構成
+		// アイコン + スキル名 + 装備マーカーを構成
 		icon := normalizeInventoryIcon(skill.Icon)
-		var itemContent string
-		if chainInfo != "" {
-			itemContent = fmt.Sprintf("%s %s %s%s", icon, skill.TypeName, chainInfo, equipMark)
-		} else {
-			itemContent = fmt.Sprintf("%s %s%s", icon, skill.TypeName, equipMark)
-		}
+		itemContent := fmt.Sprintf("%s %s%s", icon, skill.TypeName, equipMark)
 
 		// プレフィックスを含めた全体の内容を作成し、表示幅で切り詰め後パディング
 		fullContent := prefix + itemContent
@@ -656,8 +636,6 @@ func (s *InventoryScreen) renderSkillPreviewContent() string {
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary)
 	labelStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
 	valueStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary)
-	chainStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff)
-
 	builder.WriteString(titleStyle.Render(normalizeInventoryIcon(skill.Icon) + " " + skill.TypeName))
 	builder.WriteString("\n\n")
 
@@ -674,29 +652,6 @@ func (s *InventoryScreen) renderSkillPreviewContent() string {
 		if skillType.Description != "" {
 			builder.WriteString(labelStyle.Render("説明: "))
 			builder.WriteString(valueStyle.Render(skillType.Description))
-			builder.WriteString("\n")
-		}
-	}
-
-	// チェイン効果バリエーション
-	builder.WriteString("\n")
-	builder.WriteString(labelStyle.Render("チェイン効果バリエーション:"))
-	builder.WriteString("\n")
-
-	if len(skill.ChainVariations) == 0 {
-		builder.WriteString(labelStyle.Render("  (なし)"))
-		builder.WriteString("\n")
-	} else {
-		// 詳細表示モードかどうかで表示を切り替え
-		if s.showingSkillDetail {
-			for _, chainID := range skill.ChainVariations {
-				builder.WriteString(chainStyle.Render(fmt.Sprintf("  - %s", chainID)))
-				builder.WriteString("\n")
-			}
-		} else {
-			builder.WriteString(chainStyle.Render(fmt.Sprintf("  %d種類の効果を保有", len(skill.ChainVariations))))
-			builder.WriteString("\n")
-			builder.WriteString(labelStyle.Render("  (Enterで詳細表示)"))
 			builder.WriteString("\n")
 		}
 	}

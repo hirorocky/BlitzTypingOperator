@@ -57,7 +57,7 @@ func TestInventoryProviderAdapter_WithData(t *testing.T) {
 	coreInv.AddCore("warrior")
 
 	// スキルを追加
-	skillInv.AddSkill("slash", "")
+	skillInv.AddSkill("slash")
 
 	// マスタデータを設定
 	coreTypes := map[string]domain.CoreType{
@@ -87,7 +87,7 @@ func TestInventoryProviderAdapter_WithData(t *testing.T) {
 
 	// スロットにコアを設定
 	_ = slotMgr.SetCore(0, "warrior")
-	_ = slotMgr.SetSkill(0, 0, "slash", "")
+	_ = slotMgr.SetSkill(0, 0, "slash")
 
 	adapter := NewInventoryProviderAdapter(slotMgr)
 

@@ -53,12 +53,10 @@ type CoreSelectItem struct {
 
 // SkillSelectItem はスキル選択リストの表示アイテムです。
 type SkillSelectItem struct {
-	TypeID          string
-	TypeName        string
-	Icon            string
-	IsCompatible    bool
-	ChainCount      int
-	ChainVariations []string
+	TypeID       string
+	TypeName     string
+	Icon         string
+	IsCompatible bool
 }
 
 // ==================== AgentCustomizationScreen ====================
@@ -356,7 +354,7 @@ func (s *AgentCustomizationScreen) updateSkillList() {
 
 	// リストを構築
 	for _, typeID := range compatibleSkillIDs {
-		ownership, exists := ownedSkills[typeID]
+		_, exists := ownedSkills[typeID]
 		if !exists {
 			continue
 		}
@@ -369,16 +367,11 @@ func (s *AgentCustomizationScreen) updateSkillList() {
 			icon = skillType.Icon
 		}
 
-		// チェイン効果バリエーションを取得
-		chainVariations := ownership.GetChainVariations()
-
 		item := SkillSelectItem{
-			TypeID:          typeID,
-			TypeName:        typeName,
-			Icon:            icon,
-			IsCompatible:    true,
-			ChainCount:      len(chainVariations),
-			ChainVariations: chainVariations,
+			TypeID:       typeID,
+			TypeName:     typeName,
+			Icon:         icon,
+			IsCompatible: true,
 		}
 		s.compatibleSkillList = append(s.compatibleSkillList, item)
 	}
@@ -400,16 +393,7 @@ func (s *AgentCustomizationScreen) handleSkillSelectKey(msg tea.KeyMsg) (tea.Mod
 		if s.selectedSkillIndex < len(s.compatibleSkillList) {
 			skill := s.compatibleSkillList[s.selectedSkillIndex]
 			s.selectedSkillTypeID = skill.TypeID
-
-			// チェイン効果バリエーションがある場合は選択モードへ
-			if len(skill.ChainVariations) > 0 {
-				s.chainVariationList = skill.ChainVariations
-				s.selectedChainIndex = 0
-				s.currentMode = ModeChainSelect
-			} else {
-				// チェイン効果なしで直接設定
-				s.setSkillToSlot("")
-			}
+			s.setSkillToSlot()
 		}
 	}
 
@@ -447,22 +431,16 @@ func (s *AgentCustomizationScreen) handleChainSelectKey(msg tea.KeyMsg) (tea.Mod
 			s.selectedChainIndex++
 		}
 	case "enter":
-		var chainEffectID string
-		if s.selectedChainIndex < len(s.chainVariationList) {
-			chainEffectID = s.chainVariationList[s.selectedChainIndex]
-		} else {
-			chainEffectID = "" // 「なし」を選択
-		}
-		s.setSkillToSlot(chainEffectID)
+		s.setSkillToSlot()
 	}
 
 	return s, nil
 }
 
 // setSkillToSlot はスキルをスロットに設定します。
-func (s *AgentCustomizationScreen) setSkillToSlot(chainEffectID string) {
+func (s *AgentCustomizationScreen) setSkillToSlot() {
 	skillSlotIndex := s.getSelectedSkillSlotIndex()
-	if err := s.slotManager.SetSkill(s.selectedSlotIndex, skillSlotIndex, s.selectedSkillTypeID, chainEffectID); err != nil {
+	if err := s.slotManager.SetSkill(s.selectedSlotIndex, skillSlotIndex, s.selectedSkillTypeID); err != nil {
 		s.errorMessage = fmt.Sprintf("スキル設定に失敗: %v", err)
 	} else {
 		s.statusMessage = "スキルを設定しました"
@@ -631,18 +609,17 @@ func (s *AgentCustomizationScreen) renderAgentCard(slotIndex int, isSelected boo
 			cardContent.WriteString("\n")
 
 			// チェイン効果表示（2行目）
-			if skillConfig != nil && !skillConfig.IsEmpty() && skillConfig.ChainEffectID != "" {
-				// チェイン効果の短い説明を表示
+			chainEffectCfg := agentSlot.GetChainEffect(j)
+			if chainEffectCfg != nil && !chainEffectCfg.IsEmpty() {
 				chainStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff)
-				chainText := skillConfig.ChainEffectID
-				if ce, ok := s.chainEffects[skillConfig.ChainEffectID]; ok {
+				chainText := chainEffectCfg.TypeID
+				if ce, ok := s.chainEffects[chainEffectCfg.TypeID]; ok {
 					chainText = ce.ShortDescription
 				}
 				cardContent.WriteString("    ")
 				cardContent.WriteString(chainStyle.Render(fmt.Sprintf("[%s]", chainText)))
 				cardContent.WriteString("\n")
 			} else {
-				// チェイン効果がない場合は空行
 				cardContent.WriteString("\n")
 			}
 		}
@@ -918,11 +895,7 @@ func (s *AgentCustomizationScreen) renderSkillDetail() string {
 		builder.WriteString(labelStyle.Render(skillType.Description))
 		builder.WriteString("\n\n")
 
-		// チェイン効果情報
-		if len(skill.ChainVariations) > 0 {
-			chainStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff)
-			builder.WriteString(chainStyle.Render(fmt.Sprintf("🔗 %d種のチェイン効果あり", len(skill.ChainVariations))))
-		}
+		// チェイン効果情報はチェイン効果タブで確認
 	}
 
 	return builder.String()

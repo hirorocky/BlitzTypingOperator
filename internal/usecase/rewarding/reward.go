@@ -636,16 +636,11 @@ func AddRewardsToInventory(
 		}
 	}
 
-	// モジュール（スキル）をインベントリに追加（TypeID + ChainEffectID）
+	// モジュール（スキル）をインベントリに追加
 	for _, module := range result.DroppedModules {
-		chainEffectID := ""
-		if module.HasChainEffect() {
-			chainEffectID = module.ChainEffect.ID
-		}
-		skillInv.AddSkill(module.TypeID, chainEffectID)
+		skillInv.AddSkill(module.TypeID)
 		slog.Info("スキルをインベントリに追加",
 			slog.String("skill_type_id", module.TypeID),
-			slog.String("chain_effect_id", chainEffectID),
 		)
 	}
 

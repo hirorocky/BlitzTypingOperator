@@ -243,16 +243,8 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 
 		// UniqueSkillsを復元
 		if loadedSaveData.Inventory.UniqueSkills != nil && loadedSaveData.Inventory.UniqueSkills.Skills != nil {
-			for typeID, chainVariations := range loadedSaveData.Inventory.UniqueSkills.Skills {
-				if len(chainVariations) == 0 {
-					// チェイン効果がない場合でもスキルを保有状態にする
-					invManager.AddSkill(typeID, "")
-				} else {
-					// 各チェイン効果バリエーションを復元
-					for _, chainID := range chainVariations {
-						invManager.AddSkill(typeID, chainID)
-					}
-				}
+			for typeID := range loadedSaveData.Inventory.UniqueSkills.Skills {
+				invManager.AddSkill(typeID)
 			}
 		}
 	}
@@ -265,14 +257,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		}
 		// 全スキルを追加
 		for _, mt := range externalData.ModuleDefinitions {
-			invManager.AddSkill(mt.ID, "")
-		}
-		// 全チェイン効果バリエーションを追加
-		for _, ce := range chainEffects {
-			// 各スキルに対してチェイン効果を追加
-			for _, mt := range externalData.ModuleDefinitions {
-				invManager.AddSkill(mt.ID, ce.ID)
-			}
+			invManager.AddSkill(mt.ID)
 		}
 		slog.Info("デバッグモード: 全コア・スキルを追加",
 			slog.Int("cores", len(externalData.CoreTypes)),
@@ -341,7 +326,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 				if skillSlotSave.TypeID == "" {
 					continue
 				}
-				if err := slotManager.SetSkill(i, j, skillSlotSave.TypeID, skillSlotSave.ChainEffectID); err != nil {
+				if err := slotManager.SetSkill(i, j, skillSlotSave.TypeID); err != nil {
 					slog.Warn("スロット復元時にスキル設定に失敗",
 						slog.Int("slot", i),
 						slog.Int("skillSlot", j),
@@ -608,8 +593,8 @@ func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 		}
 	}
 	ownedSkills := m.invManager.Skills().GetOwnedSkills()
-	for typeID, ownership := range ownedSkills {
-		saveData.Inventory.UniqueSkills.Skills[typeID] = ownership.GetChainVariations()
+	for typeID := range ownedSkills {
+		saveData.Inventory.UniqueSkills.Skills[typeID] = []string{}
 	}
 
 	// AgentSlotsを追加（3スロットの構成）
@@ -629,8 +614,7 @@ func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 			skillConfig := agentSlot.GetSkill(j)
 			if skillConfig != nil && !skillConfig.IsEmpty() {
 				slotSave.Skills[j] = savedata.SkillSlotSaveCfg{
-					TypeID:        skillConfig.TypeID,
-					ChainEffectID: skillConfig.ChainEffectID,
+					TypeID: skillConfig.TypeID,
 				}
 			}
 		}

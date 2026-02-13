@@ -69,8 +69,8 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		invMgr.AddCore("mage")
 
 		// スキルを追加
-		invMgr.AddSkill("slash", "")
-		invMgr.AddSkill("fireball", "chain_damage")
+		invMgr.AddSkill("slash")
+		invMgr.AddSkill("fireball")
 
 		// AgentSlotManagerを作成
 		slotMgr := slot.NewAgentSlotManager(
@@ -89,7 +89,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		}
 
 		// スキルを設定
-		err = slotMgr.SetSkill(0, 0, "slash", "")
+		err = slotMgr.SetSkill(0, 0, "slash")
 		if err != nil {
 			t.Fatalf("SetSkillに失敗: %v", err)
 		}
@@ -108,7 +108,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		invMgr.AddCore("warrior")
 
 		// スキルを追加
-		invMgr.AddSkill("slash", "")
+		invMgr.AddSkill("slash")
 
 		// AgentSlotManagerを作成
 		slotMgr := slot.NewAgentSlotManager(
@@ -122,7 +122,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 
 		// コアとスキルを設定
 		_ = slotMgr.SetCore(0, "warrior")
-		_ = slotMgr.SetSkill(0, 0, "slash", "")
+		_ = slotMgr.SetSkill(0, 0, "slash")
 
 		// バトル用エージェントを構築（旧システムのGetEquippedAgentsに相当）
 		agents := slotMgr.BuildAgentsForBattle()
@@ -149,8 +149,8 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		invMgr.AddCore("mage")
 
 		// スキルを追加
-		invMgr.AddSkill("slash", "")
-		invMgr.AddSkill("fireball", "")
+		invMgr.AddSkill("slash")
+		invMgr.AddSkill("fireball")
 
 		// AgentSlotManagerを作成
 		slotMgr := slot.NewAgentSlotManager(
@@ -164,11 +164,11 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 
 		// スロット0にウォリアーを設定
 		_ = slotMgr.SetCore(0, "warrior")
-		_ = slotMgr.SetSkill(0, 0, "slash", "")
+		_ = slotMgr.SetSkill(0, 0, "slash")
 
 		// スロット1にメイジを設定
 		_ = slotMgr.SetCore(1, "mage")
-		_ = slotMgr.SetSkill(1, 0, "fireball", "")
+		_ = slotMgr.SetSkill(1, 0, "fireball")
 
 		// バトル用エージェントを構築
 		agents := slotMgr.BuildAgentsForBattle()
@@ -191,7 +191,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 		invMgr.AddCore("warrior")
 
 		// スキルを追加
-		invMgr.AddSkill("slash", "")
+		invMgr.AddSkill("slash")
 
 		// AgentSlotManagerを作成
 		slotMgr := slot.NewAgentSlotManager(
@@ -205,7 +205,7 @@ func TestTask11_NewSystemCanReplaceOldSystem(t *testing.T) {
 
 		// スロット1にのみ設定（スロット0は空）
 		_ = slotMgr.SetCore(1, "warrior")
-		_ = slotMgr.SetSkill(1, 0, "slash", "")
+		_ = slotMgr.SetSkill(1, 0, "slash")
 
 		// バトル用エージェントを構築
 		agents := slotMgr.BuildAgentsForBattle()
@@ -257,22 +257,19 @@ func TestTask11_InventoryManagerUniqueness(t *testing.T) {
 		}
 	})
 
-	t.Run("スキルのチェイン効果バリエーションが蓄積される", func(t *testing.T) {
+	t.Run("同一TypeIDのスキルは重複追加されない", func(t *testing.T) {
 		invMgr := inventory.NewInventoryManager()
 
-		// チェイン効果なしのスキルを追加
-		invMgr.AddSkill("slash", "")
+		// スキルを追加
+		invMgr.AddSkill("slash")
 
-		// チェイン効果付きのスキルを追加
-		invMgr.AddSkill("slash", "chain_damage")
-		invMgr.AddSkill("slash", "chain_heal")
+		// 同じスキルを再度追加
+		invMgr.AddSkill("slash")
+		invMgr.AddSkill("slash")
 
-		// チェイン効果バリエーションを確認
-		variations := invMgr.Skills().GetChainVariations("slash")
-
-		// 空文字列は含まれないので、chain_damageとchain_healの2つ
-		if len(variations) != 2 {
-			t.Errorf("チェイン効果バリエーション数が不正: got %d, want 2", len(variations))
+		// スキルが保有されていることを確認
+		if !invMgr.Skills().HasSkill("slash") {
+			t.Error("スキルが保有されているべき")
 		}
 	})
 }

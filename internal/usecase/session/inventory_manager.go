@@ -40,8 +40,8 @@ func (m *InventoryManager) AddCore(typeID string) bool {
 }
 
 // AddSkill はスキルをインベントリに追加します。
-func (m *InventoryManager) AddSkill(typeID string, chainEffectID string) {
-	m.skills.AddSkill(typeID, chainEffectID)
+func (m *InventoryManager) AddSkill(typeID string) {
+	m.skills.AddSkill(typeID)
 }
 
 // GetOwnedCores は保有しているコアのTypeIDリストを返します。

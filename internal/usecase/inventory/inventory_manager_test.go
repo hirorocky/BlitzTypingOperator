@@ -65,56 +65,28 @@ func TestInventoryManager_AddCore_Duplicate(t *testing.T) {
 func TestInventoryManager_AddSkill_NewSkill(t *testing.T) {
 	manager := NewInventoryManager()
 
-	// 新規スキル追加（チェイン効果あり）
-	manager.AddSkill("skill_slash", "chain_fire")
+	// 新規スキル追加
+	manager.AddSkill("skill_slash")
 
 	// 追加されたことを確認
 	if !manager.Skills().HasSkill("skill_slash") {
 		t.Error("Skill should exist after AddSkill")
 	}
-
-	// チェイン効果が登録されていることを確認
-	if !manager.Skills().HasChainVariation("skill_slash", "chain_fire") {
-		t.Error("Chain variation should exist after AddSkill")
-	}
 }
 
-// TestInventoryManager_AddSkill_WithoutChainEffect はチェイン効果なしスキルのテストです。
-func TestInventoryManager_AddSkill_WithoutChainEffect(t *testing.T) {
-	manager := NewInventoryManager()
-
-	// チェイン効果なしでスキル追加
-	manager.AddSkill("skill_heal", "")
-
-	// 追加されたことを確認
-	if !manager.Skills().HasSkill("skill_heal") {
-		t.Error("Skill should exist after AddSkill")
-	}
-
-	// チェイン効果は空のはず
-	variations := manager.Skills().GetChainVariations("skill_heal")
-	if len(variations) != 0 {
-		t.Errorf("GetChainVariations() should return empty slice, got %v", variations)
-	}
-}
-
-// TestInventoryManager_AddSkill_AdditionalChainEffect は追加チェイン効果のテストです。
-func TestInventoryManager_AddSkill_AdditionalChainEffect(t *testing.T) {
+// TestInventoryManager_AddSkill_Duplicate は重複スキル追加のテストです。
+func TestInventoryManager_AddSkill_Duplicate(t *testing.T) {
 	manager := NewInventoryManager()
 
 	// 最初のスキル追加
-	manager.AddSkill("skill_slash", "chain_fire")
+	manager.AddSkill("skill_slash")
 
-	// 同じスキルに別のチェイン効果を追加
-	manager.AddSkill("skill_slash", "chain_ice")
+	// 同じスキルを再度追加（更新されないはず）
+	manager.AddSkill("skill_slash")
 
-	// 両方のチェイン効果が登録されていることを確認
-	if !manager.Skills().HasChainVariation("skill_slash", "chain_fire") {
-		t.Error("First chain variation should exist")
-	}
-
-	if !manager.Skills().HasChainVariation("skill_slash", "chain_ice") {
-		t.Error("Second chain variation should exist")
+	// 保有していることを確認
+	if !manager.Skills().HasSkill("skill_slash") {
+		t.Error("Skill should still exist after duplicate AddSkill")
 	}
 }
 
@@ -154,9 +126,9 @@ func TestInventoryManager_GetOwnedSkillTypes(t *testing.T) {
 	manager := NewInventoryManager()
 
 	// 複数のスキルを追加
-	manager.AddSkill("skill_slash", "chain_fire")
-	manager.AddSkill("skill_heal", "")
-	manager.AddSkill("skill_guard", "chain_shield")
+	manager.AddSkill("skill_slash")
+	manager.AddSkill("skill_heal")
+	manager.AddSkill("skill_guard")
 
 	// TypeID一覧を取得
 	typeIDs := manager.GetOwnedSkillTypes()
@@ -202,10 +174,50 @@ func TestInventoryManager_GetOwnedSkillTypes_Empty(t *testing.T) {
 	}
 }
 
+// 受け入れ基準3: InventoryManagerの3インベントリ統合
+func TestInventoryManager_ChainEffects(t *testing.T) {
+	t.Run("NewInventoryManagerはChainEffectsを返す", func(t *testing.T) {
+		manager := NewInventoryManager()
+		if manager.ChainEffects() == nil {
+			t.Error("ChainEffects() should not be nil")
+		}
+	})
+
+	t.Run("AddChainEffectで追加できる", func(t *testing.T) {
+		manager := NewInventoryManager()
+
+		added := manager.AddChainEffect("damage_bonus")
+		if !added {
+			t.Error("AddChainEffect() should return true for new effect")
+		}
+
+		if !manager.ChainEffects().HasChainEffect("damage_bonus") {
+			t.Error("ChainEffect should exist after AddChainEffect")
+		}
+	})
+
+	t.Run("重複追加はfalseを返す", func(t *testing.T) {
+		manager := NewInventoryManager()
+
+		manager.AddChainEffect("damage_bonus")
+		added := manager.AddChainEffect("damage_bonus")
+		if added {
+			t.Error("AddChainEffect() should return false for duplicate")
+		}
+	})
+
+	t.Run("NewInventoryManagerWithInventoriesでChainEffectInventoryを受け取る", func(t *testing.T) {
+		manager := NewInventoryManagerWithInventories(nil, nil, nil)
+		if manager.ChainEffects() == nil {
+			t.Error("ChainEffects() should not be nil even with nil input")
+		}
+	})
+}
+
 // TestInventoryManager_LoadFromSaveData はセーブデータからの復元をテストします。
 func TestInventoryManager_LoadFromSaveData(t *testing.T) {
 	// コアインベントリとスキルインベントリを事前に準備
-	manager := NewInventoryManagerWithInventories(nil, nil)
+	manager := NewInventoryManagerWithInventories(nil, nil, nil)
 
 	if manager == nil {
 		t.Fatal("NewInventoryManagerWithInventories() returned nil")
