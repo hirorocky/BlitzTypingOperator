@@ -34,21 +34,13 @@ const (
 	ModeChainSelect
 )
 
-// 旧モード定義のエイリアス（後方互換性のため）
-const (
-	CustomizationModeSlotSelect      = ModeCardSelect
-	CustomizationModeCoreSelect      = ModeCoreSelect
-	CustomizationModeSkillSlotSelect = ModeCardSelect // スキルスロット選択はカード選択に統合
-	CustomizationModeSkillSelect     = ModeSkillSelect
-	CustomizationModeChainSelect     = ModeChainSelect
-)
-
 // ==================== 表示用アイテム定義 ====================
 
 // CoreSelectItem はコア選択リストの表示アイテムです。
 type CoreSelectItem struct {
-	TypeID   string
-	TypeName string
+	TypeID              string
+	TypeName            string
+	IsEquippedElsewhere bool
 }
 
 // SkillSelectItem はスキル選択リストの表示アイテムです。
@@ -57,6 +49,13 @@ type SkillSelectItem struct {
 	TypeName     string
 	Icon         string
 	IsCompatible bool
+}
+
+// ChainEffectSelectItem はチェイン効果選択リストの表示アイテムです。
+type ChainEffectSelectItem struct {
+	TypeID              string
+	ShortDescription    string
+	IsEquippedElsewhere bool
 }
 
 // ==================== AgentCustomizationScreen ====================
@@ -82,7 +81,9 @@ type AgentCustomizationScreen struct {
 	// スロット選択
 	selectedSlotIndex int
 
-	// カード内フォーカス位置（0=コア、1-4=スキルスロット）
+	// カード内フォーカス位置
+	// 0=コア、奇数=スキル(1,3,5,7)、偶数(2,4,6,8)=チェイン効果
+	// スキルインデックス: (focusPosition-1)/2、チェインインデックス: (focusPosition-2)/2
 	focusPosition int
 
 	// コア選択
@@ -95,7 +96,7 @@ type AgentCustomizationScreen struct {
 	selectedSkillTypeID string
 
 	// チェイン効果選択
-	chainVariationList []string
+	chainEffectList    []ChainEffectSelectItem
 	selectedChainIndex int
 
 	// スタイル
@@ -199,7 +200,8 @@ func (s *AgentCustomizationScreen) handleCardSelectKey(msg tea.KeyMsg) (tea.Mode
 		// コアが設定されていない場合はコア位置から動かさない
 		currentSlot := s.slotManager.GetSlot(s.selectedSlotIndex)
 		if currentSlot != nil && !currentSlot.IsEmpty() {
-			if s.focusPosition < domain.MaxSkillSlotCount {
+			maxPos := 2 * domain.MaxSkillSlotCount // 8
+			if s.focusPosition < maxPos {
 				s.focusPosition++
 			}
 		}
@@ -208,23 +210,28 @@ func (s *AgentCustomizationScreen) handleCardSelectKey(msg tea.KeyMsg) (tea.Mode
 		if s.focusPosition == 0 {
 			// コア選択
 			s.enterCoreSelectMode()
+		} else if s.isChainFocusPosition() {
+			// チェイン効果選択（独立フロー）
+			s.enterChainSelectMode()
 		} else {
 			// スキル選択
 			currentSlot := s.slotManager.GetSlot(s.selectedSlotIndex)
 			if currentSlot != nil && !currentSlot.IsEmpty() {
-				s.enterSkillSelectMode(s.focusPosition - 1)
+				s.enterSkillSelectMode(s.getSelectedSkillSlotIndex())
 			} else {
 				s.errorMessage = "先にコアを設定してください"
 			}
 		}
 	case "delete", "backspace", "d":
-		// 選択中のコア/スキルを外す
+		// 選択中のコア/スキル/チェイン効果を外す
 		if s.focusPosition == 0 {
 			s.clearCurrentSlotCore()
+		} else if s.isChainFocusPosition() {
+			s.clearChainEffectSlot()
 		} else {
 			currentSlot := s.slotManager.GetSlot(s.selectedSlotIndex)
 			if currentSlot != nil && !currentSlot.IsEmpty() {
-				s.clearSkillSlot(s.focusPosition - 1)
+				s.clearSkillSlot(s.getSelectedSkillSlotIndex())
 			}
 		}
 	}
@@ -264,8 +271,9 @@ func (s *AgentCustomizationScreen) updateCoreList() {
 		}
 
 		item := CoreSelectItem{
-			TypeID:   typeID,
-			TypeName: typeName,
+			TypeID:              typeID,
+			TypeName:            typeName,
+			IsEquippedElsewhere: s.isCoreEquippedElsewhere(typeID),
 		}
 		s.coreList = append(s.coreList, item)
 	}
@@ -326,10 +334,9 @@ func (s *AgentCustomizationScreen) handleCoreSelectKey(msg tea.KeyMsg) (tea.Mode
 // ==================== スキル選択モード ====================
 
 // enterSkillSelectMode はスキル選択モードに遷移します。
-func (s *AgentCustomizationScreen) enterSkillSelectMode(skillSlotIndex int) {
+func (s *AgentCustomizationScreen) enterSkillSelectMode(_ int) {
 	s.currentMode = ModeSkillSelect
 	s.selectedSkillIndex = 0
-	// focusPosition - 1 がスキルスロットインデックス
 	s.updateSkillList()
 	s.errorMessage = ""
 	s.statusMessage = ""
@@ -400,41 +407,164 @@ func (s *AgentCustomizationScreen) handleSkillSelectKey(msg tea.KeyMsg) (tea.Mod
 	return s, nil
 }
 
-// getSelectedSkillSlotIndex は現在選択中のスキルスロットインデックスを返します。
-func (s *AgentCustomizationScreen) getSelectedSkillSlotIndex() int {
-	if s.focusPosition > 0 {
-		return s.focusPosition - 1
-	}
-	return 0
+// isChainFocusPosition はフォーカスがチェイン効果位置にあるかを返します。
+// チェイン効果位置: 2, 4, 6, 8（偶数かつ2以上）
+func (s *AgentCustomizationScreen) isChainFocusPosition() bool {
+	return s.focusPosition >= 2 && s.focusPosition%2 == 0
 }
 
-// 後方互換性のため
-var _ = (*AgentCustomizationScreen).selectedSkillSlotIndex
+// getSelectedSkillSlotIndex は現在のfocusPositionに対応するスキルスロットインデックスを返します。
+// スキル位置(1,3,5,7): (pos-1)/2、チェイン位置(2,4,6,8): (pos-2)/2
+func (s *AgentCustomizationScreen) getSelectedSkillSlotIndex() int {
+	if s.focusPosition <= 0 {
+		return 0
+	}
+	if s.isChainFocusPosition() {
+		return (s.focusPosition - 2) / 2
+	}
+	return (s.focusPosition - 1) / 2
+}
 
-func (s *AgentCustomizationScreen) selectedSkillSlotIndex() int {
-	return s.getSelectedSkillSlotIndex()
+// isCoreEquippedElsewhere は指定コアが他のスロットで装備されているかを返します。
+func (s *AgentCustomizationScreen) isCoreEquippedElsewhere(typeID string) bool {
+	for i := 0; i < slot.MaxAgentSlotCount; i++ {
+		if i == s.selectedSlotIndex {
+			continue
+		}
+		agentSlot := s.slotManager.GetSlot(i)
+		if agentSlot != nil && agentSlot.CoreTypeID == typeID {
+			return true
+		}
+	}
+	return false
+}
+
+// isChainEffectEquippedElsewhere は指定チェイン効果が他の位置で装備されているかを返します。
+func (s *AgentCustomizationScreen) isChainEffectEquippedElsewhere(typeID string) bool {
+	chainSlotIdx := s.getSelectedSkillSlotIndex()
+	for i := 0; i < slot.MaxAgentSlotCount; i++ {
+		agentSlot := s.slotManager.GetSlot(i)
+		if agentSlot == nil || agentSlot.IsEmpty() {
+			continue
+		}
+		for j := 0; j < domain.MaxSkillSlotCount; j++ {
+			if i == s.selectedSlotIndex && j == chainSlotIdx {
+				continue
+			}
+			chainCfg := agentSlot.GetChainEffect(j)
+			if chainCfg != nil && !chainCfg.IsEmpty() && chainCfg.TypeID == typeID {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // ==================== チェイン効果選択モード ====================
 
+// enterChainSelectMode はチェイン効果選択モードに遷移します。
+func (s *AgentCustomizationScreen) enterChainSelectMode() {
+	currentSlot := s.slotManager.GetSlot(s.selectedSlotIndex)
+	if currentSlot == nil || currentSlot.IsEmpty() {
+		s.errorMessage = "先にコアを設定してください"
+		return
+	}
+
+	chainSlotIdx := s.getSelectedSkillSlotIndex()
+	skillConfig := currentSlot.GetSkill(chainSlotIdx)
+	if skillConfig == nil || skillConfig.IsEmpty() {
+		s.errorMessage = "先にスキルを設定してください"
+		return
+	}
+
+	s.currentMode = ModeChainSelect
+	s.selectedChainIndex = 0
+	s.updateChainEffectList()
+	s.errorMessage = ""
+	s.statusMessage = ""
+}
+
+// updateChainEffectList は保有チェイン効果リストを更新します。
+func (s *AgentCustomizationScreen) updateChainEffectList() {
+	s.chainEffectList = []ChainEffectSelectItem{}
+
+	if s.invManager == nil || s.invManager.ChainEffects() == nil {
+		return
+	}
+
+	ownedChainEffects := s.invManager.ChainEffects().GetOwnedChainEffects()
+	sort.Strings(ownedChainEffects)
+
+	for _, typeID := range ownedChainEffects {
+		shortDesc := typeID
+		if ce, ok := s.chainEffects[typeID]; ok {
+			shortDesc = ce.ShortDescription
+		}
+
+		item := ChainEffectSelectItem{
+			TypeID:              typeID,
+			ShortDescription:    shortDesc,
+			IsEquippedElsewhere: s.isChainEffectEquippedElsewhere(typeID),
+		}
+		s.chainEffectList = append(s.chainEffectList, item)
+	}
+}
+
 func (s *AgentCustomizationScreen) handleChainSelectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
-		s.currentMode = ModeSkillSelect
+		s.currentMode = ModeCardSelect
 	case "up", "k":
 		if s.selectedChainIndex > 0 {
 			s.selectedChainIndex--
 		}
 	case "down", "j":
 		// +1 は「なし」オプション用
-		if s.selectedChainIndex < len(s.chainVariationList) {
+		if s.selectedChainIndex < len(s.chainEffectList) {
 			s.selectedChainIndex++
 		}
 	case "enter":
-		s.setSkillToSlot()
+		s.setChainEffectToSlot()
 	}
 
 	return s, nil
+}
+
+// setChainEffectToSlot はチェイン効果をスロットに設定します。
+func (s *AgentCustomizationScreen) setChainEffectToSlot() {
+	chainSlotIdx := s.getSelectedSkillSlotIndex()
+
+	if s.selectedChainIndex < len(s.chainEffectList) {
+		// チェイン効果を設定
+		typeID := s.chainEffectList[s.selectedChainIndex].TypeID
+		if err := s.slotManager.SetChainEffect(s.selectedSlotIndex, chainSlotIdx, typeID); err != nil {
+			s.errorMessage = fmt.Sprintf("チェイン効果設定に失敗: %v", err)
+		} else {
+			s.statusMessage = "チェイン効果を設定しました"
+			s.errorMessage = ""
+			s.currentMode = ModeCardSelect
+		}
+	} else {
+		// 「なし」を選択: チェイン効果をクリア
+		if err := s.slotManager.ClearChainEffect(s.selectedSlotIndex, chainSlotIdx); err != nil {
+			s.errorMessage = fmt.Sprintf("チェイン効果クリアに失敗: %v", err)
+		} else {
+			s.statusMessage = "チェイン効果をクリアしました"
+			s.errorMessage = ""
+			s.currentMode = ModeCardSelect
+		}
+	}
+}
+
+// clearChainEffectSlot はフォーカス中のチェイン効果スロットをクリアします。
+func (s *AgentCustomizationScreen) clearChainEffectSlot() {
+	chainSlotIdx := s.getSelectedSkillSlotIndex()
+	if err := s.slotManager.ClearChainEffect(s.selectedSlotIndex, chainSlotIdx); err != nil {
+		s.errorMessage = fmt.Sprintf("チェイン効果クリアに失敗: %v", err)
+	} else {
+		s.statusMessage = fmt.Sprintf("チェイン効果スロット%dをクリアしました", chainSlotIdx+1)
+		s.errorMessage = ""
+	}
 }
 
 // setSkillToSlot はスキルをスロットに設定します。
@@ -574,15 +704,17 @@ func (s *AgentCustomizationScreen) renderAgentCard(slotIndex int, isSelected boo
 		}
 		cardContent.WriteString("\n")
 
-		// スキルスロット表示
+		// スキルスロット表示（各スキルとチェイン効果を交互に表示）
 		for j := 0; j < domain.MaxSkillSlotCount; j++ {
 			skillConfig := agentSlot.GetSkill(j)
+			skillFocusPos := 2*j + 1 // 1, 3, 5, 7
+			chainFocusPos := 2*j + 2 // 2, 4, 6, 8
 
+			// スキル行
 			skillStyle := lipgloss.NewStyle()
 			prefix := "  "
 
-			// フォーカス位置判定（j+1 がfocusPosition）
-			if isSelected && s.focusPosition == j+1 {
+			if isSelected && s.focusPosition == skillFocusPos {
 				skillStyle = skillStyle.Bold(true).
 					Foreground(styles.ColorSelectedFg).
 					Background(styles.ColorSelectedBg)
@@ -592,7 +724,7 @@ func (s *AgentCustomizationScreen) renderAgentCard(slotIndex int, isSelected boo
 			var skillContent string
 			if skillConfig == nil || skillConfig.IsEmpty() {
 				skillContent = fmt.Sprintf("スキル%d: (空)", j+1)
-				if !isSelected || s.focusPosition != j+1 {
+				if !isSelected || s.focusPosition != skillFocusPos {
 					skillStyle = skillStyle.Foreground(styles.ColorSubtle)
 				}
 			} else {
@@ -608,20 +740,34 @@ func (s *AgentCustomizationScreen) renderAgentCard(slotIndex int, isSelected boo
 			cardContent.WriteString(skillStyle.Render(prefix + skillContent))
 			cardContent.WriteString("\n")
 
-			// チェイン効果表示（2行目）
+			// チェイン効果行
 			chainEffectCfg := agentSlot.GetChainEffect(j)
+			chainStyle := lipgloss.NewStyle()
+			chainPrefix := "    "
+
+			if isSelected && s.focusPosition == chainFocusPos {
+				chainStyle = chainStyle.Bold(true).
+					Foreground(styles.ColorSelectedFg).
+					Background(styles.ColorSelectedBg)
+				chainPrefix = "  > "
+			}
+
 			if chainEffectCfg != nil && !chainEffectCfg.IsEmpty() {
-				chainStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff)
+				if !isSelected || s.focusPosition != chainFocusPos {
+					chainStyle = chainStyle.Foreground(styles.ColorBuff)
+				}
 				chainText := chainEffectCfg.TypeID
 				if ce, ok := s.chainEffects[chainEffectCfg.TypeID]; ok {
 					chainText = ce.ShortDescription
 				}
-				cardContent.WriteString("    ")
-				cardContent.WriteString(chainStyle.Render(fmt.Sprintf("[%s]", chainText)))
-				cardContent.WriteString("\n")
+				cardContent.WriteString(chainStyle.Render(fmt.Sprintf("%s[%s]", chainPrefix, chainText)))
+			} else if isSelected && s.focusPosition == chainFocusPos {
+				// フォーカス中の空チェイン効果スロット
+				cardContent.WriteString(chainStyle.Render(chainPrefix + "[チェイン: 空]"))
 			} else {
-				cardContent.WriteString("\n")
+				cardContent.WriteString("")
 			}
+			cardContent.WriteString("\n")
 		}
 	}
 
@@ -780,7 +926,11 @@ func (s *AgentCustomizationScreen) renderCoreList() string {
 			prefix = "> "
 		}
 
-		builder.WriteString(style.Render(prefix + core.TypeName))
+		displayName := core.TypeName
+		if core.IsEquippedElsewhere {
+			displayName += " (装備中)"
+		}
+		builder.WriteString(style.Render(prefix + displayName))
 		builder.WriteString("\n")
 	}
 
@@ -912,10 +1062,15 @@ func (s *AgentCustomizationScreen) renderModalChainSelect() string {
 func (s *AgentCustomizationScreen) renderChainList() string {
 	var builder strings.Builder
 
-	// 全アイテム数（チェイン効果 + 「なし」オプション）
-	totalItems := len(s.chainVariationList) + 1
+	if len(s.chainEffectList) == 0 {
+		builder.WriteString(lipgloss.NewStyle().Foreground(styles.ColorSubtle).Render("保有チェイン効果がありません"))
+		return builder.String()
+	}
 
-	// 表示可能な行数（Height - パディング）
+	// 全アイテム数（チェイン効果 + 「なし」オプション）
+	totalItems := len(s.chainEffectList) + 1
+
+	// 表示可能な行数
 	maxVisibleItems := 10
 
 	// スクロール位置を計算
@@ -929,7 +1084,6 @@ func (s *AgentCustomizationScreen) renderChainList() string {
 		endIdx = totalItems
 	}
 
-	// チェイン効果リスト
 	for i := startIdx; i < endIdx; i++ {
 		style := lipgloss.NewStyle()
 		prefix := "  "
@@ -942,15 +1096,13 @@ func (s *AgentCustomizationScreen) renderChainList() string {
 		}
 
 		var itemText string
-		if i < len(s.chainVariationList) {
-			// チェイン効果の短い説明を表示
-			chainID := s.chainVariationList[i]
-			itemText = chainID
-			if ce, ok := s.chainEffects[chainID]; ok {
-				itemText = ce.ShortDescription
+		if i < len(s.chainEffectList) {
+			ce := s.chainEffectList[i]
+			itemText = ce.ShortDescription
+			if ce.IsEquippedElsewhere {
+				itemText += " (装備中)"
 			}
 		} else {
-			// 「なし」オプション
 			itemText = "(なし)"
 		}
 		builder.WriteString(style.Render(prefix + itemText))
@@ -964,37 +1116,27 @@ func (s *AgentCustomizationScreen) renderChainList() string {
 func (s *AgentCustomizationScreen) renderChainDetail() string {
 	var builder strings.Builder
 
-	// スキル名
-	skillName := s.selectedSkillTypeID
-	if skillType, ok := s.skillTypes[s.selectedSkillTypeID]; ok {
-		skillName = skillType.Name
-	}
-	nameStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary)
-	builder.WriteString(nameStyle.Render(skillName))
-	builder.WriteString("\n\n")
+	if s.selectedChainIndex < len(s.chainEffectList) {
+		ce := s.chainEffectList[s.selectedChainIndex]
 
-	// 選択中のチェイン効果
-	if s.selectedChainIndex < len(s.chainVariationList) {
-		chainID := s.chainVariationList[s.selectedChainIndex]
-
-		// チェイン効果の説明を表示
+		// チェイン効果名
 		chainStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff).Bold(true)
-		chainName := chainID
-		chainDesc := ""
-		if ce, ok := s.chainEffects[chainID]; ok {
-			chainName = ce.ShortDescription
-			chainDesc = ce.Description
-		}
-		builder.WriteString(chainStyle.Render(chainName))
+		builder.WriteString(chainStyle.Render(ce.ShortDescription))
 		builder.WriteString("\n\n")
 
-		// チェイン効果の長い説明
-		if chainDesc != "" {
+		// チェイン効果の説明
+		if ceData, ok := s.chainEffects[ce.TypeID]; ok && ceData.Description != "" {
 			descStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
-			builder.WriteString(descStyle.Render(chainDesc))
+			builder.WriteString(descStyle.Render(ceData.Description))
+		}
+
+		// 装備中の警告
+		if ce.IsEquippedElsewhere {
+			builder.WriteString("\n\n")
+			warnStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("208"))
+			builder.WriteString(warnStyle.Render("他のスロットで装備中"))
 		}
 	} else {
-		// 「なし」選択中
 		labelStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
 		builder.WriteString(labelStyle.Render("チェイン効果なしで装備します"))
 	}

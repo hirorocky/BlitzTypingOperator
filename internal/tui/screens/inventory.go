@@ -28,6 +28,8 @@ const (
 	TabCoreInventory InventoryTab = iota
 	// TabSkillInventory はスキル一覧タブです。
 	TabSkillInventory
+	// TabChainEffectInventory はチェイン効果一覧タブです。
+	TabChainEffectInventory
 )
 
 // UniqueInventoryProvider はユニークインベントリデータを提供するインターフェースです。
@@ -52,8 +54,9 @@ type InventoryScreen struct {
 	slotManager *slot.AgentSlotManager
 
 	// マスタデータ
-	coreTypes  map[string]domain.CoreType
-	skillTypes map[string]domain.SkillType
+	coreTypes    map[string]domain.CoreType
+	skillTypes   map[string]domain.SkillType
+	chainEffects map[string]domain.ChainEffect
 
 	// 現在のタブ
 	currentTab InventoryTab
@@ -66,8 +69,9 @@ type InventoryScreen struct {
 	skillList          []SkillInventoryItem
 	selectedSkillIndex int
 
-	// スキル詳細表示モード（チェイン効果バリエーション表示）
-	showingSkillDetail bool
+	// チェイン効果一覧関連
+	chainEffectList          []ChainEffectInventoryItem
+	selectedChainEffectIndex int
 
 	// スタイル
 	styles *styles.GameStyles
@@ -92,27 +96,39 @@ type SkillInventoryItem struct {
 	EquippedSlots []int // 装備中のスロット番号リスト
 }
 
+// ChainEffectInventoryItem はチェイン効果一覧の表示アイテムです。
+type ChainEffectInventoryItem struct {
+	TypeID        string
+	TypeName      string
+	Description   string
+	IsEquipped    bool  // いずれかのスロットに装備中か
+	EquippedSlots []int // 装備中のスロット番号リスト（エージェントスロットインデックス）
+}
+
 // NewInventoryScreen は新しいInventoryScreenを作成します。
 func NewInventoryScreen(
 	invManager *inventory.InventoryManager,
 	slotManager *slot.AgentSlotManager,
 	coreTypes map[string]domain.CoreType,
 	skillTypes map[string]domain.SkillType,
+	chainEffects map[string]domain.ChainEffect,
 ) *InventoryScreen {
 	screen := &InventoryScreen{
-		invManager:  invManager,
-		slotManager: slotManager,
-		coreTypes:   coreTypes,
-		skillTypes:  skillTypes,
-		currentTab:  TabCoreInventory,
-		styles:      styles.NewGameStyles(),
-		width:       140,
-		height:      40,
+		invManager:   invManager,
+		slotManager:  slotManager,
+		coreTypes:    coreTypes,
+		skillTypes:   skillTypes,
+		chainEffects: chainEffects,
+		currentTab:   TabCoreInventory,
+		styles:       styles.NewGameStyles(),
+		width:        140,
+		height:       40,
 	}
 
 	// リストを初期化
 	screen.updateCoreList()
 	screen.updateSkillList()
+	screen.updateChainEffectList()
 
 	return screen
 }
@@ -139,15 +155,6 @@ func (s *InventoryScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // handleKeyMsg はキーボード入力を処理します。
 func (s *InventoryScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	// スキル詳細表示中の場合
-	if s.showingSkillDetail {
-		switch msg.String() {
-		case "esc", "backspace":
-			s.showingSkillDetail = false
-		}
-		return s, nil
-	}
-
 	switch msg.String() {
 	case "esc":
 		return s, func() tea.Msg {
@@ -161,11 +168,6 @@ func (s *InventoryScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		s.moveUp()
 	case "down", "j":
 		s.moveDown()
-	case "enter":
-		// スキルタブでEnterを押すと詳細表示
-		if s.currentTab == TabSkillInventory && len(s.skillList) > 0 {
-			s.showingSkillDetail = true
-		}
 	}
 
 	return s, nil
@@ -175,15 +177,13 @@ func (s *InventoryScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (s *InventoryScreen) prevTab() {
 	if s.currentTab > TabCoreInventory {
 		s.currentTab--
-		s.showingSkillDetail = false
 	}
 }
 
 // nextTab は次のタブに移動します。
 func (s *InventoryScreen) nextTab() {
-	if s.currentTab < TabSkillInventory {
+	if s.currentTab < TabChainEffectInventory {
 		s.currentTab++
-		s.showingSkillDetail = false
 	}
 }
 
@@ -198,6 +198,10 @@ func (s *InventoryScreen) moveUp() {
 		if s.selectedSkillIndex > 0 {
 			s.selectedSkillIndex--
 		}
+	case TabChainEffectInventory:
+		if s.selectedChainEffectIndex > 0 {
+			s.selectedChainEffectIndex--
+		}
 	}
 }
 
@@ -211,6 +215,10 @@ func (s *InventoryScreen) moveDown() {
 	case TabSkillInventory:
 		if s.selectedSkillIndex < len(s.skillList)-1 {
 			s.selectedSkillIndex++
+		}
+	case TabChainEffectInventory:
+		if s.selectedChainEffectIndex < len(s.chainEffectList)-1 {
+			s.selectedChainEffectIndex++
 		}
 	}
 }
@@ -347,6 +355,77 @@ func (s *InventoryScreen) getEquippedSkillTypeIDs() map[string][]int {
 	return result
 }
 
+// updateChainEffectList はチェイン効果一覧を更新します。
+func (s *InventoryScreen) updateChainEffectList() {
+	s.chainEffectList = []ChainEffectInventoryItem{}
+
+	if s.invManager == nil {
+		return
+	}
+
+	// 保有チェイン効果を取得
+	ownedChainEffects := s.invManager.ChainEffects().GetOwnedChainEffects()
+
+	// 装備状況を取得
+	equippedChainEffects := s.getEquippedChainEffectTypeIDs()
+
+	// リストを構築（GetOwnedChainEffectsは既にソート済み）
+	for _, typeID := range ownedChainEffects {
+		// マスタデータから表示名・説明を取得
+		// domain.ChainEffectにNameフィールドはないため、ShortDescriptionを表示名に使用
+		typeName := typeID
+		description := ""
+		if ce, ok := s.chainEffects[typeID]; ok {
+			if ce.ShortDescription != "" {
+				typeName = ce.ShortDescription
+			}
+			description = ce.Description
+		}
+
+		// 装備状況を確認
+		equippedSlots := equippedChainEffects[typeID]
+
+		item := ChainEffectInventoryItem{
+			TypeID:        typeID,
+			TypeName:      typeName,
+			Description:   description,
+			IsEquipped:    len(equippedSlots) > 0,
+			EquippedSlots: equippedSlots,
+		}
+		s.chainEffectList = append(s.chainEffectList, item)
+	}
+}
+
+// getEquippedChainEffectTypeIDs は装備中のチェイン効果TypeIDとスロット番号のマップを返します。
+func (s *InventoryScreen) getEquippedChainEffectTypeIDs() map[string][]int {
+	result := make(map[string][]int)
+
+	if s.slotManager == nil {
+		return result
+	}
+
+	slots := s.slotManager.GetSlots()
+	for i, agentSlot := range slots {
+		if agentSlot == nil || agentSlot.IsEmpty() {
+			continue
+		}
+
+		// 各チェイン効果スロットを確認
+		for j := range domain.MaxSkillSlotCount {
+			chainCfg := agentSlot.GetChainEffect(j)
+			if chainCfg != nil && !chainCfg.IsEmpty() {
+				typeID := chainCfg.TypeID
+				// 同じスロットで重複しないようにチェック
+				if !slices.Contains(result[typeID], i) {
+					result[typeID] = append(result[typeID], i)
+				}
+			}
+		}
+	}
+
+	return result
+}
+
 // View は画面をレンダリングします。
 func (s *InventoryScreen) View() string {
 	var builder strings.Builder
@@ -377,7 +456,7 @@ func (s *InventoryScreen) View() string {
 
 // renderTabBar はタブバーをレンダリングします。
 func (s *InventoryScreen) renderTabBar() string {
-	tabs := []string{"コア一覧", "スキル一覧"}
+	tabs := []string{"コア一覧", "スキル一覧", "チェイン効果"}
 
 	var tabItems []string
 	for i, tab := range tabs {
@@ -407,6 +486,8 @@ func (s *InventoryScreen) renderMainContent() string {
 		return s.renderCoreInventory()
 	case TabSkillInventory:
 		return s.renderSkillInventory()
+	case TabChainEffectInventory:
+		return s.renderChainEffectInventory()
 	}
 	return ""
 }
@@ -672,6 +753,129 @@ func (s *InventoryScreen) renderSkillPreviewContent() string {
 	return builder.String()
 }
 
+// renderChainEffectInventory はチェイン効果一覧をレンダリングします。
+func (s *InventoryScreen) renderChainEffectInventory() string {
+	if len(s.chainEffectList) == 0 {
+		return lipgloss.NewStyle().
+			Width(s.width).
+			Align(lipgloss.Center).
+			Foreground(styles.ColorSubtle).
+			Render("チェイン効果がありません")
+	}
+
+	// リストとプレビューを横に並べる
+	listContent := s.renderChainEffectListItems()
+	previewContent := s.renderChainEffectPreviewContent()
+
+	listBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorPrimary).
+		Padding(1).
+		Render(listContent)
+
+	previewBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorSubtle).
+		Padding(1).
+		Width(50).
+		Render(previewContent)
+
+	content := lipgloss.JoinHorizontal(lipgloss.Top, listBox, "  ", previewBox)
+	return lipgloss.NewStyle().
+		Width(s.width).
+		Align(lipgloss.Center).
+		Render(content)
+}
+
+// renderChainEffectListItems はチェイン効果リストの項目をレンダリングします。
+func (s *InventoryScreen) renderChainEffectListItems() string {
+	var items []string
+
+	// 内部コンテンツの固定表示幅
+	const contentWidth = 50
+
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorSecondary)
+	titleText := padToDisplayWidth("保有チェイン効果一覧", contentWidth)
+	items = append(items, titleStyle.Render(titleText))
+	items = append(items, padToDisplayWidth("", contentWidth))
+
+	for i, ce := range s.chainEffectList {
+		style := lipgloss.NewStyle()
+		prefix := "  "
+
+		if i == s.selectedChainEffectIndex {
+			style = style.Bold(true).
+				Foreground(styles.ColorSelectedFg).
+				Background(styles.ColorSelectedBg)
+			prefix = "> "
+		} else if ce.IsEquipped {
+			style = style.Foreground(styles.ColorBuff)
+		}
+
+		// 装備マーカー
+		equipMark := ""
+		if ce.IsEquipped {
+			slots := make([]string, len(ce.EquippedSlots))
+			for j, slotNum := range ce.EquippedSlots {
+				slots[j] = fmt.Sprintf("%d", slotNum+1)
+			}
+			equipMark = fmt.Sprintf(" [E%s]", strings.Join(slots, ","))
+		}
+
+		item := fmt.Sprintf("%s%s", ce.TypeName, equipMark)
+
+		// プレフィックスを含めた全体の内容を作成し、表示幅で切り詰め後パディング
+		fullContent := prefix + item
+		truncated := truncateToDisplayWidth(fullContent, contentWidth)
+		padded := padToDisplayWidth(truncated, contentWidth)
+		items = append(items, style.Render(padded))
+	}
+
+	return strings.Join(items, "\n")
+}
+
+// renderChainEffectPreviewContent はチェイン効果のプレビューをレンダリングします。
+func (s *InventoryScreen) renderChainEffectPreviewContent() string {
+	if s.selectedChainEffectIndex >= len(s.chainEffectList) {
+		return "チェイン効果を選択してください"
+	}
+
+	ce := s.chainEffectList[s.selectedChainEffectIndex]
+
+	var builder strings.Builder
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorPrimary)
+	labelStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
+	valueStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary)
+
+	builder.WriteString(titleStyle.Render(ce.TypeName))
+	builder.WriteString("\n\n")
+
+	builder.WriteString(labelStyle.Render("TypeID: "))
+	builder.WriteString(valueStyle.Render(ce.TypeID))
+	builder.WriteString("\n")
+
+	if ce.Description != "" {
+		builder.WriteString(labelStyle.Render("説明: "))
+		builder.WriteString(valueStyle.Render(ce.Description))
+		builder.WriteString("\n")
+	}
+
+	// 装備状況
+	builder.WriteString("\n")
+	if ce.IsEquipped {
+		slots := make([]string, len(ce.EquippedSlots))
+		for j, slotNum := range ce.EquippedSlots {
+			slots[j] = fmt.Sprintf("スロット%d", slotNum+1)
+		}
+		equipStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff)
+		builder.WriteString(equipStyle.Render("装備中: " + strings.Join(slots, ", ")))
+	} else {
+		builder.WriteString(labelStyle.Render("未装備"))
+	}
+
+	return builder.String()
+}
+
 // renderHints はヒントをレンダリングします。
 func (s *InventoryScreen) renderHints() string {
 	hintStyle := lipgloss.NewStyle().
@@ -679,14 +883,7 @@ func (s *InventoryScreen) renderHints() string {
 		Align(lipgloss.Center).
 		Width(s.width)
 
-	var hints string
-	if s.showingSkillDetail {
-		hints = "Esc/Backspace: 戻る"
-	} else if s.currentTab == TabSkillInventory && len(s.skillList) > 0 {
-		hints = "←/→: タブ切替  ↑/↓: 選択  Enter: チェイン効果詳細  Esc: ホーム"
-	} else {
-		hints = "←/→: タブ切替  ↑/↓: 選択  Esc: ホーム"
-	}
+	hints := "←/→: タブ切替  ↑/↓: 選択  Esc: ホーム"
 
 	return hintStyle.Render(hints)
 }
@@ -695,6 +892,7 @@ func (s *InventoryScreen) renderHints() string {
 func (s *InventoryScreen) RefreshData() {
 	s.updateCoreList()
 	s.updateSkillList()
+	s.updateChainEffectList()
 }
 
 // ==================== Screenインターフェース実装 ====================

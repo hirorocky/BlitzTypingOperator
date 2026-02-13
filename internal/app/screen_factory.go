@@ -100,12 +100,13 @@ func (f *ScreenFactory) CreateAgentCustomizationScreen(
 }
 
 // CreateInventoryScreen はインベントリ画面を作成します。
-// コア・スキルの一覧表示と装備状況の確認ができる画面を生成します。
+// コア・スキル・チェイン効果の一覧表示と装備状況の確認ができる画面を生成します。
 func (f *ScreenFactory) CreateInventoryScreen(
 	invManager *inventory.InventoryManager,
 	slotManager *slot.AgentSlotManager,
 	coreTypes map[string]domain.CoreType,
 	skillTypes map[string]domain.SkillType,
+	chainEffects map[string]domain.ChainEffect,
 ) *screens.InventoryScreen {
-	return screens.NewInventoryScreen(invManager, slotManager, coreTypes, skillTypes)
+	return screens.NewInventoryScreen(invManager, slotManager, coreTypes, skillTypes, chainEffects)
 }

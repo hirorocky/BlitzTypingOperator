@@ -244,7 +244,7 @@
   - `showingSkillDetail`フラグ: チェイン効果以外の用途がなければ除去
 - **関連テスト**: 基準19, 20, 21, 22, 23
 - **依存**: タスク3+15（GetChainVariations除去後）
-- **状態**: 未着手
+- **状態**: 完了
 
 ### タスク12: TUI - チェイン効果一覧タブ追加
 - **対象**: `internal/tui/screens/inventory.go`
@@ -256,7 +256,7 @@
   - タブ切替の操作処理を更新
 - **関連テスト**: 基準24, 25
 - **依存**: タスク1, タスク6a
-- **状態**: 未着手
+- **状態**: 完了
 
 ### タスク13: TUI - エージェントカスタマイズのチェイン効果対応
 - **対象**: `internal/tui/screens/agent_customization.go`
@@ -269,7 +269,7 @@
   - `SetSkill`の呼び出しからchainEffectID引数を除去
 - **関連テスト**: 基準11, 12, 13
 - **依存**: タスク6b
-- **状態**: 未着手
+- **状態**: 完了
 
 ### タスク14: app層の統合更新 + debugモード対応
 - **対象**: `internal/app/root_model.go`, `internal/app/screen_factory.go`, `internal/tui/presenter/debug_inventory_provider.go`
@@ -286,7 +286,7 @@
     - `DebugInventoryProvider.GetChainEffects()`はマスタデータから全チェイン効果を返す（現行通り動作）
 - **関連テスト**: 全基準（統合） + 基準27, 28, 29（debugモード）
 - **依存**: 全タスク完了後
-- **状態**: 未着手
+- **状態**: 完了
 
 ## TUIテスト手順
 
@@ -403,3 +403,7 @@ send_keys("jj\r", delay=300)     # カスタマイズ画面へ
 - タスク8完了: ChainEffect変換関数追加、AgentSlot変換にチェイン効果対応追加
 - タスク9完了: AddRewardsToInventoryにChainEffectInventory引数追加、チェイン効果の独立追加ロジック実装、session.InventoryManagerにchainEffectsフィールド追加
 - タスク10完了: first_agent.jsonの3エージェントに異なるコア設定（all_rounder/healer/quick_recoverer）、InitializeNewGameの3種コア対応
+- タスク11完了: showingSkillDetail除去、Enter→詳細トグルの除去、ヒントテキスト更新
+- タスク12完了: TabChainEffectInventory追加、ChainEffectInventoryItem構造体、チェイン効果タブのレンダリング
+- タスク13完了: focusPosition拡張（0=コア,奇数=スキル,偶数=チェイン効果）、独立チェイン効果選択フロー、「(装備中)」表示、後方互換エイリアス削除
+- タスク14完了: UniqueChainEffectsのセーブ/ロード対応、ChainEffectsスロットのセーブ/ロード、debugモードで全チェイン効果追加、SlotManagerへのChainEffectInventory設定
