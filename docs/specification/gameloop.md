@@ -32,7 +32,7 @@ The game loop shall manage scene transitions between:
 
 The game loop shall maintain GameState including:
 - プレイヤー情報（MaxHP、装備エージェント）
-- インベントリ（コア、モジュール）
+- インベントリ（コア、スキル、チェイン効果）
 - 敵進行状態（EnemyProgress: ランク・撃破記録）
 - 統計情報（バトル/タイピング統計）
 - 実績状態
@@ -53,9 +53,9 @@ When ゲームを終了する or 特定のタイミング, the game loop shall:
 
 **受け入れ基準**:
 1. コアはTypeIDのみで保存（レベル概念なし）
-2. モジュールはID+カウントで保存
-3. エージェントはコア情報埋め込み+モジュールIDリストで保存
-4. 装備はスロット番号順にエージェントIDを保存
+2. スキルはTypeIDリストで保存
+3. チェイン効果はTypeIDリストで保存（スキルと独立）
+4. エージェントスロット設定はコア+スキル+チェイン効果IDリストで保存
 5. 敵進行状態（CurrentRank、DefeatRecords）を保存
 
 ### REQ-GAMELOOP-4: バトル結果処理

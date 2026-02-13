@@ -26,19 +26,20 @@ var (
 	ColorSelectedBg = lipgloss.Color("#5E43A4") // 選択中アイテムの背景（暗い紫）
 	ColorSelectedFg = lipgloss.Color("#FFFFFF") // 選択中アイテムの前景（白）
 
-	// HP色分け（Requirement 18.2）
+	// HP色分け
 	ColorHPHigh   = lipgloss.Color("#04B575") // 緑（50%以上）
 	ColorHPMedium = lipgloss.Color("#FFB454") // 黄（25%以上50%未満）
 	ColorHPLow    = lipgloss.Color("#FF4672") // 赤（25%未満）
 
-	// ダメージ・回復色（Requirement 18.2）
+	// ダメージ・回復色
 	ColorDamage = lipgloss.Color("#FF4672") // 赤
 	ColorHeal   = lipgloss.Color("#04B575") // 緑
 
 	// その他
-	ColorSubtle  = lipgloss.Color("#6C6C6C")
-	ColorWarning = lipgloss.Color("#FFB454")
-	ColorInfo    = lipgloss.Color("#00BFFF")
+	ColorSubtle   = lipgloss.Color("#6C6C6C")
+	ColorEquipped = lipgloss.Color("#999999") // 装備済みアイテム（明るめの灰色）
+	ColorWarning  = lipgloss.Color("#FFB454")
+	ColorInfo     = lipgloss.Color("#00BFFF")
 
 	// バフ・デバフ
 	ColorBuff   = lipgloss.Color("#00BFFF") // 青

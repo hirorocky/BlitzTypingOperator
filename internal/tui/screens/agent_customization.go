@@ -45,10 +45,11 @@ type CoreSelectItem struct {
 
 // SkillSelectItem はスキル選択リストの表示アイテムです。
 type SkillSelectItem struct {
-	TypeID       string
-	TypeName     string
-	Icon         string
-	IsCompatible bool
+	TypeID              string
+	TypeName            string
+	Icon                string
+	IsCompatible        bool
+	IsEquippedElsewhere bool
 }
 
 // ChainEffectSelectItem はチェイン効果選択リストの表示アイテムです。
@@ -375,10 +376,11 @@ func (s *AgentCustomizationScreen) updateSkillList() {
 		}
 
 		item := SkillSelectItem{
-			TypeID:       typeID,
-			TypeName:     typeName,
-			Icon:         icon,
-			IsCompatible: true,
+			TypeID:              typeID,
+			TypeName:            typeName,
+			Icon:                icon,
+			IsCompatible:        true,
+			IsEquippedElsewhere: s.isSkillEquippedElsewhere(typeID),
 		}
 		s.compatibleSkillList = append(s.compatibleSkillList, item)
 	}
@@ -434,6 +436,27 @@ func (s *AgentCustomizationScreen) isCoreEquippedElsewhere(typeID string) bool {
 		agentSlot := s.slotManager.GetSlot(i)
 		if agentSlot != nil && agentSlot.CoreTypeID == typeID {
 			return true
+		}
+	}
+	return false
+}
+
+// isSkillEquippedElsewhere は指定スキルが他のスロットで装備されているかを返します。
+func (s *AgentCustomizationScreen) isSkillEquippedElsewhere(typeID string) bool {
+	skillSlotIdx := s.getSelectedSkillSlotIndex()
+	for i := 0; i < slot.MaxAgentSlotCount; i++ {
+		agentSlot := s.slotManager.GetSlot(i)
+		if agentSlot == nil || agentSlot.IsEmpty() {
+			continue
+		}
+		for j := 0; j < domain.MaxSkillSlotCount; j++ {
+			if i == s.selectedSlotIndex && j == skillSlotIdx {
+				continue
+			}
+			skillConfig := agentSlot.GetSkill(j)
+			if skillConfig != nil && !skillConfig.IsEmpty() && skillConfig.TypeID == typeID {
+				return true
+			}
 		}
 	}
 	return false
@@ -924,6 +947,8 @@ func (s *AgentCustomizationScreen) renderCoreList() string {
 				Foreground(styles.ColorSelectedFg).
 				Background(styles.ColorSelectedBg)
 			prefix = "> "
+		} else if core.IsEquippedElsewhere {
+			style = style.Foreground(styles.ColorEquipped)
 		}
 
 		displayName := core.TypeName
@@ -1013,10 +1038,15 @@ func (s *AgentCustomizationScreen) renderSkillList() string {
 				Foreground(styles.ColorSelectedFg).
 				Background(styles.ColorSelectedBg)
 			prefix = "> "
+		} else if skill.IsEquippedElsewhere {
+			style = style.Foreground(styles.ColorEquipped)
 		}
 
-		item := fmt.Sprintf("%s %s", skill.Icon, skill.TypeName)
-		builder.WriteString(style.Render(prefix + item))
+		displayName := fmt.Sprintf("%s %s", skill.Icon, skill.TypeName)
+		if skill.IsEquippedElsewhere {
+			displayName += " (装備中)"
+		}
+		builder.WriteString(style.Render(prefix + displayName))
 		builder.WriteString("\n")
 	}
 
@@ -1088,11 +1118,18 @@ func (s *AgentCustomizationScreen) renderChainList() string {
 		style := lipgloss.NewStyle()
 		prefix := "  "
 
+		isEquipped := false
+		if i < len(s.chainEffectList) {
+			isEquipped = s.chainEffectList[i].IsEquippedElsewhere
+		}
+
 		if i == s.selectedChainIndex {
 			style = style.Bold(true).
 				Foreground(styles.ColorSelectedFg).
 				Background(styles.ColorSelectedBg)
 			prefix = "> "
+		} else if isEquipped {
+			style = style.Foreground(styles.ColorEquipped)
 		}
 
 		var itemText string
@@ -1130,12 +1167,6 @@ func (s *AgentCustomizationScreen) renderChainDetail() string {
 			builder.WriteString(descStyle.Render(ceData.Description))
 		}
 
-		// 装備中の警告
-		if ce.IsEquippedElsewhere {
-			builder.WriteString("\n\n")
-			warnStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("208"))
-			builder.WriteString(warnStyle.Render("他のスロットで装備中"))
-		}
 	} else {
 		labelStyle := lipgloss.NewStyle().Foreground(styles.ColorSubtle)
 		builder.WriteString(labelStyle.Render("チェイン効果なしで装備します"))

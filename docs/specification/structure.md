@@ -57,10 +57,11 @@ config       ← 横断的関心事（全層から参照可能）
 
 **主要なサブシステム**:
 - **エンティティ**: core.go, skill.go, agent.go, enemy.go, player.go
-- **スロットシステム**: agent_slot.go（AgentSlot、SkillSlotConfig）- 3スロットのエージェント構成管理
+- **スロットシステム**: agent_slot.go（AgentSlot、SkillSlotConfig、ChainEffectSlotConfig）- 3スロットのエージェント構成管理
 - **インベントリ**:
   - core_inventory.go: コアの保有管理（TypeIDの保有フラグ）
-  - skill_inventory.go: スキルのユニーク管理（TypeID + チェイン効果バリエーション）
+  - skill_inventory.go: スキルのユニーク管理（TypeIDのみ）
+  - chain_effect_inventory.go: チェイン効果の保有管理（TypeIDの保有フラグ）
 - **敵進行システム**: enemy_progress.go - 敵撃破記録・ランク進行・選択可能レベル範囲
 - **効果システム**: effect_table.go, effect_column.go, effect_context.go, effect_entry.go
   - EffectTableパターン: バフ、デバフ、パッシブ、チェイン効果を統一的に管理
@@ -85,8 +86,8 @@ config       ← 横断的関心事（全層から参照可能）
   - `combat/recast`: リキャスト管理（RecastManager）
   - `combat/voltage`: ボルテージ管理（VoltageManager）- 時間経過によるダメージ乗算
 - `typing`: タイピング評価
-- `slot`: エージェントスロット管理（AgentSlotManager）- 3スロットのコア・スキル付け替え
-- `inventory`: インベントリ管理（InventoryManager）- コア・スキル保有状態の統合管理
+- `slot`: エージェントスロット管理（AgentSlotManager）- 3スロットのコア・スキル・チェイン効果付け替え
+- `inventory`: インベントリ管理（InventoryManager）- コア・スキル・チェイン効果保有状態の統合管理
 - `spawning`: 敵生成
 - `rewarding`: 報酬計算・ドロップ
 - `progress`: 敵進行管理（EnemyProgressManager）- 撃破状況・ランク進行・HP成長
@@ -98,10 +99,13 @@ config       ← 横断的関心事（全層から参照可能）
 **目的**: 外部リソース（ファイル、ターミナル等）とのやり取り
 **サブパッケージ**:
 - `infra/savedata/`: セーブ/ロード永続化
+  - `savedata.go`: セーブデータ構造体（CoreInventorySave, SkillInventorySave, ChainEffectInventorySave, AgentSlotSave）
+  - `unique_inventory_converter.go`: 各インベントリのセーブ/ロード変換関数
 - `infra/masterdata/`: JSONマスタデータローダー＋埋め込みデータ（Go embed.FS）
   - timed_effects.json: 時限効果定義（ID、名前、説明、効果列、効果値）
   - modules.json: モジュール定義（各effect_columnにtimed_effect_idを参照）
   - enemy_actions.json: 敵行動定義（各バフ/デバフ行動にtimed_effect_idを参照）
+  - chain_effects.json: チェイン効果定義（ID、名前、説明、効果）
 - `infra/errorhandler/`: エラーハンドリング
 - `infra/startup/`: 起動処理
 - `infra/terminal/`: ターミナル環境検証
@@ -113,8 +117,8 @@ config       ← 横断的関心事（全層から参照可能）
 - `screens/`: 各シーンの画面実装（Bubbleteaの`tea.Model`実装）
   - 画面タイプ: home, battle_select, battle, agent_customization, inventory, reward, encyclopedia, settings, stats_achievements
   - 大きな画面は分割: battle.go（状態）、battle_view.go（描画）、battle_logic.go（ロジック）
-  - agent_customization: 3スロットエージェントのコア・スキル付け替えUI
-  - inventory: コア・スキルの所持一覧表示
+  - agent_customization: 3スロットエージェントのコア・スキル・チェイン効果付け替えUI
+  - inventory: コア・スキル・チェイン効果の所持一覧表示（3タブ構成）
 - `components/`: 再利用可能なUIコンポーネント
   - 基本コンポーネント: components.go
   - 専用コンポーネント: hp_display.go, recast_progress_bar.go, chain_effect_badge.go, passive_skill_notification.go
