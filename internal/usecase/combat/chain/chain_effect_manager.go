@@ -1,5 +1,5 @@
 // Package chain はチェイン効果管理機能を提供します。
-// モジュール使用後のリキャスト期間中に発動する追加効果を管理します。
+// モジュール使用後、次のスキル使用まで待機し、他エージェントの行動で発動する追加効果を管理します。
 package chain
 
 import (
@@ -164,17 +164,10 @@ func (m *ChainEffectManager) isEffectTriggeredBy(effectType domain.ChainEffectTy
 	}
 }
 
-// ExpireEffectsForAgent はリキャスト終了時に未発動チェイン効果を破棄します。
-// 破棄された効果のリストを返します。
-func (m *ChainEffectManager) ExpireEffectsForAgent(agentIndex int) []*PendingChainEffect {
-	expired := make([]*PendingChainEffect, 0)
-
-	if pending, exists := m.pendingEffects[agentIndex]; exists {
-		expired = append(expired, pending)
-		delete(m.pendingEffects, agentIndex)
-	}
-
-	return expired
+// ClearEffectForAgent は指定エージェントの待機中チェイン効果を削除します。
+// チェイン効果のないスキル使用時に、以前のチェイン効果をクリアするために使用します。
+func (m *ChainEffectManager) ClearEffectForAgent(agentIndex int) {
+	delete(m.pendingEffects, agentIndex)
 }
 
 // GetPendingEffects は待機中チェイン効果を取得します。

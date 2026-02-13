@@ -1,0 +1,75 @@
+{
+  "version": "0.0.1",
+  "timestamp": "2025-01-01T00:00:00Z",
+  "player": {
+    "max_hp": 2000,
+    "agent_slots": [
+      {
+        "core_type_id": "all_rounder",
+        "skills": [
+          { "type_id": "physical_strike_lv1", "chain_effect_id": "damage_bonus" },
+          { "type_id": "fireball_lv1", "chain_effect_id": "damage_amp" },
+          { "type_id": "attack_debuff_lv1", "chain_effect_id": "debuff_extend" },
+          { "type_id": "defense_debuff_lv1", "chain_effect_id": "buff_extend" }
+        ]
+      },
+      {
+        "core_type_id": "all_rounder",
+        "skills": [
+          { "type_id": "heal_lv1", "chain_effect_id": "heal_bonus" },
+          { "type_id": "str_buff_lv1", "chain_effect_id": "cooldown_reduce" },
+          { "type_id": "defense_buff_lv1", "chain_effect_id": "time_extend" },
+          {}
+        ]
+      },
+      {
+        "core_type_id": "perfectionist",
+        "skills": [
+          { "type_id": "physical_strike_lv2", "chain_effect_id": "life_steal" },
+          { "type_id": "fireball_lv2", "chain_effect_id": "damage_cut" },
+          {},
+          {}
+        ]
+      }
+    ]
+  },
+  "inventory": {
+    "unique_cores": {
+      "cores": ["all_rounder", "perfectionist"]
+    },
+    "skills": {
+      "skills": {
+        "physical_strike_lv1": ["", "damage_bonus"],
+        "fireball_lv1": ["", "damage_amp"],
+        "attack_debuff_lv1": ["", "debuff_extend"],
+        "defense_debuff_lv1": ["", "buff_extend"],
+        "heal_lv1": ["", "heal_bonus"],
+        "str_buff_lv1": ["", "cooldown_reduce"],
+        "defense_buff_lv1": ["", "time_extend"],
+        "physical_strike_lv2": ["", "life_steal"],
+        "fireball_lv2": ["", "damage_cut"]
+      }
+    }
+  },
+  "enemy_progress": {
+    "current_rank": 3,
+    "defeat_records": {}
+  },
+  "statistics": {
+    "total_battles": 0,
+    "victories": 0,
+    "defeats": 0,
+    "max_level_reached": 0,
+    "highest_wpm": 0,
+    "average_wpm": 0,
+    "perfect_accuracy_count": 0,
+    "total_characters_typed": 0
+  },
+  "achievements": {
+    "unlocked": [],
+    "progress": {}
+  },
+  "settings": {
+    "key_bindings": {}
+  }
+}

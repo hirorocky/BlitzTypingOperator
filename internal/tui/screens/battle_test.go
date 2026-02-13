@@ -1088,8 +1088,8 @@ func TestBattleScreenChainEffectTrigger(t *testing.T) {
 	}
 }
 
-// TestBattleScreenRecastCompletionExpiresChainEffect はリキャスト終了時に未発動チェイン効果が破棄されることを検証します。
-func TestBattleScreenRecastCompletionExpiresChainEffect(t *testing.T) {
+// TestBattleScreenRecastCompletionPersistsChainEffect はリキャスト終了後もチェイン効果が待機状態を維持することを検証します。
+func TestBattleScreenRecastCompletionPersistsChainEffect(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
 	agents := createTestAgentsWithChainEffect()
@@ -1126,11 +1126,161 @@ func TestBattleScreenRecastCompletionExpiresChainEffect(t *testing.T) {
 		t.Error("リキャストが終了していません")
 	}
 
-	// チェイン効果が破棄されているはず
-	for _, pe := range screen.chainEffectManager.GetPendingEffects() {
-		if pe.AgentIndex == 0 {
-			t.Error("リキャスト終了時にエージェント0のチェイン効果が破棄されていません")
-		}
+	// リキャスト完了後もチェイン効果が待機状態を維持している（効果内容も検証）
+	pending := screen.chainEffectManager.GetPendingEffectForAgent(0)
+	if pending == nil {
+		t.Fatal("リキャスト完了後にエージェント0のチェイン効果が消えています（待機状態を維持すべき）")
+	}
+	if pending.Effect.Type != domain.ChainEffectDamageBonus {
+		t.Errorf("チェイン効果タイプ: got %v, want %v", pending.Effect.Type, domain.ChainEffectDamageBonus)
+	}
+	if pending.Effect.Value != 25 {
+		t.Errorf("チェイン効果値: got %v, want 25", pending.Effect.Value)
+	}
+}
+
+// TestBattleScreenChainEffectTriggersAfterRecastCompletion はリキャスト完了後に他エージェントがスキルを使用した場合にチェイン効果が発動することを検証します。
+func TestBattleScreenChainEffectTriggersAfterRecastCompletion(t *testing.T) {
+	enemy := createTestEnemy()
+	player := createTestPlayer()
+	agents := createTestAgentsWithChainEffectMultiple()
+
+	screen := NewBattleScreen(enemy, player, agents, nil)
+
+	if len(screen.moduleSlots) < 5 {
+		t.Skip("モジュールスロットが足りません")
+	}
+
+	// エージェント0のスキル選択（チェイン効果を登録）→チャレンジ完了
+	screen.selectedModuleIdx = 0
+	slot0 := screen.moduleSlots[screen.selectedModuleIdx]
+	screen.StartCooldown(screen.selectedModuleIdx, slot0.CooldownTotal)
+	screen.startAgentRecast(slot0.AgentIndex, slot0.Module)
+	screen.handleChallengeComplete(&domain.ChallengeOutput{
+		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+	})
+
+	// チェイン効果が登録されている
+	if !screen.chainEffectManager.HasPendingEffect(0) {
+		t.Fatal("エージェント0のチェイン効果が登録されていません")
+	}
+
+	// リキャストを短い時間に設定して終了させる
+	screen.recastManager.CancelRecast(0)
+	screen.recastManager.StartRecast(0, 50*time.Millisecond)
+	_, _ = screen.Update(BattleTickMsg{})
+
+	// リキャスト完了を確認
+	if !screen.recastManager.IsAgentReady(0) {
+		t.Fatal("リキャストが終了していません")
+	}
+
+	// リキャスト完了後もチェイン効果が残っていることを確認
+	if !screen.chainEffectManager.HasPendingEffect(0) {
+		t.Fatal("リキャスト完了後にチェイン効果が消えています")
+	}
+
+	// エージェント1がスキル使用（チェイン効果が発動するはず）
+	screen.selectedModuleIdx = 4
+	screen.selectedAgentIdx = 1
+	slot1 := screen.moduleSlots[screen.selectedModuleIdx]
+	screen.StartCooldown(screen.selectedModuleIdx, slot1.CooldownTotal)
+	screen.startAgentRecast(slot1.AgentIndex, slot1.Module)
+	screen.handleChallengeComplete(&domain.ChallengeOutput{
+		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+	})
+
+	// エージェント0のチェイン効果が発動して消えている
+	if screen.chainEffectManager.HasPendingEffect(0) {
+		t.Error("リキャスト完了後の他エージェントスキル使用でチェイン効果が発動していません")
+	}
+}
+
+// TestBattleScreenStartRecastClearsChainEffectForNoChainSkill はチェイン効果なしスキル使用時に既存の待機中チェイン効果が削除されることを検証します。
+func TestBattleScreenStartRecastClearsChainEffectForNoChainSkill(t *testing.T) {
+	enemy := createTestEnemy()
+	player := createTestPlayer()
+	agents := createTestAgentsWithChainEffect()
+
+	screen := NewBattleScreen(enemy, player, agents, nil)
+
+	if len(screen.moduleSlots) < 2 {
+		t.Skip("モジュールスロットが足りません")
+	}
+
+	// エージェント0のチェイン効果付きスキルを使用
+	screen.selectedModuleIdx = 0
+	slot0 := screen.moduleSlots[screen.selectedModuleIdx]
+	screen.StartCooldown(screen.selectedModuleIdx, slot0.CooldownTotal)
+	screen.startAgentRecast(slot0.AgentIndex, slot0.Module)
+	screen.handleChallengeComplete(&domain.ChallengeOutput{
+		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+	})
+
+	// チェイン効果が登録されている
+	if !screen.chainEffectManager.HasPendingEffect(0) {
+		t.Fatal("チェイン効果が登録されていません")
+	}
+
+	// リキャスト完了
+	screen.recastManager.CancelRecast(0)
+
+	// チェイン効果なしスキル（m2: 魔法攻撃, ChainEffect=nil）を使用
+	screen.selectedModuleIdx = 1
+	slot1 := screen.moduleSlots[screen.selectedModuleIdx]
+	screen.StartCooldown(screen.selectedModuleIdx, slot1.CooldownTotal)
+	screen.startAgentRecast(slot1.AgentIndex, slot1.Module)
+
+	// チェイン効果なしスキル使用後、既存のチェイン効果が削除されている
+	if screen.chainEffectManager.HasPendingEffect(0) {
+		t.Error("チェイン効果なしスキル使用後に既存のチェイン効果が削除されていません")
+	}
+}
+
+// TestBattleScreenPendingChainEffectTriggersWhenOtherAgentUsesNonChainSkill は、
+// エージェントAがチェイン効果付きスキルを使用した後に、別のエージェントBが非チェインスキルを
+// 使用した際に、エージェントAの待機中チェイン効果が発動して消費されることを検証します。
+func TestBattleScreenPendingChainEffectTriggersWhenOtherAgentUsesNonChainSkill(t *testing.T) {
+	enemy := createTestEnemy()
+	player := createTestPlayer()
+	agents := createTestAgentsWithChainEffectMultiple()
+
+	screen := NewBattleScreen(enemy, player, agents, nil)
+
+	if len(screen.moduleSlots) < 6 {
+		t.Skip("モジュールスロットが足りません")
+	}
+
+	// エージェント0のチェイン効果付きスキル（slot 0: m1）を使用
+	screen.selectedModuleIdx = 0
+	slot0 := screen.moduleSlots[screen.selectedModuleIdx]
+	screen.StartCooldown(screen.selectedModuleIdx, slot0.CooldownTotal)
+	screen.startAgentRecast(slot0.AgentIndex, slot0.Module)
+	screen.handleChallengeComplete(&domain.ChallengeOutput{
+		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+	})
+
+	// チェイン効果が登録されていることを確認
+	if !screen.chainEffectManager.HasPendingEffect(0) {
+		t.Fatal("エージェント0のチェイン効果が登録されていません")
+	}
+
+	// リキャスト完了
+	screen.recastManager.CancelRecast(0)
+
+	// エージェント1の非チェインスキル（slot 5: m6 魔法攻撃2, ChainEffect=nil）を使用
+	screen.selectedModuleIdx = 5
+	screen.selectedAgentIdx = 1
+	slot1 := screen.moduleSlots[screen.selectedModuleIdx]
+	screen.StartCooldown(screen.selectedModuleIdx, slot1.CooldownTotal)
+	screen.startAgentRecast(slot1.AgentIndex, slot1.Module)
+	screen.handleChallengeComplete(&domain.ChallengeOutput{
+		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+	})
+
+	// エージェント0の待機中チェイン効果が発動して消費されていることを確認
+	if screen.chainEffectManager.HasPendingEffect(0) {
+		t.Error("別エージェントの非チェインスキル使用時にエージェント0の待機中チェイン効果が発動・消費されていません")
 	}
 }
 

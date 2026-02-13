@@ -10,6 +10,7 @@
 //
 //	-data <path>  外部データディレクトリのパス（省略時は埋め込みデータを使用）
 //	-debug        デバッグモードを有効化（全コア・モジュール・チェイン効果を選択可能）
+//	-save <path>  セーブデータJSONファイルのパス（指定時はそのファイルからゲーム状態をロード）
 package main
 
 import (
@@ -27,11 +28,12 @@ func main() {
 	// コマンドライン引数を解析
 	dataDir := flag.String("data", "", "外部データディレクトリのパス（省略時は埋め込みデータを使用）")
 	debugMode := flag.Bool("debug", false, "デバッグモードを有効化（全コア・モジュール・チェイン効果を選択可能）")
+	saveFile := flag.String("save", "", "セーブデータJSONファイルのパス（指定時はそのファイルからゲーム状態をロード）")
 	flag.Parse()
 
 	// RootModelを作成 - ゲーム全体の状態管理とシーンルーティングを担当
 	// 外部データディレクトリが指定されていない場合は埋め込みデータを使用
-	model := app.NewRootModel(*dataDir, masterdata.EmbeddedData, *debugMode)
+	model := app.NewRootModel(*dataDir, masterdata.EmbeddedData, *debugMode, *saveFile)
 
 	// Bubbleteaプログラムを作成
 	// tea.WithAltScreen(): 代替スクリーンバッファを使用し、

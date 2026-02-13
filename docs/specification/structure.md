@@ -68,7 +68,7 @@ config       ← 横断的関心事（全層から参照可能）
   - AddBuff/AddDebuff: 同一TimedEffectID時の重複判定・Duration加算（上限99.9秒）
 - **時限効果**: timed_effect.go - マスタデータで定義される一時ステータス（バフ/デバフ）。ID、効果列、効果値を保持
 - **効果説明**: effect_description.go（EffectColumn/効果値からUI向け説明テキストを生成）
-- **チェイン効果**: chain_effect.go（スキル使用後のリキャスト中に発動する追加効果）
+- **チェイン効果**: chain_effect.go（スキル使用後、次のスキル使用まで待機し、他エージェントの行動で発動する追加効果）
 - **パッシブスキル**: passive_skill.go（トリガー/効果タイプ定義）, passive_evaluator.go（条件判定・効果適用）
 - **敵行動システム**: enemy.go 内に行動パターン（EnemyAction）、フェーズ遷移、チャージ/ディフェンス状態管理を含む。バフ/デバフ行動の効果は時限効果IDで参照
 

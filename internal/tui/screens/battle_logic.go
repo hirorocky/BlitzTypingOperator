@@ -220,7 +220,7 @@ func (s *BattleScreen) StartCooldown(slotIndex int, duration float64) {
 
 // ==================== ゲームロジック: リキャスト管理 ====================
 
-// UpdateRecasts はリキャスト時間を更新し、終了したエージェントのチェイン効果を破棄します。
+// UpdateRecasts はリキャスト時間を更新します。
 func (s *BattleScreen) UpdateRecasts(deltaSeconds float64) {
 	if s.recastManager == nil {
 		return
@@ -228,14 +228,7 @@ func (s *BattleScreen) UpdateRecasts(deltaSeconds float64) {
 
 	// リキャスト時間を更新（deltaSecondsをtime.Durationに変換）
 	delta := time.Duration(deltaSeconds * float64(time.Second))
-	completedAgents := s.recastManager.UpdateRecast(delta)
-
-	// リキャスト完了したエージェントのチェイン効果を破棄
-	if s.chainEffectManager != nil {
-		for _, agentIndex := range completedAgents {
-			s.chainEffectManager.ExpireEffectsForAgent(agentIndex)
-		}
-	}
+	s.recastManager.UpdateRecast(delta)
 }
 
 // isModuleUsable は指定スロットのモジュールが使用可能かを判定します。
@@ -270,9 +263,13 @@ func (s *BattleScreen) startAgentRecast(agentIndex int, module *domain.SkillMode
 	cooldownDuration := time.Duration(module.CooldownSeconds() * float64(time.Second))
 	s.recastManager.StartRecast(agentIndex, cooldownDuration)
 
-	// チェイン効果を登録
-	if s.chainEffectManager != nil && module.ChainEffect != nil {
-		s.chainEffectManager.RegisterChainEffect(agentIndex, module.ChainEffect, module.TypeID)
+	// チェイン効果の管理: スキルにチェイン効果があれば登録、なければ既存効果をクリア
+	if s.chainEffectManager != nil {
+		if module.ChainEffect != nil {
+			s.chainEffectManager.RegisterChainEffect(agentIndex, module.ChainEffect, module.TypeID)
+		} else {
+			s.chainEffectManager.ClearEffectForAgent(agentIndex)
+		}
 	}
 }
 
