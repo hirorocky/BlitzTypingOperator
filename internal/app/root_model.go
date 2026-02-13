@@ -526,6 +526,7 @@ func (m *RootModel) handleBattleResult(result screens.BattleResultMsg) {
 				rewardResult,
 				m.invManager.Cores(),
 				m.invManager.Skills(),
+				m.invManager.ChainEffects(),
 			)
 		}
 

@@ -352,7 +352,7 @@ func TestAddRewardsToInventory_WithChainEffect(t *testing.T) {
 	skillInv := domain.NewSkillInventory()
 
 	// インベントリに追加
-	warning := AddRewardsToInventory(result, coreInv, skillInv)
+	warning := AddRewardsToInventory(result, coreInv, skillInv, nil)
 
 	if warning.WarningMessage != "" {
 		t.Error("新システムでは警告メッセージは空であるべき")

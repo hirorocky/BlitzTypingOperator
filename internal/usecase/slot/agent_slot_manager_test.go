@@ -1080,34 +1080,104 @@ func TestAgentSlotManager_BuildAgentsForBattle_AllFull(t *testing.T) {
 	}
 }
 
-// ==================== ChainEffect適用のテスト ====================
+// ==================== 受け入れ基準6,7,26: チェイン効果ユニーク制約・BuildForBattle ====================
 
-func TestAgentSlotManager_BuildAgentsForBattle_WithChainEffect(t *testing.T) {
-	t.Skip("TODO: ChainEffect統合機能は未実装のためスキップ")
-	// ChainEffectsを含むマネージャーを作成
-	coreInv := domain.NewCoreInventory()
-	skillInv := domain.NewSkillInventory()
+func TestSetChainEffect_DuplicateAcrossSlots_ReturnsError(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+	chainEffectInv := domain.NewChainEffectInventory()
+	chainEffectInv.AddChainEffect("damage_bonus")
+	manager.SetChainEffectInventory(chainEffectInv)
 
+	// 2スロットにそれぞれコアとスキルを設定
+	coreInv.AddCore("core_001")
+	coreInv.AddCore("core_002")
+	skillInv.AddSkill("skill_001")
+	skillInv.AddSkill("skill_004")
+	_ = manager.SetCore(0, "core_001")
+	_ = manager.SetSkill(0, 0, "skill_001")
+	_ = manager.SetCore(1, "core_002")
+	_ = manager.SetSkill(1, 0, "skill_004")
+
+	// スロット0にチェイン効果を設定
+	err := manager.SetChainEffect(0, 0, "damage_bonus")
+	if err != nil {
+		t.Fatalf("最初のSetChainEffectに失敗: %v", err)
+	}
+
+	// スロット1に同じチェイン効果を設定 → エラー
+	err = manager.SetChainEffect(1, 0, "damage_bonus")
+	if err != ErrChainEffectAlreadyEquipped {
+		t.Errorf("重複チェイン効果でErrChainEffectAlreadyEquippedが返るべき: got %v", err)
+	}
+}
+
+func TestSetChainEffect_SameSlotOverwrite_Allowed(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+	chainEffectInv := domain.NewChainEffectInventory()
+	chainEffectInv.AddChainEffect("damage_bonus")
+	manager.SetChainEffectInventory(chainEffectInv)
+
+	coreInv.AddCore("core_001")
+	skillInv.AddSkill("skill_001")
+	_ = manager.SetCore(0, "core_001")
+	_ = manager.SetSkill(0, 0, "skill_001")
+	_ = manager.SetChainEffect(0, 0, "damage_bonus")
+
+	// 同じスロットに同じチェイン効果を再設定 → 許可
+	err := manager.SetChainEffect(0, 0, "damage_bonus")
+	if err != nil {
+		t.Errorf("同じスロットへの再設定はエラーにならないべき: %v", err)
+	}
+}
+
+func TestSetChainEffect_ClearAndReuse_Allowed(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+	chainEffectInv := domain.NewChainEffectInventory()
+	chainEffectInv.AddChainEffect("damage_bonus")
+	manager.SetChainEffectInventory(chainEffectInv)
+
+	coreInv.AddCore("core_001")
+	coreInv.AddCore("core_002")
+	skillInv.AddSkill("skill_001")
+	skillInv.AddSkill("skill_004")
+	_ = manager.SetCore(0, "core_001")
+	_ = manager.SetSkill(0, 0, "skill_001")
+	_ = manager.SetCore(1, "core_002")
+	_ = manager.SetSkill(1, 0, "skill_004")
+
+	// スロット0にチェイン効果を設定
+	_ = manager.SetChainEffect(0, 0, "damage_bonus")
+
+	// スロット0のチェイン効果をクリア
+	_ = manager.ClearChainEffect(0, 0)
+
+	// スロット1に同じチェイン効果を設定 → クリア後なので許可
+	err := manager.SetChainEffect(1, 0, "damage_bonus")
+	if err != nil {
+		t.Errorf("クリア後の再設定はエラーにならないべき: %v", err)
+	}
+}
+
+func TestBuildAgentsForBattle_WithChainEffect(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+
+	// チェイン効果マスタデータとインベントリを設定
+	chainEffectInv := domain.NewChainEffectInventory()
+	chainEffectInv.AddChainEffect("chain_damage_bonus")
+	manager.SetChainEffectInventory(chainEffectInv)
+
+	// マスタデータにチェイン効果を追加（コンストラクタで渡したマップに追加）
+	// 新しいマネージャーを作成してマスタデータを含める
 	coreTypes := map[string]domain.CoreType{
-		"core_001": {
-			ID:          "core_001",
-			Name:        "テストコア",
-			AllowedTags: []string{"physical"},
-		},
+		"core_001": createTestCoreType("core_001", []string{"physical", "magic"}),
 	}
-
 	skillTypes := map[string]domain.SkillType{
-		"skill_001": {
-			ID:   "skill_001",
-			Name: "テストスキル",
-			Tags: []string{"physical"},
-		},
+		"skill_001": createTestSkillType("skill_001", []string{"physical"}),
 	}
-
-	passiveSkills := map[string]domain.PassiveSkill{}
-
-	// ChainEffectsマップを作成
-	chainEffects := map[string]domain.ChainEffect{
+	passiveSkills := map[string]domain.PassiveSkill{
+		"passive_001": createTestPassiveSkill("passive_001"),
+	}
+	chainEffectsMap := map[string]domain.ChainEffect{
 		"chain_damage_bonus": domain.NewChainEffectWithTemplate(
 			"chain_damage_bonus",
 			domain.ChainEffectDamageBonus,
@@ -1116,37 +1186,24 @@ func TestAgentSlotManager_BuildAgentsForBattle_WithChainEffect(t *testing.T) {
 			"ダメージ+%.0f",
 		),
 	}
+	mgr := NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, chainEffectsMap)
+	mgr.SetChainEffectInventory(chainEffectInv)
 
-	manager := NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, chainEffects)
-
-	// インベントリにコアとスキルを追加
 	coreInv.AddCore("core_001")
 	skillInv.AddSkill("skill_001")
 
-	// スロットを設定
-	if err := manager.SetCore(0, "core_001"); err != nil {
-		t.Fatalf("SetCoreでエラー: %v", err)
-	}
-	if err := manager.SetSkill(0, 0, "skill_001"); err != nil {
-		t.Fatalf("SetSkillでエラー: %v", err)
-	}
+	_ = mgr.SetCore(0, "core_001")
+	_ = mgr.SetSkill(0, 0, "skill_001")
+	_ = mgr.SetChainEffect(0, 0, "chain_damage_bonus")
 
-	// バトル用エージェントを構築
-	agents := manager.BuildAgentsForBattle()
-
+	agents := mgr.BuildAgentsForBattle()
 	if len(agents) != 1 {
-		t.Fatalf("エージェント数 = %d, want %d", len(agents), 1)
+		t.Fatalf("エージェント数 = %d, want 1", len(agents))
 	}
 
-	// スキルにChainEffectが適用されていることを確認
-	agent := agents[0]
-	if len(agent.Modules) != 1 {
-		t.Fatalf("スキル数 = %d, want %d", len(agent.Modules), 1)
-	}
-
-	skill := agent.Modules[0]
+	skill := agents[0].Modules[0]
 	if !skill.HasChainEffect() {
-		t.Error("スキルにChainEffectが適用されていない")
+		t.Error("チェイン効果スロットから解決されたChainEffectが適用されるべき")
 	}
 
 	if skill.ChainEffect.Type != domain.ChainEffectDamageBonus {
@@ -1154,65 +1211,160 @@ func TestAgentSlotManager_BuildAgentsForBattle_WithChainEffect(t *testing.T) {
 	}
 
 	if skill.ChainEffect.Value != 50.0 {
-		t.Errorf("ChainEffect.Value = %f, want %f", skill.ChainEffect.Value, 50.0)
+		t.Errorf("ChainEffect.Value = %f, want 50.0", skill.ChainEffect.Value)
 	}
 }
 
-func TestAgentSlotManager_BuildAgentsForBattle_WithoutChainEffect(t *testing.T) {
-	t.Skip("TODO: ChainEffect統合機能は未実装のためスキップ")
-	// ChainEffectsを含むマネージャーを作成
-	coreInv := domain.NewCoreInventory()
-	skillInv := domain.NewSkillInventory()
+func TestBuildAgentsForBattle_WithoutChainEffect(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
 
-	coreTypes := map[string]domain.CoreType{
-		"core_001": {
-			ID:          "core_001",
-			Name:        "テストコア",
-			AllowedTags: []string{"physical"},
-		},
-	}
-
-	skillTypes := map[string]domain.SkillType{
-		"skill_001": {
-			ID:   "skill_001",
-			Name: "テストスキル",
-			Tags: []string{"physical"},
-		},
-	}
-
-	passiveSkills := map[string]domain.PassiveSkill{}
-	chainEffects := map[string]domain.ChainEffect{}
-
-	manager := NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, chainEffects)
-
-	// インベントリにコアとスキルを追加（ChainEffectなし）
 	coreInv.AddCore("core_001")
 	skillInv.AddSkill("skill_001")
 
-	// スロットを設定（ChainEffectID空）
-	if err := manager.SetCore(0, "core_001"); err != nil {
-		t.Fatalf("SetCoreでエラー: %v", err)
-	}
-	if err := manager.SetSkill(0, 0, "skill_001"); err != nil {
-		t.Fatalf("SetSkillでエラー: %v", err)
-	}
+	_ = manager.SetCore(0, "core_001")
+	_ = manager.SetSkill(0, 0, "skill_001")
 
-	// バトル用エージェントを構築
+	// チェイン効果未設定
 	agents := manager.BuildAgentsForBattle()
-
 	if len(agents) != 1 {
-		t.Fatalf("エージェント数 = %d, want %d", len(agents), 1)
+		t.Fatalf("エージェント数 = %d, want 1", len(agents))
 	}
 
-	// スキルにChainEffectが適用されていないことを確認
-	agent := agents[0]
-	if len(agent.Modules) != 1 {
-		t.Fatalf("スキル数 = %d, want %d", len(agent.Modules), 1)
-	}
-
-	skill := agent.Modules[0]
+	skill := agents[0].Modules[0]
 	if skill.HasChainEffect() {
-		t.Error("ChainEffectIDが空の場合はChainEffectが適用されないべき")
+		t.Error("チェイン効果未設定の場合はChainEffectが適用されないべき")
+	}
+}
+
+// ==================== 受け入れ基準4,5: コアユニーク制約 ====================
+
+// ==================== 受け入れ基準8,9,10: チェイン効果基本管理 ====================
+
+func TestSetChainEffect_Success(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+	chainEffectInv := domain.NewChainEffectInventory()
+	chainEffectInv.AddChainEffect("damage_bonus")
+
+	// チェイン効果インベントリを設定
+	manager.SetChainEffectInventory(chainEffectInv)
+
+	// コアとスキルを設定
+	coreInv.AddCore("core_001")
+	skillInv.AddSkill("skill_001")
+	_ = manager.SetCore(0, "core_001")
+	_ = manager.SetSkill(0, 0, "skill_001")
+
+	// チェイン効果を設定
+	err := manager.SetChainEffect(0, 0, "damage_bonus")
+	if err != nil {
+		t.Fatalf("SetChainEffectに失敗: %v", err)
+	}
+
+	// 設定されていることを確認
+	chainCfg := manager.GetSlot(0).GetChainEffect(0)
+	if chainCfg == nil || chainCfg.TypeID != "damage_bonus" {
+		t.Errorf("チェイン効果が設定されていない: %v", chainCfg)
+	}
+}
+
+func TestSetChainEffect_SkillNotSet_ReturnsError(t *testing.T) {
+	manager, coreInv, _ := createTestManager()
+	chainEffectInv := domain.NewChainEffectInventory()
+	chainEffectInv.AddChainEffect("damage_bonus")
+	manager.SetChainEffectInventory(chainEffectInv)
+
+	// コアのみ設定（スキル未設定）
+	coreInv.AddCore("core_001")
+	_ = manager.SetCore(0, "core_001")
+
+	// スキル未設定でチェイン効果を設定 → エラー
+	err := manager.SetChainEffect(0, 0, "damage_bonus")
+	if err != ErrSkillNotSetForChain {
+		t.Errorf("スキル未設定でErrSkillNotSetForChainが返るべき: got %v", err)
+	}
+}
+
+func TestSetChainEffect_NotOwned_ReturnsError(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+	chainEffectInv := domain.NewChainEffectInventory()
+	// damage_bonusは追加しない
+	manager.SetChainEffectInventory(chainEffectInv)
+
+	coreInv.AddCore("core_001")
+	skillInv.AddSkill("skill_001")
+	_ = manager.SetCore(0, "core_001")
+	_ = manager.SetSkill(0, 0, "skill_001")
+
+	// 保有していないチェイン効果を設定 → エラー
+	err := manager.SetChainEffect(0, 0, "damage_bonus")
+	if err != ErrChainEffectNotOwned {
+		t.Errorf("未保有でErrChainEffectNotOwnedが返るべき: got %v", err)
+	}
+}
+
+func TestClearChainEffect_Success(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+	chainEffectInv := domain.NewChainEffectInventory()
+	chainEffectInv.AddChainEffect("damage_bonus")
+	manager.SetChainEffectInventory(chainEffectInv)
+
+	coreInv.AddCore("core_001")
+	skillInv.AddSkill("skill_001")
+	_ = manager.SetCore(0, "core_001")
+	_ = manager.SetSkill(0, 0, "skill_001")
+	_ = manager.SetChainEffect(0, 0, "damage_bonus")
+
+	// チェイン効果をクリア
+	err := manager.ClearChainEffect(0, 0)
+	if err != nil {
+		t.Fatalf("ClearChainEffectに失敗: %v", err)
+	}
+
+	chainCfg := manager.GetSlot(0).GetChainEffect(0)
+	if chainCfg != nil && !chainCfg.IsEmpty() {
+		t.Error("クリア後にチェイン効果が残っている")
+	}
+}
+
+func TestClearSkill_AutoClearsChainEffect(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+	chainEffectInv := domain.NewChainEffectInventory()
+	chainEffectInv.AddChainEffect("damage_bonus")
+	manager.SetChainEffectInventory(chainEffectInv)
+
+	coreInv.AddCore("core_001")
+	skillInv.AddSkill("skill_001")
+	_ = manager.SetCore(0, "core_001")
+	_ = manager.SetSkill(0, 0, "skill_001")
+	_ = manager.SetChainEffect(0, 0, "damage_bonus")
+
+	// スキルをクリア → チェイン効果も自動クリア
+	_ = manager.ClearSkill(0, 0)
+
+	chainCfg := manager.GetSlot(0).GetChainEffect(0)
+	if chainCfg != nil && !chainCfg.IsEmpty() {
+		t.Error("スキルクリア後にチェイン効果が残っている")
+	}
+}
+
+func TestClearCore_CascadeClearsChainEffect(t *testing.T) {
+	manager, coreInv, skillInv := createTestManager()
+	chainEffectInv := domain.NewChainEffectInventory()
+	chainEffectInv.AddChainEffect("damage_bonus")
+	manager.SetChainEffectInventory(chainEffectInv)
+
+	coreInv.AddCore("core_001")
+	skillInv.AddSkill("skill_001")
+	_ = manager.SetCore(0, "core_001")
+	_ = manager.SetSkill(0, 0, "skill_001")
+	_ = manager.SetChainEffect(0, 0, "damage_bonus")
+
+	// コアをクリア → スキル＆チェイン効果も連鎖クリア
+	_ = manager.ClearCore(0)
+
+	chainCfg := manager.GetSlot(0).GetChainEffect(0)
+	if chainCfg != nil && !chainCfg.IsEmpty() {
+		t.Error("コアクリア後にチェイン効果が残っている")
 	}
 }
 

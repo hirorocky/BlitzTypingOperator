@@ -132,7 +132,7 @@
   - nil渡し時のデフォルトChainEffectInventory作成
 - **関連テスト**: 基準3
 - **依存**: タスク1
-- **状態**: 未着手
+- **状態**: 完了
 
 ### タスク5: AgentSlotManagerにコアユニーク制約追加
 - **対象**: `internal/usecase/slot/agent_slot_manager.go`
@@ -142,7 +142,7 @@
   - `ClearCore`で制約を解放
 - **関連テスト**: 基準4, 5
 - **依存**: なし（既存のSetCore/ClearCoreの修正）
-- **状態**: 未着手
+- **状態**: 完了
 
 ### タスク6a: AgentSlotManagerにチェイン効果基本管理追加
 - **対象**: `internal/usecase/slot/agent_slot_manager.go`
@@ -160,7 +160,7 @@
   - `ClearCore`でスキル＆チェイン効果の連鎖クリア
 - **関連テスト**: 基準8, 9, 10
 - **依存**: タスク1, タスク2
-- **状態**: 未着手
+- **状態**: 完了
 
 ### タスク6b: AgentSlotManagerにユニーク制約・BuildForBattle対応追加
 - **対象**: `internal/usecase/slot/agent_slot_manager.go`
@@ -172,7 +172,7 @@
     - `ChainEffectSlotConfig.TypeID`で`m.chainEffects`マスタデータマップから`domain.ChainEffect`を解決
 - **関連テスト**: 基準6, 7, 26
 - **依存**: タスク2（ChainEffectSlotConfig構造体）, タスク6a（SetChainEffect基本実装）
-- **状態**: 未着手
+- **状態**: 完了
 
 ### タスク7: セーブデータ構造の更新
 - **対象**: `internal/infra/savedata/savedata.go`
@@ -187,7 +187,7 @@
   - `UniqueChainEffects`がnilの旧セーブデータ読込時にデフォルト値を補完
 - **関連テスト**: 基準14, 15
 - **依存**: なし（独立して実施可能）
-- **状態**: 未着手
+- **状態**: 完了
 
 ### タスク8: セーブデータ変換関数の更新
 - **対象**: `internal/infra/savedata/unique_inventory_converter.go`
@@ -202,7 +202,7 @@
   - converter関数はドメインロジックを持たず、純粋なデータ変換のみ行う
 - **関連テスト**: 基準14, 15
 - **依存**: タスク7, タスク1, タスク2, タスク3+15
-- **状態**: 未着手
+- **状態**: 完了
 
 ### タスク9: 報酬システムのチェイン効果分離
 - **対象**: `internal/usecase/rewarding/reward.go`（usecaseレイヤーに所属）
@@ -215,7 +215,7 @@
 - **注意**: 報酬ロジックはusecaseレイヤーに正しく配置済み（`internal/usecase/rewarding/`）
 - **関連テスト**: 基準16
 - **依存**: タスク1, タスク3+15
-- **状態**: 未着手
+- **状態**: 完了
 
 ### タスク10: 初期エージェントのコア分離
 - **対象**:
@@ -232,7 +232,7 @@
   - `InitializeNewGame`: ChainEffectInventorySaveの初期化追加
 - **関連テスト**: 基準17, 18
 - **依存**: タスク7（SkillInventorySaveの新フォーマット）
-- **状態**: 未着手
+- **状態**: 完了
 
 ### タスク11: TUI - スキル一覧タブからチェイン効果UI除去
 - **対象**: `internal/tui/screens/inventory.go`
@@ -395,3 +395,11 @@ send_keys("jj\r", delay=300)     # カスタマイズ画面へ
 - タスク1完了: ChainEffectInventoryドメインモデル作成（domain/chain_effect_inventory.go）
 - タスク2完了: AgentSlotにChainEffectSlotConfig/ChainEffects配列追加、SetChainEffect/ClearChainEffect/GetChainEffectメソッド追加
 - タスク3+15完了: SkillOwnershipからChainVariations除去、AddSkill/SetSkillシグネチャ簡略化、全呼び出し元修正（~25ファイル）
+- タスク4完了: InventoryManagerにchainEffectsフィールド追加、ChainEffects()アクセサ、AddChainEffect()メソッド、NewInventoryManagerWithInventories 3引数化
+- タスク5完了: SetCoreにコアユニーク制約追加（ErrCoreAlreadyEquipped）、isCoreEquippedElsewhere()
+- タスク6a完了: AgentSlotManagerにchainEffectInvフィールド追加、SetChainEffect/ClearChainEffect実装
+- タスク6b完了: チェイン効果ユニーク制約追加（ErrChainEffectAlreadyEquipped）、buildModuleFromConfigのチェイン効果解決
+- タスク7完了: ChainEffectInventorySave/ChainEffectSlotSaveCfg追加、SkillInventorySave.Skillsを[]stringに変更、SkillSlotSaveCfgからChainEffectID除去
+- タスク8完了: ChainEffect変換関数追加、AgentSlot変換にチェイン効果対応追加
+- タスク9完了: AddRewardsToInventoryにChainEffectInventory引数追加、チェイン効果の独立追加ロジック実装、session.InventoryManagerにchainEffectsフィールド追加
+- タスク10完了: first_agent.jsonの3エージェントに異なるコア設定（all_rounder/healer/quick_recoverer）、InitializeNewGameの3種コア対応

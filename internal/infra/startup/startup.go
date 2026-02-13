@@ -175,15 +175,16 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 	saveData := savedata.NewSaveData()
 
 	// 初期コアとスキルをユニークインベントリに追加
-	// コア：オールラウンダー（TypeIDリスト形式）
+	// コア：3種類の異なるコア
 	// スキル：軽斬撃、応急手当、気合い溜め
-	saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores, "all_rounder")
+	saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores,
+		"all_rounder", "healer", "quick_recoverer")
 
 	saveData.Inventory.UniqueSkills.Skills = append(saveData.Inventory.UniqueSkills.Skills,
 		"physical_strike_lv1", "heal_lv1", "str_buff_lv1")
 
 	// 初期エージェントスロット構成
-	// 3スロットにオールラウンダー + 1スキルずつ分散
+	// 3スロットに異なるコア + 1スキルずつ分散
 	saveData.Player.AgentSlots[0] = savedata.AgentSlotSave{
 		CoreTypeID: "all_rounder",
 		Skills: [4]savedata.SkillSlotSaveCfg{
@@ -194,7 +195,7 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 		},
 	}
 	saveData.Player.AgentSlots[1] = savedata.AgentSlotSave{
-		CoreTypeID: "all_rounder",
+		CoreTypeID: "healer",
 		Skills: [4]savedata.SkillSlotSaveCfg{
 			{TypeID: "heal_lv1"},
 			{},
@@ -203,7 +204,7 @@ func (i *NewGameInitializer) InitializeNewGame() *savedata.SaveData {
 		},
 	}
 	saveData.Player.AgentSlots[2] = savedata.AgentSlotSave{
-		CoreTypeID: "all_rounder",
+		CoreTypeID: "quick_recoverer",
 		Skills: [4]savedata.SkillSlotSaveCfg{
 			{TypeID: "str_buff_lv1"},
 			{},
