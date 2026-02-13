@@ -124,7 +124,7 @@ type RootModel struct {
 // dataDir: 外部データディレクトリのパス（空の場合は埋め込みデータを使用）
 // embeddedFS: 埋め込みファイルシステム（dataDir が空の場合に使用）
 // debugMode: デバッグモードを有効化（全コア・モジュール・チェイン効果を選択可能）
-func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
+func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath string) *RootModel {
 	// セーブディレクトリを決定（デバッグモードでは専用のセーブファイルを使用）
 	homeDir, _ := os.UserHomeDir()
 	saveDir := filepath.Join(homeDir, ".BlitzTypingOperator")
@@ -181,7 +181,23 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool) *RootModel {
 	var statusMessage string
 	var loadedSaveData *savedata.SaveData
 
-	if saveDataIO.Exists() {
+	if saveFilePath != "" {
+		// 指定されたセーブファイルからロード
+		var loadErr error
+		loadedSaveData, loadErr = savedata.LoadSaveDataFromFile(saveFilePath)
+		if loadErr == nil {
+			gs = gamestate.GameStateFromSaveData(loadedSaveData, domainSources)
+			statusMessage = "指定セーブファイルをロードしました"
+			slog.Info("指定セーブファイルをロード", slog.String("path", saveFilePath))
+		} else {
+			// ロード失敗時は新規ゲームにフォールバック
+			slog.Error("指定セーブファイルの読み込みに失敗", slog.String("path", saveFilePath), slog.Any("error", loadErr))
+			initializer := startup.NewNewGameInitializer(externalData)
+			loadedSaveData = initializer.InitializeNewGame()
+			gs = gamestate.GameStateFromSaveData(loadedSaveData, domainSources)
+			statusMessage = "セーブファイルの読み込みに失敗しました。新規ゲームを開始します"
+		}
+	} else if saveDataIO.Exists() {
 		var loadErr error
 		loadedSaveData, loadErr = saveDataIO.LoadGame()
 		if loadErr == nil {

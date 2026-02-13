@@ -110,8 +110,8 @@ func TestCheckAndTriggerSameAgent(t *testing.T) {
 	}
 }
 
-// TestExpireEffectsForAgent はリキャスト終了時の効果破棄をテストします。
-func TestExpireEffectsForAgent(t *testing.T) {
+// TestClearEffectForAgent は指定エージェントの待機中チェイン効果を削除することをテストします。
+func TestClearEffectForAgent(t *testing.T) {
 	cem := NewChainEffectManager()
 
 	// 複数エージェントのチェイン効果を登録
@@ -120,15 +120,12 @@ func TestExpireEffectsForAgent(t *testing.T) {
 	cem.RegisterChainEffect(0, &effect1, "slash_lv1")
 	cem.RegisterChainEffect(1, &effect2, "heal_lv1")
 
-	// エージェント0のリキャスト終了（効果破棄）
-	expired := cem.ExpireEffectsForAgent(0)
+	// エージェント0の効果を削除
+	cem.ClearEffectForAgent(0)
 
-	// 破棄された効果を確認
-	if len(expired) != 1 {
-		t.Fatalf("破棄された効果数: got %d, want 1", len(expired))
-	}
-	if expired[0].AgentIndex != 0 {
-		t.Errorf("破棄されたAgentIndex: got %d, want 0", expired[0].AgentIndex)
+	// エージェント0の効果が削除されている
+	if cem.HasPendingEffect(0) {
+		t.Error("エージェント0の待機中効果が削除されていません")
 	}
 
 	// エージェント1の効果は残っている
@@ -138,6 +135,23 @@ func TestExpireEffectsForAgent(t *testing.T) {
 	}
 	if pending[0].AgentIndex != 1 {
 		t.Errorf("残りAgentIndex: got %d, want 1", pending[0].AgentIndex)
+	}
+}
+
+// TestClearEffectForAgentNoEffect は効果がないエージェントに対するClearEffectForAgentが安全に動作することをテストします。
+func TestClearEffectForAgentNoEffect(t *testing.T) {
+	cem := NewChainEffectManager()
+
+	// 存在しないエージェントに対してクリア（エラーにならない）
+	cem.ClearEffectForAgent(0)
+
+	// 他の効果に影響しない
+	effect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 20.0)
+	cem.RegisterChainEffect(1, &effect, "slash_lv1")
+	cem.ClearEffectForAgent(0)
+
+	if !cem.HasPendingEffect(1) {
+		t.Error("エージェント1の待機中効果が消えてしまいました")
 	}
 }
 

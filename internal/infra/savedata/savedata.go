@@ -379,6 +379,30 @@ func (io *SaveDataIO) loadFromFile(filePath string) (*SaveData, error) {
 	return &data, nil
 }
 
+// LoadSaveDataFromFile は指定パスからセーブデータを読み込みます。
+// -saveフラグで指定されたテスト用セーブファイルのロードに使用します。
+func LoadSaveDataFromFile(filePath string) (*SaveData, error) {
+	jsonData, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("ファイル読み込みに失敗: %w", err)
+	}
+
+	var data SaveData
+	if err := json.Unmarshal(jsonData, &data); err != nil {
+		return nil, fmt.Errorf("JSONパースに失敗: %w", err)
+	}
+
+	if err := ValidateSaveVersion(data.Version); err != nil {
+		return nil, err
+	}
+
+	if err := ValidateSaveData(&data); err != nil {
+		return nil, err
+	}
+
+	return &data, nil
+}
+
 // LoadFromBackup は指定したバックアップインデックスからセーブデータを読み込みます。
 func (io *SaveDataIO) LoadFromBackup(backupIndex int) (*SaveData, error) {
 	if backupIndex < 1 || backupIndex > MaxBackupCount {
