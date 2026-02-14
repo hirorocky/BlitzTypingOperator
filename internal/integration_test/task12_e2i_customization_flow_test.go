@@ -151,10 +151,10 @@ func TestE2I_FullCustomizationFlow(t *testing.T) {
 
 	// インベントリにアイテムを追加（バトル報酬シミュレーション）
 	invManager.AddCore("berserker")
-	invManager.AddSkill("basic_attack", "chain_combo")      // チェイン効果付き
-	invManager.AddSkill("basic_attack", "chain_crit")       // 同じスキル、別のチェイン効果
-	invManager.AddSkill("power_attack", "")                 // チェイン効果なし
-	invManager.AddSkill("berserk_strike", "chain_ultimate") // 最強スキル
+	invManager.AddSkill("basic_attack")   // チェイン効果付き
+	invManager.AddSkill("basic_attack")   // 同じスキル、別のチェイン効果
+	invManager.AddSkill("power_attack")   // チェイン効果なし
+	invManager.AddSkill("berserk_strike") // 最強スキル
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -190,13 +190,13 @@ func TestE2I_FullCustomizationFlow(t *testing.T) {
 	}
 
 	// ステップ5: スキル設定（チェイン効果付き）
-	err = slotManager.SetSkill(slotIndex, 0, "basic_attack", "chain_combo")
+	err = slotManager.SetSkill(slotIndex, 0, "basic_attack")
 	if err != nil {
 		t.Fatalf("スキル設定(チェイン効果付き)に失敗: %v", err)
 	}
 
 	// ステップ6: 同じスキルを別スロットに設定しようとするとエラーになることを確認
-	err = slotManager.SetSkill(slotIndex, 1, "basic_attack", "chain_crit")
+	err = slotManager.SetSkill(slotIndex, 1, "basic_attack")
 	if err == nil {
 		t.Error("同じスキルIDを複数スロットに設定できてしまった")
 	}
@@ -205,13 +205,13 @@ func TestE2I_FullCustomizationFlow(t *testing.T) {
 	}
 
 	// ステップ7: スキル設定（チェイン効果なし）
-	err = slotManager.SetSkill(slotIndex, 1, "power_attack", "")
+	err = slotManager.SetSkill(slotIndex, 1, "power_attack")
 	if err != nil {
 		t.Fatalf("スキル設定(チェインなし)に失敗: %v", err)
 	}
 
 	// ステップ8: スキル設定（最強スキル）
-	err = slotManager.SetSkill(slotIndex, 2, "berserk_strike", "chain_ultimate")
+	err = slotManager.SetSkill(slotIndex, 2, "berserk_strike")
 	if err != nil {
 		t.Fatalf("スキル設定(最強)に失敗: %v", err)
 	}
@@ -249,13 +249,13 @@ func TestE2I_MultipleAgentCustomizationFlow(t *testing.T) {
 	invManager.AddCore("archmage")
 	invManager.AddCore("priest")
 
-	invManager.AddSkill("basic_attack", "")
-	invManager.AddSkill("power_attack", "")
-	invManager.AddSkill("fire_bolt", "")
-	invManager.AddSkill("inferno", "")
-	invManager.AddSkill("heal", "")
-	invManager.AddSkill("cure_all", "")
-	invManager.AddSkill("attack_up", "")
+	invManager.AddSkill("basic_attack")
+	invManager.AddSkill("power_attack")
+	invManager.AddSkill("fire_bolt")
+	invManager.AddSkill("inferno")
+	invManager.AddSkill("heal")
+	invManager.AddSkill("cure_all")
+	invManager.AddSkill("attack_up")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -269,19 +269,19 @@ func TestE2I_MultipleAgentCustomizationFlow(t *testing.T) {
 
 	// スロット0: バーサーカー（物理アタッカー）
 	slotManager.SetCore(0, "berserker")
-	slotManager.SetSkill(0, 0, "basic_attack", "")
-	slotManager.SetSkill(0, 1, "power_attack", "")
+	slotManager.SetSkill(0, 0, "basic_attack")
+	slotManager.SetSkill(0, 1, "power_attack")
 
 	// スロット1: アークメイジ（魔法アタッカー）
 	slotManager.SetCore(1, "archmage")
-	slotManager.SetSkill(1, 0, "fire_bolt", "")
-	slotManager.SetSkill(1, 1, "inferno", "")
+	slotManager.SetSkill(1, 0, "fire_bolt")
+	slotManager.SetSkill(1, 1, "inferno")
 
 	// スロット2: プリースト（サポート）
 	slotManager.SetCore(2, "priest")
-	slotManager.SetSkill(2, 0, "heal", "")
-	slotManager.SetSkill(2, 1, "cure_all", "")
-	slotManager.SetSkill(2, 2, "attack_up", "")
+	slotManager.SetSkill(2, 0, "heal")
+	slotManager.SetSkill(2, 1, "cure_all")
+	slotManager.SetSkill(2, 2, "attack_up")
 
 	// 全スロット確認
 	if slotManager.GetReadySlotCount() != 3 {
@@ -329,13 +329,13 @@ func TestE2I_CompatibilityFiltering_AllTagsMatch(t *testing.T) {
 	invManager.AddCore("balanced")
 
 	// 各種スキルを追加
-	invManager.AddSkill("basic_attack", "")   // physical_low
-	invManager.AddSkill("fire_bolt", "")      // magic_low
-	invManager.AddSkill("heal", "")           // heal_low
-	invManager.AddSkill("attack_up", "")      // buff_low
-	invManager.AddSkill("poison", "")         // debuff_low
-	invManager.AddSkill("power_attack", "")   // physical_mid - バランスは許可しない
-	invManager.AddSkill("berserk_strike", "") // physical_high - バランスは許可しない
+	invManager.AddSkill("basic_attack")   // physical_low
+	invManager.AddSkill("fire_bolt")      // magic_low
+	invManager.AddSkill("heal")           // heal_low
+	invManager.AddSkill("attack_up")      // buff_low
+	invManager.AddSkill("poison")         // debuff_low
+	invManager.AddSkill("power_attack")   // physical_mid - バランスは許可しない
+	invManager.AddSkill("berserk_strike") // physical_high - バランスは許可しない
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -372,9 +372,9 @@ func TestE2I_CompatibilityFiltering_NoTagsMatch(t *testing.T) {
 	invManager.AddCore("priest")
 
 	// 物理スキルのみ追加（プリーストとは互換性なし）
-	invManager.AddSkill("basic_attack", "")   // physical_low
-	invManager.AddSkill("power_attack", "")   // physical_mid
-	invManager.AddSkill("berserk_strike", "") // physical_high
+	invManager.AddSkill("basic_attack")   // physical_low
+	invManager.AddSkill("power_attack")   // physical_mid
+	invManager.AddSkill("berserk_strike") // physical_high
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -411,9 +411,9 @@ func TestE2I_CompatibilityFiltering_CoreChangeRemovesIncompatible(t *testing.T) 
 	invManager.AddCore("berserker")
 
 	// 各種スキルを追加
-	invManager.AddSkill("basic_attack", "") // physical_low - 両方互換
-	invManager.AddSkill("fire_bolt", "")    // magic_low - バランスのみ互換
-	invManager.AddSkill("heal", "")         // heal_low - バランスのみ互換
+	invManager.AddSkill("basic_attack") // physical_low - 両方互換
+	invManager.AddSkill("fire_bolt")    // magic_low - バランスのみ互換
+	invManager.AddSkill("heal")         // heal_low - バランスのみ互換
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -429,9 +429,9 @@ func TestE2I_CompatibilityFiltering_CoreChangeRemovesIncompatible(t *testing.T) 
 	slotManager.SetCore(0, "balanced")
 
 	// スキルを設定
-	slotManager.SetSkill(0, 0, "basic_attack", "")
-	slotManager.SetSkill(0, 1, "fire_bolt", "")
-	slotManager.SetSkill(0, 2, "heal", "")
+	slotManager.SetSkill(0, 0, "basic_attack")
+	slotManager.SetSkill(0, 1, "fire_bolt")
+	slotManager.SetSkill(0, 2, "heal")
 
 	// スキル数を確認
 	if slotManager.GetSlot(0).GetSkillCount() != 3 {
@@ -465,8 +465,8 @@ func TestE2I_CompatibilityFiltering_ValidateMethod(t *testing.T) {
 	invManager.AddCore("archmage")
 
 	// スキルを追加
-	invManager.AddSkill("fire_bolt", "")    // magic_low - 互換
-	invManager.AddSkill("basic_attack", "") // physical_low - 非互換
+	invManager.AddSkill("fire_bolt")    // magic_low - 互換
+	invManager.AddSkill("basic_attack") // physical_low - 非互換
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -495,8 +495,8 @@ func TestE2I_CompatibilityFiltering_ValidateMethod(t *testing.T) {
 	}
 }
 
-// TestE2I_ChainEffectVariationSelection はチェイン効果バリエーション選択の動作をテストします。
-func TestE2I_ChainEffectVariationSelection(t *testing.T) {
+// TestE2I_SkillOverwrite はスキル上書きの動作をテストします。
+func TestE2I_SkillOverwrite(t *testing.T) {
 	// テスト環境のセットアップ
 	invManager := inventory.NewInventoryManager()
 	coreTypes := createE2ITestCoreTypes()
@@ -506,10 +506,9 @@ func TestE2I_ChainEffectVariationSelection(t *testing.T) {
 	// コアを追加
 	invManager.AddCore("berserker")
 
-	// 同じスキルに複数のチェイン効果を追加
-	invManager.AddSkill("basic_attack", "chain_fire")
-	invManager.AddSkill("basic_attack", "chain_ice")
-	invManager.AddSkill("basic_attack", "chain_lightning")
+	// スキルを追加
+	invManager.AddSkill("basic_attack")
+	invManager.AddSkill("power_attack")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -524,34 +523,22 @@ func TestE2I_ChainEffectVariationSelection(t *testing.T) {
 	// コアを設定
 	slotManager.SetCore(0, "berserker")
 
-	// 保有しているチェイン効果を確認
-	chainVariations := invManager.Skills().GetChainVariations("basic_attack")
-	if len(chainVariations) != 3 {
-		t.Errorf("チェイン効果バリエーション数が不正: got %d, want 3", len(chainVariations))
-	}
-
-	// 最初にchain_fireで設定
-	err := slotManager.SetSkill(0, 0, "basic_attack", "chain_fire")
+	// 最初にbasic_attackで設定
+	err := slotManager.SetSkill(0, 0, "basic_attack")
 	if err != nil {
-		t.Errorf("chain_fireでの設定に失敗: %v", err)
+		t.Errorf("basic_attackでの設定に失敗: %v", err)
 	}
 
-	// 同じスロット位置でチェイン効果を上書きできることを確認
-	err = slotManager.SetSkill(0, 0, "basic_attack", "chain_ice")
+	// 同じスロット位置でスキルを上書きできることを確認
+	err = slotManager.SetSkill(0, 0, "power_attack")
 	if err != nil {
-		t.Errorf("chain_iceでの上書きに失敗: %v", err)
+		t.Errorf("power_attackでの上書きに失敗: %v", err)
 	}
 
-	// チェイン効果がchain_iceに変更されていることを確認
+	// スキルがpower_attackに変更されていることを確認
 	skillConfig := slotManager.GetSlot(0).GetSkill(0)
-	if skillConfig.ChainEffectID != "chain_ice" {
-		t.Errorf("チェイン効果が更新されていない: got %s, want chain_ice", skillConfig.ChainEffectID)
-	}
-
-	// 保有していないチェイン効果は設定できない
-	err = slotManager.SetSkill(0, 0, "basic_attack", "chain_not_owned")
-	if err != slot.ErrChainVariationNotOwned {
-		t.Errorf("未保有チェイン効果はErrChainVariationNotOwnedを返すべき: got %v", err)
+	if skillConfig.TypeID != "power_attack" {
+		t.Errorf("スキルが更新されていない: got %s, want power_attack", skillConfig.TypeID)
 	}
 }
 
@@ -597,8 +584,8 @@ func TestE2I_SlotClearAndReconfigure(t *testing.T) {
 	// コアとスキルを追加
 	invManager.AddCore("berserker")
 	invManager.AddCore("archmage")
-	invManager.AddSkill("basic_attack", "")
-	invManager.AddSkill("fire_bolt", "")
+	invManager.AddSkill("basic_attack")
+	invManager.AddSkill("fire_bolt")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -612,7 +599,7 @@ func TestE2I_SlotClearAndReconfigure(t *testing.T) {
 
 	// 初期設定
 	slotManager.SetCore(0, "berserker")
-	slotManager.SetSkill(0, 0, "basic_attack", "")
+	slotManager.SetSkill(0, 0, "basic_attack")
 
 	// 設定確認
 	if slotManager.GetSlot(0).IsEmpty() {
@@ -632,7 +619,7 @@ func TestE2I_SlotClearAndReconfigure(t *testing.T) {
 
 	// 再設定（別のコア）
 	slotManager.SetCore(0, "archmage")
-	slotManager.SetSkill(0, 0, "fire_bolt", "")
+	slotManager.SetSkill(0, 0, "fire_bolt")
 
 	// 再設定確認
 	if slotManager.GetSlot(0).CoreTypeID != "archmage" {
@@ -650,7 +637,7 @@ func TestE2I_SameSkillMultipleTimes_ShouldFail(t *testing.T) {
 
 	// コアとスキルを追加
 	invManager.AddCore("berserker")
-	invManager.AddSkill("basic_attack", "")
+	invManager.AddSkill("basic_attack")
 
 	// AgentSlotManagerを作成
 	slotManager := slot.NewAgentSlotManager(
@@ -666,13 +653,13 @@ func TestE2I_SameSkillMultipleTimes_ShouldFail(t *testing.T) {
 	slotManager.SetCore(0, "berserker")
 
 	// 最初のスロットにスキルを設定
-	err := slotManager.SetSkill(0, 0, "basic_attack", "")
+	err := slotManager.SetSkill(0, 0, "basic_attack")
 	if err != nil {
 		t.Fatalf("スロット0へのbasic_attack設定に失敗: %v", err)
 	}
 
 	// 同じスキルを別のスロットに設定しようとするとエラーになるべき
-	err = slotManager.SetSkill(0, 1, "basic_attack", "")
+	err = slotManager.SetSkill(0, 1, "basic_attack")
 	if err == nil {
 		t.Error("同じスキルを別スロットに設定できてしまった")
 	}

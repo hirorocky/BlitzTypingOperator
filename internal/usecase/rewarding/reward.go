@@ -625,6 +625,7 @@ func AddRewardsToInventory(
 	result *RewardResult,
 	coreInv *domain.CoreInventory,
 	skillInv *domain.SkillInventory,
+	chainEffectInv *domain.ChainEffectInventory,
 ) *InventoryWarning {
 	// コアをインベントリに追加（TypeIDのみ）
 	for _, core := range result.DroppedCores {
@@ -636,17 +637,22 @@ func AddRewardsToInventory(
 		}
 	}
 
-	// モジュール（スキル）をインベントリに追加（TypeID + ChainEffectID）
+	// モジュール（スキル）をインベントリに追加
 	for _, module := range result.DroppedModules {
-		chainEffectID := ""
-		if module.HasChainEffect() {
-			chainEffectID = module.ChainEffect.ID
-		}
-		skillInv.AddSkill(module.TypeID, chainEffectID)
+		skillInv.AddSkill(module.TypeID)
 		slog.Info("スキルをインベントリに追加",
 			slog.String("skill_type_id", module.TypeID),
-			slog.String("chain_effect_id", chainEffectID),
 		)
+
+		// チェイン効果を独立インベントリに追加
+		if chainEffectInv != nil && module.HasChainEffect() {
+			added := chainEffectInv.AddChainEffect(module.ChainEffect.ID)
+			if added {
+				slog.Info("チェイン効果をインベントリに追加",
+					slog.String("chain_effect_id", module.ChainEffect.ID),
+				)
+			}
+		}
 	}
 
 	// 新しいシステムでは容量制限がないため、警告は不要

@@ -11,15 +11,19 @@ type InventoryManager struct {
 	// cores はコアインベントリです（TypeIDごとの保有フラグ管理）。
 	cores *domain.CoreInventory
 
-	// skills はスキルインベントリです（TypeIDごとの保有状態とチェイン効果管理）。
+	// skills はスキルインベントリです（TypeIDごとの保有状態管理）。
 	skills *domain.SkillInventory
+
+	// chainEffects はチェイン効果インベントリです（TypeIDごとの保有フラグ管理）。
+	chainEffects *domain.ChainEffectInventory
 }
 
 // NewInventoryManager は新しいInventoryManagerを作成します。
 func NewInventoryManager() *InventoryManager {
 	return &InventoryManager{
-		cores:  domain.NewCoreInventory(),
-		skills: domain.NewSkillInventory(),
+		cores:        domain.NewCoreInventory(),
+		skills:       domain.NewSkillInventory(),
+		chainEffects: domain.NewChainEffectInventory(),
 	}
 }
 
@@ -40,8 +44,8 @@ func (m *InventoryManager) AddCore(typeID string) bool {
 }
 
 // AddSkill はスキルをインベントリに追加します。
-func (m *InventoryManager) AddSkill(typeID string, chainEffectID string) {
-	m.skills.AddSkill(typeID, chainEffectID)
+func (m *InventoryManager) AddSkill(typeID string) {
+	m.skills.AddSkill(typeID)
 }
 
 // GetOwnedCores は保有しているコアのTypeIDリストを返します。
@@ -62,4 +66,9 @@ func (m *InventoryManager) HasCore(typeID string) bool {
 // HasSkill は指定TypeIDのスキルを保有しているかを返します。
 func (m *InventoryManager) HasSkill(typeID string) bool {
 	return m.skills.HasSkill(typeID)
+}
+
+// ChainEffects はチェイン効果インベントリを返します。
+func (m *InventoryManager) ChainEffects() *domain.ChainEffectInventory {
+	return m.chainEffects
 }

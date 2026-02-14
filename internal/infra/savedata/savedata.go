@@ -109,20 +109,28 @@ type CoreInventorySave struct {
 }
 
 // SkillInventorySave はユニークスキルインベントリのセーブデータです。
-// TypeID→チェイン効果IDリストのマップ形式で管理します。
+// TypeIDリスト形式で管理します。
 type SkillInventorySave struct {
-	// Skills はSkillTypeID → チェイン効果IDリストのマップです。
-	Skills map[string][]string `json:"skills"`
+	// Skills は保有SkillTypeIDリストです。
+	Skills []string `json:"skills"`
 }
 
 // SkillSlotSaveCfg はスキルスロット構成のセーブデータです。
-// スキルTypeIDとチェイン効果IDを保持します。
 type SkillSlotSaveCfg struct {
 	// TypeID はスキルTypeID（空の場合は未設定）です。
 	TypeID string `json:"type_id,omitempty"`
+}
 
-	// ChainEffectID はチェイン効果ID（なしの場合は空文字列）です。
-	ChainEffectID string `json:"chain_effect_id,omitempty"`
+// ChainEffectInventorySave はチェイン効果インベントリのセーブデータです。
+type ChainEffectInventorySave struct {
+	// ChainEffects は保有チェイン効果TypeIDリストです。
+	ChainEffects []string `json:"chain_effects"`
+}
+
+// ChainEffectSlotSaveCfg はチェイン効果スロット構成のセーブデータです。
+type ChainEffectSlotSaveCfg struct {
+	// TypeID はチェイン効果TypeID（空の場合は未設定）です。
+	TypeID string `json:"type_id,omitempty"`
 }
 
 // AgentSlotSave はエージェントスロットのセーブデータです。
@@ -133,6 +141,9 @@ type AgentSlotSave struct {
 
 	// Skills はスキルスロット構成（4つ）です。
 	Skills [4]SkillSlotSaveCfg `json:"skills"`
+
+	// ChainEffects はチェイン効果スロット構成（4つ）です。
+	ChainEffects [4]ChainEffectSlotSaveCfg `json:"chain_effects"`
 }
 
 // InventorySaveData はインベントリのセーブデータです。
@@ -141,8 +152,10 @@ type InventorySaveData struct {
 	UniqueCores *CoreInventorySave `json:"unique_cores,omitempty"`
 
 	// UniqueSkills はユニークスキルインベントリです。
-	// TypeID→チェイン効果IDリストのマップ形式で管理します。
 	UniqueSkills *SkillInventorySave `json:"skills,omitempty"`
+
+	// UniqueChainEffects はユニークチェイン効果インベントリです。
+	UniqueChainEffects *ChainEffectInventorySave `json:"unique_chain_effects,omitempty"`
 }
 
 // StatisticsSaveData は統計のセーブデータです。
@@ -226,7 +239,10 @@ func NewSaveData() *SaveData {
 				Cores: make([]string, 0),
 			},
 			UniqueSkills: &SkillInventorySave{
-				Skills: make(map[string][]string),
+				Skills: make([]string, 0),
+			},
+			UniqueChainEffects: &ChainEffectInventorySave{
+				ChainEffects: make([]string, 0),
 			},
 		},
 		EnemyProgress: &EnemyProgressSave{

@@ -243,21 +243,20 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 
 		// UniqueSkillsを復元
 		if loadedSaveData.Inventory.UniqueSkills != nil && loadedSaveData.Inventory.UniqueSkills.Skills != nil {
-			for typeID, chainVariations := range loadedSaveData.Inventory.UniqueSkills.Skills {
-				if len(chainVariations) == 0 {
-					// チェイン効果がない場合でもスキルを保有状態にする
-					invManager.AddSkill(typeID, "")
-				} else {
-					// 各チェイン効果バリエーションを復元
-					for _, chainID := range chainVariations {
-						invManager.AddSkill(typeID, chainID)
-					}
-				}
+			for _, typeID := range loadedSaveData.Inventory.UniqueSkills.Skills {
+				invManager.AddSkill(typeID)
+			}
+		}
+
+		// UniqueChainEffectsを復元
+		if loadedSaveData.Inventory.UniqueChainEffects != nil && loadedSaveData.Inventory.UniqueChainEffects.ChainEffects != nil {
+			for _, typeID := range loadedSaveData.Inventory.UniqueChainEffects.ChainEffects {
+				invManager.AddChainEffect(typeID)
 			}
 		}
 	}
 
-	// デバッグモード: 全コアと全スキルを所持
+	// デバッグモード: 全コア・スキル・チェイン効果を所持
 	if debugMode && externalData != nil {
 		// 全コアを追加
 		for _, ct := range externalData.CoreTypes {
@@ -265,18 +264,16 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		}
 		// 全スキルを追加
 		for _, mt := range externalData.ModuleDefinitions {
-			invManager.AddSkill(mt.ID, "")
+			invManager.AddSkill(mt.ID)
 		}
-		// 全チェイン効果バリエーションを追加
+		// 全チェイン効果を追加
 		for _, ce := range chainEffects {
-			// 各スキルに対してチェイン効果を追加
-			for _, mt := range externalData.ModuleDefinitions {
-				invManager.AddSkill(mt.ID, ce.ID)
-			}
+			invManager.AddChainEffect(ce.ID)
 		}
-		slog.Info("デバッグモード: 全コア・スキルを追加",
+		slog.Info("デバッグモード: 全コア・スキル・チェイン効果を追加",
 			slog.Int("cores", len(externalData.CoreTypes)),
 			slog.Int("skills", len(externalData.ModuleDefinitions)),
+			slog.Int("chain_effects", len(chainEffects)),
 		)
 	}
 
@@ -320,6 +317,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		passiveSkills,
 		chainEffectsMap,
 	)
+	slotManager.SetChainEffectInventory(invManager.ChainEffects())
 
 	// セーブデータからエージェントスロットを復元
 	if loadedSaveData != nil && loadedSaveData.Player != nil {
@@ -341,11 +339,25 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 				if skillSlotSave.TypeID == "" {
 					continue
 				}
-				if err := slotManager.SetSkill(i, j, skillSlotSave.TypeID, skillSlotSave.ChainEffectID); err != nil {
+				if err := slotManager.SetSkill(i, j, skillSlotSave.TypeID); err != nil {
 					slog.Warn("スロット復元時にスキル設定に失敗",
 						slog.Int("slot", i),
 						slog.Int("skillSlot", j),
 						slog.String("skillTypeID", skillSlotSave.TypeID),
+						slog.Any("error", err),
+					)
+				}
+			}
+			// チェイン効果を設定
+			for j, chainSlotSave := range agentSlotSave.ChainEffects {
+				if chainSlotSave.TypeID == "" {
+					continue
+				}
+				if err := slotManager.SetChainEffect(i, j, chainSlotSave.TypeID); err != nil {
+					slog.Warn("スロット復元時にチェイン効果設定に失敗",
+						slog.Int("slot", i),
+						slog.Int("chainSlot", j),
+						slog.String("chainEffectTypeID", chainSlotSave.TypeID),
 						slog.Any("error", err),
 					)
 				}
@@ -416,6 +428,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		slotManager,
 		coreTypesMap,
 		skillTypesMap,
+		chainEffectsMap,
 	)
 
 	model := &RootModel{
@@ -541,6 +554,7 @@ func (m *RootModel) handleBattleResult(result screens.BattleResultMsg) {
 				rewardResult,
 				m.invManager.Cores(),
 				m.invManager.Skills(),
+				m.invManager.ChainEffects(),
 			)
 		}
 
@@ -601,16 +615,26 @@ func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 	ownedCores := m.invManager.Cores().GetOwnedCores()
 	saveData.Inventory.UniqueCores.Cores = ownedCores
 
-	// UniqueSkillsを追加（SkillTypeID → チェイン効果IDリスト）
+	// UniqueSkillsを追加（TypeIDリスト形式）
 	if saveData.Inventory.UniqueSkills == nil {
 		saveData.Inventory.UniqueSkills = &savedata.SkillInventorySave{
-			Skills: make(map[string][]string),
+			Skills: make([]string, 0),
 		}
 	}
 	ownedSkills := m.invManager.Skills().GetOwnedSkills()
-	for typeID, ownership := range ownedSkills {
-		saveData.Inventory.UniqueSkills.Skills[typeID] = ownership.GetChainVariations()
+	skillTypeIDs := make([]string, 0, len(ownedSkills))
+	for typeID := range ownedSkills {
+		skillTypeIDs = append(skillTypeIDs, typeID)
 	}
+	saveData.Inventory.UniqueSkills.Skills = skillTypeIDs
+
+	// UniqueChainEffectsを追加
+	if saveData.Inventory.UniqueChainEffects == nil {
+		saveData.Inventory.UniqueChainEffects = &savedata.ChainEffectInventorySave{
+			ChainEffects: make([]string, 0),
+		}
+	}
+	saveData.Inventory.UniqueChainEffects.ChainEffects = m.invManager.ChainEffects().GetOwnedChainEffects()
 
 	// AgentSlotsを追加（3スロットの構成）
 	slots := m.slotManager.GetSlots()
@@ -629,8 +653,14 @@ func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 			skillConfig := agentSlot.GetSkill(j)
 			if skillConfig != nil && !skillConfig.IsEmpty() {
 				slotSave.Skills[j] = savedata.SkillSlotSaveCfg{
-					TypeID:        skillConfig.TypeID,
-					ChainEffectID: skillConfig.ChainEffectID,
+					TypeID: skillConfig.TypeID,
+				}
+			}
+			// チェイン効果スロット構成を保存
+			chainCfg := agentSlot.GetChainEffect(j)
+			if chainCfg != nil && !chainCfg.IsEmpty() {
+				slotSave.ChainEffects[j] = savedata.ChainEffectSlotSaveCfg{
+					TypeID: chainCfg.TypeID,
 				}
 			}
 		}

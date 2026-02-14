@@ -15,17 +15,12 @@ func TestSkillSlotConfig_IsEmpty(t *testing.T) {
 	}{
 		{
 			name:   "TypeIDが空の場合は空スロット",
-			config: SkillSlotConfig{TypeID: "", ChainEffectID: ""},
+			config: SkillSlotConfig{TypeID: ""},
 			want:   true,
 		},
 		{
 			name:   "TypeIDが設定されている場合は空でない",
-			config: SkillSlotConfig{TypeID: "skill_001", ChainEffectID: ""},
-			want:   false,
-		},
-		{
-			name:   "TypeIDとChainEffectIDが両方設定されている場合は空でない",
-			config: SkillSlotConfig{TypeID: "skill_001", ChainEffectID: "chain_001"},
+			config: SkillSlotConfig{TypeID: "skill_001"},
 			want:   false,
 		},
 	}
@@ -41,15 +36,12 @@ func TestSkillSlotConfig_IsEmpty(t *testing.T) {
 }
 
 func TestSkillSlotConfig_Clear(t *testing.T) {
-	config := SkillSlotConfig{TypeID: "skill_001", ChainEffectID: "chain_001"}
+	config := SkillSlotConfig{TypeID: "skill_001"}
 
 	config.Clear()
 
 	if config.TypeID != "" {
 		t.Errorf("Clear後のTypeIDは空であるべき、got %q", config.TypeID)
-	}
-	if config.ChainEffectID != "" {
-		t.Errorf("Clear後のChainEffectIDは空であるべき、got %q", config.ChainEffectID)
 	}
 }
 
@@ -104,7 +96,7 @@ func TestAgentSlot_GetSkillCount(t *testing.T) {
 			slot: &AgentSlot{
 				CoreTypeID: "core_001",
 				Skills: [4]SkillSlotConfig{
-					{TypeID: "skill_001", ChainEffectID: ""},
+					{TypeID: "skill_001"},
 					{},
 					{},
 					{},
@@ -117,9 +109,9 @@ func TestAgentSlot_GetSkillCount(t *testing.T) {
 			slot: &AgentSlot{
 				CoreTypeID: "core_001",
 				Skills: [4]SkillSlotConfig{
-					{TypeID: "skill_001", ChainEffectID: "chain_001"},
-					{TypeID: "skill_002", ChainEffectID: ""},
-					{TypeID: "skill_003", ChainEffectID: "chain_002"},
+					{TypeID: "skill_001"},
+					{TypeID: "skill_002"},
+					{TypeID: "skill_003"},
 					{},
 				},
 			},
@@ -130,10 +122,10 @@ func TestAgentSlot_GetSkillCount(t *testing.T) {
 			slot: &AgentSlot{
 				CoreTypeID: "core_001",
 				Skills: [4]SkillSlotConfig{
-					{TypeID: "skill_001", ChainEffectID: ""},
-					{TypeID: "skill_002", ChainEffectID: ""},
-					{TypeID: "skill_003", ChainEffectID: ""},
-					{TypeID: "skill_004", ChainEffectID: ""},
+					{TypeID: "skill_001"},
+					{TypeID: "skill_002"},
+					{TypeID: "skill_003"},
+					{TypeID: "skill_004"},
 				},
 			},
 			want: 4,
@@ -154,8 +146,8 @@ func TestAgentSlot_Clear(t *testing.T) {
 	slot := &AgentSlot{
 		CoreTypeID: "core_001",
 		Skills: [4]SkillSlotConfig{
-			{TypeID: "skill_001", ChainEffectID: "chain_001"},
-			{TypeID: "skill_002", ChainEffectID: ""},
+			{TypeID: "skill_001"},
+			{TypeID: "skill_002"},
 			{},
 			{},
 		},
@@ -214,20 +206,14 @@ func TestAgentSlot_SetSkill(t *testing.T) {
 		CoreTypeID: "core_001",
 	}
 
-	slot.SetSkill(0, "skill_001", "chain_001")
-	slot.SetSkill(2, "skill_003", "")
+	slot.SetSkill(0, "skill_001")
+	slot.SetSkill(2, "skill_003")
 
 	if slot.Skills[0].TypeID != "skill_001" {
 		t.Errorf("Skills[0].TypeID = %q, want %q", slot.Skills[0].TypeID, "skill_001")
 	}
-	if slot.Skills[0].ChainEffectID != "chain_001" {
-		t.Errorf("Skills[0].ChainEffectID = %q, want %q", slot.Skills[0].ChainEffectID, "chain_001")
-	}
 	if slot.Skills[2].TypeID != "skill_003" {
 		t.Errorf("Skills[2].TypeID = %q, want %q", slot.Skills[2].TypeID, "skill_003")
-	}
-	if slot.Skills[2].ChainEffectID != "" {
-		t.Errorf("Skills[2].ChainEffectID = %q, want %q", slot.Skills[2].ChainEffectID, "")
 	}
 	if slot.GetSkillCount() != 2 {
 		t.Errorf("スキル数 = %d, want %d", slot.GetSkillCount(), 2)
@@ -240,8 +226,8 @@ func TestAgentSlot_SetSkill_IgnoresInvalidIndex(t *testing.T) {
 	}
 
 	// 無効なインデックスの設定は無視される
-	slot.SetSkill(-1, "skill_001", "")
-	slot.SetSkill(4, "skill_002", "")
+	slot.SetSkill(-1, "skill_001")
+	slot.SetSkill(4, "skill_002")
 
 	if slot.GetSkillCount() != 0 {
 		t.Errorf("無効なインデックスへの設定後、スキル数 = %d, want %d", slot.GetSkillCount(), 0)
@@ -252,8 +238,8 @@ func TestAgentSlot_ClearSkill(t *testing.T) {
 	slot := &AgentSlot{
 		CoreTypeID: "core_001",
 		Skills: [4]SkillSlotConfig{
-			{TypeID: "skill_001", ChainEffectID: "chain_001"},
-			{TypeID: "skill_002", ChainEffectID: ""},
+			{TypeID: "skill_001"},
+			{TypeID: "skill_002"},
 			{},
 			{},
 		},
@@ -277,7 +263,7 @@ func TestAgentSlot_ClearSkill_IgnoresInvalidIndex(t *testing.T) {
 	slot := &AgentSlot{
 		CoreTypeID: "core_001",
 		Skills: [4]SkillSlotConfig{
-			{TypeID: "skill_001", ChainEffectID: ""},
+			{TypeID: "skill_001"},
 			{},
 			{},
 			{},
@@ -297,33 +283,30 @@ func TestAgentSlot_GetSkill(t *testing.T) {
 	slot := &AgentSlot{
 		CoreTypeID: "core_001",
 		Skills: [4]SkillSlotConfig{
-			{TypeID: "skill_001", ChainEffectID: "chain_001"},
-			{TypeID: "skill_002", ChainEffectID: ""},
+			{TypeID: "skill_001"},
+			{TypeID: "skill_002"},
 			{},
 			{},
 		},
 	}
 
 	tests := []struct {
-		name        string
-		index       int
-		wantTypeID  string
-		wantChainID string
-		wantNil     bool
+		name       string
+		index      int
+		wantTypeID string
+		wantNil    bool
 	}{
 		{
-			name:        "有効なインデックス（設定済み）",
-			index:       0,
-			wantTypeID:  "skill_001",
-			wantChainID: "chain_001",
-			wantNil:     false,
+			name:       "有効なインデックス（設定済み）",
+			index:      0,
+			wantTypeID: "skill_001",
+			wantNil:    false,
 		},
 		{
-			name:        "有効なインデックス（空スロット）",
-			index:       2,
-			wantTypeID:  "",
-			wantChainID: "",
-			wantNil:     false,
+			name:       "有効なインデックス（空スロット）",
+			index:      2,
+			wantTypeID: "",
+			wantNil:    false,
 		},
 		{
 			name:    "無効なインデックス（負）",
@@ -351,9 +334,6 @@ func TestAgentSlot_GetSkill(t *testing.T) {
 			}
 			if got.TypeID != tt.wantTypeID {
 				t.Errorf("GetSkill(%d).TypeID = %q, want %q", tt.index, got.TypeID, tt.wantTypeID)
-			}
-			if got.ChainEffectID != tt.wantChainID {
-				t.Errorf("GetSkill(%d).ChainEffectID = %q, want %q", tt.index, got.ChainEffectID, tt.wantChainID)
 			}
 		})
 	}

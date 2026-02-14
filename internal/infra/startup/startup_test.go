@@ -20,6 +20,22 @@ func createTestExternalData() *masterdata.ExternalData {
 				PassiveSkillID: "ps_combo_master",
 				MinDropLevel:   1,
 			},
+			{
+				ID:             "healer",
+				Name:           "ヒーラー",
+				AllowedTags:    []string{"heal_low", "heal_mid", "heal_high"},
+				StatWeights:    map[string]float64{"STR": 0.5, "INT": 1.5, "WIL": 0.8, "LUK": 1.2},
+				PassiveSkillID: "ps_miracle_heal",
+				MinDropLevel:   3,
+			},
+			{
+				ID:             "quick_recoverer",
+				Name:           "クイックリカバラー",
+				AllowedTags:    []string{"heal_low", "heal_mid", "buff_low"},
+				StatWeights:    map[string]float64{"STR": 0.7, "INT": 1.2, "WIL": 1.1, "LUK": 1.0},
+				PassiveSkillID: "ps_quick_recovery",
+				MinDropLevel:   4,
+			},
 		},
 		ModuleDefinitions: []masterdata.ModuleDefinitionData{
 			{
@@ -107,7 +123,7 @@ func createTestExternalData() *masterdata.ExternalData {
 			},
 			{
 				ID:         "agent_first_2",
-				CoreTypeID: "all_rounder",
+				CoreTypeID: "healer",
 				CoreLevel:  1,
 				Modules: []masterdata.FirstAgentModuleData{
 					{TypeID: "heal_lv1"},
@@ -115,7 +131,7 @@ func createTestExternalData() *masterdata.ExternalData {
 			},
 			{
 				ID:         "agent_first_3",
-				CoreTypeID: "all_rounder",
+				CoreTypeID: "quick_recoverer",
 				CoreLevel:  1,
 				Modules: []masterdata.FirstAgentModuleData{
 					{TypeID: "attack_buff_lv1"},
@@ -142,10 +158,12 @@ func TestNewGameInitializer_CreateInitialAgents(t *testing.T) {
 		t.Fatalf("初期エージェントは3体作成されるべきです: got %d", len(agents))
 	}
 
+	expectedCores := []string{"all_rounder", "healer", "quick_recoverer"}
 	for i, agent := range agents {
 		// エージェントがコアを持つこと
 		if agent.Core == nil {
 			t.Errorf("初期エージェント%dはコアを持つべきです", i+1)
+			continue
 		}
 
 		// エージェントが1つのモジュールを持つこと
@@ -153,9 +171,9 @@ func TestNewGameInitializer_CreateInitialAgents(t *testing.T) {
 			t.Errorf("初期エージェント%dは1つのモジュールを持つべきです: got %d", i+1, len(agent.Modules))
 		}
 
-		// オールラウンダー特性であること
-		if agent.Core.Type.ID != "all_rounder" {
-			t.Errorf("初期エージェント%dのコアはオールラウンダー特性であるべきです: got %s", i+1, agent.Core.Type.ID)
+		// 期待するコア特性であること
+		if agent.Core.Type.ID != expectedCores[i] {
+			t.Errorf("初期エージェント%dのコアは%sであるべきです: got %s", i+1, expectedCores[i], agent.Core.Type.ID)
 		}
 	}
 }

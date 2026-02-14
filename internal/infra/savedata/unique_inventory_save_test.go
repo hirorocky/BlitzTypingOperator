@@ -55,10 +55,7 @@ func TestCoreInventorySave_JSONSerialization(t *testing.T) {
 // TestSkillInventorySave_JSONSerialization はSkillInventorySaveのJSON化をテストします。
 func TestSkillInventorySave_JSONSerialization(t *testing.T) {
 	save := SkillInventorySave{
-		Skills: map[string][]string{
-			"physical_lv1": {"damage_bonus", "life_steal"},
-			"heal_lv1":     {},
-		},
+		Skills: []string{"physical_lv1", "heal_lv1"},
 	}
 
 	// JSON化
@@ -77,23 +74,22 @@ func TestSkillInventorySave_JSONSerialization(t *testing.T) {
 	if len(loaded.Skills) != 2 {
 		t.Errorf("Skills count: got %d, want 2", len(loaded.Skills))
 	}
-	if len(loaded.Skills["physical_lv1"]) != 2 {
-		t.Errorf("physical_lv1 chain effects: got %d, want 2", len(loaded.Skills["physical_lv1"]))
+	if loaded.Skills[0] != "physical_lv1" {
+		t.Errorf("Skills[0]: got %s, want physical_lv1", loaded.Skills[0])
 	}
-	if len(loaded.Skills["heal_lv1"]) != 0 {
-		t.Errorf("heal_lv1 chain effects: got %d, want 0", len(loaded.Skills["heal_lv1"]))
+	if loaded.Skills[1] != "heal_lv1" {
+		t.Errorf("Skills[1]: got %s, want heal_lv1", loaded.Skills[1])
 	}
 }
 
 // TestSkillSlotSaveCfg_JSONSerialization はSkillSlotSaveCfgのJSON化をテストします。
 func TestSkillSlotSaveCfg_JSONSerialization(t *testing.T) {
-	// チェイン効果ありのスキル
-	withChain := SkillSlotSaveCfg{
-		TypeID:        "physical_lv1",
-		ChainEffectID: "damage_bonus",
+	// スキルスロット
+	withSkill := SkillSlotSaveCfg{
+		TypeID: "physical_lv1",
 	}
 
-	data, err := json.Marshal(withChain)
+	data, err := json.Marshal(withSkill)
 	if err != nil {
 		t.Fatalf("JSON化に失敗: %v", err)
 	}
@@ -105,9 +101,6 @@ func TestSkillSlotSaveCfg_JSONSerialization(t *testing.T) {
 
 	if loaded.TypeID != "physical_lv1" {
 		t.Errorf("TypeID: got %s, want physical_lv1", loaded.TypeID)
-	}
-	if loaded.ChainEffectID != "damage_bonus" {
-		t.Errorf("ChainEffectID: got %s, want damage_bonus", loaded.ChainEffectID)
 	}
 
 	// 空のスロット（omitemptyで省略される）
@@ -123,16 +116,87 @@ func TestSkillSlotSaveCfg_JSONSerialization(t *testing.T) {
 	}
 }
 
+// TestChainEffectInventorySave_JSONSerialization はChainEffectInventorySaveのJSON化をテストします。
+func TestChainEffectInventorySave_JSONSerialization(t *testing.T) {
+	save := ChainEffectInventorySave{
+		ChainEffects: []string{"damage_bonus", "heal_bonus", "life_steal"},
+	}
+
+	// JSON化
+	data, err := json.Marshal(save)
+	if err != nil {
+		t.Fatalf("JSON化に失敗: %v", err)
+	}
+
+	// 復元
+	var loaded ChainEffectInventorySave
+	if err := json.Unmarshal(data, &loaded); err != nil {
+		t.Fatalf("復元に失敗: %v", err)
+	}
+
+	// 検証
+	if len(loaded.ChainEffects) != 3 {
+		t.Errorf("ChainEffects count: got %d, want 3", len(loaded.ChainEffects))
+	}
+	if loaded.ChainEffects[0] != "damage_bonus" {
+		t.Errorf("ChainEffects[0]: got %s, want damage_bonus", loaded.ChainEffects[0])
+	}
+	if loaded.ChainEffects[1] != "heal_bonus" {
+		t.Errorf("ChainEffects[1]: got %s, want heal_bonus", loaded.ChainEffects[1])
+	}
+	if loaded.ChainEffects[2] != "life_steal" {
+		t.Errorf("ChainEffects[2]: got %s, want life_steal", loaded.ChainEffects[2])
+	}
+}
+
+// TestChainEffectSlotSaveCfg_JSONSerialization はChainEffectSlotSaveCfgのJSON化をテストします。
+func TestChainEffectSlotSaveCfg_JSONSerialization(t *testing.T) {
+	// チェイン効果ありのスロット
+	withEffect := ChainEffectSlotSaveCfg{
+		TypeID: "damage_bonus",
+	}
+
+	data, err := json.Marshal(withEffect)
+	if err != nil {
+		t.Fatalf("JSON化に失敗: %v", err)
+	}
+
+	var loaded ChainEffectSlotSaveCfg
+	if err := json.Unmarshal(data, &loaded); err != nil {
+		t.Fatalf("復元に失敗: %v", err)
+	}
+
+	if loaded.TypeID != "damage_bonus" {
+		t.Errorf("TypeID: got %s, want damage_bonus", loaded.TypeID)
+	}
+
+	// 空のスロット（omitemptyで省略される）
+	empty := ChainEffectSlotSaveCfg{}
+	emptyData, err := json.Marshal(empty)
+	if err != nil {
+		t.Fatalf("空スロットのJSON化に失敗: %v", err)
+	}
+
+	if string(emptyData) != "{}" {
+		t.Errorf("空スロットのJSON: got %s, want {}", string(emptyData))
+	}
+}
+
 // TestAgentSlotSave_JSONSerialization はAgentSlotSaveのJSON化をテストします。
-// CoreLevelフィールドを削除。
 func TestAgentSlotSave_JSONSerialization(t *testing.T) {
 	save := AgentSlotSave{
 		CoreTypeID: "all_rounder",
 		Skills: [4]SkillSlotSaveCfg{
-			{TypeID: "physical_lv1", ChainEffectID: "damage_bonus"},
-			{TypeID: "heal_lv1", ChainEffectID: ""},
-			{TypeID: "", ChainEffectID: ""},
-			{TypeID: "", ChainEffectID: ""},
+			{TypeID: "physical_lv1"},
+			{TypeID: "heal_lv1"},
+			{},
+			{},
+		},
+		ChainEffects: [4]ChainEffectSlotSaveCfg{
+			{TypeID: "damage_bonus"},
+			{},
+			{},
+			{},
 		},
 	}
 
@@ -155,11 +219,14 @@ func TestAgentSlotSave_JSONSerialization(t *testing.T) {
 	if loaded.Skills[0].TypeID != "physical_lv1" {
 		t.Errorf("Skills[0].TypeID: got %s, want physical_lv1", loaded.Skills[0].TypeID)
 	}
-	if loaded.Skills[0].ChainEffectID != "damage_bonus" {
-		t.Errorf("Skills[0].ChainEffectID: got %s, want damage_bonus", loaded.Skills[0].ChainEffectID)
-	}
 	if loaded.Skills[1].TypeID != "heal_lv1" {
 		t.Errorf("Skills[1].TypeID: got %s, want heal_lv1", loaded.Skills[1].TypeID)
+	}
+	if loaded.ChainEffects[0].TypeID != "damage_bonus" {
+		t.Errorf("ChainEffects[0].TypeID: got %s, want damage_bonus", loaded.ChainEffects[0].TypeID)
+	}
+	if loaded.ChainEffects[1].TypeID != "" {
+		t.Errorf("ChainEffects[1].TypeID: got %s, want empty", loaded.ChainEffects[1].TypeID)
 	}
 }
 
@@ -185,15 +252,17 @@ func TestAgentSlotSave_EmptySlot(t *testing.T) {
 	}
 }
 
-// TestInventorySaveDataV4_JSONSerialization は新しいInventorySaveDataのJSON化をテストします。
-// コアはTypeIDリスト形式で管理します。
-func TestInventorySaveDataV4_JSONSerialization(t *testing.T) {
+// TestInventorySaveData_JSONSerialization はInventorySaveDataのJSON化をテストします。
+func TestInventorySaveData_JSONSerialization(t *testing.T) {
 	save := &InventorySaveData{
 		UniqueCores: &CoreInventorySave{
 			Cores: []string{"all_rounder"},
 		},
 		UniqueSkills: &SkillInventorySave{
-			Skills: map[string][]string{"physical_lv1": {"damage_bonus"}},
+			Skills: []string{"physical_lv1"},
+		},
+		UniqueChainEffects: &ChainEffectInventorySave{
+			ChainEffects: []string{"damage_bonus"},
 		},
 	}
 
@@ -209,7 +278,7 @@ func TestInventorySaveDataV4_JSONSerialization(t *testing.T) {
 		t.Fatalf("復元に失敗: %v", err)
 	}
 
-	// 新フィールドの検証
+	// UniqueCoresの検証
 	if loaded.UniqueCores == nil {
 		t.Fatal("UniqueCoresがnilです")
 	}
@@ -219,11 +288,27 @@ func TestInventorySaveDataV4_JSONSerialization(t *testing.T) {
 	if loaded.UniqueCores.Cores[0] != "all_rounder" {
 		t.Errorf("UniqueCores[0]: got %s, want all_rounder", loaded.UniqueCores.Cores[0])
 	}
+
+	// UniqueSkillsの検証
 	if loaded.UniqueSkills == nil {
 		t.Fatal("UniqueSkillsがnilです")
 	}
-	if len(loaded.UniqueSkills.Skills["physical_lv1"]) != 1 {
-		t.Errorf("UniqueSkills[physical_lv1] chain count: got %d, want 1", len(loaded.UniqueSkills.Skills["physical_lv1"]))
+	if len(loaded.UniqueSkills.Skills) != 1 {
+		t.Errorf("UniqueSkills count: got %d, want 1", len(loaded.UniqueSkills.Skills))
+	}
+	if loaded.UniqueSkills.Skills[0] != "physical_lv1" {
+		t.Errorf("UniqueSkills[0]: got %s, want physical_lv1", loaded.UniqueSkills.Skills[0])
+	}
+
+	// UniqueChainEffectsの検証
+	if loaded.UniqueChainEffects == nil {
+		t.Fatal("UniqueChainEffectsがnilです")
+	}
+	if len(loaded.UniqueChainEffects.ChainEffects) != 1 {
+		t.Errorf("UniqueChainEffects count: got %d, want 1", len(loaded.UniqueChainEffects.ChainEffects))
+	}
+	if loaded.UniqueChainEffects.ChainEffects[0] != "damage_bonus" {
+		t.Errorf("UniqueChainEffects[0]: got %s, want damage_bonus", loaded.UniqueChainEffects.ChainEffects[0])
 	}
 }
 
@@ -235,7 +320,13 @@ func TestPlayerSaveData_JSONSerialization(t *testing.T) {
 			{
 				CoreTypeID: "all_rounder",
 				Skills: [4]SkillSlotSaveCfg{
-					{TypeID: "physical_lv1", ChainEffectID: "damage_bonus"},
+					{TypeID: "physical_lv1"},
+					{},
+					{},
+					{},
+				},
+				ChainEffects: [4]ChainEffectSlotSaveCfg{
+					{TypeID: "damage_bonus"},
 					{},
 					{},
 					{},
@@ -269,6 +360,9 @@ func TestPlayerSaveData_JSONSerialization(t *testing.T) {
 	if loaded.AgentSlots[0].Skills[0].TypeID != "physical_lv1" {
 		t.Errorf("AgentSlots[0].Skills[0].TypeID: got %s, want physical_lv1", loaded.AgentSlots[0].Skills[0].TypeID)
 	}
+	if loaded.AgentSlots[0].ChainEffects[0].TypeID != "damage_bonus" {
+		t.Errorf("AgentSlots[0].ChainEffects[0].TypeID: got %s, want damage_bonus", loaded.AgentSlots[0].ChainEffects[0].TypeID)
+	}
 
 	// 2つ目と3つ目のスロットは空であること
 	if loaded.AgentSlots[1].CoreTypeID != "" {
@@ -300,6 +394,14 @@ func TestNewSaveData_FullInitialization(t *testing.T) {
 	}
 	if len(saveData.Inventory.UniqueSkills.Skills) != 0 {
 		t.Errorf("UniqueSkills should be empty, got %d", len(saveData.Inventory.UniqueSkills.Skills))
+	}
+
+	// UniqueChainEffectsが初期化されていること
+	if saveData.Inventory.UniqueChainEffects == nil {
+		t.Error("UniqueChainEffectsがnilです")
+	}
+	if len(saveData.Inventory.UniqueChainEffects.ChainEffects) != 0 {
+		t.Errorf("UniqueChainEffects should be empty, got %d", len(saveData.Inventory.UniqueChainEffects.ChainEffects))
 	}
 
 	// PlayerのAgentSlotsが初期化されていること
@@ -341,15 +443,25 @@ func TestSaveAndLoad_FullData(t *testing.T) {
 	saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores, "all_rounder", "attack_balance")
 
 	// ユニークスキルを追加
-	saveData.Inventory.UniqueSkills.Skills["physical_lv1"] = []string{"damage_bonus", "life_steal"}
-	saveData.Inventory.UniqueSkills.Skills["heal_lv1"] = []string{}
+	saveData.Inventory.UniqueSkills.Skills = append(saveData.Inventory.UniqueSkills.Skills,
+		"physical_lv1", "heal_lv1")
+
+	// ユニークチェイン効果を追加
+	saveData.Inventory.UniqueChainEffects.ChainEffects = append(saveData.Inventory.UniqueChainEffects.ChainEffects,
+		"damage_bonus", "life_steal")
 
 	// エージェントスロットを設定
 	saveData.Player.AgentSlots[0] = AgentSlotSave{
 		CoreTypeID: "all_rounder",
 		Skills: [4]SkillSlotSaveCfg{
-			{TypeID: "physical_lv1", ChainEffectID: "damage_bonus"},
+			{TypeID: "physical_lv1"},
 			{TypeID: "heal_lv1"},
+			{},
+			{},
+		},
+		ChainEffects: [4]ChainEffectSlotSaveCfg{
+			{TypeID: "damage_bonus"},
+			{},
 			{},
 			{},
 		},
@@ -383,29 +495,21 @@ func TestSaveAndLoad_FullData(t *testing.T) {
 	if len(loadedData.Inventory.UniqueCores.Cores) != 2 {
 		t.Errorf("UniqueCores count: got %d, want 2", len(loadedData.Inventory.UniqueCores.Cores))
 	}
-	hasAllRounder := false
-	hasAttackBalance := false
-	for _, c := range loadedData.Inventory.UniqueCores.Cores {
-		if c == "all_rounder" {
-			hasAllRounder = true
-		}
-		if c == "attack_balance" {
-			hasAttackBalance = true
-		}
-	}
-	if !hasAllRounder {
-		t.Error("all_rounder should be in Cores")
-	}
-	if !hasAttackBalance {
-		t.Error("attack_balance should be in Cores")
-	}
 
 	// ユニークスキルの検証
 	if loadedData.Inventory.UniqueSkills == nil {
 		t.Fatal("UniqueSkillsがnilです")
 	}
-	if len(loadedData.Inventory.UniqueSkills.Skills["physical_lv1"]) != 2 {
-		t.Errorf("physical_lv1 chain count: got %d, want 2", len(loadedData.Inventory.UniqueSkills.Skills["physical_lv1"]))
+	if len(loadedData.Inventory.UniqueSkills.Skills) != 2 {
+		t.Errorf("UniqueSkills count: got %d, want 2", len(loadedData.Inventory.UniqueSkills.Skills))
+	}
+
+	// ユニークチェイン効果の検証
+	if loadedData.Inventory.UniqueChainEffects == nil {
+		t.Fatal("UniqueChainEffectsがnilです")
+	}
+	if len(loadedData.Inventory.UniqueChainEffects.ChainEffects) != 2 {
+		t.Errorf("UniqueChainEffects count: got %d, want 2", len(loadedData.Inventory.UniqueChainEffects.ChainEffects))
 	}
 
 	// エージェントスロットの検証
@@ -416,8 +520,8 @@ func TestSaveAndLoad_FullData(t *testing.T) {
 	if slot0.Skills[0].TypeID != "physical_lv1" {
 		t.Errorf("AgentSlots[0].Skills[0].TypeID: got %s, want physical_lv1", slot0.Skills[0].TypeID)
 	}
-	if slot0.Skills[0].ChainEffectID != "damage_bonus" {
-		t.Errorf("AgentSlots[0].Skills[0].ChainEffectID: got %s, want damage_bonus", slot0.Skills[0].ChainEffectID)
+	if slot0.ChainEffects[0].TypeID != "damage_bonus" {
+		t.Errorf("AgentSlots[0].ChainEffects[0].TypeID: got %s, want damage_bonus", slot0.ChainEffects[0].TypeID)
 	}
 }
 
@@ -494,11 +598,8 @@ func TestConvertSaveToCoreInventory(t *testing.T) {
 
 // TestConvertSkillInventoryToSave はSkillInventoryからセーブ形式への変換をテストします。
 func TestConvertSkillInventoryToSave(t *testing.T) {
-	// ドメインモデルを作成
-	skills := map[string][]string{
-		"physical_lv1": {"damage_bonus", "life_steal"},
-		"heal_lv1":     {},
-	}
+	// ドメインモデルを作成（TypeIDリスト形式）
+	skills := []string{"physical_lv1", "heal_lv1"}
 
 	// セーブ形式に変換
 	save := ConvertSkillInventoryToSave(skills)
@@ -507,19 +608,18 @@ func TestConvertSkillInventoryToSave(t *testing.T) {
 	if len(save.Skills) != 2 {
 		t.Errorf("Skills count: got %d, want 2", len(save.Skills))
 	}
-	if len(save.Skills["physical_lv1"]) != 2 {
-		t.Errorf("physical_lv1 chains: got %d, want 2", len(save.Skills["physical_lv1"]))
+	if save.Skills[0] != "physical_lv1" {
+		t.Errorf("Skills[0]: got %s, want physical_lv1", save.Skills[0])
+	}
+	if save.Skills[1] != "heal_lv1" {
+		t.Errorf("Skills[1]: got %s, want heal_lv1", save.Skills[1])
 	}
 }
 
 // TestConvertSaveToSkillInventory はセーブ形式からSkillInventoryへの変換をテストします。
 func TestConvertSaveToSkillInventory(t *testing.T) {
 	save := &SkillInventorySave{
-		Skills: map[string][]string{
-			"physical_lv1": {"damage_bonus", "life_steal"},
-			"heal_lv1":     {},
-			"unknown":      {"effect1"},
-		},
+		Skills: []string{"physical_lv1", "heal_lv1", "unknown"},
 	}
 
 	// マスタデータに存在するTypeIDのセット
@@ -536,30 +636,81 @@ func TestConvertSaveToSkillInventory(t *testing.T) {
 	if len(skills) != 2 {
 		t.Errorf("Skills count: got %d, want 2", len(skills))
 	}
-	if _, exists := skills["unknown"]; exists {
-		t.Error("unknown should be ignored (not in master data)")
+	// unknownが含まれていないことを確認
+	for _, s := range skills {
+		if s == "unknown" {
+			t.Error("unknown should be ignored (not in master data)")
+		}
+	}
+}
+
+// TestConvertChainEffectInventoryToSave はChainEffectInventoryからセーブ形式への変換をテストします。
+func TestConvertChainEffectInventoryToSave(t *testing.T) {
+	// ドメインモデルを作成（TypeIDリスト形式）
+	chainEffects := []string{"damage_bonus", "heal_bonus"}
+
+	// セーブ形式に変換
+	save := ConvertChainEffectInventoryToSave(chainEffects)
+
+	// 検証
+	if len(save.ChainEffects) != 2 {
+		t.Errorf("ChainEffects count: got %d, want 2", len(save.ChainEffects))
+	}
+	if save.ChainEffects[0] != "damage_bonus" {
+		t.Errorf("ChainEffects[0]: got %s, want damage_bonus", save.ChainEffects[0])
+	}
+	if save.ChainEffects[1] != "heal_bonus" {
+		t.Errorf("ChainEffects[1]: got %s, want heal_bonus", save.ChainEffects[1])
+	}
+}
+
+// TestConvertSaveToChainEffectInventory はセーブ形式からChainEffectInventoryへの変換をテストします。
+func TestConvertSaveToChainEffectInventory(t *testing.T) {
+	save := &ChainEffectInventorySave{
+		ChainEffects: []string{"damage_bonus", "heal_bonus", "unknown"},
+	}
+
+	// マスタデータに存在するTypeIDのセット
+	validTypeIDs := map[string]bool{
+		"damage_bonus": true,
+		"heal_bonus":   true,
+		// unknownはマスタに存在しない
+	}
+
+	// ドメイン形式に変換（存在しないTypeIDは無視）
+	chainEffects := ConvertSaveToChainEffectInventory(save, validTypeIDs)
+
+	// 検証: マスタに存在するもののみ復元
+	if len(chainEffects) != 2 {
+		t.Errorf("ChainEffects count: got %d, want 2", len(chainEffects))
+	}
+	// unknownが含まれていないことを確認
+	for _, ce := range chainEffects {
+		if ce == "unknown" {
+			t.Error("unknown should be ignored (not in master data)")
+		}
 	}
 }
 
 // TestConvertAgentSlotsToSave はAgentSlotからセーブ形式への変換をテストします。
-// CoreLevelフィールドを削除。
 func TestConvertAgentSlotsToSave(t *testing.T) {
-	// ドメインモデル形式（CoreTypeID, Skills配列）- CoreLevelなし
+	// ドメインモデル形式（CoreTypeID, Skills配列, ChainEffects配列）
 	slots := [3]struct {
-		CoreTypeID string
-		Skills     [4]struct {
-			TypeID        string
-			ChainEffectID string
-		}
+		CoreTypeID   string
+		Skills       [4]struct{ TypeID string }
+		ChainEffects [4]struct{ TypeID string }
 	}{
 		{
 			CoreTypeID: "all_rounder",
-			Skills: [4]struct {
-				TypeID        string
-				ChainEffectID string
-			}{
-				{TypeID: "physical_lv1", ChainEffectID: "damage_bonus"},
+			Skills: [4]struct{ TypeID string }{
+				{TypeID: "physical_lv1"},
 				{TypeID: "heal_lv1"},
+				{},
+				{},
+			},
+			ChainEffects: [4]struct{ TypeID string }{
+				{TypeID: "damage_bonus"},
+				{},
 				{},
 				{},
 			},
@@ -568,10 +719,10 @@ func TestConvertAgentSlotsToSave(t *testing.T) {
 		{},
 	}
 
-	// セーブ形式に変換（レベル引数なし）
+	// セーブ形式に変換
 	var saves [3]AgentSlotSave
 	for i, slot := range slots {
-		saves[i] = ConvertAgentSlotToSave(slot.CoreTypeID, slot.Skills)
+		saves[i] = ConvertAgentSlotToSave(slot.CoreTypeID, slot.Skills, slot.ChainEffects)
 	}
 
 	// 検証
@@ -581,19 +732,27 @@ func TestConvertAgentSlotsToSave(t *testing.T) {
 	if saves[0].Skills[0].TypeID != "physical_lv1" {
 		t.Errorf("Slot 0 Skills[0].TypeID: got %s, want physical_lv1", saves[0].Skills[0].TypeID)
 	}
+	if saves[0].ChainEffects[0].TypeID != "damage_bonus" {
+		t.Errorf("Slot 0 ChainEffects[0].TypeID: got %s, want damage_bonus", saves[0].ChainEffects[0].TypeID)
+	}
 	if saves[1].CoreTypeID != "" {
 		t.Errorf("Slot 1 should be empty, got CoreTypeID: %s", saves[1].CoreTypeID)
 	}
 }
 
 // TestConvertSaveToAgentSlot はセーブ形式からAgentSlotへの変換をテストします。
-// CoreLevelフィールドを削除。
 func TestConvertSaveToAgentSlot(t *testing.T) {
 	save := AgentSlotSave{
 		CoreTypeID: "all_rounder",
 		Skills: [4]SkillSlotSaveCfg{
-			{TypeID: "physical_lv1", ChainEffectID: "damage_bonus"},
+			{TypeID: "physical_lv1"},
 			{TypeID: "unknown"},
+			{},
+			{},
+		},
+		ChainEffects: [4]ChainEffectSlotSaveCfg{
+			{TypeID: "damage_bonus"},
+			{TypeID: "invalid_chain"},
 			{},
 			{},
 		},
@@ -607,9 +766,13 @@ func TestConvertSaveToAgentSlot(t *testing.T) {
 		"physical_lv1": true,
 		// unknownはマスタに存在しない
 	}
+	validChainEffectTypeIDs := map[string]bool{
+		"damage_bonus": true,
+		// invalid_chainはマスタに存在しない
+	}
 
-	// ドメイン形式に変換（存在しないTypeIDは無視）- coreLevelを返さない
-	coreTypeID, skills := ConvertSaveToAgentSlot(save, validCoreTypeIDs, validSkillTypeIDs)
+	// ドメイン形式に変換（存在しないTypeIDは無視）
+	coreTypeID, skills, chainEffects := ConvertSaveToAgentSlot(save, validCoreTypeIDs, validSkillTypeIDs, validChainEffectTypeIDs)
 
 	// 検証
 	if coreTypeID != "all_rounder" {
@@ -621,15 +784,26 @@ func TestConvertSaveToAgentSlot(t *testing.T) {
 	if skills[1].TypeID != "" {
 		t.Errorf("Skills[1].TypeID should be empty (unknown not in master), got %s", skills[1].TypeID)
 	}
+	if chainEffects[0].TypeID != "damage_bonus" {
+		t.Errorf("ChainEffects[0].TypeID: got %s, want damage_bonus", chainEffects[0].TypeID)
+	}
+	if chainEffects[1].TypeID != "" {
+		t.Errorf("ChainEffects[1].TypeID should be empty (invalid_chain not in master), got %s", chainEffects[1].TypeID)
+	}
 }
 
 // TestConvertSaveToAgentSlot_InvalidCore はマスタに存在しないコアが無視されることをテストします。
-// CoreLevelフィールドを削除。
 func TestConvertSaveToAgentSlot_InvalidCore(t *testing.T) {
 	save := AgentSlotSave{
 		CoreTypeID: "invalid_core",
 		Skills: [4]SkillSlotSaveCfg{
 			{TypeID: "physical_lv1"},
+			{},
+			{},
+			{},
+		},
+		ChainEffects: [4]ChainEffectSlotSaveCfg{
+			{TypeID: "damage_bonus"},
 			{},
 			{},
 			{},
@@ -643,9 +817,12 @@ func TestConvertSaveToAgentSlot_InvalidCore(t *testing.T) {
 	validSkillTypeIDs := map[string]bool{
 		"physical_lv1": true,
 	}
+	validChainEffectTypeIDs := map[string]bool{
+		"damage_bonus": true,
+	}
 
-	// 変換（コアが無効な場合は全体が空になる）- coreLevelを返さない
-	coreTypeID, skills := ConvertSaveToAgentSlot(save, validCoreTypeIDs, validSkillTypeIDs)
+	// 変換（コアが無効な場合は全体が空になる）
+	coreTypeID, skills, chainEffects := ConvertSaveToAgentSlot(save, validCoreTypeIDs, validSkillTypeIDs, validChainEffectTypeIDs)
 
 	// コアが無効なのでスロット全体が空
 	if coreTypeID != "" {
@@ -656,12 +833,16 @@ func TestConvertSaveToAgentSlot_InvalidCore(t *testing.T) {
 			t.Errorf("Skills[%d].TypeID should be empty for invalid core, got %s", i, skill.TypeID)
 		}
 	}
+	for i, ce := range chainEffects {
+		if ce.TypeID != "" {
+			t.Errorf("ChainEffects[%d].TypeID should be empty for invalid core, got %s", i, ce.TypeID)
+		}
+	}
 }
 
 // ==================== タスク7.3: セーブ/ロードの統合テスト ====================
 
-// TestSaveLoadIntegration_FullCycle は新スキーマでの保存・復元の統合テストです。
-// コアはTypeIDリスト形式、CoreLevelなし、MaxHP追加。
+// TestSaveLoadIntegration_FullCycle はセーブデータの保存・復元の統合テストです。
 func TestSaveLoadIntegration_FullCycle(t *testing.T) {
 	tmpDir := t.TempDir()
 	io := NewSaveDataIO(tmpDir, false)
@@ -673,19 +854,28 @@ func TestSaveLoadIntegration_FullCycle(t *testing.T) {
 	saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores,
 		"all_rounder", "attack_balance", "defense_balance")
 
-	// ユニークスキルを設定
-	saveData.Inventory.UniqueSkills.Skills["physical_lv1"] = []string{"damage_bonus", "life_steal"}
-	saveData.Inventory.UniqueSkills.Skills["heal_lv1"] = []string{"heal_bonus"}
-	saveData.Inventory.UniqueSkills.Skills["buff_lv1"] = []string{}
+	// ユニークスキルを設定（TypeIDリスト形式）
+	saveData.Inventory.UniqueSkills.Skills = append(saveData.Inventory.UniqueSkills.Skills,
+		"physical_lv1", "heal_lv1", "buff_lv1")
 
-	// エージェントスロット0を設定（フル装備）- CoreLevelなし
+	// ユニークチェイン効果を設定
+	saveData.Inventory.UniqueChainEffects.ChainEffects = append(saveData.Inventory.UniqueChainEffects.ChainEffects,
+		"damage_bonus", "heal_bonus", "life_steal")
+
+	// エージェントスロット0を設定（フル装備）
 	saveData.Player.AgentSlots[0] = AgentSlotSave{
 		CoreTypeID: "all_rounder",
 		Skills: [4]SkillSlotSaveCfg{
-			{TypeID: "physical_lv1", ChainEffectID: "damage_bonus"},
-			{TypeID: "heal_lv1", ChainEffectID: "heal_bonus"},
-			{TypeID: "buff_lv1", ChainEffectID: ""},
-			{TypeID: "physical_lv1", ChainEffectID: "life_steal"},
+			{TypeID: "physical_lv1"},
+			{TypeID: "heal_lv1"},
+			{TypeID: "buff_lv1"},
+			{TypeID: "physical_lv1"},
+		},
+		ChainEffects: [4]ChainEffectSlotSaveCfg{
+			{TypeID: "damage_bonus"},
+			{TypeID: "heal_bonus"},
+			{},
+			{TypeID: "life_steal"},
 		},
 	}
 
@@ -744,8 +934,10 @@ func TestSaveLoadIntegration_FullCycle(t *testing.T) {
 	if len(loadedData.Inventory.UniqueSkills.Skills) != 3 {
 		t.Errorf("UniqueSkills count: got %d, want 3", len(loadedData.Inventory.UniqueSkills.Skills))
 	}
-	if len(loadedData.Inventory.UniqueSkills.Skills["physical_lv1"]) != 2 {
-		t.Errorf("physical_lv1 chains: got %d, want 2", len(loadedData.Inventory.UniqueSkills.Skills["physical_lv1"]))
+
+	// ユニークチェイン効果
+	if len(loadedData.Inventory.UniqueChainEffects.ChainEffects) != 3 {
+		t.Errorf("UniqueChainEffects count: got %d, want 3", len(loadedData.Inventory.UniqueChainEffects.ChainEffects))
 	}
 
 	// エージェントスロット0
@@ -756,14 +948,14 @@ func TestSaveLoadIntegration_FullCycle(t *testing.T) {
 	if slot0.Skills[0].TypeID != "physical_lv1" {
 		t.Errorf("Slot0 Skill0 TypeID: got %s, want physical_lv1", slot0.Skills[0].TypeID)
 	}
-	if slot0.Skills[0].ChainEffectID != "damage_bonus" {
-		t.Errorf("Slot0 Skill0 ChainEffectID: got %s, want damage_bonus", slot0.Skills[0].ChainEffectID)
+	if slot0.ChainEffects[0].TypeID != "damage_bonus" {
+		t.Errorf("Slot0 ChainEffect0 TypeID: got %s, want damage_bonus", slot0.ChainEffects[0].TypeID)
 	}
 	if slot0.Skills[3].TypeID != "physical_lv1" {
 		t.Errorf("Slot0 Skill3 TypeID: got %s, want physical_lv1", slot0.Skills[3].TypeID)
 	}
-	if slot0.Skills[3].ChainEffectID != "life_steal" {
-		t.Errorf("Slot0 Skill3 ChainEffectID: got %s, want life_steal", slot0.Skills[3].ChainEffectID)
+	if slot0.ChainEffects[3].TypeID != "life_steal" {
+		t.Errorf("Slot0 ChainEffect3 TypeID: got %s, want life_steal", slot0.ChainEffects[3].TypeID)
 	}
 
 	// エージェントスロット1
@@ -788,7 +980,6 @@ func TestSaveLoadIntegration_FullCycle(t *testing.T) {
 }
 
 // TestSaveLoadIntegration_InvalidTypeIDsIgnored はマスタに存在しないTypeIDが無視されることをテストします。
-// コアはTypeIDリスト形式、CoreLevelなし。
 func TestSaveLoadIntegration_InvalidTypeIDsIgnored(t *testing.T) {
 	// セーブデータにマスタに存在しないTypeIDを含める
 	saveData := NewSaveData()
@@ -797,16 +988,26 @@ func TestSaveLoadIntegration_InvalidTypeIDsIgnored(t *testing.T) {
 	saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores,
 		"valid_core", "invalid_core")
 
-	// 一部有効、一部無効なスキル
-	saveData.Inventory.UniqueSkills.Skills["valid_skill"] = []string{"valid_chain"}
-	saveData.Inventory.UniqueSkills.Skills["invalid_skill"] = []string{"invalid_chain"}
+	// 一部有効、一部無効なスキル（TypeIDリスト形式）
+	saveData.Inventory.UniqueSkills.Skills = append(saveData.Inventory.UniqueSkills.Skills,
+		"valid_skill", "invalid_skill")
 
-	// エージェントスロット: 有効なコアだが一部無効なスキル
+	// 一部有効、一部無効なチェイン効果
+	saveData.Inventory.UniqueChainEffects.ChainEffects = append(saveData.Inventory.UniqueChainEffects.ChainEffects,
+		"valid_chain", "invalid_chain")
+
+	// エージェントスロット: 有効なコアだが一部無効なスキル・チェイン効果
 	saveData.Player.AgentSlots[0] = AgentSlotSave{
 		CoreTypeID: "valid_core",
 		Skills: [4]SkillSlotSaveCfg{
-			{TypeID: "valid_skill", ChainEffectID: "valid_chain"},
+			{TypeID: "valid_skill"},
 			{TypeID: "invalid_skill"},
+			{},
+			{},
+		},
+		ChainEffects: [4]ChainEffectSlotSaveCfg{
+			{TypeID: "valid_chain"},
+			{TypeID: "invalid_chain"},
 			{},
 			{},
 		},
@@ -829,6 +1030,9 @@ func TestSaveLoadIntegration_InvalidTypeIDsIgnored(t *testing.T) {
 	}
 	validSkillTypeIDs := map[string]bool{
 		"valid_skill": true,
+	}
+	validChainEffectTypeIDs := map[string]bool{
+		"valid_chain": true,
 	}
 
 	// コアインベントリの変換テスト（TypeIDリスト形式）
@@ -858,15 +1062,29 @@ func TestSaveLoadIntegration_InvalidTypeIDsIgnored(t *testing.T) {
 	if len(skills) != 1 {
 		t.Errorf("Skills after filter: got %d, want 1", len(skills))
 	}
-	if _, exists := skills["invalid_skill"]; exists {
-		t.Error("invalid_skill should be filtered out")
+	for _, s := range skills {
+		if s == "invalid_skill" {
+			t.Error("invalid_skill should be filtered out")
+		}
 	}
 
-	// エージェントスロット0の変換テスト（コア有効、スキル一部無効）- coreLevelなし
-	coreTypeID, skillSlots := ConvertSaveToAgentSlot(
+	// チェイン効果インベントリの変換テスト
+	chainEffects := ConvertSaveToChainEffectInventory(saveData.Inventory.UniqueChainEffects, validChainEffectTypeIDs)
+	if len(chainEffects) != 1 {
+		t.Errorf("ChainEffects after filter: got %d, want 1", len(chainEffects))
+	}
+	for _, ce := range chainEffects {
+		if ce == "invalid_chain" {
+			t.Error("invalid_chain should be filtered out")
+		}
+	}
+
+	// エージェントスロット0の変換テスト（コア有効、スキル・チェイン効果一部無効）
+	coreTypeID, skillSlots, ceSlots := ConvertSaveToAgentSlot(
 		saveData.Player.AgentSlots[0],
 		validCoreTypeIDs,
 		validSkillTypeIDs,
+		validChainEffectTypeIDs,
 	)
 	if coreTypeID != "valid_core" {
 		t.Errorf("Slot0 CoreTypeID: got %s, want valid_core", coreTypeID)
@@ -877,12 +1095,19 @@ func TestSaveLoadIntegration_InvalidTypeIDsIgnored(t *testing.T) {
 	if skillSlots[1].TypeID != "" {
 		t.Errorf("Slot0 Skill1 should be empty (invalid skill filtered), got %s", skillSlots[1].TypeID)
 	}
+	if ceSlots[0].TypeID != "valid_chain" {
+		t.Errorf("Slot0 ChainEffect0: got %s, want valid_chain", ceSlots[0].TypeID)
+	}
+	if ceSlots[1].TypeID != "" {
+		t.Errorf("Slot0 ChainEffect1 should be empty (invalid chain filtered), got %s", ceSlots[1].TypeID)
+	}
 
 	// エージェントスロット1の変換テスト（コア無効→スロット全体空）
-	coreTypeID, skillSlots = ConvertSaveToAgentSlot(
+	coreTypeID, skillSlots, ceSlots = ConvertSaveToAgentSlot(
 		saveData.Player.AgentSlots[1],
 		validCoreTypeIDs,
 		validSkillTypeIDs,
+		validChainEffectTypeIDs,
 	)
 	if coreTypeID != "" {
 		t.Errorf("Slot1 CoreTypeID should be empty (invalid core), got %s", coreTypeID)
@@ -890,6 +1115,11 @@ func TestSaveLoadIntegration_InvalidTypeIDsIgnored(t *testing.T) {
 	for i, skill := range skillSlots {
 		if skill.TypeID != "" {
 			t.Errorf("Slot1 Skill%d should be empty when core is invalid, got %s", i, skill.TypeID)
+		}
+	}
+	for i, ce := range ceSlots {
+		if ce.TypeID != "" {
+			t.Errorf("Slot1 ChainEffect%d should be empty when core is invalid, got %s", i, ce.TypeID)
 		}
 	}
 }
@@ -926,6 +1156,12 @@ func TestSaveLoadIntegration_EmptyData(t *testing.T) {
 	if len(loadedData.Inventory.UniqueSkills.Skills) != 0 {
 		t.Errorf("UniqueSkills should be empty, got %d", len(loadedData.Inventory.UniqueSkills.Skills))
 	}
+	if loadedData.Inventory.UniqueChainEffects == nil {
+		t.Fatal("UniqueChainEffects should not be nil")
+	}
+	if len(loadedData.Inventory.UniqueChainEffects.ChainEffects) != 0 {
+		t.Errorf("UniqueChainEffects should be empty, got %d", len(loadedData.Inventory.UniqueChainEffects.ChainEffects))
+	}
 	for i, slot := range loadedData.Player.AgentSlots {
 		if slot.CoreTypeID != "" {
 			t.Errorf("AgentSlots[%d] should be empty, got CoreTypeID: %s", i, slot.CoreTypeID)
@@ -934,7 +1170,6 @@ func TestSaveLoadIntegration_EmptyData(t *testing.T) {
 }
 
 // TestSaveLoadIntegration_NilConversion はnilセーブデータの変換をテストします。
-// コアはTypeIDリスト形式で返される。
 func TestSaveLoadIntegration_NilConversion(t *testing.T) {
 	validTypeIDs := map[string]bool{"valid": true}
 
@@ -947,7 +1182,13 @@ func TestSaveLoadIntegration_NilConversion(t *testing.T) {
 	// nil SkillInventorySave
 	skills := ConvertSaveToSkillInventory(nil, validTypeIDs)
 	if len(skills) != 0 {
-		t.Errorf("nil SkillInventorySave should return empty map, got %d", len(skills))
+		t.Errorf("nil SkillInventorySave should return empty slice, got %d", len(skills))
+	}
+
+	// nil ChainEffectInventorySave
+	chainEffects := ConvertSaveToChainEffectInventory(nil, validTypeIDs)
+	if len(chainEffects) != 0 {
+		t.Errorf("nil ChainEffectInventorySave should return empty slice, got %d", len(chainEffects))
 	}
 }
 

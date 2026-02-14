@@ -352,7 +352,7 @@ func TestAddRewardsToInventory_WithChainEffect(t *testing.T) {
 	skillInv := domain.NewSkillInventory()
 
 	// インベントリに追加
-	warning := AddRewardsToInventory(result, coreInv, skillInv)
+	warning := AddRewardsToInventory(result, coreInv, skillInv, nil)
 
 	if warning.WarningMessage != "" {
 		t.Error("新システムでは警告メッセージは空であるべき")
@@ -361,24 +361,6 @@ func TestAddRewardsToInventory_WithChainEffect(t *testing.T) {
 	// スキルインベントリにスキルが追加されたことを確認
 	if !skillInv.HasSkill("physical_lv1") {
 		t.Error("スキルがインベントリに追加されるべき")
-	}
-
-	// チェイン効果バリエーションが追加されたことを確認
-	chainVariations := skillInv.GetChainVariations("physical_lv1")
-	if len(chainVariations) != 1 {
-		t.Errorf("チェイン効果バリエーション数が期待と異なる: got %d, want 1", len(chainVariations))
-	}
-
-	// チェイン効果IDが保存されていることを確認
-	hasExpectedChainEffect := false
-	for _, variation := range chainVariations {
-		if variation == "test_effect" {
-			hasExpectedChainEffect = true
-			break
-		}
-	}
-	if !hasExpectedChainEffect {
-		t.Errorf("期待するチェイン効果IDが保存されていない: want test_effect, got %v", chainVariations)
 	}
 }
 

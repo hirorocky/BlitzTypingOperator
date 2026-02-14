@@ -17,10 +17,11 @@ import (
 // ==================== テスト用ヘルパー ====================
 
 // setupTestCustomizationScreen はテスト用のAgentCustomizationScreenをセットアップします。
-func setupTestCustomizationScreen() (*AgentCustomizationScreen, *domain.CoreInventory, *domain.SkillInventory, *slot.AgentSlotManager) {
+func setupTestCustomizationScreen() (*AgentCustomizationScreen, *domain.CoreInventory, *domain.SkillInventory, *domain.ChainEffectInventory, *slot.AgentSlotManager) {
 	// コアとスキルのインベントリを作成
 	coreInv := domain.NewCoreInventory()
 	skillInv := domain.NewSkillInventory()
+	chainEffectInv := domain.NewChainEffectInventory()
 
 	// テスト用マスタデータ
 	coreTypes := map[string]domain.CoreType{
@@ -63,32 +64,36 @@ func setupTestCustomizationScreen() (*AgentCustomizationScreen, *domain.CoreInve
 	}
 
 	passiveSkills := map[string]domain.PassiveSkill{}
-	chainEffects := map[string]domain.ChainEffect{}
+	chainEffects := map[string]domain.ChainEffect{
+		"damage_bonus": {ID: "damage_bonus", ShortDescription: "ダメージ増加", Description: "攻撃ダメージが増加する"},
+		"armor_pierce": {ID: "armor_pierce", ShortDescription: "防御貫通", Description: "敵の防御力を貫通する"},
+	}
 
 	// スロットマネージャーを作成
 	slotManager := slot.NewAgentSlotManager(coreInv, skillInv, coreTypes, skillTypes, passiveSkills, chainEffects)
+	slotManager.SetChainEffectInventory(chainEffectInv)
 
 	// インベントリマネージャーを作成
-	invManager := inventory.NewInventoryManagerWithInventories(coreInv, skillInv)
+	invManager := inventory.NewInventoryManagerWithInventories(coreInv, skillInv, chainEffectInv)
 
 	// カスタマイズ画面を作成
 	screen := NewAgentCustomizationScreen(invManager, slotManager, coreTypes, skillTypes, passiveSkills, chainEffects)
 
-	return screen, coreInv, skillInv, slotManager
+	return screen, coreInv, skillInv, chainEffectInv, slotManager
 }
 
 // ==================== タスク10.1: 基本構造のテスト ====================
 
 func TestAgentCustomizationScreen_NewAgentCustomizationScreen(t *testing.T) {
-	screen, _, _, _ := setupTestCustomizationScreen()
+	screen, _, _, _, _ := setupTestCustomizationScreen()
 
 	if screen == nil {
 		t.Fatal("画面がnilです")
 	}
 
 	// 初期状態の確認
-	if screen.currentMode != CustomizationModeSlotSelect {
-		t.Errorf("初期モードが不正です: got %v, want %v", screen.currentMode, CustomizationModeSlotSelect)
+	if screen.currentMode != ModeCardSelect {
+		t.Errorf("初期モードが不正です: got %v, want %v", screen.currentMode, ModeCardSelect)
 	}
 
 	if screen.selectedSlotIndex != 0 {
@@ -97,7 +102,7 @@ func TestAgentCustomizationScreen_NewAgentCustomizationScreen(t *testing.T) {
 }
 
 func TestAgentCustomizationScreen_View_ShowsThreeSlots(t *testing.T) {
-	screen, _, _, _ := setupTestCustomizationScreen()
+	screen, _, _, _, _ := setupTestCustomizationScreen()
 
 	view := screen.View()
 
@@ -113,7 +118,7 @@ func TestAgentCustomizationScreen_View_ShowsThreeSlots(t *testing.T) {
 }
 
 func TestAgentCustomizationScreen_Update_SlotNavigation(t *testing.T) {
-	screen, _, _, _ := setupTestCustomizationScreen()
+	screen, _, _, _, _ := setupTestCustomizationScreen()
 
 	// 新UI: 左右キーでスロット切替、上下キーでカード内フォーカス移動
 	// 右キーでスロット2に移動
@@ -136,7 +141,7 @@ func TestAgentCustomizationScreen_Update_SlotNavigation(t *testing.T) {
 }
 
 func TestAgentCustomizationScreen_Update_EnterTransitionsToCoreSelectMode(t *testing.T) {
-	screen, coreInv, _, _ := setupTestCustomizationScreen()
+	screen, coreInv, _, _, _ := setupTestCustomizationScreen()
 
 	// コアをインベントリに追加
 	coreInv.AddCore("balance")
@@ -144,15 +149,15 @@ func TestAgentCustomizationScreen_Update_EnterTransitionsToCoreSelectMode(t *tes
 	// Enterを押してコア選択モードに遷移
 	screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-	if screen.currentMode != CustomizationModeCoreSelect {
-		t.Errorf("Enterでコア選択モードに遷移していません: got %v, want %v", screen.currentMode, CustomizationModeCoreSelect)
+	if screen.currentMode != ModeCoreSelect {
+		t.Errorf("Enterでコア選択モードに遷移していません: got %v, want %v", screen.currentMode, ModeCoreSelect)
 	}
 }
 
 // ==================== タスク10.2: コア選択モードのテスト ====================
 
 func TestAgentCustomizationScreen_CoreSelectMode_ShowsOwnedCores(t *testing.T) {
-	screen, coreInv, _, _ := setupTestCustomizationScreen()
+	screen, coreInv, _, _, _ := setupTestCustomizationScreen()
 
 	// コアをインベントリに追加
 	coreInv.AddCore("balance")
@@ -173,7 +178,7 @@ func TestAgentCustomizationScreen_CoreSelectMode_ShowsOwnedCores(t *testing.T) {
 }
 
 func TestAgentCustomizationScreen_CoreSelectMode_CoreSelection(t *testing.T) {
-	screen, coreInv, _, slotManager := setupTestCustomizationScreen()
+	screen, coreInv, _, _, slotManager := setupTestCustomizationScreen()
 
 	// コアをインベントリに追加
 	coreInv.AddCore("balance")
@@ -195,15 +200,15 @@ func TestAgentCustomizationScreen_CoreSelectMode_CoreSelection(t *testing.T) {
 // ==================== タスク10.3: スキル選択モードのテスト ====================
 
 func TestAgentCustomizationScreen_SkillSelectMode_ShowsCompatibleSkills(t *testing.T) {
-	screen, coreInv, skillInv, slotManager := setupTestCustomizationScreen()
+	screen, coreInv, skillInv, _, slotManager := setupTestCustomizationScreen()
 
 	// コアをインベントリに追加して設定
 	coreInv.AddCore("balance")
 	slotManager.SetCore(0, "balance")
 
 	// スキルをインベントリに追加
-	skillInv.AddSkill("strike", "")   // physical タグ
-	skillInv.AddSkill("fireball", "") // magic タグ
+	skillInv.AddSkill("strike")   // physical タグ
+	skillInv.AddSkill("fireball") // magic タグ
 
 	// スキル選択モードに移行
 	screen.focusPosition = 1 // スキルスロット1にフォーカス
@@ -224,15 +229,15 @@ func TestAgentCustomizationScreen_SkillSelectMode_ShowsCompatibleSkills(t *testi
 }
 
 func TestAgentCustomizationScreen_SkillSelectMode_FiltersIncompatibleSkills(t *testing.T) {
-	screen, coreInv, skillInv, slotManager := setupTestCustomizationScreen()
+	screen, coreInv, skillInv, _, slotManager := setupTestCustomizationScreen()
 
 	// アタッカーコアを設定（physicalのみ許可）
 	coreInv.AddCore("attacker")
 	slotManager.SetCore(0, "attacker")
 
 	// スキルをインベントリに追加
-	skillInv.AddSkill("strike", "")   // physical タグ - 互換
-	skillInv.AddSkill("fireball", "") // magic タグ - 非互換
+	skillInv.AddSkill("strike")   // physical タグ - 互換
+	skillInv.AddSkill("fireball") // magic タグ - 非互換
 
 	// スキル選択モードに移行
 	screen.focusPosition = 1
@@ -260,14 +265,14 @@ func TestAgentCustomizationScreen_SkillSelectMode_FiltersIncompatibleSkills(t *t
 }
 
 func TestAgentCustomizationScreen_SkillSelectMode_SetsSkillToSlot(t *testing.T) {
-	screen, coreInv, skillInv, slotManager := setupTestCustomizationScreen()
+	screen, coreInv, skillInv, _, slotManager := setupTestCustomizationScreen()
 
 	// コアを設定
 	coreInv.AddCore("balance")
 	slotManager.SetCore(0, "balance")
 
 	// スキルを追加
-	skillInv.AddSkill("strike", "")
+	skillInv.AddSkill("strike")
 
 	// スキル選択モードに移行
 	screen.selectedSlotIndex = 0
@@ -286,38 +291,118 @@ func TestAgentCustomizationScreen_SkillSelectMode_SetsSkillToSlot(t *testing.T) 
 	}
 }
 
-func TestAgentCustomizationScreen_SkillSelectMode_ChainEffectVariationSelection(t *testing.T) {
-	screen, coreInv, skillInv, slotManager := setupTestCustomizationScreen()
+func TestAgentCustomizationScreen_ChainSelectMode_IndependentFlow(t *testing.T) {
+	screen, coreInv, skillInv, chainEffectInv, slotManager := setupTestCustomizationScreen()
 
-	// コアを設定
+	// コアとスキルを設定
+	coreInv.AddCore("balance")
+	slotManager.SetCore(0, "balance")
+	skillInv.AddSkill("strike")
+	slotManager.SetSkill(0, 0, "strike")
+
+	// チェイン効果をインベントリに追加
+	chainEffectInv.AddChainEffect("damage_bonus")
+
+	// チェイン効果位置にフォーカス（focusPosition=2はスキル[0]のチェイン効果）
+	screen.selectedSlotIndex = 0
+	screen.focusPosition = 2
+
+	// Enterでチェイン効果選択モードに遷移
+	screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+	if screen.currentMode != ModeChainSelect {
+		t.Errorf("チェイン効果選択モードに遷移していません: got %v, want %v", screen.currentMode, ModeChainSelect)
+	}
+
+	// チェイン効果リストに保有チェイン効果が含まれること
+	if len(screen.chainEffectList) != 1 {
+		t.Errorf("チェイン効果リスト数が不正: got %v, want 1", len(screen.chainEffectList))
+	}
+}
+
+func TestAgentCustomizationScreen_ChainSelectMode_SetsChainEffect(t *testing.T) {
+	screen, coreInv, skillInv, chainEffectInv, slotManager := setupTestCustomizationScreen()
+
+	// コアとスキルを設定
+	coreInv.AddCore("balance")
+	slotManager.SetCore(0, "balance")
+	skillInv.AddSkill("strike")
+	slotManager.SetSkill(0, 0, "strike")
+
+	// チェイン効果を追加
+	chainEffectInv.AddChainEffect("damage_bonus")
+
+	// チェイン効果位置からチェイン効果選択モードに遷移
+	screen.selectedSlotIndex = 0
+	screen.focusPosition = 2
+	screen.enterChainSelectMode()
+
+	// 最初のチェイン効果を選択（Enter）
+	screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+	// スロットにチェイン効果が設定されていること
+	agentSlot := slotManager.GetSlot(0)
+	chainCfg := agentSlot.GetChainEffect(0)
+	if chainCfg == nil || chainCfg.TypeID != "damage_bonus" {
+		t.Errorf("チェイン効果が設定されていません: got %v", chainCfg)
+	}
+
+	// ModeCardSelectに戻ること
+	if screen.currentMode != ModeCardSelect {
+		t.Errorf("カード選択モードに戻っていません: got %v", screen.currentMode)
+	}
+}
+
+func TestAgentCustomizationScreen_ChainSelectMode_DisabledWithoutSkill(t *testing.T) {
+	screen, coreInv, _, chainEffectInv, slotManager := setupTestCustomizationScreen()
+
+	// コアのみ設定（スキル未設定）
 	coreInv.AddCore("balance")
 	slotManager.SetCore(0, "balance")
 
-	// チェイン効果付きスキルを追加
-	skillInv.AddSkill("strike", "chain_damage_boost")
-	skillInv.AddSkill("strike", "chain_heal")
+	// チェイン効果を追加
+	chainEffectInv.AddChainEffect("damage_bonus")
 
-	// スキル選択モードに移行
+	// コアを直接設定
 	screen.selectedSlotIndex = 0
-	screen.focusPosition = 1 // スキルスロット1にフォーカス
-	screen.enterSkillSelectMode(0)
-	screen.updateSkillList()
+	screen.focusPosition = 2 // チェイン効果位置
 
-	// スキルを選択してチェイン効果選択モードに遷移
+	// Enterでチェイン効果選択を試みる
 	screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-	// チェイン効果バリエーションが2つあることを確認
-	if screen.currentMode == CustomizationModeChainSelect {
-		if len(screen.chainVariationList) != 2 {
-			t.Errorf("チェイン効果バリエーション数が不正です: got %v, want 2", len(screen.chainVariationList))
-		}
+	// ModeChainSelectに遷移していないこと（スキル未設定のため）
+	if screen.currentMode == ModeChainSelect {
+		t.Error("スキル未設定でチェイン効果選択モードに遷移してはいけません")
+	}
+}
+
+func TestAgentCustomizationScreen_ChainSelectMode_EscReturnsToCardSelect(t *testing.T) {
+	screen, coreInv, skillInv, chainEffectInv, slotManager := setupTestCustomizationScreen()
+
+	// セットアップ
+	coreInv.AddCore("balance")
+	slotManager.SetCore(0, "balance")
+	skillInv.AddSkill("strike")
+	slotManager.SetSkill(0, 0, "strike")
+	chainEffectInv.AddChainEffect("damage_bonus")
+
+	// チェイン効果選択モードに遷移
+	screen.selectedSlotIndex = 0
+	screen.focusPosition = 2
+	screen.enterChainSelectMode()
+
+	// Escでカード選択に戻る
+	screen.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+	if screen.currentMode != ModeCardSelect {
+		t.Errorf("Escでカード選択に戻っていません: got %v", screen.currentMode)
 	}
 }
 
 // ==================== タスク10.4: スロットクリア機能のテスト ====================
 
 func TestAgentCustomizationScreen_ClearCore(t *testing.T) {
-	screen, coreInv, _, slotManager := setupTestCustomizationScreen()
+	screen, coreInv, _, _, slotManager := setupTestCustomizationScreen()
 
 	// コアを設定
 	coreInv.AddCore("balance")
@@ -336,13 +421,13 @@ func TestAgentCustomizationScreen_ClearCore(t *testing.T) {
 }
 
 func TestAgentCustomizationScreen_ClearSkill(t *testing.T) {
-	screen, coreInv, skillInv, slotManager := setupTestCustomizationScreen()
+	screen, coreInv, skillInv, _, slotManager := setupTestCustomizationScreen()
 
 	// コアとスキルを設定
 	coreInv.AddCore("balance")
 	slotManager.SetCore(0, "balance")
-	skillInv.AddSkill("strike", "")
-	slotManager.SetSkill(0, 0, "strike", "")
+	skillInv.AddSkill("strike")
+	slotManager.SetSkill(0, 0, "strike")
 
 	// スキルスロット1にフォーカス
 	screen.selectedSlotIndex = 0
@@ -360,35 +445,35 @@ func TestAgentCustomizationScreen_ClearSkill(t *testing.T) {
 }
 
 func TestAgentCustomizationScreen_EscReturnsToPreviousMode(t *testing.T) {
-	screen, coreInv, _, _ := setupTestCustomizationScreen()
+	screen, coreInv, _, _, _ := setupTestCustomizationScreen()
 
 	coreInv.AddCore("balance")
 
 	// スロット選択からコア選択へ
 	screen.enterCoreSelectMode()
-	if screen.currentMode != CustomizationModeCoreSelect {
+	if screen.currentMode != ModeCoreSelect {
 		t.Fatal("コア選択モードへの遷移に失敗")
 	}
 
 	// Escでスロット選択に戻る
 	screen.Update(tea.KeyMsg{Type: tea.KeyEsc})
-	if screen.currentMode != CustomizationModeSlotSelect {
-		t.Errorf("Escでスロット選択に戻っていません: got %v, want %v", screen.currentMode, CustomizationModeSlotSelect)
+	if screen.currentMode != ModeCardSelect {
+		t.Errorf("Escでスロット選択に戻っていません: got %v, want %v", screen.currentMode, ModeCardSelect)
 	}
 }
 
 // ==================== 互換性表示のテスト ====================
 
 func TestAgentCustomizationScreen_ShowsCompatibilityIndicator(t *testing.T) {
-	screen, coreInv, skillInv, slotManager := setupTestCustomizationScreen()
+	screen, coreInv, skillInv, _, slotManager := setupTestCustomizationScreen()
 
 	// アタッカーコアを設定（physicalのみ許可）
 	coreInv.AddCore("attacker")
 	slotManager.SetCore(0, "attacker")
 
 	// スキルを追加
-	skillInv.AddSkill("strike", "")   // 互換
-	skillInv.AddSkill("fireball", "") // 非互換（magicタグ）
+	skillInv.AddSkill("strike")   // 互換
+	skillInv.AddSkill("fireball") // 非互換（magicタグ）
 
 	// スキル選択モードに移行
 	screen.focusPosition = 1
@@ -407,7 +492,7 @@ func TestAgentCustomizationScreen_ShowsCompatibilityIndicator(t *testing.T) {
 // ==================== Screenインターフェースのテスト ====================
 
 func TestAgentCustomizationScreen_ImplementsScreenInterface(t *testing.T) {
-	screen, _, _, _ := setupTestCustomizationScreen()
+	screen, _, _, _, _ := setupTestCustomizationScreen()
 
 	// Screenインターフェースを実装していることを確認
 	var _ Screen = screen

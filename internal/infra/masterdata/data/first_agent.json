@@ -12,7 +12,7 @@
     },
     {
       "id": "agent_first_2",
-      "core_type_id": "all_rounder",
+      "core_type_id": "healer",
       "core_level": 1,
       "modules": [
         {
@@ -22,7 +22,7 @@
     },
     {
       "id": "agent_first_3",
-      "core_type_id": "all_rounder",
+      "core_type_id": "quick_recoverer",
       "core_level": 1,
       "modules": [
         {

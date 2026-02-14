@@ -226,6 +226,7 @@ func (g *GameState) AddRewardsToInventory(result *rewarding.RewardResult) *rewar
 		result,
 		g.inventory.Cores(),
 		g.inventory.Skills(),
+		g.inventory.ChainEffects(),
 	)
 }
 

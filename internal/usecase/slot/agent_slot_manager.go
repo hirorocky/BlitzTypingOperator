@@ -18,9 +18,6 @@ var (
 	// ErrSkillNotOwned は保有していないスキルを設定しようとした場合のエラー
 	ErrSkillNotOwned = errors.New("skill not owned")
 
-	// ErrChainVariationNotOwned は保有していないチェイン効果を選択しようとした場合のエラー
-	ErrChainVariationNotOwned = errors.New("chain variation not owned")
-
 	// ErrSkillIncompatible はコアと互換性のないスキルを設定しようとした場合のエラー
 	ErrSkillIncompatible = errors.New("skill incompatible with core")
 
@@ -38,6 +35,18 @@ var (
 
 	// ErrSkillAlreadyEquipped は既に他のスロットで装備済みのスキルを設定しようとした場合のエラー
 	ErrSkillAlreadyEquipped = errors.New("skill already equipped in another slot")
+
+	// ErrCoreAlreadyEquipped は既に他のスロットで装備済みのコアを設定しようとした場合のエラー
+	ErrCoreAlreadyEquipped = errors.New("core already equipped in another slot")
+
+	// ErrChainEffectNotOwned は保有していないチェイン効果を設定しようとした場合のエラー
+	ErrChainEffectNotOwned = errors.New("chain effect not owned")
+
+	// ErrSkillNotSetForChain はスキル未設定スロットにチェイン効果を設定しようとした場合のエラー
+	ErrSkillNotSetForChain = errors.New("skill not set for chain effect slot")
+
+	// ErrChainEffectAlreadyEquipped は既に他のスロットで装備済みのチェイン効果を設定しようとした場合のエラー
+	ErrChainEffectAlreadyEquipped = errors.New("chain effect already equipped in another slot")
 )
 
 // MaxAgentSlotCount はエージェントスロットの最大数です。
@@ -66,6 +75,9 @@ type AgentSlotManager struct {
 
 	// chainEffects はChainEffectマスタデータへの参照（ID→ChainEffect）
 	chainEffects map[string]domain.ChainEffect
+
+	// chainEffectInv はチェイン効果インベントリへの参照
+	chainEffectInv *domain.ChainEffectInventory
 
 	// locked はバトル中のスロット変更禁止フラグ
 	locked bool
@@ -130,6 +142,11 @@ func (m *AgentSlotManager) SetCore(slot int, typeID string) error {
 		return ErrCoreNotOwned
 	}
 
+	// コアユニーク制約: 他スロットで同じコアが装備されていないか確認
+	if m.isCoreEquippedElsewhere(slot, typeID) {
+		return ErrCoreAlreadyEquipped
+	}
+
 	// スロットにコアを設定
 	targetSlot := m.slots[slot]
 	targetSlot.SetCore(typeID)
@@ -158,6 +175,44 @@ func (m *AgentSlotManager) ClearCore(slot int) error {
 	m.slots[slot].Clear()
 
 	return nil
+}
+
+// isChainEffectEquippedElsewhere は指定チェイン効果が他のスロットで装備されているかをチェックします。
+// 同じ位置（slot, skillSlot）への上書きは重複とみなしません。
+func (m *AgentSlotManager) isChainEffectEquippedElsewhere(targetSlot, targetSkillSlot int, typeID string) bool {
+	for slotIdx := range MaxAgentSlotCount {
+		agentSlot := m.slots[slotIdx]
+		if agentSlot == nil || agentSlot.IsEmpty() {
+			continue
+		}
+
+		for skillSlotIdx := range domain.MaxSkillSlotCount {
+			// 同じ位置への上書きはスキップ
+			if slotIdx == targetSlot && skillSlotIdx == targetSkillSlot {
+				continue
+			}
+
+			chainCfg := agentSlot.GetChainEffect(skillSlotIdx)
+			if chainCfg != nil && !chainCfg.IsEmpty() && chainCfg.TypeID == typeID {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// isCoreEquippedElsewhere は指定コアが他のスロットで装備されているかをチェックします。
+// 同じスロットへの上書きは重複とみなしません。
+func (m *AgentSlotManager) isCoreEquippedElsewhere(targetSlot int, typeID string) bool {
+	for i := range MaxAgentSlotCount {
+		if i == targetSlot {
+			continue
+		}
+		if m.slots[i] != nil && m.slots[i].CoreTypeID == typeID {
+			return true
+		}
+	}
+	return false
 }
 
 // removeIncompatibleSkills はスロット内の互換性のないスキルを削除します。
@@ -211,7 +266,7 @@ func (m *AgentSlotManager) isSkillCompatibleWithCoreType(skillType domain.SkillT
 // SetSkill はスロットのスキルを設定します。
 // 同じスキルIDは全エージェントを通じて1つしか装備できません。
 // ロック中はErrSlotLockedを返します。
-func (m *AgentSlotManager) SetSkill(slot int, skillSlot int, typeID string, chainEffectID string) error {
+func (m *AgentSlotManager) SetSkill(slot int, skillSlot int, typeID string) error {
 	// ロックチェック
 	if m.locked {
 		return ErrSlotLocked
@@ -238,11 +293,6 @@ func (m *AgentSlotManager) SetSkill(slot int, skillSlot int, typeID string, chai
 		return ErrSkillNotOwned
 	}
 
-	// チェイン効果バリエーションの保有確認
-	if chainEffectID != "" && !m.skillInv.HasChainVariation(typeID, chainEffectID) {
-		return ErrChainVariationNotOwned
-	}
-
 	// スキルTypeを取得
 	skillType, exists := m.skillTypes[typeID]
 	if !exists {
@@ -266,7 +316,7 @@ func (m *AgentSlotManager) SetSkill(slot int, skillSlot int, typeID string, chai
 	}
 
 	// スキルを設定
-	targetSlot.SetSkill(skillSlot, typeID, chainEffectID)
+	targetSlot.SetSkill(skillSlot, typeID)
 
 	return nil
 }
@@ -316,6 +366,69 @@ func (m *AgentSlotManager) ClearSkill(slot int, skillSlot int) error {
 	// スキルスロットをクリア
 	m.slots[slot].ClearSkill(skillSlot)
 
+	return nil
+}
+
+// ==================== チェイン効果管理 ====================
+
+// SetChainEffectInventory はチェイン効果インベントリを設定します。
+func (m *AgentSlotManager) SetChainEffectInventory(inv *domain.ChainEffectInventory) {
+	m.chainEffectInv = inv
+}
+
+// SetChainEffect はスロットのスキルスロットにチェイン効果を設定します。
+// スキル未設定の場合はErrSkillNotSetForChainを返します。
+// インベントリに保有していない場合はErrChainEffectNotOwnedを返します。
+func (m *AgentSlotManager) SetChainEffect(slot, skillSlot int, chainEffectTypeID string) error {
+	if m.locked {
+		return ErrSlotLocked
+	}
+
+	if slot < 0 || slot >= MaxAgentSlotCount {
+		return ErrSlotIndexOutOfRange
+	}
+
+	if skillSlot < 0 || skillSlot >= domain.MaxSkillSlotCount {
+		return ErrSkillSlotIndexOutOfRange
+	}
+
+	// スキル未設定チェック
+	targetSlot := m.slots[slot]
+	skillConfig := targetSlot.GetSkill(skillSlot)
+	if skillConfig == nil || skillConfig.IsEmpty() {
+		return ErrSkillNotSetForChain
+	}
+
+	// インベントリ保有チェック
+	if m.chainEffectInv == nil || !m.chainEffectInv.HasChainEffect(chainEffectTypeID) {
+		return ErrChainEffectNotOwned
+	}
+
+	// 全スロットでのチェイン効果重複チェック
+	if m.isChainEffectEquippedElsewhere(slot, skillSlot, chainEffectTypeID) {
+		return ErrChainEffectAlreadyEquipped
+	}
+
+	// チェイン効果を設定
+	targetSlot.SetChainEffect(skillSlot, chainEffectTypeID)
+	return nil
+}
+
+// ClearChainEffect はスロットの指定スキルスロットのチェイン効果をクリアします。
+func (m *AgentSlotManager) ClearChainEffect(slot, skillSlot int) error {
+	if m.locked {
+		return ErrSlotLocked
+	}
+
+	if slot < 0 || slot >= MaxAgentSlotCount {
+		return ErrSlotIndexOutOfRange
+	}
+
+	if skillSlot < 0 || skillSlot >= domain.MaxSkillSlotCount {
+		return ErrSkillSlotIndexOutOfRange
+	}
+
+	m.slots[slot].ClearChainEffect(skillSlot)
 	return nil
 }
 
@@ -457,7 +570,7 @@ func (m *AgentSlotManager) buildAgentFromSlot(slot int) *domain.AgentModel {
 			continue
 		}
 
-		module := m.buildModuleFromConfig(skillConfig)
+		module := m.buildModuleFromConfig(targetSlot, i, skillConfig)
 		if module != nil {
 			modules = append(modules, module)
 		}
@@ -470,16 +583,18 @@ func (m *AgentSlotManager) buildAgentFromSlot(slot int) *domain.AgentModel {
 }
 
 // buildModuleFromConfig はスキルスロット構成からSkillModelを構築します。
-func (m *AgentSlotManager) buildModuleFromConfig(config *domain.SkillSlotConfig) *domain.SkillModel {
+// AgentSlotのChainEffectsスロットからチェイン効果を解決します。
+func (m *AgentSlotManager) buildModuleFromConfig(agentSlot *domain.AgentSlot, skillSlotIdx int, config *domain.SkillSlotConfig) *domain.SkillModel {
 	skillType, exists := m.skillTypes[config.TypeID]
 	if !exists {
 		return nil
 	}
 
-	// チェイン効果の取得
-	var chainEffect *domain.ChainEffect = nil
-	if config.ChainEffectID != "" && m.chainEffects != nil {
-		if ce, exists := m.chainEffects[config.ChainEffectID]; exists {
+	// チェイン効果スロットから解決
+	var chainEffect *domain.ChainEffect
+	chainCfg := agentSlot.GetChainEffect(skillSlotIdx)
+	if chainCfg != nil && !chainCfg.IsEmpty() {
+		if ce, found := m.chainEffects[chainCfg.TypeID]; found {
 			chainEffect = &ce
 		}
 	}

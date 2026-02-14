@@ -20,10 +20,10 @@ func createTestInventories() (*domain.CoreInventory, *domain.SkillInventory) {
 	coreInv.AddCore("attacker")
 
 	skillInv := domain.NewSkillInventory()
-	skillInv.AddSkill("slash", "chain_fire")
-	skillInv.AddSkill("heal", "")
-	skillInv.AddSkill("fireball", "chain_burn")
-	skillInv.AddSkill("strike", "") // スロット1用の追加スキル
+	skillInv.AddSkill("slash")
+	skillInv.AddSkill("heal")
+	skillInv.AddSkill("fireball")
+	skillInv.AddSkill("strike") // スロット1用の追加スキル
 
 	return coreInv, skillInv
 }
@@ -122,10 +122,10 @@ func TestBattleEngine_InitializeBattleWithSlotManager(t *testing.T) {
 	if err := slotManager.SetCore(0, "all_rounder"); err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
-	if err := slotManager.SetSkill(0, 0, "slash", "chain_fire"); err != nil {
+	if err := slotManager.SetSkill(0, 0, "slash"); err != nil {
 		t.Fatalf("スキル設定に失敗: %v", err)
 	}
-	if err := slotManager.SetSkill(0, 1, "heal", ""); err != nil {
+	if err := slotManager.SetSkill(0, 1, "heal"); err != nil {
 		t.Fatalf("スキル設定に失敗: %v", err)
 	}
 
@@ -267,7 +267,7 @@ func TestAgentSlotManager_LockDuringBattle(t *testing.T) {
 		t.Errorf("ロック中のコア設定: 期待 ErrSlotLocked, 実際 %v", err)
 	}
 
-	err = slotManager.SetSkill(0, 0, "slash", "")
+	err = slotManager.SetSkill(0, 0, "slash")
 	if err != slot.ErrSlotLocked {
 		t.Errorf("ロック中のスキル設定: 期待 ErrSlotLocked, 実際 %v", err)
 	}
@@ -331,20 +331,20 @@ func TestBattleIntegration_AgentModelConstruction(t *testing.T) {
 	if err := slotManager.SetCore(0, "all_rounder"); err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
-	if err := slotManager.SetSkill(0, 0, "slash", "chain_fire"); err != nil {
+	if err := slotManager.SetSkill(0, 0, "slash"); err != nil {
 		t.Fatalf("スキル設定に失敗: %v", err)
 	}
-	if err := slotManager.SetSkill(0, 1, "heal", ""); err != nil {
+	if err := slotManager.SetSkill(0, 1, "heal"); err != nil {
 		t.Fatalf("スキル設定に失敗: %v", err)
 	}
-	if err := slotManager.SetSkill(0, 2, "fireball", "chain_burn"); err != nil {
+	if err := slotManager.SetSkill(0, 2, "fireball"); err != nil {
 		t.Fatalf("スキル設定に失敗: %v", err)
 	}
 
 	if err := slotManager.SetCore(1, "attacker"); err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
-	if err := slotManager.SetSkill(1, 0, "strike", ""); err != nil {
+	if err := slotManager.SetSkill(1, 0, "strike"); err != nil {
 		t.Fatalf("スキル設定に失敗: %v", err)
 	}
 
@@ -390,7 +390,7 @@ func TestBattleIntegration_BattleWithSlotAgents(t *testing.T) {
 	if err := slotManager.SetCore(0, "all_rounder"); err != nil {
 		t.Fatalf("コア設定に失敗: %v", err)
 	}
-	if err := slotManager.SetSkill(0, 0, "slash", ""); err != nil {
+	if err := slotManager.SetSkill(0, 0, "slash"); err != nil {
 		t.Fatalf("スキル設定に失敗: %v", err)
 	}
 
