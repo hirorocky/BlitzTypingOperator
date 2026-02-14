@@ -1041,6 +1041,14 @@ func ValidateSkillDefinitionData(data SkillDefinitionData) error {
 	if len(data.Effects) == 0 {
 		return fmt.Errorf("スキル効果が空です: ID=%s", data.ID)
 	}
+	if data.ManaCost < 0 {
+		return fmt.Errorf("マナコストが負の値です: ID=%s, ManaCost=%d", data.ID, data.ManaCost)
+	}
+	for i, effect := range data.Effects {
+		if effect.ManaGain < 0 {
+			return fmt.Errorf("マナ獲得量が負の値です: ID=%s, Effect[%d].ManaGain=%d", data.ID, i, effect.ManaGain)
+		}
+	}
 	return nil
 }
 

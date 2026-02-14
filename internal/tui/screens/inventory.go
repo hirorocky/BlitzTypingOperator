@@ -695,7 +695,7 @@ func (s *InventoryScreen) renderSkillListItems() string {
 		icon := normalizeInventoryIcon(skill.Icon)
 		manaCostMark := ""
 		if skillType, ok := s.skillTypes[skill.TypeID]; ok && skillType.ManaCost > 0 {
-			manaCostMark = " ⭐"
+			manaCostMark = fmt.Sprintf(" ⭐x%d", skillType.ManaCost)
 		}
 		itemContent := fmt.Sprintf("%s %s%s%s", icon, skill.TypeName, manaCostMark, equipMark)
 
@@ -742,7 +742,7 @@ func (s *InventoryScreen) renderSkillPreviewContent() string {
 
 		if skillType.ManaCost > 0 {
 			manaStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff)
-			builder.WriteString(manaStyle.Render(fmt.Sprintf("消費マナ: %s", strings.Repeat("⭐", skillType.ManaCost))))
+			builder.WriteString(manaStyle.Render(fmt.Sprintf("消費マナ: ⭐x%d", skillType.ManaCost)))
 			builder.WriteString("\n")
 		}
 	}

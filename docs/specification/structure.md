@@ -46,7 +46,7 @@ config       ← 横断的関心事（全層から参照可能）
 - `message_handlers.go`: Bubbleteaメッセージハンドリング
 - `masterdata_converter.go`: masterdata→domain型変換ヘルパー。以下の変換関数を提供：
   - `ConvertTimedEffects`: timed_effects.jsonの時限効果定義をマップに変換
-  - `ResolveSkillTimedEffects`: スキルのEffectColumnSpec.Column/ValueをTimedEffectから解決（ManaCost/ManaGainフィールド込み）
+  - `ResolveModuleTimedEffects`: スキルのEffectColumnSpec.Column/ValueをTimedEffectから解決（ManaCost/ManaGainフィールド込み）
   - `ResolveEnemyActionTimedEffects`: 敵行動のEffectColumn/EffectValueをTimedEffectから解決
 - `*_adapter.go`: 層間データ変換アダプター（例: enemy_progress_adapter.go）
 

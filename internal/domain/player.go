@@ -130,7 +130,11 @@ func (p *PlayerModel) IsAlive() bool {
 
 // ConsumeMana はマナを消費します。
 // マナが不足している場合はfalseを返し、マナは変更されません。
+// 負の値は無視されます（falseを返す）。0の場合は何も消費せず成功を返します。
 func (p *PlayerModel) ConsumeMana(amount int) bool {
+	if amount < 0 {
+		return false
+	}
 	if amount > p.Mana {
 		return false
 	}
@@ -139,7 +143,11 @@ func (p *PlayerModel) ConsumeMana(amount int) bool {
 }
 
 // GainMana はマナを獲得します。MaxManaを超えないようクランプされます。
+// 負の値は無視されます。
 func (p *PlayerModel) GainMana(amount int) {
+	if amount <= 0 {
+		return
+	}
 	p.Mana += amount
 	if p.Mana > p.MaxMana {
 		p.Mana = p.MaxMana

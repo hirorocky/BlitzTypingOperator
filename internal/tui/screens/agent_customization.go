@@ -758,7 +758,7 @@ func (s *AgentCustomizationScreen) renderAgentCard(slotIndex int, isSelected boo
 					skillName = skillType.Name
 					icon = skillType.Icon
 					if skillType.ManaCost > 0 {
-						manaCostMark = " ⭐"
+						manaCostMark = fmt.Sprintf(" ⭐x%d", skillType.ManaCost)
 					}
 				}
 				skillContent = fmt.Sprintf("%s %s%s", icon, skillName, manaCostMark)
@@ -1081,7 +1081,7 @@ func (s *AgentCustomizationScreen) renderSkillDetail() string {
 
 		if skillType.ManaCost > 0 {
 			manaStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff)
-			builder.WriteString(manaStyle.Render(fmt.Sprintf("消費マナ: %s", strings.Repeat("⭐", skillType.ManaCost))))
+			builder.WriteString(manaStyle.Render(fmt.Sprintf("消費マナ: ⭐x%d", skillType.ManaCost)))
 			builder.WriteString("\n\n")
 		}
 	}
