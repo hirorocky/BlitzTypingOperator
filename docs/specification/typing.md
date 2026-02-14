@@ -101,7 +101,7 @@ The typing system shall calculate speed factor as:
 **受け入れ基準**:
 1. 速くクリアするほど高い係数
 2. 上限2.0でキャップ
-3. モジュール効果の乗算に使用
+3. スキル効果の乗算に使用
 
 ## チャレンジタイプ
 
@@ -223,7 +223,7 @@ The typing system shall calculate speed factor as:
 
 ## 関連ドメイン
 
-- **Battle**: タイピング結果に基づくモジュール効果計算、ディフェンス中の敵攻撃処理
+- **Battle**: タイピング結果に基づくスキル効果計算、ディフェンス中の敵攻撃処理
 - **Game Loop**: タイピング統計の記録
 - **Collection**: WPM/正確性に基づく実績解除
 - **Agent**: SkillType.ChallengeType/DifficultyRate/ChallengeOptionsの参照

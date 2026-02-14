@@ -81,24 +81,24 @@ func TestBattleScreenPlayerInfo(t *testing.T) {
 	}
 }
 
-// TestBattleScreenModuleList はモジュール一覧表示をテストします。
+// TestBattleScreenSkillList はスキル一覧表示をテストします。
 
-func TestBattleScreenModuleList(t *testing.T) {
+func TestBattleScreenSkillList(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
 	agents := createTestAgents()
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	// モジュールスロットが作成されていることを確認
-	if len(screen.moduleSlots) == 0 {
-		t.Error("モジュールスロットが空です")
+	// スキルスロットが作成されていることを確認
+	if len(screen.skillSlots) == 0 {
+		t.Error("スキルスロットが空です")
 	}
 
 	// エージェントごとにグループ化されているか
-	expectedSlots := len(agents) * 4 // 各エージェント4モジュール
-	if len(screen.moduleSlots) != expectedSlots {
-		t.Errorf("モジュールスロット数: got %d, want %d", len(screen.moduleSlots), expectedSlots)
+	expectedSlots := len(agents) * 4 // 各エージェント4スキル
+	if len(screen.skillSlots) != expectedSlots {
+		t.Errorf("スキルスロット数: got %d, want %d", len(screen.skillSlots), expectedSlots)
 	}
 }
 
@@ -112,9 +112,9 @@ func TestBattleScreenCooldownDisplay(t *testing.T) {
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
 	// クールダウンを設定
-	if len(screen.moduleSlots) > 0 {
-		screen.moduleSlots[0].CooldownRemaining = 3.0
-		screen.moduleSlots[0].CooldownTotal = 5.0
+	if len(screen.skillSlots) > 0 {
+		screen.skillSlots[0].CooldownRemaining = 3.0
+		screen.skillSlots[0].CooldownTotal = 5.0
 	}
 
 	screen.width = 120
@@ -137,11 +137,11 @@ func TestBattleScreenTypingChallenge(t *testing.T) {
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
 	// タイピングチャレンジを開始
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
-	screen.selectedModuleIdx = 0
-	screen.startChallenge(screen.moduleSlots[0].Module)
+	screen.selectedSkillIdx = 0
+	screen.startChallenge(screen.skillSlots[0].Skill)
 
 	if screen.activeChallenge == nil {
 		t.Error("チャレンジが開始されていません")
@@ -157,13 +157,13 @@ func TestBattleScreenTimeLimit(t *testing.T) {
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
 	// チャレンジを開始
-	screen.selectedModuleIdx = 0
-	screen.startChallenge(screen.moduleSlots[0].Module)
+	screen.selectedSkillIdx = 0
+	screen.startChallenge(screen.skillSlots[0].Skill)
 
 	// チャレンジが開始されていること
 	if screen.activeChallenge == nil {
@@ -219,18 +219,18 @@ func TestBattleScreenTickUpdatesCooldowns(t *testing.T) {
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
 	// クールダウンを設定
-	if len(screen.moduleSlots) > 0 {
-		screen.moduleSlots[0].CooldownRemaining = 3.0
+	if len(screen.skillSlots) > 0 {
+		screen.skillSlots[0].CooldownRemaining = 3.0
 	}
 
 	// TickMsgを送信（100ms経過をシミュレート）
 	_, _ = screen.Update(BattleTickMsg{})
 
 	// クールダウンが減少していること
-	if len(screen.moduleSlots) > 0 {
+	if len(screen.skillSlots) > 0 {
 		// tickInterval (100ms = 0.1秒) 分減少しているはず
 		expected := 3.0 - 0.1
-		actual := screen.moduleSlots[0].CooldownRemaining
+		actual := screen.skillSlots[0].CooldownRemaining
 		if actual > expected+0.01 || actual < expected-0.01 {
 			t.Errorf("クールダウンが更新されていません: got %.2f, want %.2f", actual, expected)
 		}
@@ -290,13 +290,13 @@ func TestBattleScreenTypingTimeout(t *testing.T) {
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
 	// チャレンジを開始
-	screen.selectedModuleIdx = 0
-	screen.startChallenge(screen.moduleSlots[0].Module)
+	screen.selectedSkillIdx = 0
+	screen.startChallenge(screen.skillSlots[0].Skill)
 
 	if screen.activeChallenge == nil {
 		t.Fatal("チャレンジが開始されていません")
@@ -499,14 +499,14 @@ func createTestAgents() []*domain.AgentModel {
 
 	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 
-	modules := []*domain.SkillModel{
-		newTestDamageModule("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ"),
-		newTestDamageModule("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
-		newTestHealModule("m3", "回復", []string{"heal_low"}, 1.0, "INT", "HP回復"),
-		newTestBuffModule("m4", "バフ", []string{"buff_low"}, "攻撃力UP"),
+	skills := []*domain.SkillModel{
+		newTestDamageSkill("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ"),
+		newTestDamageSkill("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
+		newTestHealSkill("m3", "回復", []string{"heal_low"}, 1.0, "INT", "HP回復"),
+		newTestBuffSkill("m4", "バフ", []string{"buff_low"}, "攻撃力UP"),
 	}
 
-	agent := domain.NewAgent("agent1", core, modules)
+	agent := domain.NewAgent("agent1", core, skills)
 	return []*domain.AgentModel{agent}
 }
 
@@ -535,15 +535,15 @@ func TestBattleScreen3AreaLayout(t *testing.T) {
 		t.Error("マナ情報エリアが表示されていません")
 	}
 
-	// モジュール情報が含まれること
-	if !strings.Contains(rendered, "モジュール") {
-		t.Error("モジュールエリアが表示されていません")
+	// スキル情報が含まれること
+	if !strings.Contains(rendered, "スキル") {
+		t.Error("スキルエリアが表示されていません")
 	}
 }
 
-// TestBattleScreenAgentModuleDisplay はエージェントごとのモジュール表示をテストします。
+// TestBattleScreenAgentSkillDisplay はエージェントごとのスキル表示をテストします。
 
-func TestBattleScreenAgentModuleDisplay(t *testing.T) {
+func TestBattleScreenAgentSkillDisplay(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
 	agents := createTestAgents()
@@ -619,13 +619,13 @@ func TestBattleScreenTypingColorDisplay(t *testing.T) {
 	screen.width = 120
 	screen.height = 40
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
 	// チャレンジを開始
-	screen.selectedModuleIdx = 0
-	screen.startChallenge(screen.moduleSlots[0].Module)
+	screen.selectedSkillIdx = 0
+	screen.startChallenge(screen.skillSlots[0].Skill)
 
 	rendered := screen.View()
 
@@ -764,30 +764,30 @@ func TestBattleScreenCooldownLogic(t *testing.T) {
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
 	// クールダウン開始
 	screen.StartCooldown(0, 5.0)
-	if screen.moduleSlots[0].CooldownRemaining != 5.0 {
-		t.Errorf("クールダウン設定失敗: got %.2f, want 5.0", screen.moduleSlots[0].CooldownRemaining)
+	if screen.skillSlots[0].CooldownRemaining != 5.0 {
+		t.Errorf("クールダウン設定失敗: got %.2f, want 5.0", screen.skillSlots[0].CooldownRemaining)
 	}
 
 	// クールダウン更新
 	screen.UpdateCooldowns(1.0)
-	if screen.moduleSlots[0].CooldownRemaining != 4.0 {
-		t.Errorf("クールダウン更新失敗: got %.2f, want 4.0", screen.moduleSlots[0].CooldownRemaining)
+	if screen.skillSlots[0].CooldownRemaining != 4.0 {
+		t.Errorf("クールダウン更新失敗: got %.2f, want 4.0", screen.skillSlots[0].CooldownRemaining)
 	}
 
 	// IsReady確認
-	if screen.moduleSlots[0].IsReady() {
+	if screen.skillSlots[0].IsReady() {
 		t.Error("クールダウン中なのにIsReady=trueになっています")
 	}
 
 	// クールダウン完了
 	screen.UpdateCooldowns(5.0)
-	if !screen.moduleSlots[0].IsReady() {
+	if !screen.skillSlots[0].IsReady() {
 		t.Error("クールダウン完了後もIsReady=falseのままです")
 	}
 }
@@ -800,13 +800,13 @@ func TestBattleScreenTypingLogic(t *testing.T) {
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
 	// チャレンジ開始
-	screen.selectedModuleIdx = 0
-	screen.startChallenge(screen.moduleSlots[0].Module)
+	screen.selectedSkillIdx = 0
+	screen.startChallenge(screen.skillSlots[0].Skill)
 	if screen.activeChallenge == nil {
 		t.Fatal("チャレンジが開始されていません")
 	}
@@ -885,29 +885,29 @@ func TestBattleScreenHasRecastManager(t *testing.T) {
 	}
 }
 
-// TestBattleScreenModuleUsageStartsRecast はモジュール使用時にリキャストが開始されることを検証します。
-func TestBattleScreenModuleUsageStartsRecast(t *testing.T) {
+// TestBattleScreenSkillUsageStartsRecast はスキル使用時にリキャストが開始されることを検証します。
+func TestBattleScreenSkillUsageStartsRecast(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
 	agents := createTestAgentsWithChainEffect()
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
-	// モジュール使用前はエージェントがReady
+	// スキル使用前はエージェントがReady
 	if !screen.recastManager.IsAgentReady(0) {
 		t.Error("初期状態でエージェントがリキャスト中になっています")
 	}
 
 	// スキル選択時にクールダウンとリキャストを開始
-	screen.selectedModuleIdx = 0
-	slot := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot.CooldownTotal)
-	screen.startAgentRecast(slot.AgentIndex, slot.Module)
-	screen.startChallenge(slot.Module)
+	screen.selectedSkillIdx = 0
+	slot := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot.CooldownTotal)
+	screen.startAgentRecast(slot.AgentIndex, slot.Skill)
+	screen.startChallenge(slot.Skill)
 
 	// スキル選択直後にエージェント0がリキャスト中になっているはず
 	if screen.recastManager.IsAgentReady(0) {
@@ -915,24 +915,24 @@ func TestBattleScreenModuleUsageStartsRecast(t *testing.T) {
 	}
 }
 
-// TestBattleScreenRecastBlocksModuleUsage はリキャスト中のエージェントのモジュール使用がブロックされることを検証します。
-func TestBattleScreenRecastBlocksModuleUsage(t *testing.T) {
+// TestBattleScreenRecastBlocksSkillUsage はリキャスト中のエージェントのスキル使用がブロックされることを検証します。
+func TestBattleScreenRecastBlocksSkillUsage(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
 	agents := createTestAgents()
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
 	// エージェント0のリキャストを開始
 	screen.recastManager.StartRecast(0, 5*time.Second)
 
-	// エージェント0のモジュールは使用不可
-	if screen.isModuleUsable(0) {
-		t.Error("リキャスト中のエージェントのモジュールが使用可能になっています")
+	// エージェント0のスキルは使用不可
+	if screen.isSkillUsable(0) {
+		t.Error("リキャスト中のエージェントのスキルが使用可能になっています")
 	}
 }
 
@@ -1008,16 +1008,16 @@ func TestBattleScreenHasChainEffectManager(t *testing.T) {
 	}
 }
 
-// TestBattleScreenModuleUsageRegistersChainEffect はモジュール使用時にチェイン効果が登録されることを検証します。
-func TestBattleScreenModuleUsageRegistersChainEffect(t *testing.T) {
+// TestBattleScreenSkillUsageRegistersChainEffect はスキル使用時にチェイン効果が登録されることを検証します。
+func TestBattleScreenSkillUsageRegistersChainEffect(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
 	agents := createTestAgentsWithChainEffect()
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
 	// 登録前は待機中チェイン効果なし
@@ -1026,10 +1026,10 @@ func TestBattleScreenModuleUsageRegistersChainEffect(t *testing.T) {
 	}
 
 	// スキル選択時にクールダウンとリキャストを開始（チェイン効果も登録される）
-	screen.selectedModuleIdx = 0
-	slot := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot.CooldownTotal)
-	screen.startAgentRecast(slot.AgentIndex, slot.Module)
+	screen.selectedSkillIdx = 0
+	slot := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot.CooldownTotal)
+	screen.startAgentRecast(slot.AgentIndex, slot.Skill)
 
 	// スキル選択直後にチェイン効果が登録されているはず
 	pendingEffects := screen.chainEffectManager.GetPendingEffects()
@@ -1038,7 +1038,7 @@ func TestBattleScreenModuleUsageRegistersChainEffect(t *testing.T) {
 	}
 }
 
-// TestBattleScreenChainEffectTrigger は他エージェントのモジュール使用時にチェイン効果が発動することを検証します。
+// TestBattleScreenChainEffectTrigger は他エージェントのスキル使用時にチェイン効果が発動することを検証します。
 func TestBattleScreenChainEffectTrigger(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -1046,15 +1046,15 @@ func TestBattleScreenChainEffectTrigger(t *testing.T) {
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) < 5 {
-		t.Skip("モジュールスロットが足りません")
+	if len(screen.skillSlots) < 5 {
+		t.Skip("スキルスロットが足りません")
 	}
 
 	// エージェント0のスキル選択（チェイン効果を登録）→チャレンジ完了
-	screen.selectedModuleIdx = 0
-	slot0 := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot0.CooldownTotal)
-	screen.startAgentRecast(slot0.AgentIndex, slot0.Module)
+	screen.selectedSkillIdx = 0
+	slot0 := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot0.CooldownTotal)
+	screen.startAgentRecast(slot0.AgentIndex, slot0.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
 	})
@@ -1065,11 +1065,11 @@ func TestBattleScreenChainEffectTrigger(t *testing.T) {
 	}
 
 	// エージェント1のスキル選択（チェイン効果が発動）→チャレンジ完了
-	screen.selectedModuleIdx = 4 // エージェント1の最初のモジュール
+	screen.selectedSkillIdx = 4 // エージェント1の最初のスキル
 	screen.selectedAgentIdx = 1
-	slot1 := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot1.CooldownTotal)
-	screen.startAgentRecast(slot1.AgentIndex, slot1.Module)
+	slot1 := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot1.CooldownTotal)
+	screen.startAgentRecast(slot1.AgentIndex, slot1.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
 	})
@@ -1096,15 +1096,15 @@ func TestBattleScreenRecastCompletionPersistsChainEffect(t *testing.T) {
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
 	// エージェント0のスキル選択（チェイン効果を登録）→チャレンジ完了
-	screen.selectedModuleIdx = 0
-	slot := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot.CooldownTotal)
-	screen.startAgentRecast(slot.AgentIndex, slot.Module)
+	screen.selectedSkillIdx = 0
+	slot := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot.CooldownTotal)
+	screen.startAgentRecast(slot.AgentIndex, slot.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
 	})
@@ -1147,15 +1147,15 @@ func TestBattleScreenChainEffectTriggersAfterRecastCompletion(t *testing.T) {
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) < 5 {
-		t.Skip("モジュールスロットが足りません")
+	if len(screen.skillSlots) < 5 {
+		t.Skip("スキルスロットが足りません")
 	}
 
 	// エージェント0のスキル選択（チェイン効果を登録）→チャレンジ完了
-	screen.selectedModuleIdx = 0
-	slot0 := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot0.CooldownTotal)
-	screen.startAgentRecast(slot0.AgentIndex, slot0.Module)
+	screen.selectedSkillIdx = 0
+	slot0 := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot0.CooldownTotal)
+	screen.startAgentRecast(slot0.AgentIndex, slot0.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
 	})
@@ -1181,11 +1181,11 @@ func TestBattleScreenChainEffectTriggersAfterRecastCompletion(t *testing.T) {
 	}
 
 	// エージェント1がスキル使用（チェイン効果が発動するはず）
-	screen.selectedModuleIdx = 4
+	screen.selectedSkillIdx = 4
 	screen.selectedAgentIdx = 1
-	slot1 := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot1.CooldownTotal)
-	screen.startAgentRecast(slot1.AgentIndex, slot1.Module)
+	slot1 := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot1.CooldownTotal)
+	screen.startAgentRecast(slot1.AgentIndex, slot1.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
 	})
@@ -1204,15 +1204,15 @@ func TestBattleScreenStartRecastClearsChainEffectForNoChainSkill(t *testing.T) {
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) < 2 {
-		t.Skip("モジュールスロットが足りません")
+	if len(screen.skillSlots) < 2 {
+		t.Skip("スキルスロットが足りません")
 	}
 
 	// エージェント0のチェイン効果付きスキルを使用
-	screen.selectedModuleIdx = 0
-	slot0 := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot0.CooldownTotal)
-	screen.startAgentRecast(slot0.AgentIndex, slot0.Module)
+	screen.selectedSkillIdx = 0
+	slot0 := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot0.CooldownTotal)
+	screen.startAgentRecast(slot0.AgentIndex, slot0.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
 	})
@@ -1226,10 +1226,10 @@ func TestBattleScreenStartRecastClearsChainEffectForNoChainSkill(t *testing.T) {
 	screen.recastManager.CancelRecast(0)
 
 	// チェイン効果なしスキル（m2: 魔法攻撃, ChainEffect=nil）を使用
-	screen.selectedModuleIdx = 1
-	slot1 := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot1.CooldownTotal)
-	screen.startAgentRecast(slot1.AgentIndex, slot1.Module)
+	screen.selectedSkillIdx = 1
+	slot1 := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot1.CooldownTotal)
+	screen.startAgentRecast(slot1.AgentIndex, slot1.Skill)
 
 	// チェイン効果なしスキル使用後、既存のチェイン効果が削除されている
 	if screen.chainEffectManager.HasPendingEffect(0) {
@@ -1247,15 +1247,15 @@ func TestBattleScreenPendingChainEffectTriggersWhenOtherAgentUsesNonChainSkill(t
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) < 6 {
-		t.Skip("モジュールスロットが足りません")
+	if len(screen.skillSlots) < 6 {
+		t.Skip("スキルスロットが足りません")
 	}
 
 	// エージェント0のチェイン効果付きスキル（slot 0: m1）を使用
-	screen.selectedModuleIdx = 0
-	slot0 := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot0.CooldownTotal)
-	screen.startAgentRecast(slot0.AgentIndex, slot0.Module)
+	screen.selectedSkillIdx = 0
+	slot0 := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot0.CooldownTotal)
+	screen.startAgentRecast(slot0.AgentIndex, slot0.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
 	})
@@ -1269,11 +1269,11 @@ func TestBattleScreenPendingChainEffectTriggersWhenOtherAgentUsesNonChainSkill(t
 	screen.recastManager.CancelRecast(0)
 
 	// エージェント1の非チェインスキル（slot 5: m6 魔法攻撃2, ChainEffect=nil）を使用
-	screen.selectedModuleIdx = 5
+	screen.selectedSkillIdx = 5
 	screen.selectedAgentIdx = 1
-	slot1 := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot1.CooldownTotal)
-	screen.startAgentRecast(slot1.AgentIndex, slot1.Module)
+	slot1 := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot1.CooldownTotal)
+	screen.startAgentRecast(slot1.AgentIndex, slot1.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
 	})
@@ -1286,16 +1286,16 @@ func TestBattleScreenPendingChainEffectTriggersWhenOtherAgentUsesNonChainSkill(t
 
 // ==================== Task 7.3: 統合フロー検証テスト ====================
 
-// TestBattleScreenModuleRecastChainFlowIntegration はモジュール使用→リキャスト開始→チェイン効果登録の一連フローを検証します。
-func TestBattleScreenModuleRecastChainFlowIntegration(t *testing.T) {
+// TestBattleScreenSkillRecastChainFlowIntegration はスキル使用→リキャスト開始→チェイン効果登録の一連フローを検証します。
+func TestBattleScreenSkillRecastChainFlowIntegration(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
 	agents := createTestAgentsWithChainEffect()
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
 	// Step 1: 初期状態確認
@@ -1307,10 +1307,10 @@ func TestBattleScreenModuleRecastChainFlowIntegration(t *testing.T) {
 	}
 
 	// Step 2: スキル選択（クールダウン・リキャスト・チェイン効果の開始）
-	screen.selectedModuleIdx = 0
-	slot := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot.CooldownTotal)
-	screen.startAgentRecast(slot.AgentIndex, slot.Module)
+	screen.selectedSkillIdx = 0
+	slot := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot.CooldownTotal)
+	screen.startAgentRecast(slot.AgentIndex, slot.Skill)
 
 	// Step 3: リキャスト開始確認（スキル選択直後）
 	if screen.recastManager.IsAgentReady(0) {
@@ -1323,35 +1323,35 @@ func TestBattleScreenModuleRecastChainFlowIntegration(t *testing.T) {
 		t.Error("スキル選択後: チェイン効果が登録されていない")
 	}
 
-	// Step 5: エージェント0のモジュール使用がブロックされる
-	if screen.isModuleUsable(0) {
-		t.Error("リキャスト中: エージェント0のモジュールが使用可能になっている")
+	// Step 5: エージェント0のスキル使用がブロックされる
+	if screen.isSkillUsable(0) {
+		t.Error("リキャスト中: エージェント0のスキルが使用可能になっている")
 	}
 }
 
-// TestBattleScreenRecastBlockedModuleSelection はリキャスト中のモジュール選択がブロックされることを検証します。
-func TestBattleScreenRecastBlockedModuleSelection(t *testing.T) {
+// TestBattleScreenRecastBlockedSkillSelection はリキャスト中のスキル選択がブロックされることを検証します。
+func TestBattleScreenRecastBlockedSkillSelection(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
 	agents := createTestAgents()
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
 	// エージェント0をリキャスト状態に
 	screen.recastManager.StartRecast(0, 5*time.Second)
 
-	// エージェント0のモジュールを選択してEnterを押す
+	// エージェント0のスキルを選択してEnterを押す
 	screen.selectedSlot = 0
 	screen.selectedAgentIdx = 0
 	_, _ = screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 	// タイピングチャレンジが開始されていないはず
 	if screen.activeChallenge != nil {
-		t.Error("リキャスト中のエージェントのモジュールでタイピングチャレンジが開始されました")
+		t.Error("リキャスト中のエージェントのスキルでタイピングチャレンジが開始されました")
 	}
 }
 
@@ -1363,16 +1363,16 @@ func TestBattleScreenChainEffectTimingVerification(t *testing.T) {
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) < 5 {
-		t.Skip("モジュールスロットが足りません（2エージェント必要）")
+	if len(screen.skillSlots) < 5 {
+		t.Skip("スキルスロットが足りません（2エージェント必要）")
 	}
 
 	// エージェント0のスキル選択（ダメージボーナスのチェイン効果を登録）
-	screen.selectedModuleIdx = 0
+	screen.selectedSkillIdx = 0
 	screen.selectedAgentIdx = 0
-	slot0 := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot0.CooldownTotal)
-	screen.startAgentRecast(slot0.AgentIndex, slot0.Module)
+	slot0 := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot0.CooldownTotal)
+	screen.startAgentRecast(slot0.AgentIndex, slot0.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
 	})
@@ -1386,11 +1386,11 @@ func TestBattleScreenChainEffectTimingVerification(t *testing.T) {
 	initialEnemyHP := enemy.HP
 
 	// エージェント1のスキル選択（チェイン効果が発動するはず）
-	screen.selectedModuleIdx = 4 // エージェント1の最初のモジュール
+	screen.selectedSkillIdx = 4 // エージェント1の最初のスキル
 	screen.selectedAgentIdx = 1
-	slot1 := screen.moduleSlots[screen.selectedModuleIdx]
-	screen.StartCooldown(screen.selectedModuleIdx, slot1.CooldownTotal)
-	screen.startAgentRecast(slot1.AgentIndex, slot1.Module)
+	slot1 := screen.skillSlots[screen.selectedSkillIdx]
+	screen.StartCooldown(screen.selectedSkillIdx, slot1.CooldownTotal)
+	screen.startAgentRecast(slot1.AgentIndex, slot1.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
 	})
@@ -1421,16 +1421,16 @@ func createTestAgentsWithChainEffect() []*domain.AgentModel {
 
 	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 
-	// チェイン効果付きモジュール
+	// チェイン効果付きスキル
 	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25)
-	modules := []*domain.SkillModel{
-		newTestModuleWithChainEffect("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect),
-		newTestDamageModule("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
-		newTestHealModule("m3", "回復", []string{"heal_low"}, 1.0, "INT", "HP回復"),
-		newTestBuffModule("m4", "バフ", []string{"buff_low"}, "攻撃力UP"),
+	skills := []*domain.SkillModel{
+		newTestSkillWithChainEffect("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect),
+		newTestDamageSkill("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
+		newTestHealSkill("m3", "回復", []string{"heal_low"}, 1.0, "INT", "HP回復"),
+		newTestBuffSkill("m4", "バフ", []string{"buff_low"}, "攻撃力UP"),
 	}
 
-	agent := domain.NewAgent("agent1", core, modules)
+	agent := domain.NewAgent("agent1", core, skills)
 	return []*domain.AgentModel{agent}
 }
 
@@ -1450,12 +1450,12 @@ func TestTimeExtend_PassedToChallengeInput(t *testing.T) {
 	})
 
 	// startChallengeでチャレンジが正常に開始されることを確認
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
-	screen.selectedModuleIdx = 0
-	module := screen.moduleSlots[0].Module
-	screen.startChallenge(module)
+	screen.selectedSkillIdx = 0
+	skill := screen.skillSlots[0].Skill
+	screen.startChallenge(skill)
 
 	if screen.activeChallenge == nil {
 		t.Fatal("チャレンジが開始されていません")
@@ -1483,12 +1483,12 @@ func TestTimeExtend_NegativeValue(t *testing.T) {
 	})
 
 	// startChallengeでチャレンジが正常に開始されることを確認
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
-	screen.selectedModuleIdx = 0
-	module := screen.moduleSlots[0].Module
-	screen.startChallenge(module)
+	screen.selectedSkillIdx = 0
+	skill := screen.skillSlots[0].Skill
+	screen.startChallenge(skill)
 
 	if screen.activeChallenge == nil {
 		t.Fatal("TimeExtendデバフ時もチャレンジは開始されるべきです")
@@ -1510,8 +1510,8 @@ func TestCooldownReduce_ShortensInitialCooldown(t *testing.T) {
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
 	// CooldownReduce効果を追加（30%短縮）
@@ -1524,16 +1524,16 @@ func TestCooldownReduce_ShortensInitialCooldown(t *testing.T) {
 
 	expected := 7.0
 	tolerance := 0.01
-	if screen.moduleSlots[0].CooldownRemaining < expected-tolerance ||
-		screen.moduleSlots[0].CooldownRemaining > expected+tolerance {
+	if screen.skillSlots[0].CooldownRemaining < expected-tolerance ||
+		screen.skillSlots[0].CooldownRemaining > expected+tolerance {
 		t.Errorf("CooldownReduce効果が初期値に適用されていない: got %.2f, want %.2f",
-			screen.moduleSlots[0].CooldownRemaining, expected)
+			screen.skillSlots[0].CooldownRemaining, expected)
 	}
 
 	// CooldownTotal は元の値（表示用）
-	if screen.moduleSlots[0].CooldownTotal != 10.0 {
+	if screen.skillSlots[0].CooldownTotal != 10.0 {
 		t.Errorf("CooldownTotal が変更されている: got %.2f, want 10.0",
-			screen.moduleSlots[0].CooldownTotal)
+			screen.skillSlots[0].CooldownTotal)
 	}
 }
 
@@ -1545,8 +1545,8 @@ func TestCooldownReduce_NegativeValue(t *testing.T) {
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
 	// CooldownReduce効果を追加（-30%、つまり延長）
@@ -1559,10 +1559,10 @@ func TestCooldownReduce_NegativeValue(t *testing.T) {
 
 	expected := 13.0
 	tolerance := 0.01
-	if screen.moduleSlots[0].CooldownRemaining < expected-tolerance ||
-		screen.moduleSlots[0].CooldownRemaining > expected+tolerance {
+	if screen.skillSlots[0].CooldownRemaining < expected-tolerance ||
+		screen.skillSlots[0].CooldownRemaining > expected+tolerance {
 		t.Errorf("CooldownReduce延長効果が初期値に適用されていない: got %.2f, want %.2f",
-			screen.moduleSlots[0].CooldownRemaining, expected)
+			screen.skillSlots[0].CooldownRemaining, expected)
 	}
 }
 
@@ -1574,8 +1574,8 @@ func TestCooldownReduce_MinimumLimit(t *testing.T) {
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
 
 	// CooldownReduce効果を追加（95%短縮 → 下限10%適用）
@@ -1587,9 +1587,9 @@ func TestCooldownReduce_MinimumLimit(t *testing.T) {
 	screen.StartCooldown(0, 10.0)
 
 	minExpected := 1.0
-	if screen.moduleSlots[0].CooldownRemaining < minExpected {
+	if screen.skillSlots[0].CooldownRemaining < minExpected {
 		t.Errorf("CooldownReduce の下限が適用されていない: got %.2f, want >= %.2f",
-			screen.moduleSlots[0].CooldownRemaining, minExpected)
+			screen.skillSlots[0].CooldownRemaining, minExpected)
 	}
 }
 
@@ -1607,7 +1607,7 @@ func TestDoubleCast_DoublesDamageEffect(t *testing.T) {
 	agents1 := createTestAgents()
 	screen1 := NewBattleScreen(enemy1, player1, agents1, nil)
 
-	screen1.selectedModuleIdx = 0
+	screen1.selectedSkillIdx = 0
 	screen1.selectedSlot = 0
 	initialHP1 := enemy1.HP
 	screen1.handleChallengeComplete(&domain.ChallengeOutput{
@@ -1627,7 +1627,7 @@ func TestDoubleCast_DoublesDamageEffect(t *testing.T) {
 		domain.ColDoubleCast: 1.0, // 100%
 	})
 
-	screen2.selectedModuleIdx = 0
+	screen2.selectedSkillIdx = 0
 	screen2.selectedSlot = 0
 	initialHP2 := enemy2.HP
 	screen2.handleChallengeComplete(&domain.ChallengeOutput{
@@ -1659,7 +1659,7 @@ func TestDoubleCast_ZeroProbability(t *testing.T) {
 	// バフを追加しない
 
 	// チャレンジを完了
-	screen.selectedModuleIdx = 0
+	screen.selectedSkillIdx = 0
 	screen.selectedSlot = 0
 	initialEnemyHP := enemy.HP
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
@@ -1680,7 +1680,7 @@ func TestOverheal_ConvertExcessToTempHP(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
 	player.HP = player.MaxHP // 満タン状態
-	agents := createTestAgentsWithHealModule()
+	agents := createTestAgentsWithHealSkill()
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
 
@@ -1697,8 +1697,8 @@ func TestOverheal_ConvertExcessToTempHP(t *testing.T) {
 	entry.Duration = &duration
 	player.EffectTable.Entries = append(player.EffectTable.Entries, entry)
 
-	// 回復モジュールを使用
-	screen.selectedModuleIdx = 2 // 回復モジュール
+	// 回復スキルを使用
+	screen.selectedSkillIdx = 2 // 回復スキル
 	screen.selectedSlot = 2
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
@@ -1738,8 +1738,8 @@ func TestTempHP_AbsorbsDamage(t *testing.T) {
 	}
 }
 
-// createTestAgentsWithHealModule は回復モジュール付きのエージェントを作成します。
-func createTestAgentsWithHealModule() []*domain.AgentModel {
+// createTestAgentsWithHealSkill は回復スキル付きのエージェントを作成します。
+func createTestAgentsWithHealSkill() []*domain.AgentModel {
 	coreType := domain.CoreType{
 		ID:          "test",
 		Name:        "テスト",
@@ -1749,14 +1749,14 @@ func createTestAgentsWithHealModule() []*domain.AgentModel {
 
 	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 
-	modules := []*domain.SkillModel{
-		newTestDamageModule("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ"),
-		newTestDamageModule("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
-		newTestHealModule("m3", "回復", []string{"heal_low"}, 5.0, "INT", "HP回復"),
-		newTestBuffModule("m4", "バフ", []string{"buff_low"}, "攻撃力UP"),
+	skills := []*domain.SkillModel{
+		newTestDamageSkill("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ"),
+		newTestDamageSkill("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
+		newTestHealSkill("m3", "回復", []string{"heal_low"}, 5.0, "INT", "HP回復"),
+		newTestBuffSkill("m4", "バフ", []string{"buff_low"}, "攻撃力UP"),
 	}
 
-	agent := domain.NewAgent("agent1", core, modules)
+	agent := domain.NewAgent("agent1", core, skills)
 	return []*domain.AgentModel{agent}
 }
 
@@ -1774,12 +1774,12 @@ func TestAutoCorrect_PassedToChallengeInput(t *testing.T) {
 	})
 
 	// startChallengeでチャレンジが正常に開始されることを確認
-	if len(screen.moduleSlots) == 0 {
-		t.Skip("モジュールスロットがありません")
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
 	}
-	screen.selectedModuleIdx = 0
-	module := screen.moduleSlots[0].Module
-	screen.startChallenge(module)
+	screen.selectedSkillIdx = 0
+	skill := screen.skillSlots[0].Skill
+	screen.startChallenge(skill)
 
 	if screen.activeChallenge == nil {
 		t.Fatal("チャレンジが開始されていません")
@@ -1805,24 +1805,24 @@ func createTestAgentsWithChainEffectMultiple() []*domain.AgentModel {
 	// エージェント1
 	core1 := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 	chainEffect1 := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25)
-	modules1 := []*domain.SkillModel{
-		newTestModuleWithChainEffect("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect1),
-		newTestDamageModule("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
-		newTestHealModule("m3", "回復", []string{"heal_low"}, 1.0, "INT", "HP回復"),
-		newTestBuffModule("m4", "バフ", []string{"buff_low"}, "攻撃力UP"),
+	skills1 := []*domain.SkillModel{
+		newTestSkillWithChainEffect("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect1),
+		newTestDamageSkill("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
+		newTestHealSkill("m3", "回復", []string{"heal_low"}, 1.0, "INT", "HP回復"),
+		newTestBuffSkill("m4", "バフ", []string{"buff_low"}, "攻撃力UP"),
 	}
-	agent1 := domain.NewAgent("agent1", core1, modules1)
+	agent1 := domain.NewAgent("agent1", core1, skills1)
 
 	// エージェント2
 	core2 := domain.NewCoreWithTypeID("core2", coreType, domain.PassiveSkill{})
 	chainEffect2 := domain.NewChainEffect("test_effect", domain.ChainEffectHealBonus, 30)
-	modules2 := []*domain.SkillModel{
-		newTestModuleWithChainEffect("m5", "物理攻撃2", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect2),
-		newTestDamageModule("m6", "魔法攻撃2", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
-		newTestHealModule("m7", "回復2", []string{"heal_low"}, 1.0, "INT", "HP回復"),
-		newTestBuffModule("m8", "バフ2", []string{"buff_low"}, "攻撃力UP"),
+	skills2 := []*domain.SkillModel{
+		newTestSkillWithChainEffect("m5", "物理攻撃2", []string{"physical_low"}, 1.0, "STR", "物理ダメージ", &chainEffect2),
+		newTestDamageSkill("m6", "魔法攻撃2", []string{"magic_low"}, 1.0, "INT", "魔法ダメージ"),
+		newTestHealSkill("m7", "回復2", []string{"heal_low"}, 1.0, "INT", "HP回復"),
+		newTestBuffSkill("m8", "バフ2", []string{"buff_low"}, "攻撃力UP"),
 	}
-	agent2 := domain.NewAgent("agent2", core2, modules2)
+	agent2 := domain.NewAgent("agent2", core2, skills2)
 
 	return []*domain.AgentModel{agent1, agent2}
 }

@@ -10,12 +10,12 @@ import (
 
 // 受け入れ基準16: 報酬でのスキル/チェイン効果分離追加
 
-// TestAddRewardsToInventory_ChainEffectSeparation はチェイン効果付きモジュールドロップ時に
+// TestAddRewardsToInventory_ChainEffectSeparation はチェイン効果付きスキルドロップ時に
 // スキルとチェイン効果が別々のインベントリに追加されることをテストします。
 func TestAddRewardsToInventory_ChainEffectSeparation(t *testing.T) {
-	// Arrange: チェイン効果付きモジュールを作成
+	// Arrange: チェイン効果付きスキルを作成
 	effect := domain.NewChainEffect("damage_bonus", domain.ChainEffectDamageBonus, 25)
-	module := domain.NewSkillFromType(domain.SkillType{
+	skill := domain.NewSkillFromType(domain.SkillType{
 		ID:   "physical_lv1",
 		Name: "物理攻撃Lv1",
 		Icon: "⚔️",
@@ -23,9 +23,9 @@ func TestAddRewardsToInventory_ChainEffectSeparation(t *testing.T) {
 	}, &effect)
 
 	result := &RewardResult{
-		IsVictory:      true,
-		DroppedModules: []*domain.SkillModel{module},
-		DroppedCores:   make([]*domain.CoreModel, 0),
+		IsVictory:     true,
+		DroppedSkills: []*domain.SkillModel{skill},
+		DroppedCores:  make([]*domain.CoreModel, 0),
 	}
 
 	coreInv := domain.NewCoreInventory()
@@ -46,11 +46,11 @@ func TestAddRewardsToInventory_ChainEffectSeparation(t *testing.T) {
 	}
 }
 
-// TestAddRewardsToInventory_ModuleWithoutChainEffect はチェイン効果なしモジュールの場合
+// TestAddRewardsToInventory_SkillWithoutChainEffect はチェイン効果なしスキルの場合
 // スキルのみがインベントリに追加されることをテストします。
-func TestAddRewardsToInventory_ModuleWithoutChainEffect(t *testing.T) {
-	// Arrange: チェイン効果なしモジュール
-	module := domain.NewSkillFromType(domain.SkillType{
+func TestAddRewardsToInventory_SkillWithoutChainEffect(t *testing.T) {
+	// Arrange: チェイン効果なしスキル
+	skill := domain.NewSkillFromType(domain.SkillType{
 		ID:   "heal_lv1",
 		Name: "応急手当Lv1",
 		Icon: "💚",
@@ -58,9 +58,9 @@ func TestAddRewardsToInventory_ModuleWithoutChainEffect(t *testing.T) {
 	}, nil)
 
 	result := &RewardResult{
-		IsVictory:      true,
-		DroppedModules: []*domain.SkillModel{module},
-		DroppedCores:   make([]*domain.CoreModel, 0),
+		IsVictory:     true,
+		DroppedSkills: []*domain.SkillModel{skill},
+		DroppedCores:  make([]*domain.CoreModel, 0),
 	}
 
 	coreInv := domain.NewCoreInventory()
@@ -77,30 +77,30 @@ func TestAddRewardsToInventory_ModuleWithoutChainEffect(t *testing.T) {
 
 	// Assert: チェイン効果インベントリは空のまま
 	if len(chainEffectInv.GetOwnedChainEffects()) != 0 {
-		t.Error("チェイン効果なしモジュールではChainEffectInventoryに追加されるべきではない")
+		t.Error("チェイン効果なしスキルではChainEffectInventoryに追加されるべきではない")
 	}
 }
 
 // TestAddRewardsToInventory_DuplicateChainEffectNotDuplicated は同じチェイン効果の重複追加が
 // インベントリに重複しないことをテストします。
 func TestAddRewardsToInventory_DuplicateChainEffectNotDuplicated(t *testing.T) {
-	// Arrange: 同じチェイン効果IDの2つのモジュール
+	// Arrange: 同じチェイン効果IDの2つのスキル
 	effect1 := domain.NewChainEffect("damage_bonus", domain.ChainEffectDamageBonus, 20)
 	effect2 := domain.NewChainEffect("damage_bonus", domain.ChainEffectDamageBonus, 30)
 
-	module1 := domain.NewSkillFromType(domain.SkillType{
+	skill1 := domain.NewSkillFromType(domain.SkillType{
 		ID:   "physical_lv1",
 		Name: "物理攻撃Lv1",
 	}, &effect1)
-	module2 := domain.NewSkillFromType(domain.SkillType{
+	skill2 := domain.NewSkillFromType(domain.SkillType{
 		ID:   "physical_lv2",
 		Name: "物理攻撃Lv2",
 	}, &effect2)
 
 	result := &RewardResult{
-		IsVictory:      true,
-		DroppedModules: []*domain.SkillModel{module1, module2},
-		DroppedCores:   make([]*domain.CoreModel, 0),
+		IsVictory:     true,
+		DroppedSkills: []*domain.SkillModel{skill1, skill2},
+		DroppedCores:  make([]*domain.CoreModel, 0),
 	}
 
 	coreInv := domain.NewCoreInventory()
@@ -117,21 +117,21 @@ func TestAddRewardsToInventory_DuplicateChainEffectNotDuplicated(t *testing.T) {
 	}
 }
 
-// TestAddRewardsToInventory_CoreAndModuleMixed はコアとモジュールの混合ドロップを
+// TestAddRewardsToInventory_CoreAndSkillMixed はコアとスキルの混合ドロップを
 // テストします。
-func TestAddRewardsToInventory_CoreAndModuleMixed(t *testing.T) {
+func TestAddRewardsToInventory_CoreAndSkillMixed(t *testing.T) {
 	// Arrange
 	effect := domain.NewChainEffect("heal_amp", domain.ChainEffectHealAmp, 15)
-	module := domain.NewSkillFromType(domain.SkillType{
+	skill := domain.NewSkillFromType(domain.SkillType{
 		ID:   "heal_lv1",
 		Name: "応急手当Lv1",
 	}, &effect)
 	core := domain.NewCoreWithTypeID("all_rounder", domain.CoreType{ID: "all_rounder"}, domain.PassiveSkill{})
 
 	result := &RewardResult{
-		IsVictory:      true,
-		DroppedModules: []*domain.SkillModel{module},
-		DroppedCores:   []*domain.CoreModel{core},
+		IsVictory:     true,
+		DroppedSkills: []*domain.SkillModel{skill},
+		DroppedCores:  []*domain.CoreModel{core},
 	}
 
 	coreInv := domain.NewCoreInventory()

@@ -131,7 +131,7 @@ config       ← 横断的関心事（全層から参照可能）
 **場所**: `/internal/config/`
 **目的**: マジックナンバーを一元管理。バトル設定、効果持続時間、インベントリ設定等
 **含まれるファイル**:
-- `constants.go`: 定数（`BattleTickInterval`, `DefaultModuleCooldown`, `MaxAgentEquipSlots`, `MaxStatusDuration` など）
+- `constants.go`: 定数（`BattleTickInterval`, `DefaultSkillCooldown`, `MaxAgentEquipSlots`, `MaxStatusDuration` など）
 - `balance.go`: ゲームバランス設定（旧usecase/balance）
 
 ### integration_test - 統合テスト
@@ -167,7 +167,7 @@ import (
 )
 ```
 
-**パスエイリアス**: なし（Go標準のモジュールパスを使用）
+**パスエイリアス**: なし（Go標準のスキルパスを使用）
 
 ## コード組織原則
 
@@ -175,7 +175,7 @@ import (
 2. **ドメインサービスの分離**: 複数ドメインオブジェクトの組み合わせロジックは`domain/service/`に配置
 3. **App層での型変換**: infra→domain型変換、データ解決はapp層で実施し、usecase層のinfra依存を排除
 4. **画面の自己完結性**: 各画面は独立して動作可能。RootModelがルーティングを担当
-5. **外部データ駆動**: ゲームコンテンツ（コア、モジュール、敵、時限効果）はJSONファイルで定義
+5. **外部データ駆動**: ゲームコンテンツ（コア、スキル、敵、時限効果）はJSONファイルで定義
 6. **テストの同居**: テストファイルは実装と同じディレクトリに配置
 7. **プレゼンター層の活用**: UI向けデータ変換は`tui/presenter/`で実装
 8. **定数の一元管理**: マジックナンバーはconfigパッケージに集約

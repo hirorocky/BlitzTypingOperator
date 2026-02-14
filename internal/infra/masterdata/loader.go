@@ -1,5 +1,5 @@
 // Package masterdata はマスタデータのロード処理を提供します。
-// コア特性、モジュール定義、敵タイプ定義、タイピング辞書などを
+// コア特性、スキル定義、敵タイプ定義、タイピング辞書などを
 // JSONファイルから読み込みます。
 
 package masterdata
@@ -165,7 +165,7 @@ func (c *CoreTypeData) ToDomain() domain.CoreType {
 	}
 }
 
-// ==================== スキル（モジュール）定義 ====================
+// ==================== スキル（スキル）定義 ====================
 
 // HPFormulaData はHP増減計算式のJSONデータ構造体です。
 type HPFormulaData struct {
@@ -898,22 +898,22 @@ func (l *DataLoader) LoadTypingDictionary() (*TypingDictionary, error) {
 
 // FirstAgentData はfirst_agent.jsonから読み込む初期エージェントデータの構造体です。
 type FirstAgentData struct {
-	ID         string                 `json:"id"`
-	CoreTypeID string                 `json:"core_type_id"`
-	CoreLevel  int                    `json:"core_level"`
-	Modules    []FirstAgentModuleData `json:"modules"`
+	ID         string                `json:"id"`
+	CoreTypeID string                `json:"core_type_id"`
+	CoreLevel  int                   `json:"core_level"`
+	Skills     []FirstAgentSkillData `json:"skills"`
 }
 
-// FirstAgentModuleData は初期エージェントのモジュールデータの構造体です。
-// ChainEffectはモジュールと密結合しているため、同じ構造体で定義します。
-type FirstAgentModuleData struct {
+// FirstAgentSkillData は初期エージェントのスキルデータの構造体です。
+// ChainEffectはスキルと密結合しているため、同じ構造体で定義します。
+type FirstAgentSkillData struct {
 	TypeID           string  `json:"type_id"`
 	ChainEffectType  string  `json:"chain_effect_type,omitempty"`
 	ChainEffectValue float64 `json:"chain_effect_value,omitempty"`
 }
 
 // HasChainEffect はチェイン効果を持つかどうかを返します。
-func (m *FirstAgentModuleData) HasChainEffect() bool {
+func (m *FirstAgentSkillData) HasChainEffect() bool {
 	return m.ChainEffectType != ""
 }
 

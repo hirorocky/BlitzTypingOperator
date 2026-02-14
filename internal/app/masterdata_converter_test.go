@@ -26,8 +26,8 @@ func TestResolveSkillTimedEffects(t *testing.T) {
 		},
 	}
 
-	// Arrange: ColumnSpecにTimedEffectIDのみ設定されたモジュール
-	modules := []rewarding.ModuleDropInfo{
+	// Arrange: ColumnSpecにTimedEffectIDのみ設定されたスキル
+	skills := []rewarding.SkillDropInfo{
 		{
 			ID:   "str_buff_lv1",
 			Name: "気合い溜め",
@@ -67,10 +67,10 @@ func TestResolveSkillTimedEffects(t *testing.T) {
 	}
 
 	// Act
-	ResolveSkillTimedEffects(modules, timedEffects)
+	ResolveSkillTimedEffects(skills, timedEffects)
 
 	// Assert: str_buff_lv1のバフ効果が解決されていること
-	strBuff := modules[0].Effects[1]
+	strBuff := skills[0].Effects[1]
 	if strBuff.ColumnSpec.Column != domain.ColSTRMultiplier {
 		t.Errorf("Column: got %s, want %s", strBuff.ColumnSpec.Column, domain.ColSTRMultiplier)
 	}
@@ -82,12 +82,12 @@ func TestResolveSkillTimedEffects(t *testing.T) {
 	}
 
 	// Assert: HP回復効果は影響なし
-	if modules[0].Effects[0].ColumnSpec != nil {
+	if skills[0].Effects[0].ColumnSpec != nil {
 		t.Error("HP回復効果のColumnSpecはnilのままであるべき")
 	}
 
 	// Assert: defense_buff_lv1の効果が解決されていること
-	defBuff := modules[1].Effects[0]
+	defBuff := skills[1].Effects[0]
 	if defBuff.ColumnSpec.Column != domain.ColDamageCut {
 		t.Errorf("Column: got %s, want %s", defBuff.ColumnSpec.Column, domain.ColDamageCut)
 	}

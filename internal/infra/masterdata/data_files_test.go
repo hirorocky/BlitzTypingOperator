@@ -80,9 +80,9 @@ func TestSkillsJSONExists(t *testing.T) {
 		if err := ValidateSkillDefinitionData(m); err != nil {
 			t.Errorf("スキルのバリデーションに失敗: %v", err)
 		}
-		// モジュールの効果をドメインモデルに変換して判定
-		domainModule := m.ToDomain()
-		for _, effect := range domainModule.Effects() {
+		// スキルの効果をドメインモデルに変換して判定
+		domainSkill := m.ToDomain()
+		for _, effect := range domainSkill.Effects() {
 			if effect.IsDamageEffect() {
 				effectTypeCount["damage"]++
 			}
@@ -252,8 +252,8 @@ func TestCorePassiveSkillIDsExist(t *testing.T) {
 }
 
 // TestSkillTagsMatchCoreAllowedTags はスキルのタグがコアの許可タグと適合することを検証します。
-// 注: Requirement 5.18により、初期段階では高レベルモジュールを装備可能な特化コアは用意されていません。
-// Lv1モジュール（_low タグ）のみが初期コアで使用可能であることを検証します。
+// 注: Requirement 5.18により、初期段階では高レベルスキルを装備可能な特化コアは用意されていません。
+// Lv1スキル（_low タグ）のみが初期コアで使用可能であることを検証します。
 func TestSkillTagsMatchCoreAllowedTags(t *testing.T) {
 	loader := createTestLoader()
 
@@ -275,8 +275,8 @@ func TestSkillTagsMatchCoreAllowedTags(t *testing.T) {
 		}
 	}
 
-	// _low タグを持つモジュールのみが初期コアで使用可能であることを確認
-	// 高難度モジュール（_mid, _high タグ）はゲーム進行で追加されるコアで使用可能になる想定
+	// _low タグを持つスキルのみが初期コアで使用可能であることを確認
+	// 高難度スキル（_mid, _high タグ）はゲーム進行で追加されるコアで使用可能になる想定
 	for _, m := range skills {
 		// _low タグを持つスキルのみ検証
 		hasLowTag := false

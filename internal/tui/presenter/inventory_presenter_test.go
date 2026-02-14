@@ -34,10 +34,10 @@ func TestInventoryProviderAdapter(t *testing.T) {
 		t.Error("GetCores returned nil")
 	}
 
-	// モジュール取得（空スライス）
-	modules := adapter.GetModules()
-	if modules == nil {
-		t.Error("GetModules returned nil")
+	// スキル取得（空スライス）
+	skills := adapter.GetSkills()
+	if skills == nil {
+		t.Error("GetSkills returned nil")
 	}
 
 	// エージェント取得（スロットが空なので空スライス）
@@ -91,15 +91,15 @@ func TestInventoryProviderAdapter_WithData(t *testing.T) {
 
 	adapter := NewInventoryProviderAdapter(slotMgr)
 
-	// GetCores/GetModulesは空スライスを返す
+	// GetCores/GetSkillsは空スライスを返す
 	cores := adapter.GetCores()
 	if len(cores) != 0 {
 		t.Errorf("Expected 0 cores, got %d", len(cores))
 	}
 
-	modules := adapter.GetModules()
-	if len(modules) != 0 {
-		t.Errorf("Expected 0 modules, got %d", len(modules))
+	skills := adapter.GetSkills()
+	if len(skills) != 0 {
+		t.Errorf("Expected 0 skills, got %d", len(skills))
 	}
 
 	// エージェントはBuildAgentsForBattleで構築される

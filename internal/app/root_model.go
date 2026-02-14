@@ -123,7 +123,7 @@ type RootModel struct {
 //
 // dataDir: 外部データディレクトリのパス（空の場合は埋め込みデータを使用）
 // embeddedFS: 埋め込みファイルシステム（dataDir が空の場合に使用）
-// debugMode: デバッグモードを有効化（全コア・モジュール・チェイン効果を選択可能）
+// debugMode: デバッグモードを有効化（全コア・スキル・チェイン効果を選択可能）
 func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath string) *RootModel {
 	// セーブディレクトリを決定（デバッグモードでは専用のセーブファイルを使用）
 	homeDir, _ := os.UserHomeDir()
@@ -149,19 +149,19 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 	var passiveSkills map[string]domain.PassiveSkill
 	var typingDict *typing.Dictionary
 	if loadErr == nil && externalData != nil {
-		enemyTypes, coreTypes, moduleTypes := ConvertExternalDataToDomain(externalData)
+		enemyTypes, coreTypes, skillTypes := ConvertExternalDataToDomain(externalData)
 		// 敵行動パターンを解決（IDからEnemyActionオブジェクトへ）
 		enemyActions := ConvertEnemyActions(externalData.EnemyActions)
 		ResolveEnemyTypeActions(enemyTypes, enemyActions)
 		// 時限効果の解決（TimedEffectIDからColumn/Valueへ）
 		timedEffects := ConvertTimedEffects(externalData.TimedEffects)
-		ResolveSkillTimedEffects(moduleTypes, timedEffects)
+		ResolveSkillTimedEffects(skillTypes, timedEffects)
 		ResolveEnemyActionTimedEffects(enemyTypes, timedEffects)
 		passiveSkills = ConvertPassiveSkills(externalData.PassiveSkills)
 		chainEffectDefs := ConvertChainEffects(chainEffects)
 		domainSources = &gamestate.DomainDataSources{
 			CoreTypes:              coreTypes,
-			SkillTypes:             moduleTypes,
+			SkillTypes:             skillTypes,
 			EnemyTypes:             enemyTypes,
 			PassiveSkills:          passiveSkills,
 			ChainEffectDefinitions: chainEffectDefs,

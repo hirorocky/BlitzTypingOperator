@@ -8,8 +8,8 @@ import (
 	"hirorocky/type-battle/internal/domain"
 )
 
-// newTestModuleForChain はテスト用モジュールを作成します。
-func newTestModuleForChain(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+// newTestSkillForChain はテスト用スキルを作成します。
+func newTestSkillForChain(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
@@ -27,8 +27,8 @@ func newTestModuleForChain(id, name string, tags []string, statCoef float64, sta
 	}, nil)
 }
 
-// newTestModuleWithChainEffectForChain はチェイン効果付きテスト用モジュールを作成します。
-func newTestModuleWithChainEffectForChain(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.SkillModel {
+// newTestSkillWithChainEffectForChain はチェイン効果付きテスト用スキルを作成します。
+func newTestSkillWithChainEffectForChain(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
@@ -417,32 +417,32 @@ func TestChainEffect_ValueCalculation(t *testing.T) {
 	}
 }
 
-// TestChainEffect_ModuleIntegration はモジュールへのチェイン効果統合を検証します。
-func TestChainEffect_ModuleIntegration(t *testing.T) {
-	// チェイン効果付きモジュール
+// TestChainEffect_SkillIntegration はスキルへのチェイン効果統合を検証します。
+func TestChainEffect_SkillIntegration(t *testing.T) {
+	// チェイン効果付きスキル
 	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageAmp, 25.0)
-	module := newTestModuleWithChainEffectForChain(
+	skill := newTestSkillWithChainEffectForChain(
 		"physical_lv1", "物理打撃Lv1",
 		[]string{"physical_low"}, 1.0, "STR", "物理ダメージ",
 		&chainEffect,
 	)
 
-	if !module.HasChainEffect() {
-		t.Error("モジュールにはチェイン効果があるべきです")
+	if !skill.HasChainEffect() {
+		t.Error("スキルにはチェイン効果があるべきです")
 	}
 
-	if module.ChainEffect.Type != domain.ChainEffectDamageAmp {
-		t.Errorf("ChainEffect.Type expected damage_amp, got %s", module.ChainEffect.Type)
+	if skill.ChainEffect.Type != domain.ChainEffectDamageAmp {
+		t.Errorf("ChainEffect.Type expected damage_amp, got %s", skill.ChainEffect.Type)
 	}
 
-	// チェイン効果なしモジュール
-	moduleNoEffect := newTestModuleForChain(
+	// チェイン効果なしスキル
+	skillNoEffect := newTestSkillForChain(
 		"physical_lv2", "物理打撃Lv2",
 		[]string{"physical_mid"}, 1.5, "STR", "物理ダメージ",
 	)
 
-	if moduleNoEffect.HasChainEffect() {
-		t.Error("モジュールにはチェイン効果がないべきです")
+	if skillNoEffect.HasChainEffect() {
+		t.Error("スキルにはチェイン効果がないべきです")
 	}
 }
 

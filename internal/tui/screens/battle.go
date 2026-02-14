@@ -40,20 +40,20 @@ type BattleResultMsg struct {
 	EnemyType *domain.EnemyType        // 確定ドロップ設定参照用
 }
 
-// ==================== モジュールスロット ====================
+// ==================== スキルスロット ====================
 
-// ModuleSlot はモジュールスロットを表します。
-type ModuleSlot struct {
-	Module            *domain.SkillModel
+// SkillSlot はスキルスロットを表します。
+type SkillSlot struct {
+	Skill             *domain.SkillModel
 	Agent             *domain.AgentModel
 	AgentIndex        int
-	ModuleIndex       int
+	SkillIndex        int
 	CooldownRemaining float64
 	CooldownTotal     float64
 }
 
-// IsReady はモジュールが使用可能かを返します。
-func (s *ModuleSlot) IsReady() bool {
+// IsReady はスキルが使用可能かを返します。
+func (s *SkillSlot) IsReady() bool {
 	return s.CooldownRemaining <= 0
 }
 
@@ -76,17 +76,17 @@ type BattleScreen struct {
 	player         *domain.PlayerModel
 	equippedAgents []*domain.AgentModel
 
-	// モジュールスロット
-	moduleSlots  []ModuleSlot
+	// スキルスロット
+	skillSlots   []SkillSlot
 	selectedSlot int
 
 	// エージェント選択状態（UI改善: 3エリアレイアウト用）
 	selectedAgentIdx int
 
 	// チャレンジシステム
-	activeChallenge   challenges.ChallengeModel
-	selectedModuleIdx int
-	dictionary        []string // チャレンジ生成用辞書
+	activeChallenge  challenges.ChallengeModel
+	selectedSkillIdx int
+	dictionary       []string // チャレンジ生成用辞書
 
 	// バトルエンジン
 	battleEngine *combat.BattleEngine
@@ -142,7 +142,7 @@ func NewBattleScreen(enemy *domain.EnemyModel, player *domain.PlayerModel, agent
 		enemy:            enemy,
 		player:           player,
 		equippedAgents:   agents,
-		moduleSlots:      make([]ModuleSlot, 0),
+		skillSlots:       make([]SkillSlot, 0),
 		selectedSlot:     0,
 		selectedAgentIdx: 0,
 		dictionary:       allWords,
@@ -180,17 +180,17 @@ func NewBattleScreen(enemy *domain.EnemyModel, player *domain.PlayerModel, agent
 	// 敵のパッシブスキルを登録
 	screen.battleEngine.RegisterEnemyPassive(screen.battleState)
 
-	// モジュールスロットを初期化
+	// スキルスロットを初期化
 
 	for agentIdx, agent := range agents {
-		for modIdx, module := range agent.Modules {
-			screen.moduleSlots = append(screen.moduleSlots, ModuleSlot{
-				Module:            module,
+		for skillIdx, skill := range agent.Skills {
+			screen.skillSlots = append(screen.skillSlots, SkillSlot{
+				Skill:             skill,
 				Agent:             agent,
 				AgentIndex:        agentIdx,
-				ModuleIndex:       modIdx,
+				SkillIndex:        skillIdx,
 				CooldownRemaining: 0,
-				CooldownTotal:     config.DefaultModuleCooldown,
+				CooldownTotal:     config.DefaultSkillCooldown,
 			})
 		}
 	}
@@ -398,7 +398,7 @@ func (s *BattleScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return s.handleTypingInput(msg)
 	}
 
-	return s.handleModuleSelection(msg)
+	return s.handleSkillSelection(msg)
 }
 
 // handleResultInput は結果表示中のキー入力を処理します。
@@ -412,9 +412,9 @@ func (s *BattleScreen) handleResultInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
-// handleModuleSelection はモジュール選択時のキー処理を行います。
-// UI-Improvement: 左右キーでエージェント切替、上下キーでモジュール選択
-func (s *BattleScreen) handleModuleSelection(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+// handleSkillSelection はスキル選択時のキー処理を行います。
+// UI-Improvement: 左右キーでエージェント切替、上下キーでスキル選択
+func (s *BattleScreen) handleSkillSelection(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "left", "h":
 		// 前のエージェントに切り替え
@@ -422,35 +422,35 @@ func (s *BattleScreen) handleModuleSelection(msg tea.KeyMsg) (tea.Model, tea.Cmd
 		if s.selectedAgentIdx < 0 {
 			s.selectedAgentIdx = len(s.equippedAgents) - 1
 		}
-		// そのエージェントの最初のモジュールを選択
-		s.selectFirstModuleOfAgent(s.selectedAgentIdx)
+		// そのエージェントの最初のスキルを選択
+		s.selectFirstSkillOfAgent(s.selectedAgentIdx)
 	case "right", "l":
 		// 次のエージェントに切り替え
 		s.selectedAgentIdx++
 		if s.selectedAgentIdx >= len(s.equippedAgents) {
 			s.selectedAgentIdx = 0
 		}
-		// そのエージェントの最初のモジュールを選択
-		s.selectFirstModuleOfAgent(s.selectedAgentIdx)
+		// そのエージェントの最初のスキルを選択
+		s.selectFirstSkillOfAgent(s.selectedAgentIdx)
 	case "up", "k":
-		// 現在のエージェント内で前のモジュールに移動
-		s.moveToPrevModuleInAgent()
+		// 現在のエージェント内で前のスキルに移動
+		s.moveToPrevSkillInAgent()
 	case "down", "j":
-		// 現在のエージェント内で次のモジュールに移動
-		s.moveToNextModuleInAgent()
+		// 現在のエージェント内で次のスキルに移動
+		s.moveToNextSkillInAgent()
 	case "enter":
-		// モジュール使用可能チェック（クールダウンとリキャスト両方）
-		if len(s.moduleSlots) > 0 && s.isModuleUsable(s.selectedSlot) {
-			s.selectedModuleIdx = s.selectedSlot
-			module := s.moduleSlots[s.selectedSlot].Module
+		// スキル使用可能チェック（クールダウンとリキャスト両方）
+		if len(s.skillSlots) > 0 && s.isSkillUsable(s.selectedSlot) {
+			s.selectedSkillIdx = s.selectedSlot
+			skill := s.skillSlots[s.selectedSlot].Skill
 
 			// ChallengeInput を構築してチャレンジを開始
-			cmd := s.startChallenge(module)
+			cmd := s.startChallenge(skill)
 
 			// スキル選択直後にクールダウンとリキャストを開始
-			slot := s.moduleSlots[s.selectedModuleIdx]
-			s.StartCooldown(s.selectedModuleIdx, slot.CooldownTotal)
-			s.startAgentRecast(slot.AgentIndex, module)
+			slot := s.skillSlots[s.selectedSkillIdx]
+			s.StartCooldown(s.selectedSkillIdx, slot.CooldownTotal)
+			s.startAgentRecast(slot.AgentIndex, skill)
 
 			if cmd != nil {
 				return s, cmd

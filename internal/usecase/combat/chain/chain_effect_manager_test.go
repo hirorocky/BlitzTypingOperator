@@ -47,12 +47,12 @@ func TestRegisterChainEffect(t *testing.T) {
 	if pe.Effect.Value != 20.0 {
 		t.Errorf("Effect.Value: got %f, want 20.0", pe.Effect.Value)
 	}
-	if pe.SourceModule != "slash_lv1" {
-		t.Errorf("SourceModule: got %s, want slash_lv1", pe.SourceModule)
+	if pe.SourceSkill != "slash_lv1" {
+		t.Errorf("SourceSkill: got %s, want slash_lv1", pe.SourceSkill)
 	}
 }
 
-// TestCheckAndTrigger は他エージェントモジュール使用時の発動をテストします。
+// TestCheckAndTrigger は他エージェントスキル使用時の発動をテストします。
 func TestCheckAndTrigger(t *testing.T) {
 	cem := NewChainEffectManager()
 
@@ -61,7 +61,7 @@ func TestCheckAndTrigger(t *testing.T) {
 		"次の攻撃のダメージ+%.0f%%", "次攻撃ダメ+%.0f%%")
 	cem.RegisterChainEffect(0, &effect, "slash_lv1")
 
-	// エージェント1がモジュールを使用（チェイン効果が発動）
+	// エージェント1がスキルを使用（チェイン効果が発動）
 	triggered := cem.CheckAndTrigger(1, SkillEffectFlags{HasDamage: true})
 
 	// 発動した効果を確認
@@ -95,7 +95,7 @@ func TestCheckAndTriggerSameAgent(t *testing.T) {
 	effect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
 	cem.RegisterChainEffect(0, &effect, "slash_lv1")
 
-	// 同じエージェント0がモジュールを使用（発動しない）
+	// 同じエージェント0がスキルを使用（発動しない）
 	triggered := cem.CheckAndTrigger(0, SkillEffectFlags{HasDamage: true})
 
 	// 発動しない
@@ -286,27 +286,27 @@ func TestBuffExtendEffect(t *testing.T) {
 	}
 }
 
-// TestEffectCategoryMatching は効果カテゴリとモジュール効果フラグのマッチングをテストします。
+// TestEffectCategoryMatching は効果カテゴリとスキル効果フラグのマッチングをテストします。
 func TestEffectCategoryMatching(t *testing.T) {
 	tests := []struct {
 		name          string
 		effectType    domain.ChainEffectType
-		moduleFlags   SkillEffectFlags
+		skillFlags    SkillEffectFlags
 		shouldTrigger bool
 	}{
-		// 攻撃強化効果は攻撃モジュールで発動
+		// 攻撃強化効果は攻撃スキルで発動
 		{"DamageBonus-Damage", domain.ChainEffectDamageBonus, SkillEffectFlags{HasDamage: true}, true},
 		{"DamageBonus-Heal", domain.ChainEffectDamageBonus, SkillEffectFlags{HasHeal: true}, false},
 
-		// 回復強化効果は回復モジュールで発動
+		// 回復強化効果は回復スキルで発動
 		{"HealBonus-Heal", domain.ChainEffectHealBonus, SkillEffectFlags{HasHeal: true}, true},
 		{"HealBonus-Damage", domain.ChainEffectHealBonus, SkillEffectFlags{HasDamage: true}, false},
 
-		// バフ延長効果はバフモジュールで発動
+		// バフ延長効果はバフスキルで発動
 		{"BuffExtend-Buff", domain.ChainEffectBuffExtend, SkillEffectFlags{HasBuff: true}, true},
 		{"BuffExtend-Debuff", domain.ChainEffectBuffExtend, SkillEffectFlags{HasDebuff: true}, false},
 
-		// デバフ延長効果はデバフモジュールで発動
+		// デバフ延長効果はデバフスキルで発動
 		{"DebuffExtend-Debuff", domain.ChainEffectDebuffExtend, SkillEffectFlags{HasDebuff: true}, true},
 		{"DebuffExtend-Buff", domain.ChainEffectDebuffExtend, SkillEffectFlags{HasBuff: true}, false},
 	}
@@ -315,9 +315,9 @@ func TestEffectCategoryMatching(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cem := NewChainEffectManager()
 			effect := domain.NewChainEffect("test_effect", tt.effectType, 10.0)
-			cem.RegisterChainEffect(0, &effect, "test_module")
+			cem.RegisterChainEffect(0, &effect, "test_skill")
 
-			triggered := cem.CheckAndTrigger(1, tt.moduleFlags)
+			triggered := cem.CheckAndTrigger(1, tt.skillFlags)
 
 			if tt.shouldTrigger && len(triggered) == 0 {
 				t.Error("発動すべきなのに発動しませんでした")

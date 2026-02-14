@@ -113,7 +113,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				ID:         "agent_first_1",
 				CoreTypeID: "all_rounder",
 				CoreLevel:  1,
-				Modules: []masterdata.FirstAgentModuleData{
+				Skills: []masterdata.FirstAgentSkillData{
 					{TypeID: "physical_strike_lv1"},
 				},
 			},
@@ -121,7 +121,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				ID:         "agent_first_2",
 				CoreTypeID: "all_rounder",
 				CoreLevel:  1,
-				Modules: []masterdata.FirstAgentModuleData{
+				Skills: []masterdata.FirstAgentSkillData{
 					{TypeID: "heal_lv1"},
 				},
 			},
@@ -129,7 +129,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				ID:         "agent_first_3",
 				CoreTypeID: "all_rounder",
 				CoreLevel:  1,
-				Modules: []masterdata.FirstAgentModuleData{
+				Skills: []masterdata.FirstAgentSkillData{
 					{TypeID: "attack_buff_lv1"},
 				},
 			},
@@ -152,7 +152,7 @@ func createTestRewardCalculator() *rewarding.RewardCalculator {
 		},
 	}
 
-	moduleTypes := []rewarding.ModuleDropInfo{
+	skillTypes := []rewarding.SkillDropInfo{
 		{
 			ID:           "physical_attack_1",
 			Name:         "物理打撃Lv1",
@@ -179,7 +179,7 @@ func createTestRewardCalculator() *rewarding.RewardCalculator {
 		},
 	}
 
-	return rewarding.NewRewardCalculator(coreTypes, moduleTypes, passiveSkills)
+	return rewarding.NewRewardCalculator(coreTypes, skillTypes, passiveSkills)
 }
 
 // initBattleForTestE2E はテスト用のバトル初期化ヘルパーです。
@@ -302,8 +302,8 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 	// 敵を倒すまで攻撃を繰り返す
 	for battleState.Enemy.IsAlive() {
 		agent := agents[0]
-		module := agent.Modules[0] // 物理攻撃
-		engine.ApplySkillEffect(battleState, agent, module, typingResult)
+		skill := agent.Skills[0] // 物理攻撃
+		engine.ApplySkillEffect(battleState, agent, skill, typingResult)
 		engine.RecordTypingResult(battleState, typingResult)
 	}
 
@@ -343,7 +343,7 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 	for _, c := range rewards.DroppedCores {
 		saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores, c.TypeID)
 	}
-	for _, m := range rewards.DroppedModules {
+	for _, m := range rewards.DroppedSkills {
 		saveData.Inventory.UniqueSkills.Skills = append(
 			saveData.Inventory.UniqueSkills.Skills, m.TypeID)
 		if m.ChainEffect != nil {
@@ -403,18 +403,18 @@ func TestE2E_AgentSynthesisFlow(t *testing.T) {
 	}
 	firstAgent := firstAgents[0]
 	core := firstAgent.Core
-	selectedModules := firstAgent.Modules
+	selectedSkills := firstAgent.Skills
 
-	if len(selectedModules) < 1 {
-		t.Fatalf("初期モジュールが1個以上必要です: got %d", len(selectedModules))
+	if len(selectedSkills) < 1 {
+		t.Fatalf("初期スキルが1個以上必要です: got %d", len(selectedSkills))
 	}
 
 	// エージェント合成
-	newAgent := domain.NewAgent("new_agent_1", core, selectedModules)
+	newAgent := domain.NewAgent("new_agent_1", core, selectedSkills)
 
 	// 合成後の状態確認
-	if len(newAgent.Modules) != len(selectedModules) {
-		t.Errorf("エージェントは%d個のモジュールを持つべきです", len(selectedModules))
+	if len(newAgent.Skills) != len(selectedSkills) {
+		t.Errorf("エージェントは%d個のスキルを持つべきです", len(selectedSkills))
 	}
 
 	// AgentSlotsの最後のスロットを置換（初期状態では3スロット全て埋まっている）
@@ -423,7 +423,7 @@ func TestE2E_AgentSynthesisFlow(t *testing.T) {
 	// スキルスロット構成を作成
 	var skillSlots [4]savedata.SkillSlotSaveCfg
 	var chainEffectSlots [4]savedata.ChainEffectSlotSaveCfg
-	for i, m := range newAgent.Modules {
+	for i, m := range newAgent.Skills {
 		if i >= 4 {
 			break
 		}
@@ -501,8 +501,8 @@ func TestE2E_ProgressionFlow(t *testing.T) {
 		// 敵を倒す
 		for battleState.Enemy.IsAlive() {
 			agent := agents[0]
-			module := agent.Modules[0]
-			engine.ApplySkillEffect(battleState, agent, module, typingResult)
+			skill := agent.Skills[0]
+			engine.ApplySkillEffect(battleState, agent, skill, typingResult)
 		}
 
 		// 勝利確認

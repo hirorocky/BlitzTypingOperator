@@ -1,5 +1,5 @@
 // Package chain はチェイン効果管理機能を提供します。
-// モジュール使用後、次のスキル使用まで待機し、他エージェントの行動で発動する追加効果を管理します。
+// スキル使用後、次のスキル使用まで待機し、他エージェントの行動で発動する追加効果を管理します。
 package chain
 
 import (
@@ -8,7 +8,7 @@ import (
 	"hirorocky/type-battle/internal/domain"
 )
 
-// SkillEffectFlags はモジュールが持つ効果の種別を表します。
+// SkillEffectFlags はスキルが持つ効果の種別を表します。
 type SkillEffectFlags struct {
 	// HasDamage はダメージ効果を持つかを表します。
 	HasDamage bool
@@ -31,8 +31,8 @@ type PendingChainEffect struct {
 	// Effect はチェイン効果の内容です。
 	Effect domain.ChainEffect
 
-	// SourceModule はこの効果を発生させたモジュールのIDです。
-	SourceModule string
+	// SourceSkill はこの効果を発生させたスキルのIDです。
+	SourceSkill string
 }
 
 // TriggeredChainEffect は発動したチェイン効果を表す構造体です。
@@ -51,8 +51,8 @@ type TriggeredChainEffect struct {
 }
 
 // ChainEffectManager はチェイン効果の管理を担当する構造体です。
-// モジュール使用時にチェイン効果を待機状態として登録し、
-// 他エージェントのモジュール使用時に発動条件をチェックして発動します。
+// スキル使用時にチェイン効果を待機状態として登録し、
+// 他エージェントのスキル使用時に発動条件をチェックして発動します。
 type ChainEffectManager struct {
 	// pendingEffects はエージェントインデックスごとの待機中チェイン効果です。
 	// 1エージェントにつき1つの待機中効果のみ保持します。
@@ -66,24 +66,24 @@ func NewChainEffectManager() *ChainEffectManager {
 	}
 }
 
-// RegisterChainEffect はモジュール使用時にチェイン効果を待機状態として登録します。
+// RegisterChainEffect はスキル使用時にチェイン効果を待機状態として登録します。
 // 既に同一エージェントの効果がある場合は上書きします。
 // effectがnilの場合は何もしません。
-func (m *ChainEffectManager) RegisterChainEffect(agentIndex int, effect *domain.ChainEffect, sourceModule string) {
+func (m *ChainEffectManager) RegisterChainEffect(agentIndex int, effect *domain.ChainEffect, sourceSkill string) {
 	if effect == nil {
 		return
 	}
 
 	m.pendingEffects[agentIndex] = &PendingChainEffect{
-		AgentIndex:   agentIndex,
-		Effect:       *effect,
-		SourceModule: sourceModule,
+		AgentIndex:  agentIndex,
+		Effect:      *effect,
+		SourceSkill: sourceSkill,
 	}
 }
 
-// CheckAndTrigger は他エージェントのモジュール使用時に発動条件をチェックし、発動を実行します。
-// usingAgentIndexはモジュールを使用したエージェントのインデックスです。
-// effectFlagsは使用したモジュールが持つ効果の種別です。
+// CheckAndTrigger は他エージェントのスキル使用時に発動条件をチェックし、発動を実行します。
+// usingAgentIndexはスキルを使用したエージェントのインデックスです。
+// effectFlagsは使用したスキルが持つ効果の種別です。
 // 発動した効果のリストを返します。
 func (m *ChainEffectManager) CheckAndTrigger(usingAgentIndex int, effectFlags SkillEffectFlags) []TriggeredChainEffect {
 	triggered := make([]TriggeredChainEffect, 0)
@@ -120,29 +120,29 @@ func (m *ChainEffectManager) CheckAndTrigger(usingAgentIndex int, effectFlags Sk
 	return triggered
 }
 
-// isEffectTriggeredBy はチェイン効果がモジュールの効果種別によって発動するかを判定します。
+// isEffectTriggeredBy はチェイン効果がスキルの効果種別によって発動するかを判定します。
 func (m *ChainEffectManager) isEffectTriggeredBy(effectType domain.ChainEffectType, flags SkillEffectFlags) bool {
 	effectCategory := effectType.Category()
 
 	switch effectCategory {
 	case domain.ChainEffectCategoryAttack:
-		// 攻撃強化効果はダメージモジュールで発動
+		// 攻撃強化効果はダメージスキルで発動
 		return flags.HasDamage
 
 	case domain.ChainEffectCategoryHeal:
-		// 回復強化効果は回復モジュールで発動
+		// 回復強化効果は回復スキルで発動
 		return flags.HasHeal
 
 	case domain.ChainEffectCategoryDefense:
-		// 防御強化効果は任意のモジュールで発動
+		// 防御強化効果は任意のスキルで発動
 		return true
 
 	case domain.ChainEffectCategoryTyping:
-		// タイピング強化効果は任意のモジュールで発動
+		// タイピング強化効果は任意のスキルで発動
 		return true
 
 	case domain.ChainEffectCategoryRecast:
-		// リキャスト強化効果は任意のモジュールで発動
+		// リキャスト強化効果は任意のスキルで発動
 		return true
 
 	case domain.ChainEffectCategoryEffectExtend:
@@ -156,7 +156,7 @@ func (m *ChainEffectManager) isEffectTriggeredBy(effectType domain.ChainEffectTy
 		return false
 
 	case domain.ChainEffectCategorySpecial:
-		// 特殊効果は任意のモジュールで発動
+		// 特殊効果は任意のスキルで発動
 		return true
 
 	default:

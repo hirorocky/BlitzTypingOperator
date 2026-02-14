@@ -35,8 +35,8 @@ func TestEncyclopediaCategories(t *testing.T) {
 
 	// カテゴリ切り替え（右へ）
 	screen.handleKeyMsg(tea.KeyMsg{Type: tea.KeyRight})
-	if screen.currentCategory != CategoryModule {
-		t.Errorf("カテゴリ切り替え(右)が正しくありません: got %d, want %d", screen.currentCategory, CategoryModule)
+	if screen.currentCategory != CategorySkill {
+		t.Errorf("カテゴリ切り替え(右)が正しくありません: got %d, want %d", screen.currentCategory, CategorySkill)
 	}
 
 	// さらに右へ
@@ -68,18 +68,18 @@ func TestEncyclopediaCoreEncyclopedia(t *testing.T) {
 	}
 }
 
-// TestEncyclopediaModuleEncyclopedia はモジュール図鑑をテストします。
+// TestEncyclopediaSkillEncyclopedia はスキル図鑑をテストします。
 
-func TestEncyclopediaModuleEncyclopedia(t *testing.T) {
+func TestEncyclopediaSkillEncyclopedia(t *testing.T) {
 	data := createTestEncyclopediaData()
 	screen := NewEncyclopediaScreen(data)
 
-	// モジュール図鑑タブ
-	screen.currentCategory = CategoryModule
+	// スキル図鑑タブ
+	screen.currentCategory = CategorySkill
 
-	// 全モジュールタイプが表示されていること
+	// 全スキルタイプが表示されていること
 	if len(screen.data.AllSkillTypes) == 0 {
-		t.Error("モジュールタイプが空です")
+		t.Error("スキルタイプが空です")
 	}
 }
 
@@ -133,15 +133,15 @@ func TestEncyclopediaCompletionRate(t *testing.T) {
 
 	// コンプリート率計算
 	coreRate := screen.getCoreCompletionRate()
-	moduleRate := screen.getModuleCompletionRate()
+	skillRate := screen.getSkillCompletionRate()
 	enemyRate := screen.getEnemyCompletionRate()
 
 	// 0〜100の範囲であること
 	if coreRate < 0 || coreRate > 100 {
 		t.Errorf("コア図鑑コンプリート率が範囲外: %d", coreRate)
 	}
-	if moduleRate < 0 || moduleRate > 100 {
-		t.Errorf("モジュール図鑑コンプリート率が範囲外: %d", moduleRate)
+	if skillRate < 0 || skillRate > 100 {
+		t.Errorf("スキル図鑑コンプリート率が範囲外: %d", skillRate)
 	}
 	if enemyRate < 0 || enemyRate > 100 {
 		t.Errorf("敵図鑑コンプリート率が範囲外: %d", enemyRate)
@@ -227,7 +227,7 @@ func createTestEncyclopediaData() *EncyclopediaData {
 		{ID: "healer", Name: "ヒーラー", StatWeights: map[string]float64{"STR": 0.8, "INT": 1.4, "WIL": 0.9, "LUK": 0.9}},
 	}
 
-	moduleTypes := []SkillTypeInfo{
+	skillTypes := []SkillTypeInfo{
 		{ID: "physical_lv1", Name: "物理攻撃Lv1", Icon: "⚔️", Tags: []string{"physical_low"}, Description: "基本的な物理攻撃"},
 		{ID: "magic_lv1", Name: "魔法攻撃Lv1", Icon: "💥", Tags: []string{"magic_low"}, Description: "基本的な魔法攻撃"},
 		{ID: "heal_lv1", Name: "回復Lv1", Icon: "💚", Tags: []string{"heal_low"}, Description: "基本的な回復"},
@@ -241,7 +241,7 @@ func createTestEncyclopediaData() *EncyclopediaData {
 
 	return &EncyclopediaData{
 		AllCoreTypes:       coreTypes,
-		AllSkillTypes:      moduleTypes,
+		AllSkillTypes:      skillTypes,
 		AllEnemyTypes:      enemyTypes,
 		AcquiredCoreTypes:  []string{"all_rounder"},
 		AcquiredSkillTypes: []string{"physical_lv1"},

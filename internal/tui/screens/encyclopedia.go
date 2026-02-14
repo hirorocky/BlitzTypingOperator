@@ -21,8 +21,8 @@ type EncyclopediaCategory int
 const (
 	// CategoryCore はコア図鑑です。
 	CategoryCore EncyclopediaCategory = iota
-	// CategoryModule はモジュール図鑑です。
-	CategoryModule
+	// CategorySkill はスキル図鑑です。
+	CategorySkill
 	// CategoryEnemy は敵図鑑です。
 	CategoryEnemy
 )
@@ -126,7 +126,7 @@ func (s *EncyclopediaScreen) getMaxIndex() int {
 	switch s.currentCategory {
 	case CategoryCore:
 		return len(s.data.AllCoreTypes)
-	case CategoryModule:
+	case CategorySkill:
 		return len(s.data.AllSkillTypes)
 	case CategoryEnemy:
 		return len(s.data.AllEnemyTypes)
@@ -144,7 +144,7 @@ func (s *EncyclopediaScreen) isCoreTypeAcquired(id string) bool {
 	return false
 }
 
-// isSkillTypeAcquired はモジュールタイプが獲得済みかを返します。
+// isSkillTypeAcquired はスキルタイプが獲得済みかを返します。
 func (s *EncyclopediaScreen) isSkillTypeAcquired(id string) bool {
 	for _, acquired := range s.data.AcquiredSkillTypes {
 		if acquired == id {
@@ -172,8 +172,8 @@ func (s *EncyclopediaScreen) getCoreDisplayName(ct domain.CoreType) string {
 	return "???"
 }
 
-// getModuleDisplayName はモジュールの表示名を返します（未獲得は???）。
-func (s *EncyclopediaScreen) getModuleDisplayName(mt SkillTypeInfo) string {
+// getSkillDisplayName はスキルの表示名を返します（未獲得は???）。
+func (s *EncyclopediaScreen) getSkillDisplayName(mt SkillTypeInfo) string {
 	if s.isSkillTypeAcquired(mt.ID) {
 		return mt.Name
 	}
@@ -196,8 +196,8 @@ func (s *EncyclopediaScreen) getCoreCompletionRate() int {
 	return len(s.data.AcquiredCoreTypes) * 100 / len(s.data.AllCoreTypes)
 }
 
-// getModuleCompletionRate はモジュール図鑑のコンプリート率を返します。
-func (s *EncyclopediaScreen) getModuleCompletionRate() int {
+// getSkillCompletionRate はスキル図鑑のコンプリート率を返します。
+func (s *EncyclopediaScreen) getSkillCompletionRate() int {
 	if len(s.data.AllSkillTypes) == 0 {
 		return 0
 	}
@@ -252,7 +252,7 @@ func (s *EncyclopediaScreen) View() string {
 
 // renderCategoryTabs はカテゴリタブをレンダリングします。
 func (s *EncyclopediaScreen) renderCategoryTabs() string {
-	categories := []string{"コア図鑑", "モジュール図鑑", "敵図鑑"}
+	categories := []string{"コア図鑑", "スキル図鑑", "敵図鑑"}
 
 	var tabItems []string
 	for i, cat := range categories {
@@ -282,8 +282,8 @@ func (s *EncyclopediaScreen) renderMainContent() string {
 	switch s.currentCategory {
 	case CategoryCore:
 		return s.renderCoreEncyclopedia()
-	case CategoryModule:
-		return s.renderModuleEncyclopedia()
+	case CategorySkill:
+		return s.renderSkillEncyclopedia()
 	case CategoryEnemy:
 		return s.renderEnemyEncyclopedia()
 	}
@@ -374,18 +374,18 @@ func (s *EncyclopediaScreen) renderCorePreview() string {
 	return panel.Render(45)
 }
 
-// renderModuleEncyclopedia はモジュール図鑑をレンダリングします。
-func (s *EncyclopediaScreen) renderModuleEncyclopedia() string {
+// renderSkillEncyclopedia はスキル図鑑をレンダリングします。
+func (s *EncyclopediaScreen) renderSkillEncyclopedia() string {
 	if len(s.data.AllSkillTypes) == 0 {
 		return lipgloss.NewStyle().
 			Width(s.width).
 			Align(lipgloss.Center).
 			Foreground(styles.ColorSubtle).
-			Render("モジュールタイプがありません")
+			Render("スキルタイプがありません")
 	}
 
-	listContent := s.renderModuleList()
-	previewContent := s.renderModulePreviewEncyclopedia()
+	listContent := s.renderSkillList()
+	previewContent := s.renderSkillPreviewEncyclopedia()
 
 	listBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -408,8 +408,8 @@ func (s *EncyclopediaScreen) renderModuleEncyclopedia() string {
 		Render(content)
 }
 
-// renderModuleList はモジュール図鑑のリストをレンダリングします。
-func (s *EncyclopediaScreen) renderModuleList() string {
+// renderSkillList はスキル図鑑のリストをレンダリングします。
+func (s *EncyclopediaScreen) renderSkillList() string {
 	var items []string
 	for i, mt := range s.data.AllSkillTypes {
 		acquired := s.isSkillTypeAcquired(mt.ID)
@@ -424,7 +424,7 @@ func (s *EncyclopediaScreen) renderModuleList() string {
 			style = style.Foreground(styles.ColorSubtle)
 		}
 
-		displayName := s.getModuleDisplayName(mt)
+		displayName := s.getSkillDisplayName(mt)
 		status := ""
 		if acquired {
 			status = " [獲得済み]"
@@ -434,8 +434,8 @@ func (s *EncyclopediaScreen) renderModuleList() string {
 	return strings.Join(items, "\n")
 }
 
-// renderModulePreviewEncyclopedia はモジュール図鑑のプレビューをレンダリングします。
-func (s *EncyclopediaScreen) renderModulePreviewEncyclopedia() string {
+// renderSkillPreviewEncyclopedia はスキル図鑑のプレビューをレンダリングします。
+func (s *EncyclopediaScreen) renderSkillPreviewEncyclopedia() string {
 	if s.selectedIndex >= len(s.data.AllSkillTypes) {
 		return "選択してください"
 	}
@@ -444,7 +444,7 @@ func (s *EncyclopediaScreen) renderModulePreviewEncyclopedia() string {
 	acquired := s.isSkillTypeAcquired(mt.ID)
 
 	if !acquired {
-		return "このモジュールはまだ獲得していません\n\n敵を倒してドロップを獲得しましょう"
+		return "このスキルはまだ獲得していません\n\n敵を倒してドロップを獲得しましょう"
 	}
 
 	panel := components.NewInfoPanel(mt.Name)
@@ -539,15 +539,15 @@ func (s *EncyclopediaScreen) renderEnemyPreview() string {
 // renderCompletionRate はコンプリート率をレンダリングします。
 func (s *EncyclopediaScreen) renderCompletionRate() string {
 	coreRate := s.getCoreCompletionRate()
-	moduleRate := s.getModuleCompletionRate()
+	skillRate := s.getSkillCompletionRate()
 	enemyRate := s.getEnemyCompletionRate()
 
 	rateStyle := lipgloss.NewStyle().
 		Foreground(styles.ColorSecondary)
 
 	content := fmt.Sprintf(
-		"コンプリート率  コア: %d%%  モジュール: %d%%  敵: %d%%",
-		coreRate, moduleRate, enemyRate,
+		"コンプリート率  コア: %d%%  スキル: %d%%  敵: %d%%",
+		coreRate, skillRate, enemyRate,
 	)
 
 	return lipgloss.NewStyle().

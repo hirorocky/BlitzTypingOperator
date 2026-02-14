@@ -14,7 +14,7 @@ import (
 // ==================== タスク9: バトル画面UI拡張テスト ====================
 
 // createTestAgentWithPassive はパッシブスキル付きテスト用エージェントを作成します。
-func createTestAgentWithPassive(passiveSkill domain.PassiveSkill, modules []*domain.SkillModel) *domain.AgentModel {
+func createTestAgentWithPassive(passiveSkill domain.PassiveSkill, skills []*domain.SkillModel) *domain.AgentModel {
 	coreType := domain.CoreType{
 		ID:          "test_core_type",
 		Name:        "テストコア",
@@ -23,17 +23,17 @@ func createTestAgentWithPassive(passiveSkill domain.PassiveSkill, modules []*dom
 	}
 
 	core := domain.NewCoreWithTypeID("test_core", coreType, passiveSkill)
-	return domain.NewAgent("test_agent", core, modules)
+	return domain.NewAgent("test_agent", core, skills)
 }
 
-// createTestModuleWithChain はチェイン効果付きテスト用モジュールを作成します。
-func createTestModuleWithChain(name string, chainEffect *domain.ChainEffect) *domain.SkillModel {
+// createTestSkillWithChain はチェイン効果付きテスト用スキルを作成します。
+func createTestSkillWithChain(name string, chainEffect *domain.ChainEffect) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
-		ID:          "test_module_" + name,
+		ID:          "test_skill_" + name,
 		Name:        name,
 		Icon:        "⚔️",
 		Tags:        []string{"physical_low"},
-		Description: "テスト攻撃モジュール",
+		Description: "テスト攻撃スキル",
 		Effects: []domain.SkillEffect{
 			{
 				Target:      domain.TargetEnemy,
@@ -47,14 +47,14 @@ func createTestModuleWithChain(name string, chainEffect *domain.ChainEffect) *do
 
 // TestBattleScreen_RenderAgentAreaWithRecast はリキャスト状態表示のテストです。
 func TestBattleScreen_RenderAgentAreaWithRecast(t *testing.T) {
-	// テスト用エージェントとモジュール作成
-	modules := []*domain.SkillModel{
-		createTestModuleWithChain("攻撃A", nil),
-		createTestModuleWithChain("攻撃B", nil),
-		createTestModuleWithChain("攻撃C", nil),
-		createTestModuleWithChain("攻撃D", nil),
+	// テスト用エージェントとスキル作成
+	skills := []*domain.SkillModel{
+		createTestSkillWithChain("攻撃A", nil),
+		createTestSkillWithChain("攻撃B", nil),
+		createTestSkillWithChain("攻撃C", nil),
+		createTestSkillWithChain("攻撃D", nil),
 	}
-	agent := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
 
 	// BattleScreen作成
 	screen := NewBattleScreen(createTestEnemy(), createTestPlayer(), []*domain.AgentModel{agent}, nil)
@@ -73,21 +73,21 @@ func TestBattleScreen_RenderAgentAreaWithRecast(t *testing.T) {
 
 // TestBattleScreen_RenderAgentAreaWithChainEffect はチェイン効果待機表示のテストです。
 func TestBattleScreen_RenderAgentAreaWithChainEffect(t *testing.T) {
-	// チェイン効果付きモジュール作成
+	// チェイン効果付きスキル作成
 	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
-	modules := []*domain.SkillModel{
-		createTestModuleWithChain("攻撃A", &chainEffect),
-		createTestModuleWithChain("攻撃B", nil),
-		createTestModuleWithChain("攻撃C", nil),
-		createTestModuleWithChain("攻撃D", nil),
+	skills := []*domain.SkillModel{
+		createTestSkillWithChain("攻撃A", &chainEffect),
+		createTestSkillWithChain("攻撃B", nil),
+		createTestSkillWithChain("攻撃C", nil),
+		createTestSkillWithChain("攻撃D", nil),
 	}
-	agent := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
 
 	// BattleScreen作成
 	screen := NewBattleScreen(createTestEnemy(), createTestPlayer(), []*domain.AgentModel{agent}, nil)
 
 	// チェイン効果を登録
-	screen.chainEffectManager.RegisterChainEffect(0, &chainEffect, "test_module")
+	screen.chainEffectManager.RegisterChainEffect(0, &chainEffect, "test_skill")
 
 	// View()を呼び出し
 	result := screen.View()
@@ -110,13 +110,13 @@ func TestBattleScreen_RenderAgentAreaWithPassiveSkill(t *testing.T) {
 		},
 	}
 
-	modules := []*domain.SkillModel{
-		createTestModuleWithChain("攻撃A", nil),
-		createTestModuleWithChain("攻撃B", nil),
-		createTestModuleWithChain("攻撃C", nil),
-		createTestModuleWithChain("攻撃D", nil),
+	skills := []*domain.SkillModel{
+		createTestSkillWithChain("攻撃A", nil),
+		createTestSkillWithChain("攻撃B", nil),
+		createTestSkillWithChain("攻撃C", nil),
+		createTestSkillWithChain("攻撃D", nil),
 	}
-	agent := createTestAgentWithPassive(passiveSkill, modules)
+	agent := createTestAgentWithPassive(passiveSkill, skills)
 
 	// BattleScreen作成
 	screen := NewBattleScreen(createTestEnemy(), createTestPlayer(), []*domain.AgentModel{agent}, nil)
@@ -130,36 +130,36 @@ func TestBattleScreen_RenderAgentAreaWithPassiveSkill(t *testing.T) {
 	}
 }
 
-// TestBattleScreen_RecastStateAffectsModuleUsability はリキャスト状態によるモジュール使用可否のテストです。
-func TestBattleScreen_RecastStateAffectsModuleUsability(t *testing.T) {
-	modules := []*domain.SkillModel{
-		createTestModuleWithChain("攻撃A", nil),
-		createTestModuleWithChain("攻撃B", nil),
-		createTestModuleWithChain("攻撃C", nil),
-		createTestModuleWithChain("攻撃D", nil),
+// TestBattleScreen_RecastStateAffectsSkillUsability はリキャスト状態によるスキル使用可否のテストです。
+func TestBattleScreen_RecastStateAffectsSkillUsability(t *testing.T) {
+	skills := []*domain.SkillModel{
+		createTestSkillWithChain("攻撃A", nil),
+		createTestSkillWithChain("攻撃B", nil),
+		createTestSkillWithChain("攻撃C", nil),
+		createTestSkillWithChain("攻撃D", nil),
 	}
-	agent := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
 
 	screen := NewBattleScreen(createTestEnemy(), createTestPlayer(), []*domain.AgentModel{agent}, nil)
 
 	// リキャスト前は使用可能
-	if !screen.isModuleUsable(0) {
-		t.Error("Module should be usable before recast")
+	if !screen.isSkillUsable(0) {
+		t.Error("Skill should be usable before recast")
 	}
 
 	// リキャスト開始
 	screen.recastManager.StartRecast(0, 5*time.Second)
 
 	// リキャスト中は使用不可
-	if screen.isModuleUsable(0) {
-		t.Error("Module should not be usable during recast")
+	if screen.isSkillUsable(0) {
+		t.Error("Skill should not be usable during recast")
 	}
 }
 
-// TestBattleScreen_ManaAffectsModuleUsability はマナ不足によるモジュール使用可否のテストです。
-func TestBattleScreen_ManaAffectsModuleUsability(t *testing.T) {
-	// ManaCost=1のモジュールを作成
-	module := domain.NewSkillFromType(domain.SkillType{
+// TestBattleScreen_ManaAffectsSkillUsability はマナ不足によるスキル使用可否のテストです。
+func TestBattleScreen_ManaAffectsSkillUsability(t *testing.T) {
+	// ManaCost=1のスキルを作成
+	skill := domain.NewSkillFromType(domain.SkillType{
 		ID:       "mana_skill",
 		Name:     "マナスキル",
 		Icon:     "🔮",
@@ -174,8 +174,8 @@ func TestBattleScreen_ManaAffectsModuleUsability(t *testing.T) {
 			},
 		},
 	}, nil)
-	modules := []*domain.SkillModel{module}
-	agent := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
+	skills := []*domain.SkillModel{skill}
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
 
 	player := createTestPlayer()
 	player.MaxMana = 10
@@ -183,18 +183,18 @@ func TestBattleScreen_ManaAffectsModuleUsability(t *testing.T) {
 
 	// マナ不足時は使用不可
 	screen.player.Mana = 0
-	if screen.isModuleUsable(0) {
-		t.Error("マナ不足時にモジュールが使用可能になっています")
+	if screen.isSkillUsable(0) {
+		t.Error("マナ不足時にスキルが使用可能になっています")
 	}
 
 	// マナ十分時は使用可能
 	screen.player.Mana = 1
-	if !screen.isModuleUsable(0) {
-		t.Error("マナ十分時にモジュールが使用不可になっています")
+	if !screen.isSkillUsable(0) {
+		t.Error("マナ十分時にスキルが使用不可になっています")
 	}
 
-	// ManaCost=0のモジュールはマナ0でも使用可能
-	freeCostModule := domain.NewSkillFromType(domain.SkillType{
+	// ManaCost=0のスキルはマナ0でも使用可能
+	freeCostSkill := domain.NewSkillFromType(domain.SkillType{
 		ID:       "free_skill",
 		Name:     "無コストスキル",
 		Icon:     "⚔️",
@@ -209,14 +209,14 @@ func TestBattleScreen_ManaAffectsModuleUsability(t *testing.T) {
 			},
 		},
 	}, nil)
-	freeModules := []*domain.SkillModel{freeCostModule}
-	freeAgent := createTestAgentWithPassive(domain.PassiveSkill{}, freeModules)
+	freeSkills := []*domain.SkillModel{freeCostSkill}
+	freeAgent := createTestAgentWithPassive(domain.PassiveSkill{}, freeSkills)
 
 	screen2 := NewBattleScreen(createTestEnemy(), createTestPlayer(), []*domain.AgentModel{freeAgent}, nil)
 	screen2.player.MaxMana = 10
 	screen2.player.Mana = 0
-	if !screen2.isModuleUsable(0) {
-		t.Error("ManaCost=0のモジュールがマナ0で使用不可になっています")
+	if !screen2.isSkillUsable(0) {
+		t.Error("ManaCost=0のスキルがマナ0で使用不可になっています")
 	}
 }
 
@@ -245,7 +245,7 @@ func TestGetPendingChainEffectForAgent(t *testing.T) {
 	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
 
 	// チェイン効果を登録
-	cm.RegisterChainEffect(0, &chainEffect, "test_module")
+	cm.RegisterChainEffect(0, &chainEffect, "test_skill")
 
 	// 待機中効果を取得
 	pending := cm.GetPendingEffectForAgent(0)
@@ -259,35 +259,35 @@ func TestGetPendingChainEffectForAgent(t *testing.T) {
 	}
 }
 
-// TestRenderModuleWithChainEffectBadge はモジュール表示にチェイン効果バッジが含まれるかのテストです。
-func TestRenderModuleWithChainEffectBadge(t *testing.T) {
+// TestRenderSkillWithChainEffectBadge はスキル表示にチェイン効果バッジが含まれるかのテストです。
+func TestRenderSkillWithChainEffectBadge(t *testing.T) {
 	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
-	modules := []*domain.SkillModel{
-		createTestModuleWithChain("攻撃A", &chainEffect),
-		createTestModuleWithChain("攻撃B", nil),
-		createTestModuleWithChain("攻撃C", nil),
-		createTestModuleWithChain("攻撃D", nil),
+	skills := []*domain.SkillModel{
+		createTestSkillWithChain("攻撃A", &chainEffect),
+		createTestSkillWithChain("攻撃B", nil),
+		createTestSkillWithChain("攻撃C", nil),
+		createTestSkillWithChain("攻撃D", nil),
 	}
-	agent := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
 
 	screen := NewBattleScreen(createTestEnemy(), createTestPlayer(), []*domain.AgentModel{agent}, nil)
 	result := screen.View()
 
-	// モジュールが表示されている
+	// スキルが表示されている
 	if !strings.Contains(result, "攻撃A") {
-		t.Error("View should contain module name")
+		t.Error("View should contain skill name")
 	}
 }
 
 // TestBattleScreen_RenderRecastProgress はリキャスト進捗表示のテストです。
 func TestBattleScreen_RenderRecastProgress(t *testing.T) {
-	modules := []*domain.SkillModel{
-		createTestModuleWithChain("攻撃A", nil),
-		createTestModuleWithChain("攻撃B", nil),
-		createTestModuleWithChain("攻撃C", nil),
-		createTestModuleWithChain("攻撃D", nil),
+	skills := []*domain.SkillModel{
+		createTestSkillWithChain("攻撃A", nil),
+		createTestSkillWithChain("攻撃B", nil),
+		createTestSkillWithChain("攻撃C", nil),
+		createTestSkillWithChain("攻撃D", nil),
 	}
-	agent := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
 
 	screen := NewBattleScreen(createTestEnemy(), createTestPlayer(), []*domain.AgentModel{agent}, nil)
 
@@ -312,26 +312,26 @@ func TestBattleScreen_RenderRecastProgress(t *testing.T) {
 // TestBattleScreen_ChainEffectFeedback はチェイン効果発動フィードバックのテストです。
 func TestBattleScreen_ChainEffectFeedback(t *testing.T) {
 	chainEffect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageBonus, 25.0)
-	modules := []*domain.SkillModel{
-		createTestModuleWithChain("攻撃A", &chainEffect),
-		createTestModuleWithChain("攻撃B", nil),
-		createTestModuleWithChain("攻撃C", nil),
-		createTestModuleWithChain("攻撃D", nil),
+	skills := []*domain.SkillModel{
+		createTestSkillWithChain("攻撃A", &chainEffect),
+		createTestSkillWithChain("攻撃B", nil),
+		createTestSkillWithChain("攻撃C", nil),
+		createTestSkillWithChain("攻撃D", nil),
 	}
-	agent0 := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
+	agent0 := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
 	agent1 := createTestAgentWithPassive(domain.PassiveSkill{}, []*domain.SkillModel{
-		createTestModuleWithChain("攻撃E", nil),
-		createTestModuleWithChain("攻撃F", nil),
-		createTestModuleWithChain("攻撃G", nil),
-		createTestModuleWithChain("攻撃H", nil),
+		createTestSkillWithChain("攻撃E", nil),
+		createTestSkillWithChain("攻撃F", nil),
+		createTestSkillWithChain("攻撃G", nil),
+		createTestSkillWithChain("攻撃H", nil),
 	})
 
 	screen := NewBattleScreen(createTestEnemy(), createTestPlayer(), []*domain.AgentModel{agent0, agent1}, nil)
 
 	// エージェント0のチェイン効果を登録
-	screen.chainEffectManager.RegisterChainEffect(0, &chainEffect, "test_module")
+	screen.chainEffectManager.RegisterChainEffect(0, &chainEffect, "test_skill")
 
-	// エージェント1のモジュール使用でチェイン効果発動をチェック
+	// エージェント1のスキル使用でチェイン効果発動をチェック
 	triggered := screen.chainEffectManager.CheckAndTrigger(1, chain.SkillEffectFlags{HasDamage: true})
 
 	// チェイン効果が発動する
@@ -350,10 +350,10 @@ func TestBattleScreen_ChainEffectFeedback(t *testing.T) {
 
 // TestBattleScreen_VoltageDisplay はボルテージ表示のテストです。
 func TestBattleScreen_VoltageDisplay(t *testing.T) {
-	modules := []*domain.SkillModel{
-		createTestModuleWithChain("攻撃A", nil),
+	skills := []*domain.SkillModel{
+		createTestSkillWithChain("攻撃A", nil),
 	}
-	agent := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
 
 	enemy := createTestEnemy()
 	screen := NewBattleScreen(enemy, createTestPlayer(), []*domain.AgentModel{agent}, nil)
@@ -374,10 +374,10 @@ func TestBattleScreen_VoltageDisplay(t *testing.T) {
 
 // TestBattleScreen_VoltageDisplayWithHighVoltage は高ボルテージ時の表示テストです。
 func TestBattleScreen_VoltageDisplayWithHighVoltage(t *testing.T) {
-	modules := []*domain.SkillModel{
-		createTestModuleWithChain("攻撃A", nil),
+	skills := []*domain.SkillModel{
+		createTestSkillWithChain("攻撃A", nil),
 	}
-	agent := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
 
 	enemy := createTestEnemy()
 	// ボルテージを150%に設定
@@ -396,10 +396,10 @@ func TestBattleScreen_VoltageDisplayWithHighVoltage(t *testing.T) {
 
 // TestBattleScreen_VoltageDisplayWithDangerVoltage は危険レベルボルテージの表示テストです。
 func TestBattleScreen_VoltageDisplayWithDangerVoltage(t *testing.T) {
-	modules := []*domain.SkillModel{
-		createTestModuleWithChain("攻撃A", nil),
+	skills := []*domain.SkillModel{
+		createTestSkillWithChain("攻撃A", nil),
 	}
-	agent := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
 
 	enemy := createTestEnemy()
 	// ボルテージを200%に設定

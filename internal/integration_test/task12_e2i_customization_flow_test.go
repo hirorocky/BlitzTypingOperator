@@ -231,8 +231,8 @@ func TestE2I_FullCustomizationFlow(t *testing.T) {
 	if agent.Core.TypeID != "berserker" {
 		t.Errorf("エージェントコアTypeIDが不正: got %s, want berserker", agent.Core.TypeID)
 	}
-	if len(agent.Modules) != 3 {
-		t.Errorf("エージェントスキル数が不正: got %d, want 3", len(agent.Modules))
+	if len(agent.Skills) != 3 {
+		t.Errorf("エージェントスキル数が不正: got %d, want 3", len(agent.Skills))
 	}
 }
 
@@ -309,8 +309,8 @@ func TestE2I_MultipleAgentCustomizationFlow(t *testing.T) {
 		if agent.Core.TypeID != expected.coreTypeID {
 			t.Errorf("エージェント%d CoreTypeIDが不正: got %s, want %s", i, agent.Core.TypeID, expected.coreTypeID)
 		}
-		if len(agent.Modules) != expected.skillCount {
-			t.Errorf("エージェント%d スキル数が不正: got %d, want %d", i, len(agent.Modules), expected.skillCount)
+		if len(agent.Skills) != expected.skillCount {
+			t.Errorf("エージェント%d スキル数が不正: got %d, want %d", i, len(agent.Skills), expected.skillCount)
 		}
 	}
 }
@@ -674,7 +674,7 @@ func TestE2I_SameSkillMultipleTimes_ShouldFail(t *testing.T) {
 
 	// バトル用エージェント構築
 	agents := slotManager.BuildAgentsForBattle()
-	if len(agents[0].Modules) != 1 {
-		t.Errorf("エージェントスキル数が不正: got %d, want 1", len(agents[0].Modules))
+	if len(agents[0].Skills) != 1 {
+		t.Errorf("エージェントスキル数が不正: got %d, want 1", len(agents[0].Skills))
 	}
 }

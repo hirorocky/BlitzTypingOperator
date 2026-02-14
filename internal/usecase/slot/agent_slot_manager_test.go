@@ -1013,8 +1013,8 @@ func TestAgentSlotManager_BuildAgentsForBattle(t *testing.T) {
 	if agent0.Core.TypeID != "core_001" {
 		t.Errorf("エージェント0のCoreTypeID = %q, want %q", agent0.Core.TypeID, "core_001")
 	}
-	if len(agent0.Modules) != 2 {
-		t.Errorf("エージェント0のスキル数 = %d, want %d", len(agent0.Modules), 2)
+	if len(agent0.Skills) != 2 {
+		t.Errorf("エージェント0のスキル数 = %d, want %d", len(agent0.Skills), 2)
 	}
 
 	// 2番目のエージェント（スロット2）を確認
@@ -1022,8 +1022,8 @@ func TestAgentSlotManager_BuildAgentsForBattle(t *testing.T) {
 	if agent2.Core.TypeID != "core_002" {
 		t.Errorf("エージェント2のCoreTypeID = %q, want %q", agent2.Core.TypeID, "core_002")
 	}
-	if len(agent2.Modules) != 0 {
-		t.Errorf("エージェント2のスキル数 = %d, want %d", len(agent2.Modules), 0)
+	if len(agent2.Skills) != 0 {
+		t.Errorf("エージェント2のスキル数 = %d, want %d", len(agent2.Skills), 0)
 	}
 }
 
@@ -1201,7 +1201,7 @@ func TestBuildAgentsForBattle_WithChainEffect(t *testing.T) {
 		t.Fatalf("エージェント数 = %d, want 1", len(agents))
 	}
 
-	skill := agents[0].Modules[0]
+	skill := agents[0].Skills[0]
 	if !skill.HasChainEffect() {
 		t.Error("チェイン効果スロットから解決されたChainEffectが適用されるべき")
 	}
@@ -1230,7 +1230,7 @@ func TestBuildAgentsForBattle_WithoutChainEffect(t *testing.T) {
 		t.Fatalf("エージェント数 = %d, want 1", len(agents))
 	}
 
-	skill := agents[0].Modules[0]
+	skill := agents[0].Skills[0]
 	if skill.HasChainEffect() {
 		t.Error("チェイン効果未設定の場合はChainEffectが適用されないべき")
 	}

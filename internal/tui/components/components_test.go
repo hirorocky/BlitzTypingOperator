@@ -296,7 +296,7 @@ func TestAgentCardRenderDetailed(t *testing.T) {
 	card.AgentName = "ファイター"
 	card.AgentLevel = 5
 	card.CoreTypeName = "物理攻撃型"
-	card.ModuleIcons = []string{"⚔", "⚔", "▲", "✦"}
+	card.SkillIcons = []string{"⚔", "⚔", "▲", "✦"}
 
 	result := card.Render(40)
 	if result == "" {

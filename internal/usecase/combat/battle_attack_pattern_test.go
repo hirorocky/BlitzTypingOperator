@@ -22,7 +22,7 @@ func TestBattleState_SameAttackCount_Track(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_adaptive_shield", Name: "アダプティブシールド"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:   "test_attack",
 		Name: "テスト攻撃",
 		Icon: "⚔️",
@@ -36,8 +36,8 @@ func TestBattleState_SameAttackCount_Track(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := domain.NewSkillFromType(skillType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -80,7 +80,7 @@ func TestBattleState_SameAttackCount_Reset(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_adaptive_shield", Name: "アダプティブシールド"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:   "test_attack",
 		Name: "テスト攻撃",
 		Icon: "⚔️",
@@ -94,8 +94,8 @@ func TestBattleState_SameAttackCount_Reset(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := domain.NewSkillFromType(skillType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -155,7 +155,7 @@ func TestBattleEngine_AdaptiveShield(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_adaptive_shield", Name: "アダプティブシールド"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:   "test_attack",
 		Name: "テスト攻撃",
 		Icon: "⚔️",
@@ -169,8 +169,8 @@ func TestBattleEngine_AdaptiveShield(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := domain.NewSkillFromType(skillType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{

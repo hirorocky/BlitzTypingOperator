@@ -43,7 +43,7 @@ func TestBattleEngine_ComboMaster_StackedDamage(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_combo_master", Name: "コンボマスター"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:   "test_attack",
 		Name: "テスト攻撃",
 		Icon: "⚔️",
@@ -57,8 +57,8 @@ func TestBattleEngine_ComboMaster_StackedDamage(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := domain.NewSkillFromType(skillType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -83,13 +83,13 @@ func TestBattleEngine_ComboMaster_StackedDamage(t *testing.T) {
 		SpeedFactor:    1.0,
 		AccuracyFactor: 1.0,
 	}
-	baselineDamage := engine.ApplySkillEffectWithCombo(state, agent, module, baselineResult, 0)
+	baselineDamage := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 0)
 
 	// 敵HPをリセット
 	state.Enemy.HP = state.Enemy.MaxHP
 
 	// コンボ3でのダメージ（+30% = 1.3倍）
-	combo3Damage := engine.ApplySkillEffectWithCombo(state, agent, module, baselineResult, 3)
+	combo3Damage := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 3)
 
 	// Assert: コンボ3で約1.3倍
 	expectedRatio := 1.3
@@ -130,7 +130,7 @@ func TestBattleEngine_ComboMaster_MaxStacks(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_combo_master", Name: "コンボマスター"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:   "test_attack",
 		Name: "テスト攻撃",
 		Icon: "⚔️",
@@ -144,8 +144,8 @@ func TestBattleEngine_ComboMaster_MaxStacks(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := domain.NewSkillFromType(skillType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -171,15 +171,15 @@ func TestBattleEngine_ComboMaster_MaxStacks(t *testing.T) {
 	}
 
 	// コンボ0でのベースライン
-	baselineDamage := engine.ApplySkillEffectWithCombo(state, agent, module, baselineResult, 0)
+	baselineDamage := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 0)
 	state.Enemy.HP = state.Enemy.MaxHP
 
 	// コンボ5でのダメージ（最大+50% = 1.5倍）
-	combo5Damage := engine.ApplySkillEffectWithCombo(state, agent, module, baselineResult, 5)
+	combo5Damage := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 5)
 	state.Enemy.HP = state.Enemy.MaxHP
 
 	// コンボ7でのダメージ（5で頭打ち、1.5倍のまま）
-	combo7Damage := engine.ApplySkillEffectWithCombo(state, agent, module, baselineResult, 7)
+	combo7Damage := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 7)
 
 	// Assert: コンボ5で1.5倍
 	expectedRatio5 := 1.5
@@ -225,7 +225,7 @@ func TestBattleEngine_ComboMaster_ZeroCombo(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_combo_master", Name: "コンボマスター"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:   "test_attack",
 		Name: "テスト攻撃",
 		Icon: "⚔️",
@@ -239,8 +239,8 @@ func TestBattleEngine_ComboMaster_ZeroCombo(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := domain.NewSkillFromType(skillType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -266,9 +266,9 @@ func TestBattleEngine_ComboMaster_ZeroCombo(t *testing.T) {
 	}
 
 	// コンボ0で2回実行
-	damage1 := engine.ApplySkillEffectWithCombo(state, agent, module, baselineResult, 0)
+	damage1 := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 0)
 	state.Enemy.HP = state.Enemy.MaxHP
-	damage2 := engine.ApplySkillEffectWithCombo(state, agent, module, baselineResult, 0)
+	damage2 := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 0)
 
 	// Assert: コンボ0では一貫したダメージ（倍率なし）
 	ratio := float64(damage2) / float64(damage1)

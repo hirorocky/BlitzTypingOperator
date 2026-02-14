@@ -42,7 +42,7 @@ func CreateDefaultEncyclopediaData() *screens.EncyclopediaData {
 			MinDropLevel:   3,
 		},
 	}
-	moduleTypes := []screens.SkillTypeInfo{
+	skillTypes := []screens.SkillTypeInfo{
 		{ID: "physical_lv1", Name: "物理攻撃Lv1", Icon: "⚔️", Tags: []string{"physical_low"}, Description: "基本的な物理攻撃"},
 		{ID: "magic_lv1", Name: "魔法攻撃Lv1", Icon: "💥", Tags: []string{"magic_low"}, Description: "基本的な魔法攻撃"},
 		{ID: "heal_lv1", Name: "回復Lv1", Icon: "💚", Tags: []string{"heal_low"}, Description: "基本的な回復"},
@@ -57,7 +57,7 @@ func CreateDefaultEncyclopediaData() *screens.EncyclopediaData {
 
 	return &screens.EncyclopediaData{
 		AllCoreTypes:       coreTypes,
-		AllSkillTypes:      moduleTypes,
+		AllSkillTypes:      skillTypes,
 		AllEnemyTypes:      enemyTypes,
 		AcquiredCoreTypes:  []string{"all_rounder"},
 		AcquiredSkillTypes: []string{"physical_lv1"},

@@ -10,7 +10,7 @@ import (
 
 // ==================== タイピングチャレンジ生成テスト（Task 6.1） ====================
 
-// TestGenerateChallenge_Easy は弱いモジュール用テキスト生成をテストします。
+// TestGenerateChallenge_Easy は弱いスキル用テキスト生成をテストします。
 
 func TestGenerateChallenge_Easy(t *testing.T) {
 	dict := &Dictionary{
@@ -31,7 +31,7 @@ func TestGenerateChallenge_Easy(t *testing.T) {
 	}
 }
 
-// TestGenerateChallenge_Medium は中程度のモジュール用テキスト生成をテストします。
+// TestGenerateChallenge_Medium は中程度のスキル用テキスト生成をテストします。
 
 func TestGenerateChallenge_Medium(t *testing.T) {
 	dict := &Dictionary{
@@ -52,7 +52,7 @@ func TestGenerateChallenge_Medium(t *testing.T) {
 	}
 }
 
-// TestGenerateChallenge_Hard は強力なモジュール用テキスト生成をテストします。
+// TestGenerateChallenge_Hard は強力なスキル用テキスト生成をテストします。
 
 func TestGenerateChallenge_Hard(t *testing.T) {
 	dict := &Dictionary{
@@ -106,7 +106,7 @@ func TestGenerateChallenge_NoDuplication(t *testing.T) {
 	_ = challenge2
 }
 
-// TestGenerateChallenge_TimeLimit はモジュール別制限時間設定をテストします。
+// TestGenerateChallenge_TimeLimit はスキル別制限時間設定をテストします。
 
 func TestGenerateChallenge_TimeLimit(t *testing.T) {
 	dict := &Dictionary{

@@ -15,7 +15,7 @@ import (
 // DomainDataSources はセーブデータ復元時に使用するドメイン型データソースです。
 type DomainDataSources struct {
 	CoreTypes              []domain.CoreType
-	SkillTypes             []rewarding.ModuleDropInfo
+	SkillTypes             []rewarding.SkillDropInfo
 	EnemyTypes             []domain.EnemyType
 	PassiveSkills          map[string]domain.PassiveSkill
 	ChainEffectDefinitions []rewarding.ChainEffectDefinition
@@ -70,7 +70,7 @@ func GameStateFromSaveData(data *savedata.SaveData, sources *DomainDataSources) 
 
 	// マスタデータを取得（ドメイン型）
 	coreTypes := sources.CoreTypes
-	moduleTypes := sources.SkillTypes
+	skillTypes := sources.SkillTypes
 	passiveSkills := sources.PassiveSkills
 	enemyTypes := sources.EnemyTypes
 
@@ -118,7 +118,7 @@ func GameStateFromSaveData(data *savedata.SaveData, sources *DomainDataSources) 
 	}
 
 	// RewardCalculatorを作成
-	rewardCalc := rewarding.NewRewardCalculator(coreTypes, moduleTypes, passiveSkills)
+	rewardCalc := rewarding.NewRewardCalculator(coreTypes, skillTypes, passiveSkills)
 
 	// チェイン効果プールを設定
 	if len(sources.ChainEffectDefinitions) > 0 {

@@ -19,7 +19,7 @@ func TestApplySkillEffect_マナ消費はApplySkillEffectの責務外(t *testing
 	player.PrepareForBattle()
 	player.Mana = 5
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:       "magic_skill",
 		Name:     "テスト魔法",
 		ManaCost: 1,
@@ -32,7 +32,7 @@ func TestApplySkillEffect_マナ消費はApplySkillEffectの責務外(t *testing
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
+	skill := domain.NewSkillFromType(skillType, nil)
 
 	agent := createTestAgent()
 	state := createManaTestState(player)
@@ -49,7 +49,7 @@ func TestApplySkillEffect_マナ消費はApplySkillEffectの責務外(t *testing
 	}
 
 	// Act
-	engine.ApplySkillEffect(state, agent, module, typingResult)
+	engine.ApplySkillEffect(state, agent, skill, typingResult)
 
 	// Assert: ApplySkillEffect内ではマナを消費しない
 	if state.Player.Mana != 5 {
@@ -66,7 +66,7 @@ func TestApplySkillEffect_ManaGain獲得(t *testing.T) {
 	player.Mana = 0
 	player.PrepareForBattle()
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:   "martial_skill",
 		Name: "テスト格闘",
 		Effects: []domain.SkillEffect{
@@ -79,7 +79,7 @@ func TestApplySkillEffect_ManaGain獲得(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
+	skill := domain.NewSkillFromType(skillType, nil)
 
 	agent := createTestAgent()
 	state := createManaTestState(player)
@@ -96,7 +96,7 @@ func TestApplySkillEffect_ManaGain獲得(t *testing.T) {
 	}
 
 	// Act
-	engine.ApplySkillEffect(state, agent, module, typingResult)
+	engine.ApplySkillEffect(state, agent, skill, typingResult)
 
 	// Assert
 	if state.Player.Mana != 1 {
@@ -113,7 +113,7 @@ func TestApplySkillEffect_ManaGain確率で不発(t *testing.T) {
 	player.Mana = 0
 	player.PrepareForBattle()
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:   "martial_skill",
 		Name: "テスト格闘",
 		Effects: []domain.SkillEffect{
@@ -126,7 +126,7 @@ func TestApplySkillEffect_ManaGain確率で不発(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
+	skill := domain.NewSkillFromType(skillType, nil)
 
 	agent := createTestAgent()
 	state := createManaTestState(player)
@@ -143,7 +143,7 @@ func TestApplySkillEffect_ManaGain確率で不発(t *testing.T) {
 	}
 
 	// Act
-	engine.ApplySkillEffect(state, agent, module, typingResult)
+	engine.ApplySkillEffect(state, agent, skill, typingResult)
 
 	// Assert: 確率0なので効果不発、マナ獲得もなし
 	if state.Player.Mana != 0 {
@@ -161,7 +161,7 @@ func TestApplySkillEffect_ManaCostゼロ_マナ不変(t *testing.T) {
 	player.PrepareForBattle()
 	player.Mana = 5
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:       "normal_skill",
 		Name:     "通常攻撃",
 		ManaCost: 0,
@@ -174,7 +174,7 @@ func TestApplySkillEffect_ManaCostゼロ_マナ不変(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
+	skill := domain.NewSkillFromType(skillType, nil)
 
 	agent := createTestAgent()
 	state := createManaTestState(player)
@@ -191,7 +191,7 @@ func TestApplySkillEffect_ManaCostゼロ_マナ不変(t *testing.T) {
 	}
 
 	// Act
-	engine.ApplySkillEffect(state, agent, module, typingResult)
+	engine.ApplySkillEffect(state, agent, skill, typingResult)
 
 	// Assert: ManaCost=0なのでマナ変動なし
 	if state.Player.Mana != 5 {
@@ -208,7 +208,7 @@ func TestApplySkillEffect_ManaGainのみ発生_消費は呼び出し側(t *testi
 	player.PrepareForBattle()
 	player.Mana = 1
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:       "combo_skill",
 		Name:     "コンボスキル",
 		ManaCost: 1,
@@ -222,7 +222,7 @@ func TestApplySkillEffect_ManaGainのみ発生_消費は呼び出し側(t *testi
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
+	skill := domain.NewSkillFromType(skillType, nil)
 
 	agent := createTestAgent()
 	state := createManaTestState(player)
@@ -239,7 +239,7 @@ func TestApplySkillEffect_ManaGainのみ発生_消費は呼び出し側(t *testi
 	}
 
 	// Act
-	engine.ApplySkillEffect(state, agent, module, typingResult)
+	engine.ApplySkillEffect(state, agent, skill, typingResult)
 
 	// Assert: 消費なし + 1獲得 = Mana 2
 	if state.Player.Mana != 2 {

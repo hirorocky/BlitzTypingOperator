@@ -3,7 +3,7 @@
 ## 概要
 
 バトルシステムはリアルタイム戦闘を管理するドメインです。
-タイピング入力に基づくモジュール効果計算、敵の自動攻撃処理、勝敗判定を担当します。
+タイピング入力に基づくスキル効果計算、敵の自動攻撃処理、勝敗判定を担当します。
 
 **実装**: `/internal/usecase/combat/battle.go`
 
@@ -24,12 +24,12 @@ When プレイヤーがバトルを開始する, the battle system shall:
 3. プレイヤーマナは0で初期化され、MaxManaは10（固定値）
 4. 攻撃タイマーが開始される
 
-### REQ-BATTLE-2: モジュール効果計算
+### REQ-BATTLE-2: スキル効果計算
 **種別**: Ubiquitous
 
-The battle system shall calculate module effects using:
+The battle system shall calculate skill effects using:
 - HP変化量 = (base + stat_coef × STAT) × SpeedFactor × AccuracyFactor
-- 各モジュールは複数のEffectsを持ち、それぞれが独立して発動判定される
+- 各スキルは複数のEffectsを持ち、それぞれが独立して発動判定される
 - LUKによる確率補正: 補正後確率 = ベース確率 + (LUK - 10) × luk_factor
 - スキル使用可否判定: ManaCost > 0 かつ Mana < ManaCost の場合、スキル選択不可
 
@@ -89,7 +89,7 @@ When 敵HP=0, the battle system shall end with victory.
 **ルール**:
 1. 乱数生成器は初期化時にシード設定
 2. 正確性ペナルティ閾値は0.5固定
-3. モジュールはEffects配列で複数効果を持つ（カテゴリ廃止）
+3. スキルはEffects配列で複数効果を持つ（カテゴリ廃止）
 
 ### BattleState
 
@@ -179,7 +179,7 @@ stateDiagram-v2
 
 **マナの消費と獲得**:
 1. スキル使用時の消費: ManaCost > 0 かつ使用成功時にMana減少
-2. マナ不足判定: isModuleUsableで ManaCost > 0 かつ Mana < ManaCost なら使用不可
+2. マナ不足判定: isSkillUsableで ManaCost > 0 かつ Mana < ManaCost なら使用不可
 3. 効果適用時の獲得: Effect発動判定成功後にManaGain分のマナ獲得
 4. マナクランプ: GainMana時にMaxManaを超えないようクランプ、ConsumeMana時に0未満にならない（不足で失敗）
 
@@ -199,6 +199,6 @@ stateDiagram-v2
 ## 関連ドメイン
 
 - **Typing**: チャレンジタイプに応じた入力評価、DefenseProviderによるリアルタイム防御率
-- **Agent**: 装備エージェントのモジュールとステータス参照、SkillType.ChallengeType/DifficultyRate
+- **Agent**: 装備エージェントのスキルとステータス参照、SkillType.ChallengeType/DifficultyRate
 - **Enemy**: 敵パラメータ（HP、攻撃力、間隔）参照、敵行動パターンと時限効果の参照
 - **Game Loop**: 報酬画面/ホームへのシーン遷移

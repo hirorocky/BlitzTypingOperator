@@ -75,7 +75,7 @@ func TestLoadCoreTypes(t *testing.T) {
 func TestLoadSkillDefinitions(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	modulesJSON := `{
+	skillsJSON := `{
 		"skill_types": [
 			{
 				"id": "physical_strike_lv1",
@@ -118,30 +118,30 @@ func TestLoadSkillDefinitions(t *testing.T) {
 		]
 	}`
 
-	modulesPath := filepath.Join(tmpDir, "skills.json")
-	if err := os.WriteFile(modulesPath, []byte(modulesJSON), 0644); err != nil {
+	skillsPath := filepath.Join(tmpDir, "skills.json")
+	if err := os.WriteFile(skillsPath, []byte(skillsJSON), 0644); err != nil {
 		t.Fatalf("テストファイルの作成に失敗: %v", err)
 	}
 
 	loader := NewDataLoader(tmpDir)
-	modules, err := loader.LoadSkillDefinitions()
+	skills, err := loader.LoadSkillDefinitions()
 	if err != nil {
 		t.Fatalf("スキル定義のロードに失敗: %v", err)
 	}
 
-	if len(modules) != 2 {
-		t.Errorf("スキル数: got %d, want 2", len(modules))
+	if len(skills) != 2 {
+		t.Errorf("スキル数: got %d, want 2", len(skills))
 	}
 
 	// 物理打撃Lv1の検証
-	if modules[0].ID != "physical_strike_lv1" {
-		t.Errorf("ID: got %s, want physical_strike_lv1", modules[0].ID)
+	if skills[0].ID != "physical_strike_lv1" {
+		t.Errorf("ID: got %s, want physical_strike_lv1", skills[0].ID)
 	}
-	if len(modules[0].Effects) != 1 {
-		t.Errorf("Effects length: got %d, want 1", len(modules[0].Effects))
+	if len(skills[0].Effects) != 1 {
+		t.Errorf("Effects length: got %d, want 1", len(skills[0].Effects))
 	}
-	if modules[0].Effects[0].Target != "enemy" {
-		t.Errorf("Effects[0].Target: got %s, want enemy", modules[0].Effects[0].Target)
+	if skills[0].Effects[0].Target != "enemy" {
+		t.Errorf("Effects[0].Target: got %s, want enemy", skills[0].Effects[0].Target)
 	}
 }
 
@@ -288,7 +288,7 @@ func TestLoadAllExternalData(t *testing.T) {
 	os.WriteFile(filepath.Join(tmpDir, "cores.json"), []byte(coresJSON), 0644)
 
 	// skills.json
-	modulesJSON := `{
+	skillsJSON := `{
 		"skill_types": [
 			{
 				"id": "physical_strike_lv1",
@@ -311,7 +311,7 @@ func TestLoadAllExternalData(t *testing.T) {
 			}
 		]
 	}`
-	os.WriteFile(filepath.Join(tmpDir, "skills.json"), []byte(modulesJSON), 0644)
+	os.WriteFile(filepath.Join(tmpDir, "skills.json"), []byte(skillsJSON), 0644)
 
 	// enemies.json
 	enemiesJSON := `{
@@ -357,7 +357,7 @@ func TestLoadAllExternalData(t *testing.T) {
 				"id": "agent_first",
 				"core_type_id": "attack_balance",
 				"core_level": 1,
-				"modules": [
+				"skills": [
 					{"type_id": "physical_strike_lv1"}
 				]
 			}
@@ -464,7 +464,7 @@ func TestConvertToDomainCoreType(t *testing.T) {
 func TestConvertToDomainSkillModel(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	modulesJSON := `{
+	skillsJSON := `{
 		"skill_types": [
 			{
 				"id": "physical_strike_lv1",
@@ -487,22 +487,22 @@ func TestConvertToDomainSkillModel(t *testing.T) {
 			}
 		]
 	}`
-	os.WriteFile(filepath.Join(tmpDir, "skills.json"), []byte(modulesJSON), 0644)
+	os.WriteFile(filepath.Join(tmpDir, "skills.json"), []byte(skillsJSON), 0644)
 
 	loader := NewDataLoader(tmpDir)
-	modules, err := loader.LoadSkillDefinitions()
+	skills, err := loader.LoadSkillDefinitions()
 	if err != nil {
 		t.Fatalf("スキル定義のロードに失敗: %v", err)
 	}
 
 	// ドメインモデルに変換
-	domainModule := modules[0].ToDomain()
+	domainSkill := skills[0].ToDomain()
 
-	if domainModule.TypeID != "physical_strike_lv1" {
-		t.Errorf("TypeID: got %s, want physical_strike_lv1", domainModule.TypeID)
+	if domainSkill.TypeID != "physical_strike_lv1" {
+		t.Errorf("TypeID: got %s, want physical_strike_lv1", domainSkill.TypeID)
 	}
 	// 効果がダメージ効果であることを確認
-	effects := domainModule.Effects()
+	effects := domainSkill.Effects()
 	if len(effects) != 1 {
 		t.Errorf("Effects length: got %d, want 1", len(effects))
 	}
@@ -1077,7 +1077,7 @@ func TestLoadTimedEffects(t *testing.T) {
 func TestLoadSkillsWithTimedEffectID(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	modulesJSON := `{
+	skillsJSON := `{
 		"skill_types": [
 			{
 				"id": "str_buff_lv1",
@@ -1105,16 +1105,16 @@ func TestLoadSkillsWithTimedEffectID(t *testing.T) {
 		]
 	}`
 
-	os.WriteFile(filepath.Join(tmpDir, "skills.json"), []byte(modulesJSON), 0644)
+	os.WriteFile(filepath.Join(tmpDir, "skills.json"), []byte(skillsJSON), 0644)
 
 	loader := NewDataLoader(tmpDir)
-	modules, err := loader.LoadSkillDefinitions()
+	skills, err := loader.LoadSkillDefinitions()
 	if err != nil {
 		t.Fatalf("スキル定義のロードに失敗: %v", err)
 	}
 
 	// ToDomainで変換
-	effect := modules[0].Effects[0].ToDomain()
+	effect := skills[0].Effects[0].ToDomain()
 
 	// ColumnSpecが設定されていること
 	if effect.ColumnSpec == nil {

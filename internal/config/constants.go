@@ -9,11 +9,11 @@ const (
 	// BattleTickInterval はバトル画面の更新間隔です。
 	BattleTickInterval = 100 * time.Millisecond
 
-	// DefaultModuleCooldown はモジュールのデフォルトクールダウン秒数です。
-	DefaultModuleCooldown = 5.0
+	// DefaultSkillCooldown はスキルのデフォルトクールダウン秒数です。
+	DefaultSkillCooldown = 5.0
 
 	// DefaultRecastDuration はエージェントのデフォルトリキャスト時間です。
-	// モジュール使用後、この期間中はエージェントの全モジュールが使用不可になります。
+	// スキル使用後、この期間中はエージェントの全スキルが使用不可になります。
 	DefaultRecastDuration = 5 * time.Second
 
 	// AccuracyPenaltyThreshold は正確性ペナルティ発生閾値です。
@@ -49,6 +49,6 @@ const (
 	// MaxAgentEquipSlots はエージェント装備スロットの最大数です。
 	MaxAgentEquipSlots = 3
 
-	// ModulesPerAgent はエージェントあたりのモジュール数です。
-	ModulesPerAgent = 4
+	// SkillsPerAgent はエージェントあたりのスキル数です。
+	SkillsPerAgent = 4
 )

@@ -18,8 +18,8 @@ const (
 	// EventOnHeal は回復した時のイベントを表します。
 	EventOnHeal EffectEventType = "on_heal"
 
-	// EventOnModuleUse はモジュール使用時のイベントを表します。
-	EventOnModuleUse EffectEventType = "on_module_use"
+	// EventOnSkillUse はスキル使用時のイベントを表します。
+	EventOnSkillUse EffectEventType = "on_skill_use"
 
 	// EventOnTypingDone はタイピング完了時のイベントを表します。
 	EventOnTypingDone EffectEventType = "on_typing_done"
@@ -78,8 +78,8 @@ type EffectContext struct {
 
 	// ========== チェイン発動判定用 ==========
 
-	// LastModuleAgent は最後にモジュールを使ったエージェント番号です（-1: なし）。
-	LastModuleAgent int
+	// LastSkillAgent は最後にスキルを使ったエージェント番号です（-1: なし）。
+	LastSkillAgent int
 
 	// CurrentAgent は現在評価中のエージェント番号です。
 	CurrentAgent int
@@ -98,18 +98,18 @@ type EffectContext struct {
 	// HealAmount は回復量（EventOnHeal時）です。
 	HealAmount int
 
-	// ========== モジュール情報 ==========
+	// ========== スキル情報 ==========
 
-	// IsDamageModule はダメージ効果を持つモジュールかを表します。
-	IsDamageModule bool
+	// IsDamageSkill はダメージ効果を持つスキルかを表します。
+	IsDamageSkill bool
 
-	// IsHealModule は回復効果を持つモジュールかを表します。
-	IsHealModule bool
+	// IsHealSkill は回復効果を持つスキルかを表します。
+	IsHealSkill bool
 
 	// IsPhysical は物理攻撃かどうかを表します。
 	IsPhysical bool
 
-	// HasBuffDebuffEffect はバフまたはデバフ効果を持つモジュールかを表します。
+	// HasBuffDebuffEffect はバフまたはデバフ効果を持つスキルかを表します。
 	HasBuffDebuffEffect bool
 
 	// ========== 状態カウンタ ==========
@@ -138,7 +138,7 @@ func NewEffectContext(playerHP, playerMaxHP, enemyHP, enemyMaxHP int) *EffectCon
 		EnemyHP:         enemyHP,
 		EnemyMaxHP:      enemyMaxHP,
 		EnemyHPPercent:  enemyPercent,
-		LastModuleAgent: -1,
+		LastSkillAgent:  -1,
 		UsesRemaining:   make(map[string]int),
 	}
 }
@@ -185,12 +185,12 @@ func (ctx *EffectContext) SetHeal(amount int) {
 	ctx.HealAmount = amount
 }
 
-// SetModuleUse はモジュール使用イベントを設定します。
-func (ctx *EffectContext) SetModuleUse(agentIndex int, isDamage, isHeal, isPhysical, hasBuffDebuff bool) {
-	ctx.EventType = EventOnModuleUse
-	ctx.LastModuleAgent = agentIndex
-	ctx.IsDamageModule = isDamage
-	ctx.IsHealModule = isHeal
+// SetSkillUse はスキル使用イベントを設定します。
+func (ctx *EffectContext) SetSkillUse(agentIndex int, isDamage, isHeal, isPhysical, hasBuffDebuff bool) {
+	ctx.EventType = EventOnSkillUse
+	ctx.LastSkillAgent = agentIndex
+	ctx.IsDamageSkill = isDamage
+	ctx.IsHealSkill = isHeal
 	ctx.IsPhysical = isPhysical
 	ctx.HasBuffDebuffEffect = hasBuffDebuff
 }

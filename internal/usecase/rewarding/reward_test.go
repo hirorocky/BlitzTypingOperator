@@ -9,8 +9,8 @@ import (
 	"hirorocky/type-battle/internal/domain"
 )
 
-// newTestModule はテスト用ダメージモジュールを作成するヘルパー関数です。
-func newTestModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+// newTestSkill はテスト用ダメージスキルを作成するヘルパー関数です。
+func newTestSkill(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
@@ -28,8 +28,8 @@ func newTestModule(id, name string, tags []string, statCoef float64, statRef, de
 	}, nil)
 }
 
-// newTestModuleWithChainEffect はチェイン効果付きモジュールを作成するヘルパー関数です。
-func newTestModuleWithChainEffect(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.SkillModel {
+// newTestSkillWithChainEffect はチェイン効果付きスキルを作成するヘルパー関数です。
+func newTestSkillWithChainEffect(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
@@ -113,7 +113,7 @@ func TestBattleReward_Defeat_NoRewardScreen(t *testing.T) {
 	if result.ShowRewardScreen {
 		t.Error("敗北時は報酬画面を表示すべきでない")
 	}
-	if len(result.DroppedCores) > 0 || len(result.DroppedModules) > 0 {
+	if len(result.DroppedCores) > 0 || len(result.DroppedSkills) > 0 {
 		t.Error("敗北時はドロップがないべき")
 	}
 }
@@ -144,17 +144,17 @@ func TestInventoryFull_TempStorage(t *testing.T) {
 
 	// ドロップしたアイテムを一時保管
 	droppedCore := domain.NewCoreWithTypeID("temp_core", domain.CoreType{}, domain.PassiveSkill{})
-	droppedModule := newTestModule("temp_module", "一時モジュール", []string{}, 10.0, "STR", "テスト")
+	droppedSkill := newTestSkill("temp_skill", "一時スキル", []string{}, 10.0, "STR", "テスト")
 
 	storage := calculator.CreateTempStorage()
 	storage.AddCore(droppedCore)
-	storage.AddModule(droppedModule)
+	storage.AddSkill(droppedSkill)
 
 	if len(storage.Cores) != 1 {
 		t.Errorf("一時保管コア数が期待と異なる: got %d, want 1", len(storage.Cores))
 	}
-	if len(storage.Modules) != 1 {
-		t.Errorf("一時保管モジュール数が期待と異なる: got %d, want 1", len(storage.Modules))
+	if len(storage.Skills) != 1 {
+		t.Errorf("一時保管スキル数が期待と異なる: got %d, want 1", len(storage.Skills))
 	}
 
 	// 後日受け取り
@@ -290,9 +290,9 @@ func TestChainEffectPool_GenerateWithNilProbability(t *testing.T) {
 	}
 }
 
-// TestModuleDropInfo_ToDomainWithRandomChainEffect はチェイン効果付きドメイン変換をテストします。
-func TestModuleDropInfo_ToDomainWithRandomChainEffect(t *testing.T) {
-	dropInfo := ModuleDropInfo{
+// TestSkillDropInfo_ToDomainWithRandomChainEffect はチェイン効果付きドメイン変換をテストします。
+func TestSkillDropInfo_ToDomainWithRandomChainEffect(t *testing.T) {
+	dropInfo := SkillDropInfo{
 		ID:          "physical_lv1",
 		Name:        "物理攻撃Lv1",
 		Icon:        "⚔️",
@@ -309,29 +309,29 @@ func TestModuleDropInfo_ToDomainWithRandomChainEffect(t *testing.T) {
 
 	effect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageAmp, 20)
 
-	module := dropInfo.ToDomainWithChainEffect(&effect)
+	skill := dropInfo.ToDomainWithChainEffect(&effect)
 
-	if module == nil {
-		t.Fatal("モジュールがnilであってはならない")
+	if skill == nil {
+		t.Fatal("スキルがnilであってはならない")
 	}
-	if module.ChainEffect == nil {
+	if skill.ChainEffect == nil {
 		t.Error("チェイン効果が設定されるべき")
 	}
-	if module.ChainEffect.Type != domain.ChainEffectDamageAmp {
-		t.Errorf("チェイン効果タイプが期待と異なる: got %s, want %s", module.ChainEffect.Type, domain.ChainEffectDamageAmp)
+	if skill.ChainEffect.Type != domain.ChainEffectDamageAmp {
+		t.Errorf("チェイン効果タイプが期待と異なる: got %s, want %s", skill.ChainEffect.Type, domain.ChainEffectDamageAmp)
 	}
-	if module.ChainEffect.Value != 20 {
-		t.Errorf("チェイン効果値が期待と異なる: got %.0f, want 20", module.ChainEffect.Value)
+	if skill.ChainEffect.Value != 20 {
+		t.Errorf("チェイン効果値が期待と異なる: got %.0f, want 20", skill.ChainEffect.Value)
 	}
 }
 
-// ==================== タスク11.2: モジュール入手処理更新テスト ====================
+// ==================== タスク11.2: スキル入手処理更新テスト ====================
 
-// TestAddRewardsToInventory_WithChainEffect はチェイン効果付きモジュールがインベントリに追加されることをテストします。
+// TestAddRewardsToInventory_WithChainEffect はチェイン効果付きスキルがインベントリに追加されることをテストします。
 func TestAddRewardsToInventory_WithChainEffect(t *testing.T) {
-	// チェイン効果付きモジュールを作成
+	// チェイン効果付きスキルを作成
 	effect := domain.NewChainEffect("test_effect", domain.ChainEffectDamageAmp, 25)
-	module := newTestModuleWithChainEffect(
+	skill := newTestSkillWithChainEffect(
 		"physical_lv1",
 		"物理攻撃Lv1",
 		[]string{"physical_low"},
@@ -343,8 +343,8 @@ func TestAddRewardsToInventory_WithChainEffect(t *testing.T) {
 
 	// 報酬結果を作成
 	result := &RewardResult{
-		IsVictory:      true,
-		DroppedModules: []*domain.SkillModel{module},
+		IsVictory:     true,
+		DroppedSkills: []*domain.SkillModel{skill},
 	}
 
 	// インベントリを作成（新システム）
@@ -436,7 +436,7 @@ func TestCalculateGuaranteedReward_EnemyWithDropCategory(t *testing.T) {
 			StatWeights:  map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
 		},
 	}
-	moduleTypes := []ModuleDropInfo{
+	skillTypes := []SkillDropInfo{
 		{
 			ID:           "physical_lv1",
 			Name:         "物理攻撃Lv1",
@@ -444,7 +444,7 @@ func TestCalculateGuaranteedReward_EnemyWithDropCategory(t *testing.T) {
 		},
 	}
 
-	calculator := NewRewardCalculator(coreTypes, moduleTypes, nil)
+	calculator := NewRewardCalculator(coreTypes, skillTypes, nil)
 
 	stats := &BattleStatistics{
 		TotalWPM:         80.0,
@@ -470,7 +470,7 @@ func TestCalculateGuaranteedReward_EnemyWithDropCategory(t *testing.T) {
 	}
 
 	// 必ず1つのアイテムがドロップすること
-	totalItems := len(result.DroppedCores) + len(result.DroppedModules)
+	totalItems := len(result.DroppedCores) + len(result.DroppedSkills)
 	if totalItems != 1 {
 		t.Errorf("確定ドロップで1つのアイテムがドロップすべき: got %d", totalItems)
 	}
@@ -489,9 +489,9 @@ func TestCalculateGuaranteedReward_EnemyWithDropCategory(t *testing.T) {
 	}
 }
 
-// TestCalculateGuaranteedReward_ModuleDrop はモジュールドロップ設定の敵からモジュールがドロップすることをテストします。
-func TestCalculateGuaranteedReward_ModuleDrop(t *testing.T) {
-	moduleTypes := []ModuleDropInfo{
+// TestCalculateGuaranteedReward_SkillDrop はスキルドロップ設定の敵からスキルがドロップすることをテストします。
+func TestCalculateGuaranteedReward_SkillDrop(t *testing.T) {
+	skillTypes := []SkillDropInfo{
 		{
 			ID:           "physical_lv1",
 			Name:         "物理攻撃Lv1",
@@ -502,7 +502,7 @@ func TestCalculateGuaranteedReward_ModuleDrop(t *testing.T) {
 		},
 	}
 
-	calculator := NewRewardCalculator(nil, moduleTypes, nil)
+	calculator := NewRewardCalculator(nil, skillTypes, nil)
 
 	stats := &BattleStatistics{
 		TotalWPM:         80.0,
@@ -510,32 +510,32 @@ func TestCalculateGuaranteedReward_ModuleDrop(t *testing.T) {
 		TotalTypingCount: 10,
 	}
 
-	// モジュールドロップ設定の敵タイプ
+	// スキルドロップ設定の敵タイプ
 	enemyType := domain.EnemyType{
 		ID:               "goblin",
 		Name:             "ゴブリン",
-		DropItemCategory: "module",
+		DropItemCategory: "skill",
 		DropItemTypeID:   "physical_lv1",
 	}
 
 	result := calculator.CalculateGuaranteedReward(stats, 10, enemyType)
 
 	// 必ず1つのアイテムがドロップすること
-	totalItems := len(result.DroppedCores) + len(result.DroppedModules)
+	totalItems := len(result.DroppedCores) + len(result.DroppedSkills)
 	if totalItems != 1 {
 		t.Errorf("確定ドロップで1つのアイテムがドロップすべき: got %d", totalItems)
 	}
 
-	// モジュールがドロップすること
-	if len(result.DroppedModules) != 1 {
-		t.Errorf("モジュールがドロップすべき: got %d modules", len(result.DroppedModules))
+	// スキルがドロップすること
+	if len(result.DroppedSkills) != 1 {
+		t.Errorf("スキルがドロップすべき: got %d skills", len(result.DroppedSkills))
 	}
 
-	// ドロップしたモジュールがTypeIDに対応していること
-	if len(result.DroppedModules) > 0 {
-		module := result.DroppedModules[0]
-		if module.TypeID != "physical_lv1" {
-			t.Errorf("モジュールTypeIDが期待と異なる: got %s, want physical_lv1", module.TypeID)
+	// ドロップしたスキルがTypeIDに対応していること
+	if len(result.DroppedSkills) > 0 {
+		skill := result.DroppedSkills[0]
+		if skill.TypeID != "physical_lv1" {
+			t.Errorf("スキルTypeIDが期待と異なる: got %s, want physical_lv1", skill.TypeID)
 		}
 	}
 }
@@ -665,11 +665,11 @@ func TestRollCoreDropWithTypeID_InvalidTypeID(t *testing.T) {
 	}
 }
 
-// ==================== タスク5.3: モジュールドロップの品質計算テスト ====================
+// ==================== タスク5.3: スキルドロップの品質計算テスト ====================
 
-// TestRollModuleDropWithTypeID_GeneratesCorrectType は指定したTypeIDのモジュールが生成されることをテストします。
-func TestRollModuleDropWithTypeID_GeneratesCorrectType(t *testing.T) {
-	moduleTypes := []ModuleDropInfo{
+// TestRollSkillDropWithTypeID_GeneratesCorrectType は指定したTypeIDのスキルが生成されることをテストします。
+func TestRollSkillDropWithTypeID_GeneratesCorrectType(t *testing.T) {
+	skillTypes := []SkillDropInfo{
 		{
 			ID:           "physical_lv1",
 			Name:         "物理攻撃Lv1",
@@ -684,25 +684,25 @@ func TestRollModuleDropWithTypeID_GeneratesCorrectType(t *testing.T) {
 		},
 	}
 
-	calculator := NewRewardCalculator(nil, moduleTypes, nil)
+	calculator := NewRewardCalculator(nil, skillTypes, nil)
 
 	// physical_lv1 を指定
-	module := calculator.RollModuleDropWithTypeID("physical_lv1", 10)
+	skill := calculator.RollSkillDropWithTypeID("physical_lv1", 10)
 
-	if module == nil {
-		t.Fatal("モジュールがnilであってはならない")
+	if skill == nil {
+		t.Fatal("スキルがnilであってはならない")
 	}
-	if module.TypeID != "physical_lv1" {
-		t.Errorf("モジュールTypeIDが期待と異なる: got %s, want physical_lv1", module.TypeID)
+	if skill.TypeID != "physical_lv1" {
+		t.Errorf("スキルTypeIDが期待と異なる: got %s, want physical_lv1", skill.TypeID)
 	}
-	if module.Name() != "物理攻撃Lv1" {
-		t.Errorf("モジュール名が期待と異なる: got %s, want 物理攻撃Lv1", module.Name())
+	if skill.Name() != "物理攻撃Lv1" {
+		t.Errorf("スキル名が期待と異なる: got %s, want 物理攻撃Lv1", skill.Name())
 	}
 }
 
-// TestRollModuleDropWithTypeID_ChainEffectWithPool はチェイン効果プールがある場合にチェイン効果が付与されることをテストします。
-func TestRollModuleDropWithTypeID_ChainEffectWithPool(t *testing.T) {
-	moduleTypes := []ModuleDropInfo{
+// TestRollSkillDropWithTypeID_ChainEffectWithPool はチェイン効果プールがある場合にチェイン効果が付与されることをテストします。
+func TestRollSkillDropWithTypeID_ChainEffectWithPool(t *testing.T) {
+	skillTypes := []SkillDropInfo{
 		{
 			ID:           "physical_lv1",
 			Name:         "物理攻撃Lv1",
@@ -724,22 +724,22 @@ func TestRollModuleDropWithTypeID_ChainEffectWithPool(t *testing.T) {
 	pool := NewChainEffectPool(skillEffects)
 	pool.SetNoEffectProbability(0.0) // チェイン効果を必ず付与
 
-	calculator := NewRewardCalculator(nil, moduleTypes, nil)
+	calculator := NewRewardCalculator(nil, skillTypes, nil)
 	calculator.SetChainEffectPool(pool)
 
-	module := calculator.RollModuleDropWithTypeID("physical_lv1", 10)
+	skill := calculator.RollSkillDropWithTypeID("physical_lv1", 10)
 
-	if module == nil {
-		t.Fatal("モジュールがnilであってはならない")
+	if skill == nil {
+		t.Fatal("スキルがnilであってはならない")
 	}
-	if !module.HasChainEffect() {
+	if !skill.HasChainEffect() {
 		t.Error("チェイン効果プールがある場合はチェイン効果が付与されるべき")
 	}
 }
 
-// TestRollModuleDropWithTypeID_HighLevelBetterChainEffect は高レベル敵ほど高品質チェイン効果の確率が上がることをテストします。
-func TestRollModuleDropWithTypeID_HighLevelBetterChainEffect(t *testing.T) {
-	moduleTypes := []ModuleDropInfo{
+// TestRollSkillDropWithTypeID_HighLevelBetterChainEffect は高レベル敵ほど高品質チェイン効果の確率が上がることをテストします。
+func TestRollSkillDropWithTypeID_HighLevelBetterChainEffect(t *testing.T) {
+	skillTypes := []SkillDropInfo{
 		{
 			ID:           "physical_lv1",
 			Name:         "物理攻撃Lv1",
@@ -761,16 +761,16 @@ func TestRollModuleDropWithTypeID_HighLevelBetterChainEffect(t *testing.T) {
 	pool := NewChainEffectPool(skillEffects)
 	pool.SetNoEffectProbability(0.0) // チェイン効果を必ず付与
 
-	calculator := NewRewardCalculator(nil, moduleTypes, nil)
+	calculator := NewRewardCalculator(nil, skillTypes, nil)
 	calculator.SetChainEffectPool(pool)
 
 	// 低レベル敵（レベル10）のチェイン効果値の平均
 	lowLevelSum := 0.0
 	lowLevelCount := 100
 	for i := 0; i < lowLevelCount; i++ {
-		module := calculator.RollModuleDropWithTypeID("physical_lv1", 10)
-		if module != nil && module.HasChainEffect() {
-			lowLevelSum += module.ChainEffect.Value
+		skill := calculator.RollSkillDropWithTypeID("physical_lv1", 10)
+		if skill != nil && skill.HasChainEffect() {
+			lowLevelSum += skill.ChainEffect.Value
 		}
 	}
 	lowLevelAvg := lowLevelSum / float64(lowLevelCount)
@@ -779,22 +779,22 @@ func TestRollModuleDropWithTypeID_HighLevelBetterChainEffect(t *testing.T) {
 	highLevelSum := 0.0
 	highLevelCount := 100
 	for i := 0; i < highLevelCount; i++ {
-		module := calculator.RollModuleDropWithTypeID("physical_lv1", 100)
-		if module != nil && module.HasChainEffect() {
-			highLevelSum += module.ChainEffect.Value
+		skill := calculator.RollSkillDropWithTypeID("physical_lv1", 100)
+		if skill != nil && skill.HasChainEffect() {
+			highLevelSum += skill.ChainEffect.Value
 		}
 	}
 	highLevelAvg := highLevelSum / float64(highLevelCount)
 
-	// 高レベル敵からのモジュールのチェイン効果値の平均が高いことを確認
+	// 高レベル敵からのスキルのチェイン効果値の平均が高いことを確認
 	if highLevelAvg <= lowLevelAvg {
-		t.Errorf("高レベル敵からのモジュールのチェイン効果値の平均が低レベル敵より高くなるべき: lowLevelAvg=%.2f, highLevelAvg=%.2f", lowLevelAvg, highLevelAvg)
+		t.Errorf("高レベル敵からのスキルのチェイン効果値の平均が低レベル敵より高くなるべき: lowLevelAvg=%.2f, highLevelAvg=%.2f", lowLevelAvg, highLevelAvg)
 	}
 }
 
-// TestRollModuleDropWithTypeID_AlwaysHasChainEffect はモジュールに必ずチェイン効果がつくことをテストします。
-func TestRollModuleDropWithTypeID_AlwaysHasChainEffect(t *testing.T) {
-	moduleTypes := []ModuleDropInfo{
+// TestRollSkillDropWithTypeID_AlwaysHasChainEffect はスキルに必ずチェイン効果がつくことをテストします。
+func TestRollSkillDropWithTypeID_AlwaysHasChainEffect(t *testing.T) {
+	skillTypes := []SkillDropInfo{
 		{
 			ID:           "physical_lv1",
 			Name:         "物理攻撃Lv1",
@@ -816,37 +816,37 @@ func TestRollModuleDropWithTypeID_AlwaysHasChainEffect(t *testing.T) {
 
 	pool := NewChainEffectPool(skillEffects)
 
-	calculator := NewRewardCalculator(nil, moduleTypes, nil)
+	calculator := NewRewardCalculator(nil, skillTypes, nil)
 	calculator.SetChainEffectPool(pool)
 
 	// 低レベル敵（レベル1）でも100%チェイン効果がつく
 	for i := 0; i < 10; i++ {
-		module := calculator.RollModuleDropWithTypeID("physical_lv1", 1)
-		if module == nil {
-			t.Error("モジュールがnilであるべきではない")
+		skill := calculator.RollSkillDropWithTypeID("physical_lv1", 1)
+		if skill == nil {
+			t.Error("スキルがnilであるべきではない")
 			continue
 		}
-		if !module.HasChainEffect() {
-			t.Error("モジュールには必ずチェイン効果がつくべき")
+		if !skill.HasChainEffect() {
+			t.Error("スキルには必ずチェイン効果がつくべき")
 		}
 	}
 
 	// 高レベル敵（レベル100）でも100%チェイン効果がつく
 	for i := 0; i < 10; i++ {
-		module := calculator.RollModuleDropWithTypeID("physical_lv1", 100)
-		if module == nil {
-			t.Error("モジュールがnilであるべきではない")
+		skill := calculator.RollSkillDropWithTypeID("physical_lv1", 100)
+		if skill == nil {
+			t.Error("スキルがnilであるべきではない")
 			continue
 		}
-		if !module.HasChainEffect() {
-			t.Error("モジュールには必ずチェイン効果がつくべき")
+		if !skill.HasChainEffect() {
+			t.Error("スキルには必ずチェイン効果がつくべき")
 		}
 	}
 }
 
-// TestRollModuleDropWithTypeID_ChainEffectLevelFiltering はチェイン効果のMinDropLevelでフィルタリングされることをテストします。
-func TestRollModuleDropWithTypeID_ChainEffectLevelFiltering(t *testing.T) {
-	moduleTypes := []ModuleDropInfo{
+// TestRollSkillDropWithTypeID_ChainEffectLevelFiltering はチェイン効果のMinDropLevelでフィルタリングされることをテストします。
+func TestRollSkillDropWithTypeID_ChainEffectLevelFiltering(t *testing.T) {
+	skillTypes := []SkillDropInfo{
 		{
 			ID:           "physical_lv1",
 			Name:         "物理攻撃Lv1",
@@ -877,18 +877,18 @@ func TestRollModuleDropWithTypeID_ChainEffectLevelFiltering(t *testing.T) {
 
 	pool := NewChainEffectPool(skillEffects)
 
-	calculator := NewRewardCalculator(nil, moduleTypes, nil)
+	calculator := NewRewardCalculator(nil, skillTypes, nil)
 	calculator.SetChainEffectPool(pool)
 
 	// レベル1の敵からはdamage_bonusのみドロップ可能
 	for i := 0; i < 20; i++ {
-		module := calculator.RollModuleDropWithTypeID("physical_lv1", 1)
-		if module == nil || !module.HasChainEffect() {
-			t.Error("モジュールにはチェイン効果があるべき")
+		skill := calculator.RollSkillDropWithTypeID("physical_lv1", 1)
+		if skill == nil || !skill.HasChainEffect() {
+			t.Error("スキルにはチェイン効果があるべき")
 			continue
 		}
-		if module.ChainEffect.Type != domain.ChainEffectDamageBonus {
-			t.Errorf("レベル1の敵からはdamage_bonusのみドロップすべき: got %s", module.ChainEffect.Type)
+		if skill.ChainEffect.Type != domain.ChainEffectDamageBonus {
+			t.Errorf("レベル1の敵からはdamage_bonusのみドロップすべき: got %s", skill.ChainEffect.Type)
 		}
 	}
 
@@ -896,15 +896,15 @@ func TestRollModuleDropWithTypeID_ChainEffectLevelFiltering(t *testing.T) {
 	foundDamageBonus := false
 	foundDoubleCast := false
 	for i := 0; i < 100; i++ {
-		module := calculator.RollModuleDropWithTypeID("physical_lv1", 10)
-		if module == nil || !module.HasChainEffect() {
-			t.Error("モジュールにはチェイン効果があるべき")
+		skill := calculator.RollSkillDropWithTypeID("physical_lv1", 10)
+		if skill == nil || !skill.HasChainEffect() {
+			t.Error("スキルにはチェイン効果があるべき")
 			continue
 		}
-		if module.ChainEffect.Type == domain.ChainEffectDamageBonus {
+		if skill.ChainEffect.Type == domain.ChainEffectDamageBonus {
 			foundDamageBonus = true
 		}
-		if module.ChainEffect.Type == domain.ChainEffectDoubleCast {
+		if skill.ChainEffect.Type == domain.ChainEffectDoubleCast {
 			foundDoubleCast = true
 		}
 	}
@@ -913,9 +913,9 @@ func TestRollModuleDropWithTypeID_ChainEffectLevelFiltering(t *testing.T) {
 	}
 }
 
-// TestRollModuleDropWithTypeID_InvalidTypeID は存在しないTypeIDでnilを返すことをテストします。
-func TestRollModuleDropWithTypeID_InvalidTypeID(t *testing.T) {
-	moduleTypes := []ModuleDropInfo{
+// TestRollSkillDropWithTypeID_InvalidTypeID は存在しないTypeIDでnilを返すことをテストします。
+func TestRollSkillDropWithTypeID_InvalidTypeID(t *testing.T) {
+	skillTypes := []SkillDropInfo{
 		{
 			ID:           "physical_lv1",
 			Name:         "物理攻撃Lv1",
@@ -923,18 +923,18 @@ func TestRollModuleDropWithTypeID_InvalidTypeID(t *testing.T) {
 		},
 	}
 
-	calculator := NewRewardCalculator(nil, moduleTypes, nil)
+	calculator := NewRewardCalculator(nil, skillTypes, nil)
 
-	module := calculator.RollModuleDropWithTypeID("non_existent_module", 10)
+	skill := calculator.RollSkillDropWithTypeID("non_existent_skill", 10)
 
-	if module != nil {
+	if skill != nil {
 		t.Error("存在しないTypeIDの場合はnilを返すべき")
 	}
 }
 
-// TestRollModuleDropWithTypeID_NoChainEffectPool はチェイン効果プールがない場合にチェイン効果なしのモジュールが生成されることをテストします。
-func TestRollModuleDropWithTypeID_NoChainEffectPool(t *testing.T) {
-	moduleTypes := []ModuleDropInfo{
+// TestRollSkillDropWithTypeID_NoChainEffectPool はチェイン効果プールがない場合にチェイン効果なしのスキルが生成されることをテストします。
+func TestRollSkillDropWithTypeID_NoChainEffectPool(t *testing.T) {
+	skillTypes := []SkillDropInfo{
 		{
 			ID:           "physical_lv1",
 			Name:         "物理攻撃Lv1",
@@ -943,14 +943,14 @@ func TestRollModuleDropWithTypeID_NoChainEffectPool(t *testing.T) {
 	}
 
 	// チェイン効果プールなし
-	calculator := NewRewardCalculator(nil, moduleTypes, nil)
+	calculator := NewRewardCalculator(nil, skillTypes, nil)
 
-	module := calculator.RollModuleDropWithTypeID("physical_lv1", 10)
+	skill := calculator.RollSkillDropWithTypeID("physical_lv1", 10)
 
-	if module == nil {
-		t.Fatal("モジュールがnilであってはならない")
+	if skill == nil {
+		t.Fatal("スキルがnilであってはならない")
 	}
-	if module.HasChainEffect() {
+	if skill.HasChainEffect() {
 		t.Error("チェイン効果プールがない場合はチェイン効果がnilであるべき")
 	}
 }

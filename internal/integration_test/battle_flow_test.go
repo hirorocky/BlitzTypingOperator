@@ -12,8 +12,8 @@ import (
 	"hirorocky/type-battle/internal/usecase/typing"
 )
 
-// newTestDamageModuleBattle はテスト用のダメージモジュールを作成するヘルパー関数です。
-func newTestDamageModuleBattle(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+// newTestDamageSkillBattle はテスト用のダメージスキルを作成するヘルパー関数です。
+func newTestDamageSkillBattle(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
@@ -31,8 +31,8 @@ func newTestDamageModuleBattle(id, name string, tags []string, statCoef float64,
 	}, nil)
 }
 
-// newTestHealModuleBattle はテスト用の回復モジュールを作成するヘルパー関数です。
-func newTestHealModuleBattle(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+// newTestHealSkillBattle はテスト用の回復スキルを作成するヘルパー関数です。
+func newTestHealSkillBattle(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
@@ -50,8 +50,8 @@ func newTestHealModuleBattle(id, name string, tags []string, statCoef float64, s
 	}, nil)
 }
 
-// newTestBuffModuleBattle はテスト用のバフモジュールを作成するヘルパー関数です。
-func newTestBuffModuleBattle(id, name string, tags []string, value float64, _, description string) *domain.SkillModel {
+// newTestBuffSkillBattle はテスト用のバフスキルを作成するヘルパー関数です。
+func newTestBuffSkillBattle(id, name string, tags []string, value float64, _, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
@@ -90,15 +90,15 @@ func createTestAgents() []*domain.AgentModel {
 	passiveSkill := domain.PassiveSkill{ID: "test", Name: "テスト", Description: ""}
 	core := domain.NewCoreWithTypeID("core_1", coreType, passiveSkill)
 
-	modules := []*domain.SkillModel{
-		newTestDamageModuleBattle("m1", "物理打撃Lv1", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageModuleBattle("m2", "ファイアボールLv1", []string{"magic_low"}, 1.0, "MAG", ""),
-		newTestHealModuleBattle("m3", "ヒールLv1", []string{"heal_low"}, 0.8, "MAG", ""),
-		newTestBuffModuleBattle("m4", "バフLv1", []string{"buff_low"}, 5.0, "SPD", ""),
+	skills := []*domain.SkillModel{
+		newTestDamageSkillBattle("m1", "物理打撃Lv1", []string{"physical_low"}, 1.0, "STR", ""),
+		newTestDamageSkillBattle("m2", "ファイアボールLv1", []string{"magic_low"}, 1.0, "MAG", ""),
+		newTestHealSkillBattle("m3", "ヒールLv1", []string{"heal_low"}, 0.8, "MAG", ""),
+		newTestBuffSkillBattle("m4", "バフLv1", []string{"buff_low"}, 5.0, "SPD", ""),
 	}
 
 	return []*domain.AgentModel{
-		domain.NewAgent("agent_1", core, modules),
+		domain.NewAgent("agent_1", core, skills),
 	}
 }
 
@@ -197,7 +197,7 @@ func TestBattleFlow_EnemyAttack(t *testing.T) {
 	}
 }
 
-func TestBattleFlow_ModuleUse_Attack(t *testing.T) {
+func TestBattleFlow_SkillUse_Attack(t *testing.T) {
 	enemyTypes := createTestEnemyTypes()
 	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
@@ -214,10 +214,10 @@ func TestBattleFlow_ModuleUse_Attack(t *testing.T) {
 		AccuracyFactor: 0.95,
 	}
 
-	// 物理攻撃モジュールを使用
+	// 物理攻撃スキルを使用
 	agent := agents[0]
-	module := agent.Modules[0] // 物理打撃
-	damage := engine.ApplySkillEffect(state, agent, module, typingResult)
+	skill := agent.Skills[0] // 物理打撃
+	damage := engine.ApplySkillEffect(state, agent, skill, typingResult)
 
 	// ダメージが与えられた
 	if damage <= 0 {
@@ -230,7 +230,7 @@ func TestBattleFlow_ModuleUse_Attack(t *testing.T) {
 	}
 }
 
-func TestBattleFlow_ModuleUse_Heal(t *testing.T) {
+func TestBattleFlow_SkillUse_Heal(t *testing.T) {
 	enemyTypes := createTestEnemyTypes()
 	engine := combat.NewBattleEngine(enemyTypes)
 	agents := createTestAgents()
@@ -250,10 +250,10 @@ func TestBattleFlow_ModuleUse_Heal(t *testing.T) {
 		AccuracyFactor: 0.95,
 	}
 
-	// 回復モジュールを使用
+	// 回復スキルを使用
 	agent := agents[0]
-	module := agent.Modules[2] // ヒール
-	healAmount := engine.ApplySkillEffect(state, agent, module, typingResult)
+	skill := agent.Skills[2] // ヒール
+	healAmount := engine.ApplySkillEffect(state, agent, skill, typingResult)
 
 	// 回復量が正の値
 	if healAmount <= 0 {
@@ -402,7 +402,7 @@ func TestBattleFlow_AccuracyPenalty(t *testing.T) {
 	_ = initBattleForTest(engine, 1, agents, enemyTypes)
 
 	agent := agents[0]
-	module := agent.Modules[0]
+	skill := agent.Skills[0]
 
 	// 高い正確性
 	highAccuracyResult := &typing.TypingResult{
@@ -410,7 +410,7 @@ func TestBattleFlow_AccuracyPenalty(t *testing.T) {
 		SpeedFactor:    1.0,
 		AccuracyFactor: 0.95,
 	}
-	highDamage := engine.CalculateSkillEffectWithPassive(agent, module, highAccuracyResult)
+	highDamage := engine.CalculateSkillEffectWithPassive(agent, skill, highAccuracyResult)
 
 	// 低い正確性（50%未満）
 	lowAccuracyResult := &typing.TypingResult{
@@ -418,7 +418,7 @@ func TestBattleFlow_AccuracyPenalty(t *testing.T) {
 		SpeedFactor:    1.0,
 		AccuracyFactor: 0.4,
 	}
-	lowDamage := engine.CalculateSkillEffectWithPassive(agent, module, lowAccuracyResult)
+	lowDamage := engine.CalculateSkillEffectWithPassive(agent, skill, lowAccuracyResult)
 
 	// 低い正確性の方が効果が低い（半減ペナルティ適用）
 	if lowDamage >= highDamage {

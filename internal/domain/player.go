@@ -29,7 +29,7 @@ type PlayerModel struct {
 	MaxMana int
 
 	// EffectTable はプレイヤーに適用されているステータス効果テーブルです。
-	// バフ/デバフ/コア特性/モジュールパッシブなどの効果を集約します。
+	// バフ/デバフ/コア特性/スキルパッシブなどの効果を集約します。
 
 	EffectTable *EffectTable
 }

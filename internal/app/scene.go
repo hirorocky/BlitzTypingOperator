@@ -11,7 +11,7 @@ const (
 	SceneHome Scene = iota
 
 	// SceneBattle はバトル画面を表します。
-	// リアルタイムでの敵との戦闘、タイピングチャレンジ、モジュール効果の適用が行われます。
+	// リアルタイムでの敵との戦闘、タイピングチャレンジ、スキル効果の適用が行われます。
 	SceneBattle
 
 	// SceneBattleSelect はバトル選択画面を表します。
@@ -19,11 +19,11 @@ const (
 	SceneBattleSelect
 
 	// SceneAgentManagement はエージェント管理画面を表します。
-	// コア/モジュール一覧、エージェント合成、装備管理を含みます。
+	// コア/スキル一覧、エージェント合成、装備管理を含みます。
 	SceneAgentManagement
 
 	// SceneEncyclopedia は図鑑画面を表します。
-	// コア図鑑、モジュール図鑑、敵図鑑を表示します。
+	// コア図鑑、スキル図鑑、敵図鑑を表示します。
 	SceneEncyclopedia
 
 	// SceneAchievement は統計・実績画面を表します。

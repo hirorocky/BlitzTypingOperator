@@ -14,7 +14,7 @@ import (
 func TestLoadSkillDefinitions_新形式パース(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	modulesJSON := `{
+	skillsJSON := `{
 		"skill_types": [
 			{
 				"id": "fireball_lv1",
@@ -88,40 +88,40 @@ func TestLoadSkillDefinitions_新形式パース(t *testing.T) {
 		]
 	}`
 
-	modulesPath := filepath.Join(tmpDir, "skills.json")
-	if err := os.WriteFile(modulesPath, []byte(modulesJSON), 0644); err != nil {
+	skillsPath := filepath.Join(tmpDir, "skills.json")
+	if err := os.WriteFile(skillsPath, []byte(skillsJSON), 0644); err != nil {
 		t.Fatalf("テストファイルの作成に失敗: %v", err)
 	}
 
 	loader := NewDataLoader(tmpDir)
-	modules, err := loader.LoadSkillDefinitions()
+	skills, err := loader.LoadSkillDefinitions()
 	if err != nil {
 		t.Fatalf("スキル定義のロードに失敗: %v", err)
 	}
 
-	if len(modules) != 3 {
-		t.Fatalf("スキル数: got %d, want 3", len(modules))
+	if len(skills) != 3 {
+		t.Fatalf("スキル数: got %d, want 3", len(skills))
 	}
 
 	// shapeチャレンジのパース検証
-	if modules[0].Challenge.Type != "shape" {
-		t.Errorf("fireball Challenge.Type = %q, want %q", modules[0].Challenge.Type, "shape")
+	if skills[0].Challenge.Type != "shape" {
+		t.Errorf("fireball Challenge.Type = %q, want %q", skills[0].Challenge.Type, "shape")
 	}
-	if modules[0].Challenge.Options["shape"] != "flame" {
-		t.Errorf("fireball Challenge.Options[shape] = %q, want %q", modules[0].Challenge.Options["shape"], "flame")
+	if skills[0].Challenge.Options["shape"] != "flame" {
+		t.Errorf("fireball Challenge.Options[shape] = %q, want %q", skills[0].Challenge.Options["shape"], "flame")
 	}
 
 	// standardチャレンジのパース検証
-	if modules[1].Challenge.Type != "standard" {
-		t.Errorf("physical_strike Challenge.Type = %q, want %q", modules[1].Challenge.Type, "standard")
+	if skills[1].Challenge.Type != "standard" {
+		t.Errorf("physical_strike Challenge.Type = %q, want %q", skills[1].Challenge.Type, "standard")
 	}
-	if len(modules[1].Challenge.Options) != 0 {
-		t.Errorf("physical_strike Challenge.Options should be empty, got %v", modules[1].Challenge.Options)
+	if len(skills[1].Challenge.Options) != 0 {
+		t.Errorf("physical_strike Challenge.Options should be empty, got %v", skills[1].Challenge.Options)
 	}
 
 	// defenseチャレンジのパース検証
-	if modules[2].Challenge.Type != "defense" {
-		t.Errorf("defense_buff Challenge.Type = %q, want %q", modules[2].Challenge.Type, "defense")
+	if skills[2].Challenge.Type != "defense" {
+		t.Errorf("defense_buff Challenge.Type = %q, want %q", skills[2].Challenge.Type, "defense")
 	}
 }
 
@@ -160,7 +160,7 @@ func TestToDomainType_ChallengeTypeIDとOptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			module := &SkillDefinitionData{
+			skill := &SkillDefinitionData{
 				ID:              "test_skill",
 				Name:            "テスト",
 				Icon:            "🔥",
@@ -180,7 +180,7 @@ func TestToDomainType_ChallengeTypeIDとOptions(t *testing.T) {
 				},
 			}
 
-			domainType := module.ToDomainType()
+			domainType := skill.ToDomainType()
 
 			if string(domainType.ChallengeType) != tt.wantType {
 				t.Errorf("ChallengeType = %q, want %q", domainType.ChallengeType, tt.wantType)

@@ -45,7 +45,7 @@ type SaveData struct {
 	// 注: バトル中のHP等は保存せず、装備エージェントから再計算
 	Player *PlayerSaveData `json:"player"`
 
-	// Inventory は所持アイテム（コア、モジュール、エージェント）です。
+	// Inventory は所持アイテム（コア、スキル、エージェント）です。
 
 	Inventory *InventorySaveData `json:"inventory"`
 
@@ -97,9 +97,6 @@ type SkillInstanceSave struct {
 	// nilの場合はチェイン効果なしとしてomitemptyで省略されます。
 	ChainEffect *ChainEffectSave `json:"chain_effect,omitempty"`
 }
-
-// ModuleInstanceSave はSkillInstanceSaveのエイリアスです。
-type ModuleInstanceSave = SkillInstanceSave
 
 // CoreInventorySave はユニークコアインベントリのセーブデータです。
 // TypeIDリスト形式で管理します。
