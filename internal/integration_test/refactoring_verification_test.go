@@ -32,8 +32,8 @@ func convertExternalDataToDomainSources(ext *masterdata.ExternalData) *gamestate
 	}
 
 	// SkillTypes の変換
-	moduleTypes := make([]rewarding.ModuleDropInfo, len(ext.ModuleDefinitions))
-	for i, md := range ext.ModuleDefinitions {
+	moduleTypes := make([]rewarding.ModuleDropInfo, len(ext.SkillDefinitions))
+	for i, md := range ext.SkillDefinitions {
 		// マスタデータからドメインモデルに変換
 		domainModule := md.ToDomain()
 		moduleTypes[i] = rewarding.ModuleDropInfo{

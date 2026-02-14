@@ -1,5 +1,5 @@
 {
-  "module_types": [
+  "skill_types": [
     {
       "id": "physical_strike_lv1",
       "name": "軽斬撃",

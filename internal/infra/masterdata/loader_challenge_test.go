@@ -11,11 +11,11 @@ import (
 // 受け入れ基準1-3: challenge_typeがchallengeオブジェクトに置き換わり、type+optionsを持つ
 // 受け入れ基準4: ローダーが新形式を正しくパースできる
 // 受け入れ基準36: ローダーのパーステスト
-func TestLoadModuleDefinitions_新形式パース(t *testing.T) {
+func TestLoadSkillDefinitions_新形式パース(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	modulesJSON := `{
-		"module_types": [
+		"skill_types": [
 			{
 				"id": "fireball_lv1",
 				"name": "初級攻撃魔法",
@@ -88,19 +88,19 @@ func TestLoadModuleDefinitions_新形式パース(t *testing.T) {
 		]
 	}`
 
-	modulesPath := filepath.Join(tmpDir, "modules.json")
+	modulesPath := filepath.Join(tmpDir, "skills.json")
 	if err := os.WriteFile(modulesPath, []byte(modulesJSON), 0644); err != nil {
 		t.Fatalf("テストファイルの作成に失敗: %v", err)
 	}
 
 	loader := NewDataLoader(tmpDir)
-	modules, err := loader.LoadModuleDefinitions()
+	modules, err := loader.LoadSkillDefinitions()
 	if err != nil {
-		t.Fatalf("モジュール定義のロードに失敗: %v", err)
+		t.Fatalf("スキル定義のロードに失敗: %v", err)
 	}
 
 	if len(modules) != 3 {
-		t.Fatalf("モジュール数: got %d, want 3", len(modules))
+		t.Fatalf("スキル数: got %d, want 3", len(modules))
 	}
 
 	// shapeチャレンジのパース検証

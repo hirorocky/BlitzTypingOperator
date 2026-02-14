@@ -27,7 +27,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				MinDropLevel:   1,
 			},
 		},
-		ModuleDefinitions: []masterdata.ModuleDefinitionData{
+		SkillDefinitions: []masterdata.SkillDefinitionData{
 			{
 				ID:           "physical_strike_lv1",
 				Name:         "物理打撃Lv1",

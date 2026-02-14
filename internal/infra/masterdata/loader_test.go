@@ -71,12 +71,12 @@ func TestLoadCoreTypes(t *testing.T) {
 	}
 }
 
-// TestLoadModuleDefinitions はモジュール定義のロードをテストします。
-func TestLoadModuleDefinitions(t *testing.T) {
+// TestLoadSkillDefinitions はスキル定義のロードをテストします。
+func TestLoadSkillDefinitions(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	modulesJSON := `{
-		"module_types": [
+		"skill_types": [
 			{
 				"id": "physical_strike_lv1",
 				"name": "物理打撃Lv1",
@@ -118,19 +118,19 @@ func TestLoadModuleDefinitions(t *testing.T) {
 		]
 	}`
 
-	modulesPath := filepath.Join(tmpDir, "modules.json")
+	modulesPath := filepath.Join(tmpDir, "skills.json")
 	if err := os.WriteFile(modulesPath, []byte(modulesJSON), 0644); err != nil {
 		t.Fatalf("テストファイルの作成に失敗: %v", err)
 	}
 
 	loader := NewDataLoader(tmpDir)
-	modules, err := loader.LoadModuleDefinitions()
+	modules, err := loader.LoadSkillDefinitions()
 	if err != nil {
-		t.Fatalf("モジュール定義のロードに失敗: %v", err)
+		t.Fatalf("スキル定義のロードに失敗: %v", err)
 	}
 
 	if len(modules) != 2 {
-		t.Errorf("モジュール数: got %d, want 2", len(modules))
+		t.Errorf("スキル数: got %d, want 2", len(modules))
 	}
 
 	// 物理打撃Lv1の検証
@@ -287,9 +287,9 @@ func TestLoadAllExternalData(t *testing.T) {
 	}`
 	os.WriteFile(filepath.Join(tmpDir, "cores.json"), []byte(coresJSON), 0644)
 
-	// modules.json
+	// skills.json
 	modulesJSON := `{
-		"module_types": [
+		"skill_types": [
 			{
 				"id": "physical_strike_lv1",
 				"name": "物理打撃Lv1",
@@ -311,7 +311,7 @@ func TestLoadAllExternalData(t *testing.T) {
 			}
 		]
 	}`
-	os.WriteFile(filepath.Join(tmpDir, "modules.json"), []byte(modulesJSON), 0644)
+	os.WriteFile(filepath.Join(tmpDir, "skills.json"), []byte(modulesJSON), 0644)
 
 	// enemies.json
 	enemiesJSON := `{
@@ -405,8 +405,8 @@ func TestLoadAllExternalData(t *testing.T) {
 	if len(externalData.CoreTypes) != 1 {
 		t.Errorf("CoreTypes: got %d, want 1", len(externalData.CoreTypes))
 	}
-	if len(externalData.ModuleDefinitions) != 1 {
-		t.Errorf("ModuleDefinitions: got %d, want 1", len(externalData.ModuleDefinitions))
+	if len(externalData.SkillDefinitions) != 1 {
+		t.Errorf("SkillDefinitions: got %d, want 1", len(externalData.SkillDefinitions))
 	}
 	if len(externalData.EnemyTypes) != 1 {
 		t.Errorf("EnemyTypes: got %d, want 1", len(externalData.EnemyTypes))
@@ -460,12 +460,12 @@ func TestConvertToDomainCoreType(t *testing.T) {
 	}
 }
 
-// TestConvertToDomainSkillModel はモジュールデータからドメインモデルへの変換をテストします。
+// TestConvertToDomainSkillModel はスキルデータからドメインモデルへの変換をテストします。
 func TestConvertToDomainSkillModel(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	modulesJSON := `{
-		"module_types": [
+		"skill_types": [
 			{
 				"id": "physical_strike_lv1",
 				"name": "物理打撃Lv1",
@@ -487,12 +487,12 @@ func TestConvertToDomainSkillModel(t *testing.T) {
 			}
 		]
 	}`
-	os.WriteFile(filepath.Join(tmpDir, "modules.json"), []byte(modulesJSON), 0644)
+	os.WriteFile(filepath.Join(tmpDir, "skills.json"), []byte(modulesJSON), 0644)
 
 	loader := NewDataLoader(tmpDir)
-	modules, err := loader.LoadModuleDefinitions()
+	modules, err := loader.LoadSkillDefinitions()
 	if err != nil {
-		t.Fatalf("モジュール定義のロードに失敗: %v", err)
+		t.Fatalf("スキル定義のロードに失敗: %v", err)
 	}
 
 	// ドメインモデルに変換
@@ -1073,12 +1073,12 @@ func TestLoadTimedEffects(t *testing.T) {
 	}
 }
 
-// TestLoadModulesWithTimedEffectID はmodules.jsonのtimed_effect_id読み込みをテストします（AC11）。
-func TestLoadModulesWithTimedEffectID(t *testing.T) {
+// TestLoadSkillsWithTimedEffectID はskills.jsonのtimed_effect_id読み込みをテストします。
+func TestLoadSkillsWithTimedEffectID(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	modulesJSON := `{
-		"module_types": [
+		"skill_types": [
 			{
 				"id": "str_buff_lv1",
 				"name": "気合い溜め",
@@ -1105,12 +1105,12 @@ func TestLoadModulesWithTimedEffectID(t *testing.T) {
 		]
 	}`
 
-	os.WriteFile(filepath.Join(tmpDir, "modules.json"), []byte(modulesJSON), 0644)
+	os.WriteFile(filepath.Join(tmpDir, "skills.json"), []byte(modulesJSON), 0644)
 
 	loader := NewDataLoader(tmpDir)
-	modules, err := loader.LoadModuleDefinitions()
+	modules, err := loader.LoadSkillDefinitions()
 	if err != nil {
-		t.Fatalf("モジュール定義のロードに失敗: %v", err)
+		t.Fatalf("スキル定義のロードに失敗: %v", err)
 	}
 
 	// ToDomainで変換

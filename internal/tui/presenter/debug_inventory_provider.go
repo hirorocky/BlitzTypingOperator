@@ -13,7 +13,7 @@ import (
 // 任意のパラメータでコア・モジュールを作成できます。
 type DebugInventoryProvider struct {
 	coreTypes     []masterdata.CoreTypeData
-	moduleTypes   []masterdata.ModuleDefinitionData
+	moduleTypes   []masterdata.SkillDefinitionData
 	chainEffects  []masterdata.ChainEffectData
 	passiveSkills map[string]domain.PassiveSkill
 
@@ -28,7 +28,7 @@ type DebugInventoryProvider struct {
 // NewDebugInventoryProvider は新しいDebugInventoryProviderを作成します。
 func NewDebugInventoryProvider(
 	coreTypes []masterdata.CoreTypeData,
-	moduleTypes []masterdata.ModuleDefinitionData,
+	moduleTypes []masterdata.SkillDefinitionData,
 	chainEffects []masterdata.ChainEffectData,
 	passiveSkills map[string]domain.PassiveSkill,
 ) *DebugInventoryProvider {
@@ -126,7 +126,7 @@ func (p *DebugInventoryProvider) GetCoreTypes() []masterdata.CoreTypeData {
 }
 
 // GetSkillTypes はすべてのSkillTypeを返します（デバッグモード専用）。
-func (p *DebugInventoryProvider) GetSkillTypes() []masterdata.ModuleDefinitionData {
+func (p *DebugInventoryProvider) GetSkillTypes() []masterdata.SkillDefinitionData {
 	return p.moduleTypes
 }
 

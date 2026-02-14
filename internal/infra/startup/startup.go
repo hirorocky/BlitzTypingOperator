@@ -69,10 +69,10 @@ func (i *NewGameInitializer) CreateInitialAgents() []*domain.AgentModel {
 		modules := make([]*domain.SkillModel, 0, len(firstAgentData.Modules))
 		for _, modData := range firstAgentData.Modules {
 			// モジュール定義を検索
-			var moduleDef *masterdata.ModuleDefinitionData
-			for j := range i.externalData.ModuleDefinitions {
-				if i.externalData.ModuleDefinitions[j].ID == modData.TypeID {
-					moduleDef = &i.externalData.ModuleDefinitions[j]
+			var moduleDef *masterdata.SkillDefinitionData
+			for j := range i.externalData.SkillDefinitions {
+				if i.externalData.SkillDefinitions[j].ID == modData.TypeID {
+					moduleDef = &i.externalData.SkillDefinitions[j]
 					break
 				}
 			}

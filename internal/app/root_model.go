@@ -263,7 +263,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 			invManager.AddCore(ct.ID)
 		}
 		// 全スキルを追加
-		for _, mt := range externalData.ModuleDefinitions {
+		for _, mt := range externalData.SkillDefinitions {
 			invManager.AddSkill(mt.ID)
 		}
 		// 全チェイン効果を追加
@@ -272,7 +272,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		}
 		slog.Info("デバッグモード: 全コア・スキル・チェイン効果を追加",
 			slog.Int("cores", len(externalData.CoreTypes)),
-			slog.Int("skills", len(externalData.ModuleDefinitions)),
+			slog.Int("skills", len(externalData.SkillDefinitions)),
 			slog.Int("chain_effects", len(chainEffects)),
 		)
 	}
@@ -373,7 +373,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		passiveSkills := ConvertPassiveSkills(externalData.PassiveSkills)
 		debugInvProvider = presenter.NewDebugInventoryProvider(
 			externalData.CoreTypes,
-			externalData.ModuleDefinitions,
+			externalData.SkillDefinitions,
 			chainEffects,
 			passiveSkills,
 		)

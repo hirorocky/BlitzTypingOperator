@@ -71,6 +71,9 @@ type SkillEffect struct {
 	// 0: LUKの影響なし
 	LUKFactor float64
 
+	// ManaGain は効果発動時に獲得するマナ量です。0の場合はマナ獲得なし。
+	ManaGain int
+
 	// Icon は表示用アイコンです。
 	Icon string
 }

@@ -39,6 +39,9 @@ type SkillType struct {
 	// MinDropLevel はこのスキルがドロップする最低敵レベルです。
 	MinDropLevel int
 
+	// ManaCost はスキル使用時に消費するマナ量です。0の場合はマナ消費なし。
+	ManaCost int
+
 	// Effects はこのスキルが持つ効果のリストです。
 	// 使用時に各効果が確率（Probability + LUK補正）で発動します。
 	Effects []SkillEffect

@@ -68,7 +68,7 @@ func (l *DataLoader) readFile(filename string) ([]byte, error) {
 // ExternalData は外部データファイルから読み込んだ全データを格納する構造体です。
 type ExternalData struct {
 	CoreTypes          []CoreTypeData
-	ModuleDefinitions  []ModuleDefinitionData
+	SkillDefinitions   []SkillDefinitionData
 	EnemyTypes         []EnemyTypeData
 	EnemyActions       []EnemyActionData
 	EnemyPassiveSkills []EnemyPassiveSkillData
@@ -197,7 +197,7 @@ type ChallengeData struct {
 	Options map[string]string `json:"options,omitempty"`
 }
 
-// SkillDefinitionData はskills.json（またはmodules.json）から読み込むスキル定義データの構造体です。
+// SkillDefinitionData はskills.jsonから読み込むスキル定義データの構造体です。
 type SkillDefinitionData struct {
 	ID              string            `json:"id"`
 	Name            string            `json:"name"`
@@ -211,26 +211,21 @@ type SkillDefinitionData struct {
 	Effects         []SkillEffectData `json:"effects"`
 }
 
-// ModuleDefinitionData はSkillDefinitionDataのエイリアスです。
-// 後方互換性のために残されています。新規コードではSkillDefinitionDataを使用してください。
-type ModuleDefinitionData = SkillDefinitionData
-
-// modulesFileData はmodules.jsonのルート構造です。
-type modulesFileData struct {
-	SkillTypes []ModuleDefinitionData `json:"module_types"`
+// skillsFileData はskills.jsonのルート構造です。
+type skillsFileData struct {
+	SkillTypes []SkillDefinitionData `json:"skill_types"`
 }
 
-// LoadModuleDefinitions はmodules.jsonからモジュール定義を読み込みます。
-
-func (l *DataLoader) LoadModuleDefinitions() ([]ModuleDefinitionData, error) {
-	data, err := l.readFile("modules.json")
+// LoadSkillDefinitions はskills.jsonからスキル定義を読み込みます。
+func (l *DataLoader) LoadSkillDefinitions() ([]SkillDefinitionData, error) {
+	data, err := l.readFile("skills.json")
 	if err != nil {
-		return nil, fmt.Errorf("modules.jsonの読み込みに失敗: %w", err)
+		return nil, fmt.Errorf("skills.jsonの読み込みに失敗: %w", err)
 	}
 
-	var fileData modulesFileData
+	var fileData skillsFileData
 	if err := json.Unmarshal(data, &fileData); err != nil {
-		return nil, fmt.Errorf("modules.jsonのパースに失敗: %w", err)
+		return nil, fmt.Errorf("skills.jsonのパースに失敗: %w", err)
 	}
 
 	return fileData.SkillTypes, nil
@@ -948,9 +943,9 @@ func (l *DataLoader) LoadAllExternalData() (*ExternalData, error) {
 		return nil, fmt.Errorf("コア特性のロードに失敗: %w", err)
 	}
 
-	modules, err := l.LoadModuleDefinitions()
+	skills, err := l.LoadSkillDefinitions()
 	if err != nil {
-		return nil, fmt.Errorf("モジュール定義のロードに失敗: %w", err)
+		return nil, fmt.Errorf("スキル定義のロードに失敗: %w", err)
 	}
 
 	enemyTypes, err := l.LoadEnemyTypes()
@@ -1000,7 +995,7 @@ func (l *DataLoader) LoadAllExternalData() (*ExternalData, error) {
 
 	return &ExternalData{
 		CoreTypes:          coreTypes,
-		ModuleDefinitions:  modules,
+		SkillDefinitions:   skills,
 		EnemyTypes:         enemyTypes,
 		EnemyActions:       enemyActions,
 		EnemyPassiveSkills: enemyPassiveSkills,
@@ -1043,12 +1038,6 @@ func ValidateSkillDefinitionData(data SkillDefinitionData) error {
 		return fmt.Errorf("スキル効果が空です: ID=%s", data.ID)
 	}
 	return nil
-}
-
-// ValidateModuleDefinitionData はValidateSkillDefinitionDataの後方互換ラッパーです。
-// 後方互換性のために残されています。新規コードではValidateSkillDefinitionDataを使用してください。
-func ValidateModuleDefinitionData(data ModuleDefinitionData) error {
-	return ValidateSkillDefinitionData(data)
 }
 
 // ValidateEnemyTypeData は敵タイプデータのバリデーションを行います。

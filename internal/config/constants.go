@@ -38,6 +38,12 @@ const (
 	MaxStatusDuration = 99.9
 )
 
+// マナ設定定数
+const (
+	// DefaultMaxMana はプレイヤーの最大マナ値です。
+	DefaultMaxMana = 10
+)
+
 // インベントリ設定定数
 const (
 	// MaxAgentEquipSlots はエージェント装備スロットの最大数です。

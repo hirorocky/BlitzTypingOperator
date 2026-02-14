@@ -99,8 +99,8 @@ func ConvertCoreTypes(types []masterdata.CoreTypeData) []domain.CoreType {
 	return result
 }
 
-// ConvertSkillTypes はmasterdata.ModuleDefinitionDataのスライスをreward.ModuleDropInfoのスライスに変換します。
-func ConvertSkillTypes(types []masterdata.ModuleDefinitionData) []rewarding.ModuleDropInfo {
+// ConvertSkillTypes はmasterdata.SkillDefinitionDataのスライスをreward.ModuleDropInfoのスライスに変換します。
+func ConvertSkillTypes(types []masterdata.SkillDefinitionData) []rewarding.ModuleDropInfo {
 	result := make([]rewarding.ModuleDropInfo, len(types))
 	for i, t := range types {
 		// マスターデータからドメインモデルのSkillTypeを取得し、そこからEffectsを使う
@@ -135,7 +135,7 @@ func ConvertExternalDataToDomain(ext *masterdata.ExternalData) (
 	// 敵タイプとパッシブスキルを変換（パッシブを解決）
 	enemyTypes := ConvertEnemyTypesWithPassives(ext.EnemyTypes, ext.EnemyPassiveSkills)
 	coreTypes := ConvertCoreTypes(ext.CoreTypes)
-	moduleTypes := ConvertSkillTypes(ext.ModuleDefinitions)
+	moduleTypes := ConvertSkillTypes(ext.SkillDefinitions)
 
 	return enemyTypes, coreTypes, moduleTypes
 }
