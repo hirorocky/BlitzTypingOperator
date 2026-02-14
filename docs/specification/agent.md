@@ -47,6 +47,8 @@ The agent system shall manage skills with:
 - ChallengeType: チャレンジ種別（standard / shape / defense）
 - ChallengeOptions: チャレンジ固有設定（shapeの場合: `{"shape": "flame"}`等）
 - DifficultyRate: タイピング難易度（50-200, 100=標準）
+- ManaCost: スキル使用時のマナ消費量（0以上、デフォルト0）
+- 各Effect: 発動時のマナ獲得量（ManaGain、0以上、デフォルト0）
 
 **受け入れ基準**:
 1. 各Effectはtarget（enemy/self）で対象を指定
@@ -55,6 +57,8 @@ The agent system shall manage skills with:
 4. 同一スキルは全エージェント通じて1つのみ装備可能
 5. ChallengeTypeでスキル使用時のタイピングチャレンジ種別を指定
 6. DifficultyRateでタイピング難易度を指定（EffectTableのColTypingDifficultyで乗算制御可能）
+7. ManaCostでスキル使用時のマナ消費量を指定（デフォルト0、マナ消費なし）
+8. EffectにManaGainでマナ獲得量を指定可能（デフォルト0）
 
 ### REQ-AGENT-4: チェイン効果システム
 **種別**: Ubiquitous

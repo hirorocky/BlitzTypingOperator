@@ -558,6 +558,11 @@ func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
 		}
 	}
 
+	// マナ消費（Echo/DoubleCastの追加発動ではコストを消費しない）
+	if module.Type.ManaCost > 0 && s.player != nil {
+		s.player.ConsumeMana(module.Type.ManaCost)
+	}
+
 	var effectAmount int
 	if s.battleEngine != nil && s.battleState != nil {
 		effectAmount = s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, module, typingResult, s.comboCount)

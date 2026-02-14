@@ -605,11 +605,6 @@ func (e *BattleEngine) ApplySkillEffect(
 	playerEffects := state.Player.EffectTable.Aggregate(ctx)
 	enemyEffects := state.Enemy.EffectTable.Aggregate(ctx)
 
-	// マナ消費（効果適用の前に消費）
-	if module.Type.ManaCost > 0 {
-		state.Player.ConsumeMana(module.Type.ManaCost)
-	}
-
 	totalEffect := 0
 
 	// 各効果を評価・適用

@@ -46,7 +46,7 @@ config       ← 横断的関心事（全層から参照可能）
 - `message_handlers.go`: Bubbleteaメッセージハンドリング
 - `masterdata_converter.go`: masterdata→domain型変換ヘルパー。以下の変換関数を提供：
   - `ConvertTimedEffects`: timed_effects.jsonの時限効果定義をマップに変換
-  - `ResolveModuleTimedEffects`: モジュールのEffectColumnSpec.Column/ValueをTimedEffectから解決
+  - `ResolveSkillTimedEffects`: スキルのEffectColumnSpec.Column/ValueをTimedEffectから解決（ManaCost/ManaGainフィールド込み）
   - `ResolveEnemyActionTimedEffects`: 敵行動のEffectColumn/EffectValueをTimedEffectから解決
 - `*_adapter.go`: 層間データ変換アダプター（例: enemy_progress_adapter.go）
 
@@ -103,7 +103,7 @@ config       ← 横断的関心事（全層から参照可能）
   - `unique_inventory_converter.go`: 各インベントリのセーブ/ロード変換関数
 - `infra/masterdata/`: JSONマスタデータローダー＋埋め込みデータ（Go embed.FS）
   - timed_effects.json: 時限効果定義（ID、名前、説明、効果列、効果値）
-  - modules.json: モジュール定義（各effect_columnにtimed_effect_idを参照）
+  - skills.json: スキル定義（skill_typesキーで定義、ManaCost/ManaGainフィールド、各effect_columnにtimed_effect_idを参照）
   - enemy_actions.json: 敵行動定義（各バフ/デバフ行動にtimed_effect_idを参照）
   - chain_effects.json: チェイン効果定義（ID、名前、説明、効果）
 - `infra/errorhandler/`: エラーハンドリング

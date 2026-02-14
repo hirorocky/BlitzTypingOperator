@@ -286,19 +286,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 			coreTypesMap[ct.ID] = ct
 		}
 		for _, mt := range domainSources.SkillTypes {
-			// ModuleDropInfoからSkillTypeへの変換
-			skillTypesMap[mt.ID] = domain.SkillType{
-				ID:              mt.ID,
-				Name:            mt.Name,
-				Icon:            mt.Icon,
-				Tags:            mt.Tags,
-				Description:     mt.Description,
-				CooldownSeconds: mt.CooldownSeconds,
-				DifficultyRate:  mt.DifficultyRate,
-				ChallengeType:   mt.ChallengeType,
-				MinDropLevel:    mt.MinDropLevel,
-				Effects:         mt.Effects,
-			}
+			skillTypesMap[mt.ID] = mt.ToSkillType()
 		}
 		for _, et := range domainSources.EnemyTypes {
 			enemyTypesMap[et.ID] = et

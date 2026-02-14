@@ -15,12 +15,14 @@
 When プレイヤーがバトルを開始する, the battle system shall:
 - 指定レベルの敵を生成
 - プレイヤーHPを最大値まで回復
+- プレイヤーマナを0に初期化（MaxMana=10）
 - バトル統計を初期化
 
 **受け入れ基準**:
 1. 敵レベルはプレイヤー選択値と一致
 2. プレイヤーHPはPlayerModelの固定MaxHP（敵撃破により成長、初期値1000）
-3. 攻撃タイマーが開始される
+3. プレイヤーマナは0で初期化され、MaxManaは10（固定値）
+4. 攻撃タイマーが開始される
 
 ### REQ-BATTLE-2: モジュール効果計算
 **種別**: Ubiquitous
@@ -29,6 +31,7 @@ The battle system shall calculate module effects using:
 - HP変化量 = (base + stat_coef × STAT) × SpeedFactor × AccuracyFactor
 - 各モジュールは複数のEffectsを持ち、それぞれが独立して発動判定される
 - LUKによる確率補正: 補正後確率 = ベース確率 + (LUK - 10) × luk_factor
+- スキル使用可否判定: ManaCost > 0 かつ Mana < ManaCost の場合、スキル選択不可
 
 **受け入れ基準**:
 1. 正確性50%未満で効果半減
@@ -165,6 +168,33 @@ stateDiagram-v2
 1. チェイン効果を登録したエージェント以外がスキルを使用した場合のみ発動判定実行
 2. 登録エージェント自身がスキルを使用した場合は発動しない
 3. 発動後はチェイン効果が消滅（OneShot）
+
+### マナシステム
+
+**責務**: プレイヤーのマナリソース管理。スキル使用時の消費、効果適用時の獲得を担当。
+
+**マナパラメータ**:
+- `Mana` (int): 現在のマナ値（バトル中のみ。セーブに含まない）
+- `MaxMana` (int): マナ上限（固定値10、config.DefaultMaxMana）
+
+**マナの消費と獲得**:
+1. スキル使用時の消費: ManaCost > 0 かつ使用成功時にMana減少
+2. マナ不足判定: isModuleUsableで ManaCost > 0 かつ Mana < ManaCost なら使用不可
+3. 効果適用時の獲得: Effect発動判定成功後にManaGain分のマナ獲得
+4. マナクランプ: GainMana時にMaxManaを超えないようクランプ、ConsumeMana時に0未満にならない（不足で失敗）
+
+**ルール**:
+1. バトル開始時に Mana = 0, MaxMana = 10 で初期化
+2. マナ消費はTUI層（battle_logic.go）で1回のみ（Echo/DoubleCastの追加発動はマナコスト無料）
+3. マナ獲得はApplySkillEffect内で実施（効果発動判定後）
+4. ManaCost=0のスキルは消費なし
+5. ManaGainは効果の確率判定（Probability/LUKFactor）に従う
+
+**UI表示**:
+- renderPlayerAreaに「Mana: ⭐⭐⭐」形式で表示（マナ数分の⭐を表示、0のとき非表示）
+- マナ不足のスキルは淡い色で表示
+
+**関連ドメイン**: PlayerModel（Mana/MaxManaフィールド、ConsumeMana/GainManaメソッド）
 
 ## 関連ドメイン
 

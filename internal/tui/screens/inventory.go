@@ -691,9 +691,13 @@ func (s *InventoryScreen) renderSkillListItems() string {
 			equipMark = fmt.Sprintf(" [E%s]", strings.Join(slots, ","))
 		}
 
-		// アイコン + スキル名 + 装備マーカーを構成
+		// アイコン + スキル名 + マナコスト + 装備マーカーを構成
 		icon := normalizeInventoryIcon(skill.Icon)
-		itemContent := fmt.Sprintf("%s %s%s", icon, skill.TypeName, equipMark)
+		manaCostMark := ""
+		if skillType, ok := s.skillTypes[skill.TypeID]; ok && skillType.ManaCost > 0 {
+			manaCostMark = " ⭐"
+		}
+		itemContent := fmt.Sprintf("%s %s%s%s", icon, skill.TypeName, manaCostMark, equipMark)
 
 		// プレフィックスを含めた全体の内容を作成し、表示幅で切り詰め後パディング
 		fullContent := prefix + itemContent
@@ -733,6 +737,12 @@ func (s *InventoryScreen) renderSkillPreviewContent() string {
 		if skillType.Description != "" {
 			builder.WriteString(labelStyle.Render("説明: "))
 			builder.WriteString(valueStyle.Render(skillType.Description))
+			builder.WriteString("\n")
+		}
+
+		if skillType.ManaCost > 0 {
+			manaStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff)
+			builder.WriteString(manaStyle.Render(fmt.Sprintf("消費マナ: %s", strings.Repeat("⭐", skillType.ManaCost))))
 			builder.WriteString("\n")
 		}
 	}

@@ -9,15 +9,15 @@ import (
 	"hirorocky/type-battle/internal/usecase/typing"
 )
 
-// ===== 受け入れ基準 12: スキル使用成功時にManaCost分のマナが消費される =====
+// ===== 受け入れ基準 12: マナ消費はバトルロジック層で1回だけ行われる =====
+// ApplySkillEffectはマナを消費しない（Echo/DoubleCast対応のため呼び出し側で消費）
 
-func TestApplySkillEffect_ManaCost消費(t *testing.T) {
+func TestApplySkillEffect_マナ消費はApplySkillEffectの責務外(t *testing.T) {
 	// Arrange
 	player := domain.NewPlayerWithMaxHP(1000)
 	player.MaxMana = 10
-	player.Mana = 5
 	player.PrepareForBattle()
-	player.Mana = 5 // PrepareForBattle後に再設定
+	player.Mana = 5
 
 	moduleType := domain.SkillType{
 		ID:       "magic_skill",
@@ -51,9 +51,9 @@ func TestApplySkillEffect_ManaCost消費(t *testing.T) {
 	// Act
 	engine.ApplySkillEffect(state, agent, module, typingResult)
 
-	// Assert
-	if state.Player.Mana != 4 {
-		t.Errorf("マナ消費後のManaが期待値と異なります: got %d, want 4", state.Player.Mana)
+	// Assert: ApplySkillEffect内ではマナを消費しない
+	if state.Player.Mana != 5 {
+		t.Errorf("ApplySkillEffect内でマナが消費されています: got %d, want 5", state.Player.Mana)
 	}
 }
 
@@ -199,13 +199,12 @@ func TestApplySkillEffect_ManaCostゼロ_マナ不変(t *testing.T) {
 	}
 }
 
-// ===== 受け入れ基準 13: 消費→効果→獲得の順序 =====
+// ===== 受け入れ基準 13: ApplySkillEffect内ではManaGainのみ発生する =====
 
-func TestApplySkillEffect_消費と獲得の順序(t *testing.T) {
-	// Arrange: ManaCost=1で消費し、ManaGain=1で獲得 → 結果変わらず
+func TestApplySkillEffect_ManaGainのみ発生_消費は呼び出し側(t *testing.T) {
+	// Arrange: ManaCost=1, ManaGain=1のスキル → ApplySkillEffect内ではGainのみ
 	player := domain.NewPlayerWithMaxHP(1000)
 	player.MaxMana = 10
-	player.Mana = 1
 	player.PrepareForBattle()
 	player.Mana = 1
 
@@ -242,9 +241,9 @@ func TestApplySkillEffect_消費と獲得の順序(t *testing.T) {
 	// Act
 	engine.ApplySkillEffect(state, agent, module, typingResult)
 
-	// Assert: 1消費 + 1獲得 = 結果1のまま
-	if state.Player.Mana != 1 {
-		t.Errorf("消費→獲得後のManaが期待値と異なります: got %d, want 1", state.Player.Mana)
+	// Assert: 消費なし + 1獲得 = Mana 2
+	if state.Player.Mana != 2 {
+		t.Errorf("ApplySkillEffect後のManaが期待値と異なります: got %d, want 2", state.Player.Mana)
 	}
 }
 

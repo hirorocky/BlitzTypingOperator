@@ -134,15 +134,31 @@ type ModuleModel struct { ... }
 | Tab | `\t` | |
 | Ctrl+X | `send_ctrl("x")` | 例: Ctrl+C は `send_ctrl("c")` |
 
+### 複数キーの送信
+- 複数キーを一度に送信する場合は `inter_key_delay` を指定すること
+- 一括送信（`send_keys("jj\r")`）はbubbletea側のイベント処理が追いつかず不安定になる
+- `inter_key_delay=0.05`（50ms）程度で安定する
+
+```
+# 悪い例（一括送信、TUIでは不安定）
+send_keys("jj\r", delay=1)
+
+# 良い例（キー間に遅延を入れて安定送信）
+send_keys("jj\r", delay=1, inter_key_delay=0.05)
+```
+
 ### 使用例
 ```
 # ゲーム起動（常に最新コードを使用）
 launch_tui(command="go run ./cmd/BlitzTypingOperator", mode="buffer", dimensions="160x45")
 
-# メニュー操作
+# メニュー操作（単一キー）
 send_keys("j")      # 下に移動
 send_keys("\r")     # Enter（選択）
 send_keys("\x1b")   # ESC（戻る）
+
+# メニュー操作（複数キー）
+send_keys("jj\r", inter_key_delay=0.05)  # 2つ下に移動して選択
 ```
 
 ※ 初回起動時はコンパイルのため数秒かかる。delayを長め（2秒程度）に設定すると安定する。

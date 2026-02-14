@@ -156,6 +156,70 @@ func TestBattleScreen_RecastStateAffectsModuleUsability(t *testing.T) {
 	}
 }
 
+// TestBattleScreen_ManaAffectsModuleUsability はマナ不足によるモジュール使用可否のテストです。
+func TestBattleScreen_ManaAffectsModuleUsability(t *testing.T) {
+	// ManaCost=1のモジュールを作成
+	module := domain.NewSkillFromType(domain.SkillType{
+		ID:       "mana_skill",
+		Name:     "マナスキル",
+		Icon:     "🔮",
+		Tags:     []string{"magic_low"},
+		ManaCost: 1,
+		Effects: []domain.SkillEffect{
+			{
+				Target:      domain.TargetEnemy,
+				HPFormula:   &domain.HPFormula{Base: 50.0, StatCoef: 1.0, StatRef: "MAG"},
+				Probability: 1.0,
+				Icon:        "🔮",
+			},
+		},
+	}, nil)
+	modules := []*domain.SkillModel{module}
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, modules)
+
+	player := createTestPlayer()
+	player.MaxMana = 10
+	screen := NewBattleScreen(createTestEnemy(), player, []*domain.AgentModel{agent}, nil)
+
+	// マナ不足時は使用不可
+	screen.player.Mana = 0
+	if screen.isModuleUsable(0) {
+		t.Error("マナ不足時にモジュールが使用可能になっています")
+	}
+
+	// マナ十分時は使用可能
+	screen.player.Mana = 1
+	if !screen.isModuleUsable(0) {
+		t.Error("マナ十分時にモジュールが使用不可になっています")
+	}
+
+	// ManaCost=0のモジュールはマナ0でも使用可能
+	freeCostModule := domain.NewSkillFromType(domain.SkillType{
+		ID:       "free_skill",
+		Name:     "無コストスキル",
+		Icon:     "⚔️",
+		Tags:     []string{"physical_low"},
+		ManaCost: 0,
+		Effects: []domain.SkillEffect{
+			{
+				Target:      domain.TargetEnemy,
+				HPFormula:   &domain.HPFormula{Base: 50.0, StatCoef: 1.0, StatRef: "STR"},
+				Probability: 1.0,
+				Icon:        "⚔️",
+			},
+		},
+	}, nil)
+	freeModules := []*domain.SkillModel{freeCostModule}
+	freeAgent := createTestAgentWithPassive(domain.PassiveSkill{}, freeModules)
+
+	screen2 := NewBattleScreen(createTestEnemy(), createTestPlayer(), []*domain.AgentModel{freeAgent}, nil)
+	screen2.player.MaxMana = 10
+	screen2.player.Mana = 0
+	if !screen2.isModuleUsable(0) {
+		t.Error("ManaCost=0のモジュールがマナ0で使用不可になっています")
+	}
+}
+
 // TestGetRecastInfoForAgent はエージェントリキャスト情報取得のテストです。
 func TestGetRecastInfoForAgent(t *testing.T) {
 	rm := recast.NewRecastManager()

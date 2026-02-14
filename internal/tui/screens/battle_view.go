@@ -292,6 +292,9 @@ func (s *BattleScreen) renderAgentArea() string {
 				} else if !slot.IsReady() || recastState != nil {
 					// クールダウン中またはリキャスト中は淡い色
 					moduleStyle = lipgloss.NewStyle().Foreground(styles.ColorSubtle)
+				} else if slot.Module.Type.ManaCost > 0 && s.player.Mana < slot.Module.Type.ManaCost {
+					// マナ不足時は淡い色
+					moduleStyle = lipgloss.NewStyle().Foreground(styles.ColorSubtle)
 				} else {
 					moduleStyle = lipgloss.NewStyle().Foreground(styles.ColorSecondary)
 				}
