@@ -173,7 +173,7 @@ stateDiagram-v2
 
 ### InventoryManager
 
-**責座**: コア・スキル・チェイン効果の保有状態を統合管理
+**責務**: コア・スキル・チェイン効果の保有状態を統合管理
 
 **機能**:
 1. Cores(): CoreInventoryへのアクセス

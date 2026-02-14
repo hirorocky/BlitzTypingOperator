@@ -93,7 +93,7 @@ The collection system shall track collected items:
 
 ### AchievementManager
 
-**責座**: 実績の管理と達成判定
+**責務**: 実績の管理と達成判定
 
 **インターフェース**:
 - 入力: タイピング結果、バトル結果
@@ -130,7 +130,7 @@ The collection system shall track collected items:
 
 ### 図鑑システム
 
-**責座**: コア/スキル/チェイン効果/敵の収集状況を追跡
+**責務**: コア/スキル/チェイン効果/敵の収集状況を追跡
 
 **ルール**:
 1. 入手・エンカウント済みアイテムはGameStateで管理
