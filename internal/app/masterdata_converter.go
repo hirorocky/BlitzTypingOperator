@@ -236,3 +236,84 @@ func ConvertChainEffectsToMap(effects []masterdata.ChainEffectData) map[string]d
 	}
 	return result
 }
+
+// ConvertRankRewards はmasterdata.RankRewardDataのスライスをmap[int]domain.RankRewardに変換します。
+// キーはランク番号です。未知のcategoryや不正ランクはログ警告してスキップします。
+func ConvertRankRewards(
+	data []masterdata.RankRewardData,
+	coreTypes []domain.CoreType,
+	skillTypes []rewarding.SkillDropInfo,
+	chainEffectDefs []rewarding.ChainEffectDefinition,
+) map[int]domain.RankReward {
+	// 存在確認用マップ
+	coreMap := make(map[string]bool, len(coreTypes))
+	for _, ct := range coreTypes {
+		coreMap[ct.ID] = true
+	}
+	skillMap := make(map[string]bool, len(skillTypes))
+	for _, st := range skillTypes {
+		skillMap[st.ID] = true
+	}
+	chainEffectMap := make(map[string]bool, len(chainEffectDefs))
+	for _, ce := range chainEffectDefs {
+		chainEffectMap[ce.ID] = true
+	}
+
+	result := make(map[int]domain.RankReward)
+	for _, rd := range data {
+		if rd.Rank <= 0 {
+			slog.Warn("不正なランクアップ報酬ランク、スキップします",
+				slog.Int("rank", rd.Rank))
+			continue
+		}
+
+		items := make([]domain.RankRewardItem, 0, len(rd.Rewards))
+		for _, item := range rd.Rewards {
+			category := item.Category
+			// "module"は"skill"と同義
+			if category == "module" {
+				category = "skill"
+			}
+
+			switch category {
+			case "core":
+				if !coreMap[item.TypeID] {
+					slog.Warn("ランクアップ報酬の未知コアTypeID、スキップします",
+						slog.String("typeID", item.TypeID),
+						slog.Int("rank", rd.Rank))
+					continue
+				}
+			case "skill":
+				if !skillMap[item.TypeID] {
+					slog.Warn("ランクアップ報酬の未知スキルTypeID、スキップします",
+						slog.String("typeID", item.TypeID),
+						slog.Int("rank", rd.Rank))
+					continue
+				}
+			case "chain_effect":
+				if !chainEffectMap[item.TypeID] {
+					slog.Warn("ランクアップ報酬の未知チェイン効果TypeID、スキップします",
+						slog.String("typeID", item.TypeID),
+						slog.Int("rank", rd.Rank))
+					continue
+				}
+			default:
+				slog.Warn("ランクアップ報酬の未知カテゴリ、スキップします",
+					slog.String("category", item.Category),
+					slog.Int("rank", rd.Rank))
+				continue
+			}
+
+			items = append(items, domain.RankRewardItem{
+				Category: category,
+				TypeID:   item.TypeID,
+			})
+		}
+
+		result[rd.Rank] = domain.RankReward{
+			Rank:  rd.Rank,
+			Items: items,
+		}
+	}
+	return result
+}

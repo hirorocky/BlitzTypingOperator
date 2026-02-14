@@ -72,9 +72,13 @@ func (s *RewardScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
+// sectionBoxWidth はセクションボックスの幅です。
+const sectionBoxWidth = 60
+
 // View は画面をレンダリングします。
+// 撃破報酬→ランクアップ→タイピング統計の縦並びレイアウトです。
 func (s *RewardScreen) View() string {
-	var builder strings.Builder
+	var sections []string
 
 	// タイトル
 	titleStyle := lipgloss.NewStyle().
@@ -83,33 +87,20 @@ func (s *RewardScreen) View() string {
 		Align(lipgloss.Center).
 		Width(s.width)
 
-	builder.WriteString(titleStyle.Render("🎉 バトル勝利！ 🎉"))
-	builder.WriteString("\n\n")
+	sections = append(sections, titleStyle.Render("🎉 バトル勝利！ 🎉"))
 
-	// 敵レベル
-	levelStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorPrimary).
-		Align(lipgloss.Center).
-		Width(s.width)
-
-	builder.WriteString(levelStyle.Render(fmt.Sprintf("Lv.%d の敵を撃破！", s.result.EnemyLevel)))
-	builder.WriteString("\n\n")
-
-	// メインコンテンツ（統計とドロップ）
-	builder.WriteString(s.renderMainContent())
-	builder.WriteString("\n\n")
-
-	// HP増加表示
-	if s.result.HPGain > 0 {
-		builder.WriteString(s.renderHPGain())
-		builder.WriteString("\n\n")
+	// 撃破報酬セクション（ドロップアイテムまたはHP増加がある場合のみ）
+	if s.hasDefeatReward() {
+		sections = append(sections, s.renderDefeatRewardSection())
 	}
 
-	// ランクアップ表示
+	// ランクアップセクション（ランク解放時のみ）
 	if s.result.RankUnlocked {
-		builder.WriteString(s.renderRankUp())
-		builder.WriteString("\n\n")
+		sections = append(sections, s.renderRankUpSection())
 	}
+
+	// タイピング統計セクション（常に表示）
+	sections = append(sections, s.renderTypingStatsSection())
 
 	// ヒント
 	hintStyle := lipgloss.NewStyle().
@@ -117,153 +108,86 @@ func (s *RewardScreen) View() string {
 		Align(lipgloss.Center).
 		Width(s.width)
 
-	builder.WriteString(hintStyle.Render("Enter: 続行"))
+	sections = append(sections, hintStyle.Render("Enter: 続行"))
 
-	return builder.String()
+	return strings.Join(sections, "\n\n")
 }
 
-// renderMainContent はメインコンテンツをレンダリングします。
-func (s *RewardScreen) renderMainContent() string {
-	// 左側：バトル統計、右側：ドロップアイテム
-	statsBox := s.renderBattleStats()
-	dropsBox := s.renderDrops()
+// hasDefeatReward は撃破報酬があるかを返します。
+func (s *RewardScreen) hasDefeatReward() bool {
+	return len(s.result.DroppedCores) > 0 ||
+		len(s.result.DroppedSkills) > 0 ||
+		s.result.HPGain > 0
+}
 
-	content := lipgloss.JoinHorizontal(lipgloss.Top, statsBox, "  ", dropsBox)
+// renderDefeatRewardSection は撃破報酬セクションをレンダリングします。
+func (s *RewardScreen) renderDefeatRewardSection() string {
+	var items []string
+
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorPrimary)
+
+	items = append(items, titleStyle.Render("🎁 撃破報酬"))
+	items = append(items, "")
+
+	itemStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary)
+
+	// コアドロップ
+	for _, core := range s.result.DroppedCores {
+		items = append(items, itemStyle.Render(fmt.Sprintf("  コア: %s", core.Name)))
+	}
+
+	// スキルドロップ
+	for _, skill := range s.result.DroppedSkills {
+		skillInfo := fmt.Sprintf("  スキル: %s %s", skill.Icon(), skill.Name())
+		items = append(items, itemStyle.Render(skillInfo))
+
+		// チェイン効果の詳細
+		if skill.HasChainEffect() {
+			items = append(items, lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Render(fmt.Sprintf("    + %s", skill.ChainEffect.Description)))
+		}
+	}
+
+	// HP増加
+	if s.result.HPGain > 0 {
+		hpStyle := lipgloss.NewStyle().
+			Bold(true).
+			Foreground(styles.ColorBuff)
+		items = append(items, hpStyle.Render(fmt.Sprintf("  💚 最大HP +%d (%d → %d)",
+			s.result.HPGain, s.result.PreviousMaxHP, s.result.NewMaxHP)))
+	}
+
+	content := strings.Join(items, "\n")
+
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorPrimary).
+		Padding(1).
+		Width(sectionBoxWidth).
+		Render(content)
 
 	return lipgloss.NewStyle().
 		Width(s.width).
 		Align(lipgloss.Center).
-		Render(content)
+		Render(box)
 }
 
-// renderBattleStats はバトル統計をレンダリングします。
-
-func (s *RewardScreen) renderBattleStats() string {
+// renderRankUpSection はランクアップセクションをレンダリングします。
+func (s *RewardScreen) renderRankUpSection() string {
 	var items []string
 
-	itemStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary)
-
-	// WPM
-	if s.result.Stats != nil {
-		avgWPM := s.result.Stats.GetAverageWPM()
-		avgAccuracy := s.result.Stats.GetAverageAccuracy()
-
-		items = append(items, itemStyle.Render(fmt.Sprintf("平均WPM: %.1f", avgWPM)))
-		items = append(items, itemStyle.Render(fmt.Sprintf("平均正確性: %.1f%%", avgAccuracy)))
-		items = append(items, itemStyle.Render(fmt.Sprintf("総ダメージ: %d", s.result.Stats.TotalDamageDealt)))
-		items = append(items, itemStyle.Render(fmt.Sprintf("被ダメージ: %d", s.result.Stats.TotalDamageTaken)))
-		if s.result.Stats.TotalHealAmount > 0 {
-			items = append(items, itemStyle.Render(fmt.Sprintf("回復量: %d", s.result.Stats.TotalHealAmount)))
-		}
-	} else {
-		items = append(items, itemStyle.Render("統計データなし"))
-	}
-
-	content := strings.Join(items, "\n")
-
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(styles.ColorPrimary)
-
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorPrimary).
-		Padding(1).
-		Width(35).
-		Render(titleStyle.Render("📊 バトル統計") + "\n\n" + content)
-}
-
-// renderDrops はドロップアイテムをレンダリングします。
-
-func (s *RewardScreen) renderDrops() string {
-	var items []string
-
-	// コアドロップ
-	if len(s.result.DroppedCores) > 0 {
-		coreStyle := lipgloss.NewStyle().
-			Bold(true).
-			Foreground(styles.ColorSecondary)
-		items = append(items, coreStyle.Render("【コア】"))
-
-		for _, core := range s.result.DroppedCores {
-			coreInfo := fmt.Sprintf("  %s", core.Name)
-			items = append(items, lipgloss.NewStyle().
-				Foreground(styles.ColorSecondary).
-				Render(coreInfo))
-		}
-		items = append(items, "")
-	}
-
-	// スキルドロップ
-	if len(s.result.DroppedSkills) > 0 {
-		skillStyle := lipgloss.NewStyle().
-			Bold(true).
-			Foreground(styles.ColorInfo)
-		items = append(items, skillStyle.Render("【スキル】"))
-
-		for _, skill := range s.result.DroppedSkills {
-			// スキル基本情報
-			skillInfo := fmt.Sprintf("  %s %s", skill.Icon(), skill.Name())
-
-			items = append(items, lipgloss.NewStyle().
-				Foreground(styles.ColorSecondary).
-				Render(skillInfo))
-
-			// チェイン効果の詳細説明を追加
-			if skill.HasChainEffect() {
-				items = append(items, lipgloss.NewStyle().
-					Foreground(lipgloss.Color("#FFFFFF")).
-					Render(fmt.Sprintf("    + %s", skill.ChainEffect.Description)))
-			}
-		}
-	}
-
-	// ドロップなしの場合
-	if len(s.result.DroppedCores) == 0 && len(s.result.DroppedSkills) == 0 {
-		items = append(items, lipgloss.NewStyle().
-			Foreground(styles.ColorSubtle).
-			Render("ドロップアイテムなし"))
-	}
-
-	content := strings.Join(items, "\n")
-
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(styles.ColorPrimary)
-
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorPrimary).
-		Padding(1).
-		Width(35).
-		Render(titleStyle.Render("🎁 ドロップ") + "\n\n" + content)
-}
-
-// renderHPGain はHP増加を表示します。
-func (s *RewardScreen) renderHPGain() string {
-	hpStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(styles.ColorBuff).
-		Align(lipgloss.Center).
-		Width(s.width)
-
-	return hpStyle.Render(fmt.Sprintf("💚 最大HP +%d！ (%d → %d)",
-		s.result.HPGain, s.result.PreviousMaxHP, s.result.NewMaxHP))
-}
-
-// renderRankUp はランクアップを大きく表示します。
-func (s *RewardScreen) renderRankUp() string {
-	var builder strings.Builder
-
-	// タイトル
-	titleStyle := lipgloss.NewStyle().
+	// RANK UP タイトル
+	rankUpTitle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(ascii.GoldColor).
 		Align(lipgloss.Center).
-		Width(s.width)
+		Width(sectionBoxWidth - 4). // パディング分を差し引く
+		Render("✨ RANK UP! ✨")
 
-	builder.WriteString(titleStyle.Render("✨ RANK UP! ✨"))
-	builder.WriteString("\n\n")
+	items = append(items, rankUpTitle)
 
 	// ランク数字を影付きで表示
 	shadowRenderer := ascii.NewShadowNumbers()
@@ -271,22 +195,107 @@ func (s *RewardScreen) renderRankUp() string {
 
 	rankContent := lipgloss.NewStyle().
 		Align(lipgloss.Center).
-		Width(s.width).
+		Width(sectionBoxWidth - 4).
 		Render(rankArt)
 
-	builder.WriteString(rankContent)
-	builder.WriteString("\n")
+	items = append(items, rankContent)
 
 	// ランク変化の説明
 	descStyle := lipgloss.NewStyle().
 		Foreground(ascii.DarkGoldColor).
 		Align(lipgloss.Center).
-		Width(s.width)
+		Width(sectionBoxWidth - 4)
 
-	builder.WriteString(descStyle.Render(fmt.Sprintf("ランク %d → %d",
+	items = append(items, descStyle.Render(fmt.Sprintf("ランク %d → %d",
 		s.result.PreviousRank, s.result.NewRank)))
 
-	return builder.String()
+	// ランクアップ報酬アイテム
+	if s.hasRankUpRewards() {
+		items = append(items, "")
+
+		rewardTitleStyle := lipgloss.NewStyle().
+			Bold(true).
+			Foreground(ascii.GoldColor)
+		items = append(items, rewardTitleStyle.Render("ランクアップ報酬:"))
+
+		rewardItemStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary)
+
+		for _, core := range s.result.RankUpRewardCores {
+			items = append(items, rewardItemStyle.Render(fmt.Sprintf("  コア: %s", core.Name)))
+		}
+
+		for _, skill := range s.result.RankUpRewardSkills {
+			items = append(items, rewardItemStyle.Render(fmt.Sprintf("  スキル: %s %s", skill.Icon(), skill.Name())))
+		}
+
+		for _, effect := range s.result.RankUpRewardChainEffects {
+			items = append(items, rewardItemStyle.Render(fmt.Sprintf("  チェイン効果: %s", effect.Description)))
+		}
+	}
+
+	content := strings.Join(items, "\n")
+
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(ascii.GoldColor).
+		Padding(1).
+		Width(sectionBoxWidth).
+		Render(content)
+
+	return lipgloss.NewStyle().
+		Width(s.width).
+		Align(lipgloss.Center).
+		Render(box)
+}
+
+// hasRankUpRewards はランクアップ報酬アイテムがあるかを返します。
+func (s *RewardScreen) hasRankUpRewards() bool {
+	return len(s.result.RankUpRewardCores) > 0 ||
+		len(s.result.RankUpRewardSkills) > 0 ||
+		len(s.result.RankUpRewardChainEffects) > 0
+}
+
+// renderTypingStatsSection はタイピング統計セクションをレンダリングします。
+func (s *RewardScreen) renderTypingStatsSection() string {
+	var items []string
+
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorPrimary)
+
+	items = append(items, titleStyle.Render("📊 タイピング統計"))
+	items = append(items, "")
+
+	itemStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary)
+
+	if s.result.Stats != nil {
+		avgWPM := s.result.Stats.GetAverageWPM()
+		avgAccuracy := s.result.Stats.GetAverageAccuracy()
+
+		items = append(items, itemStyle.Render(fmt.Sprintf("  平均WPM: %.1f", avgWPM)))
+		items = append(items, itemStyle.Render(fmt.Sprintf("  平均正確性: %.1f%%", avgAccuracy)))
+		items = append(items, itemStyle.Render(fmt.Sprintf("  総ダメージ: %d", s.result.Stats.TotalDamageDealt)))
+		items = append(items, itemStyle.Render(fmt.Sprintf("  被ダメージ: %d", s.result.Stats.TotalDamageTaken)))
+		if s.result.Stats.TotalHealAmount > 0 {
+			items = append(items, itemStyle.Render(fmt.Sprintf("  回復量: %d", s.result.Stats.TotalHealAmount)))
+		}
+	} else {
+		items = append(items, itemStyle.Render("  統計データなし"))
+	}
+
+	content := strings.Join(items, "\n")
+
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorPrimary).
+		Padding(1).
+		Width(sectionBoxWidth).
+		Render(content)
+
+	return lipgloss.NewStyle().
+		Width(s.width).
+		Align(lipgloss.Center).
+		Render(box)
 }
 
 // SetSize はウィンドウサイズを設定します。

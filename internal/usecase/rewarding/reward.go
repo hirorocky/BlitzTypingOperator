@@ -190,6 +190,15 @@ type RewardResult struct {
 
 	// NewRank はランク増加後のランク値です（表示用）。
 	NewRank int
+
+	// RankUpRewardCores はランクアップ報酬のコアリストです。
+	RankUpRewardCores []*domain.CoreModel
+
+	// RankUpRewardSkills はランクアップ報酬のスキルリストです。
+	RankUpRewardSkills []*domain.SkillModel
+
+	// RankUpRewardChainEffects はランクアップ報酬のチェイン効果リストです。
+	RankUpRewardChainEffects []domain.ChainEffect
 }
 
 // InventoryWarning はインベントリ警告を表す構造体です。
@@ -327,6 +336,9 @@ type RewardCalculator struct {
 	// chainEffectPool はチェイン効果プールです。
 	chainEffectPool *ChainEffectPool
 
+	// rankRewards はランクアップ報酬マップです（ランク番号→報酬）。
+	rankRewards map[int]domain.RankReward
+
 	// rng は乱数生成器です。
 	rng *rand.Rand
 }
@@ -348,6 +360,11 @@ func NewRewardCalculator(
 // SetChainEffectPool はチェイン効果プールを設定します。
 func (c *RewardCalculator) SetChainEffectPool(pool *ChainEffectPool) {
 	c.chainEffectPool = pool
+}
+
+// SetRankRewards はランクアップ報酬マップを設定します。
+func (c *RewardCalculator) SetRankRewards(rewards map[int]domain.RankReward) {
+	c.rankRewards = rewards
 }
 
 // GetChainEffectPool はチェイン効果プールを取得します。
@@ -601,6 +618,11 @@ func (c *RewardCalculator) CalculateGuaranteedRewardWithProgress(
 	result.PreviousRank = previousRank
 	result.NewRank = progress.CurrentRank
 
+	// ランクアップ報酬の解決
+	if rankUnlocked && c.rankRewards != nil {
+		c.resolveRankUpRewards(result, progress.CurrentRank)
+	}
+
 	return result
 }
 
@@ -619,6 +641,52 @@ func checkRankComplete(progress *domain.EnemyProgress, enemyTypes map[string]dom
 	}
 
 	return hasEnemiesInRank
+}
+
+// resolveRankUpRewards はランクアップ報酬をRewardResultに格納します。
+func (c *RewardCalculator) resolveRankUpRewards(result *RewardResult, newRank int) {
+	reward, ok := c.rankRewards[newRank]
+	if !ok {
+		return
+	}
+
+	for _, item := range reward.Items {
+		switch item.Category {
+		case "core":
+			core := c.RollCoreDropWithTypeID(item.TypeID, 1)
+			if core != nil {
+				result.RankUpRewardCores = append(result.RankUpRewardCores, core)
+			}
+		case "skill":
+			// ランクアップ報酬のスキルにはチェイン効果を付与しない
+			var selectedType *SkillDropInfo
+			for i := range c.skillTypes {
+				if c.skillTypes[i].ID == item.TypeID {
+					selectedType = &c.skillTypes[i]
+					break
+				}
+			}
+			if selectedType != nil {
+				result.RankUpRewardSkills = append(result.RankUpRewardSkills, selectedType.ToDomain())
+			}
+		case "chain_effect":
+			if c.chainEffectPool != nil {
+				for _, def := range c.chainEffectPool.Effects {
+					if def.ID == item.TypeID {
+						effect := domain.NewChainEffectWithTemplate(
+							def.ID,
+							def.EffectType,
+							def.MinValue,
+							def.Description,
+							def.ShortDescription,
+						)
+						result.RankUpRewardChainEffects = append(result.RankUpRewardChainEffects, effect)
+						break
+					}
+				}
+			}
+		}
+	}
 }
 
 // AddRewardsToInventory はドロップしたアイテムをインベントリに追加します。
@@ -654,6 +722,36 @@ func AddRewardsToInventory(
 			if added {
 				slog.Info("チェイン効果をインベントリに追加",
 					slog.String("chain_effect_id", skill.ChainEffect.ID),
+				)
+			}
+		}
+	}
+
+	// ランクアップ報酬のコアをインベントリに追加
+	for _, core := range result.RankUpRewardCores {
+		updated := coreInv.AddCore(core.Type.ID)
+		if updated {
+			slog.Info("ランクアップ報酬コアをインベントリに追加",
+				slog.String("core_type_id", core.Type.ID),
+			)
+		}
+	}
+
+	// ランクアップ報酬のスキルをインベントリに追加
+	for _, skill := range result.RankUpRewardSkills {
+		skillInv.AddSkill(skill.TypeID)
+		slog.Info("ランクアップ報酬スキルをインベントリに追加",
+			slog.String("skill_type_id", skill.TypeID),
+		)
+	}
+
+	// ランクアップ報酬のチェイン効果をインベントリに追加
+	if chainEffectInv != nil {
+		for _, effect := range result.RankUpRewardChainEffects {
+			added := chainEffectInv.AddChainEffect(effect.ID)
+			if added {
+				slog.Info("ランクアップ報酬チェイン効果をインベントリに追加",
+					slog.String("chain_effect_id", effect.ID),
 				)
 			}
 		}
