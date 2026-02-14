@@ -8,8 +8,8 @@ import (
 	"hirorocky/type-battle/internal/usecase/rewarding"
 )
 
-// TestResolveModuleTimedEffects はモジュールのEffectColumnSpecにTimedEffectからColumn/Valueが解決されることをテストします（AC13）。
-func TestResolveModuleTimedEffects(t *testing.T) {
+// TestResolveSkillTimedEffects はスキルのEffectColumnSpecにTimedEffectからColumn/Valueが解決されることをテストします。
+func TestResolveSkillTimedEffects(t *testing.T) {
 	// Arrange: TimedEffectマップを作成
 	timedEffects := map[string]domain.TimedEffect{
 		"st_str_buff_lv1": {
@@ -67,7 +67,7 @@ func TestResolveModuleTimedEffects(t *testing.T) {
 	}
 
 	// Act
-	ResolveModuleTimedEffects(modules, timedEffects)
+	ResolveSkillTimedEffects(modules, timedEffects)
 
 	// Assert: str_buff_lv1のバフ効果が解決されていること
 	strBuff := modules[0].Effects[1]

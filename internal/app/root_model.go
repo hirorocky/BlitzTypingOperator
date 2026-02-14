@@ -155,7 +155,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		ResolveEnemyTypeActions(enemyTypes, enemyActions)
 		// 時限効果の解決（TimedEffectIDからColumn/Valueへ）
 		timedEffects := ConvertTimedEffects(externalData.TimedEffects)
-		ResolveModuleTimedEffects(moduleTypes, timedEffects)
+		ResolveSkillTimedEffects(moduleTypes, timedEffects)
 		ResolveEnemyActionTimedEffects(enemyTypes, timedEffects)
 		passiveSkills = ConvertPassiveSkills(externalData.PassiveSkills)
 		chainEffectDefs := ConvertChainEffects(chainEffects)

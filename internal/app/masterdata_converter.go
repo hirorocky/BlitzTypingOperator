@@ -184,8 +184,8 @@ func ConvertTimedEffects(types []masterdata.TimedEffectData) map[string]domain.T
 	return result
 }
 
-// ResolveModuleTimedEffects はモジュールのEffectColumnSpecにTimedEffectからColumn/Valueを解決します。
-func ResolveModuleTimedEffects(modules []rewarding.ModuleDropInfo, timedEffects map[string]domain.TimedEffect) {
+// ResolveSkillTimedEffects はスキルのEffectColumnSpecにTimedEffectからColumn/Valueを解決します。
+func ResolveSkillTimedEffects(modules []rewarding.ModuleDropInfo, timedEffects map[string]domain.TimedEffect) {
 	for i := range modules {
 		for j := range modules[i].Effects {
 			spec := modules[i].Effects[j].ColumnSpec
