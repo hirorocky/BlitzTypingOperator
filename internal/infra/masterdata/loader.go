@@ -77,6 +77,7 @@ type ExternalData struct {
 	TypingDictionary   *TypingDictionary
 	FirstAgents        []FirstAgentData
 	TimedEffects       []TimedEffectData
+	RankRewards        []RankRewardData
 }
 
 // ==================== 時限効果定義 ====================
@@ -937,6 +938,40 @@ func (l *DataLoader) LoadFirstAgents() ([]FirstAgentData, error) {
 	return fileData.FirstAgents, nil
 }
 
+// ==================== ランクアップ報酬定義 ====================
+
+// RankRewardItemData はランクアップ報酬の個別アイテムデータです。
+type RankRewardItemData struct {
+	Category string `json:"category"`
+	TypeID   string `json:"type_id"`
+}
+
+// RankRewardData はrank_rewards.jsonから読み込むランクアップ報酬データの構造体です。
+type RankRewardData struct {
+	Rank    int                  `json:"rank"`
+	Rewards []RankRewardItemData `json:"rewards"`
+}
+
+// rankRewardsFileData はrank_rewards.jsonのルート構造です。
+type rankRewardsFileData struct {
+	RankRewards []RankRewardData `json:"rank_rewards"`
+}
+
+// LoadRankRewards はrank_rewards.jsonからランクアップ報酬定義を読み込みます。
+func (l *DataLoader) LoadRankRewards() ([]RankRewardData, error) {
+	data, err := l.readFile("rank_rewards.json")
+	if err != nil {
+		return nil, fmt.Errorf("rank_rewards.jsonの読み込みに失敗: %w", err)
+	}
+
+	var fileData rankRewardsFileData
+	if err := json.Unmarshal(data, &fileData); err != nil {
+		return nil, fmt.Errorf("rank_rewards.jsonのパースに失敗: %w", err)
+	}
+
+	return fileData.RankRewards, nil
+}
+
 // ==================== 全データ一括ロード ====================
 
 // LoadAllExternalData は全ての外部データファイルを一括でロードします。
@@ -997,6 +1032,12 @@ func (l *DataLoader) LoadAllExternalData() (*ExternalData, error) {
 		return nil, fmt.Errorf("時限効果データのロードに失敗: %w", err)
 	}
 
+	// ランクアップ報酬データのロード（オプショナル：ファイルが存在しない場合は空配列）
+	rankRewards, err := l.LoadRankRewards()
+	if err != nil {
+		rankRewards = []RankRewardData{}
+	}
+
 	return &ExternalData{
 		CoreTypes:          coreTypes,
 		SkillDefinitions:   skills,
@@ -1008,6 +1049,7 @@ func (l *DataLoader) LoadAllExternalData() (*ExternalData, error) {
 		TypingDictionary:   dictionary,
 		FirstAgents:        firstAgents,
 		TimedEffects:       timedEffects,
+		RankRewards:        rankRewards,
 	}, nil
 }
 

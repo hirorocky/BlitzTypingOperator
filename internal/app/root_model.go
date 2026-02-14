@@ -227,6 +227,17 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 			chainEffectPool := rewarding.NewChainEffectPool(domainSources.ChainEffectDefinitions)
 			gs.RewardCalculator().SetChainEffectPool(chainEffectPool)
 		}
+
+		// ランクアップ報酬を設定
+		if len(externalData.RankRewards) > 0 {
+			rankRewards := ConvertRankRewards(
+				externalData.RankRewards,
+				domainSources.CoreTypes,
+				domainSources.SkillTypes,
+				domainSources.ChainEffectDefinitions,
+			)
+			gs.RewardCalculator().SetRankRewards(rankRewards)
+		}
 	}
 
 	// 新システムのマネージャーを作成

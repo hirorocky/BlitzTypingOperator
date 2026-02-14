@@ -1,0 +1,11 @@
+{
+  "rank_rewards": [
+    {
+      "rank": 2,
+      "rewards": [
+        { "category": "core", "type_id": "magic_balance" },
+        { "category": "skill", "type_id": "heal_lv1" }
+      ]
+    }
+  ]
+}
