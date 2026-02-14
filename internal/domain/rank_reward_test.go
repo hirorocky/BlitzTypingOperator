@@ -2,9 +2,7 @@ package domain
 
 import "testing"
 
-// 受け入れ基準1: ランクアップ時にマスタデータで定義された報酬アイテムを表現できる
-
-// TestRankReward_HasItems はRankRewardがアイテムリストを保持できることをテストします。
+// TestRankReward_HasItems はRankRewardが複数カテゴリのアイテムリストを保持できることをテストします。
 func TestRankReward_HasItems(t *testing.T) {
 	reward := RankReward{
 		Rank: 2,

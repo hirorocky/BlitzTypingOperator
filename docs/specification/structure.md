@@ -48,6 +48,7 @@ config       ← 横断的関心事（全層から参照可能）
   - `ConvertTimedEffects`: timed_effects.jsonの時限効果定義をマップに変換
   - `ResolveSkillTimedEffects`: スキルのEffectColumnSpec.Column/ValueをTimedEffectから解決（ManaCost/ManaGainフィールド込み）
   - `ResolveEnemyActionTimedEffects`: 敵行動のEffectColumn/EffectValueをTimedEffectから解決
+  - `ConvertRankRewards`: rank_rewards.jsonのランクアップ報酬定義をRankRewardマップに変換
 - `*_adapter.go`: 層間データ変換アダプター（例: enemy_progress_adapter.go）
 
 ### domain層 - ドメインモデル
@@ -63,6 +64,7 @@ config       ← 横断的関心事（全層から参照可能）
   - skill_inventory.go: スキルのユニーク管理（TypeIDのみ）
   - chain_effect_inventory.go: チェイン効果の保有管理（TypeIDの保有フラグ）
 - **敵進行システム**: enemy_progress.go - 敵撃破記録・ランク進行・選択可能レベル範囲
+- **ランクアップ報酬**: rank_reward.go（RankReward / RankRewardItem VO）- ランクアップ時の報酬定義
 - **効果システム**: effect_table.go, effect_column.go, effect_context.go, effect_entry.go
   - EffectTableパターン: バフ、デバフ、パッシブ、チェイン効果を統一的に管理
   - 列指向設計: 効果種別を EffectColumn として定義
@@ -106,6 +108,7 @@ config       ← 横断的関心事（全層から参照可能）
   - skills.json: スキル定義（skill_typesキーで定義、ManaCost/ManaGainフィールド、各effect_columnにtimed_effect_idを参照）
   - enemy_actions.json: 敵行動定義（各バフ/デバフ行動にtimed_effect_idを参照）
   - chain_effects.json: チェイン効果定義（ID、名前、説明、効果）
+  - rank_rewards.json: ランクアップ報酬定義（ランクごとのコア・スキル・チェイン効果報酬）
 - `infra/errorhandler/`: エラーハンドリング
 - `infra/startup/`: 起動処理
 - `infra/terminal/`: ターミナル環境検証
@@ -116,6 +119,7 @@ config       ← 横断的関心事（全層から参照可能）
 **サブディレクトリ**:
 - `screens/`: 各シーンの画面実装（Bubbleteaの`tea.Model`実装）
   - 画面タイプ: home, battle_select, battle, agent_customization, inventory, reward, encyclopedia, settings, stats_achievements
+    - reward: バトル勝利後の報酬画面（撃破報酬・ランクアップ・タイピング統計の3セクション、縦並びレイアウト）
   - 大きな画面は分割: battle.go（状態）、battle_view.go（描画）、battle_logic.go（ロジック）
   - agent_customization: 3スロットエージェントのコア・スキル・チェイン効果付け替えUI
   - inventory: コア・スキル・チェイン効果の所持一覧表示（3タブ構成）

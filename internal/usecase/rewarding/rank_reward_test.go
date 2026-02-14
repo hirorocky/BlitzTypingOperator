@@ -6,8 +6,6 @@ import (
 	"hirorocky/type-battle/internal/domain"
 )
 
-// 受け入れ基準1,6: ランクアップ報酬の計算とインベントリ追加
-
 // TestCalculateGuaranteedRewardWithProgress_RankUpRewards はランクアップ時に報酬が設定されることをテストします。
 func TestCalculateGuaranteedRewardWithProgress_RankUpRewards(t *testing.T) {
 	coreTypes := []domain.CoreType{
@@ -90,8 +88,6 @@ func TestCalculateGuaranteedRewardWithProgress_RankUpRewards(t *testing.T) {
 	}
 }
 
-// 受け入れ基準5: 報酬が定義されていないランクでランクアップした場合、報酬は空
-
 // TestCalculateGuaranteedRewardWithProgress_RankUpNoRewards は報酬未定義ランクでランクアップ時に報酬が空であることをテストします。
 func TestCalculateGuaranteedRewardWithProgress_RankUpNoRewards(t *testing.T) {
 	coreTypes := []domain.CoreType{
@@ -144,8 +140,6 @@ func TestCalculateGuaranteedRewardWithProgress_RankUpNoRewards(t *testing.T) {
 		t.Errorf("ランクアップ報酬スキルは空であるべき: got %d", len(result.RankUpRewardSkills))
 	}
 }
-
-// 受け入れ基準7: ランクアップ報酬のスキルにはチェイン効果を付与しない
 
 // TestCalculateGuaranteedRewardWithProgress_RankUpSkillNoChainEffect はランクアップ報酬のスキルにチェイン効果がないことをテストします。
 func TestCalculateGuaranteedRewardWithProgress_RankUpSkillNoChainEffect(t *testing.T) {
@@ -231,8 +225,6 @@ func TestCalculateGuaranteedRewardWithProgress_RankUpSkillNoChainEffect(t *testi
 	}
 }
 
-// 受け入れ基準6: ランクアップ報酬のインベントリ追加
-
 // TestAddRewardsToInventory_RankUpRewards はランクアップ報酬がインベントリに正しく追加されることをテストします。
 func TestAddRewardsToInventory_RankUpRewards(t *testing.T) {
 	// Arrange: ランクアップ報酬としてコアとスキルを設定
@@ -273,8 +265,6 @@ func TestAddRewardsToInventory_RankUpRewards(t *testing.T) {
 		t.Error("ランクアップ報酬スキルがSkillInventoryに追加されるべき")
 	}
 }
-
-// 受け入れ基準6: 撃破報酬とランクアップ報酬の混合ケース
 
 // TestAddRewardsToInventory_DropsAndRankUpRewardsMixed は撃破報酬とランクアップ報酬が両方ある場合に
 // 全てインベントリに追加されることをテストします。
@@ -318,8 +308,6 @@ func TestAddRewardsToInventory_DropsAndRankUpRewardsMixed(t *testing.T) {
 	}
 }
 
-// 受け入れ基準6: ランクアップ報酬のチェイン効果がインベントリに追加される
-
 // TestAddRewardsToInventory_RankUpChainEffect はランクアップ報酬のチェイン効果がChainEffectInventoryに追加されることをテストします。
 func TestAddRewardsToInventory_RankUpChainEffect(t *testing.T) {
 	effect := domain.NewChainEffect("damage_bonus", domain.ChainEffectDamageBonus, 25)
@@ -346,8 +334,6 @@ func TestAddRewardsToInventory_RankUpChainEffect(t *testing.T) {
 		t.Error("ランクアップ報酬チェイン効果がChainEffectInventoryに追加されるべき")
 	}
 }
-
-// 受け入れ基準8: 撃破報酬がない場合のRewardResult
 
 // TestRewardResult_NoDropsNoHPGain は撃破報酬もHP増加もない場合のRewardResultをテストします。
 func TestRewardResult_NoDropsNoHPGain(t *testing.T) {
