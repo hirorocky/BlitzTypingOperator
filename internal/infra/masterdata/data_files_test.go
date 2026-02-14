@@ -60,29 +60,29 @@ func TestCoresJSONExists(t *testing.T) {
 	}
 }
 
-// TestModulesJSONExists はmodules.jsonの存在と内容を検証します。
-func TestModulesJSONExists(t *testing.T) {
+// TestSkillsJSONExists はskills.jsonの存在と内容を検証します。
+func TestSkillsJSONExists(t *testing.T) {
 	loader := createTestLoader()
 
-	modules, err := loader.LoadModuleDefinitions()
+	skills, err := loader.LoadSkillDefinitions()
 	if err != nil {
-		t.Fatalf("modules.jsonの読み込みに失敗: %v", err)
+		t.Fatalf("skills.jsonの読み込みに失敗: %v", err)
 	}
 
-	// 各効果タイプのモジュールが存在すること
+	// 各効果タイプのスキルが存在すること
 	effectTypeCount := make(map[string]int)
 	effectTypes := []string{"damage", "heal", "buff", "debuff"}
 	for _, et := range effectTypes {
 		effectTypeCount[et] = 0
 	}
 
-	for _, m := range modules {
-		if err := ValidateModuleDefinitionData(m); err != nil {
-			t.Errorf("モジュールのバリデーションに失敗: %v", err)
+	for _, m := range skills {
+		if err := ValidateSkillDefinitionData(m); err != nil {
+			t.Errorf("スキルのバリデーションに失敗: %v", err)
 		}
-		// モジュールの効果をドメインモデルに変換して判定
-		domainModule := m.ToDomain()
-		for _, effect := range domainModule.Effects() {
+		// スキルの効果をドメインモデルに変換して判定
+		domainSkill := m.ToDomain()
+		for _, effect := range domainSkill.Effects() {
 			if effect.IsDamageEffect() {
 				effectTypeCount["damage"]++
 			}
@@ -98,10 +98,10 @@ func TestModulesJSONExists(t *testing.T) {
 		}
 	}
 
-	// 各効果タイプにモジュールが存在することを確認
+	// 各効果タイプにスキルが存在することを確認
 	for et, count := range effectTypeCount {
 		if count == 0 {
-			t.Errorf("%s 効果を持つモジュールがありません", et)
+			t.Errorf("%s 効果を持つスキルがありません", et)
 		}
 	}
 }
@@ -183,8 +183,8 @@ func TestAllDataFilesLoadable(t *testing.T) {
 	if externalData.CoreTypes == nil || len(externalData.CoreTypes) == 0 {
 		t.Error("CoreTypesが空です")
 	}
-	if externalData.ModuleDefinitions == nil || len(externalData.ModuleDefinitions) == 0 {
-		t.Error("ModuleDefinitionsが空です")
+	if externalData.SkillDefinitions == nil || len(externalData.SkillDefinitions) == 0 {
+		t.Error("SkillDefinitionsが空です")
 	}
 	if externalData.EnemyTypes == nil || len(externalData.EnemyTypes) == 0 {
 		t.Error("EnemyTypesが空です")
@@ -251,10 +251,10 @@ func TestCorePassiveSkillIDsExist(t *testing.T) {
 	}
 }
 
-// TestModuleTagsMatchCoreAllowedTags はモジュールのタグがコアの許可タグと適合することを検証します。
-// 注: Requirement 5.18により、初期段階では高レベルモジュールを装備可能な特化コアは用意されていません。
-// Lv1モジュール（_low タグ）のみが初期コアで使用可能であることを検証します。
-func TestModuleTagsMatchCoreAllowedTags(t *testing.T) {
+// TestSkillTagsMatchCoreAllowedTags はスキルのタグがコアの許可タグと適合することを検証します。
+// 注: Requirement 5.18により、初期段階では高レベルスキルを装備可能な特化コアは用意されていません。
+// Lv1スキル（_low タグ）のみが初期コアで使用可能であることを検証します。
+func TestSkillTagsMatchCoreAllowedTags(t *testing.T) {
 	loader := createTestLoader()
 
 	coreTypes, err := loader.LoadCoreTypes()
@@ -262,9 +262,9 @@ func TestModuleTagsMatchCoreAllowedTags(t *testing.T) {
 		t.Fatalf("cores.jsonの読み込みに失敗: %v", err)
 	}
 
-	modules, err := loader.LoadModuleDefinitions()
+	skills, err := loader.LoadSkillDefinitions()
 	if err != nil {
-		t.Fatalf("modules.jsonの読み込みに失敗: %v", err)
+		t.Fatalf("skills.jsonの読み込みに失敗: %v", err)
 	}
 
 	// コアの許可タグを収集
@@ -275,10 +275,10 @@ func TestModuleTagsMatchCoreAllowedTags(t *testing.T) {
 		}
 	}
 
-	// _low タグを持つモジュールのみが初期コアで使用可能であることを確認
-	// 高難度モジュール（_mid, _high タグ）はゲーム進行で追加されるコアで使用可能になる想定
-	for _, m := range modules {
-		// _low タグを持つモジュールのみ検証
+	// _low タグを持つスキルのみが初期コアで使用可能であることを確認
+	// 高難度スキル（_mid, _high タグ）はゲーム進行で追加されるコアで使用可能になる想定
+	for _, m := range skills {
+		// _low タグを持つスキルのみ検証
 		hasLowTag := false
 		for _, tag := range m.Tags {
 			if strings.HasSuffix(tag, "_low") {
@@ -297,7 +297,57 @@ func TestModuleTagsMatchCoreAllowedTags(t *testing.T) {
 			}
 		}
 		if !hasValidTag && len(m.Tags) > 0 {
-			t.Errorf("基本モジュール %s のタグ %v がどのコアの許可タグにも含まれていません", m.ID, m.Tags)
+			t.Errorf("基本スキル %s のタグ %v がどのコアの許可タグにも含まれていません", m.ID, m.Tags)
 		}
+	}
+}
+
+// ===== 受け入れ基準 6: shapeチャレンジタイプの全スキルにmana_cost:1が設定されている =====
+
+func TestShapeSkillsHaveManaCost(t *testing.T) {
+	loader := createTestLoader()
+
+	skills, err := loader.LoadSkillDefinitions()
+	if err != nil {
+		t.Fatalf("skills.jsonの読み込みに失敗: %v", err)
+	}
+
+	shapeCount := 0
+	for _, s := range skills {
+		if s.Challenge.Type == "shape" {
+			shapeCount++
+			if s.ManaCost != 1 {
+				t.Errorf("shapeスキル %s のManaCostが1ではありません: got %d", s.ID, s.ManaCost)
+			}
+		}
+	}
+
+	if shapeCount == 0 {
+		t.Error("shapeチャレンジタイプのスキルが存在しません")
+	}
+}
+
+// ===== 受け入れ基準 9: mana_gain付きスキルが存在する =====
+
+func TestManaGainSkillsExist(t *testing.T) {
+	loader := createTestLoader()
+
+	skills, err := loader.LoadSkillDefinitions()
+	if err != nil {
+		t.Fatalf("skills.jsonの読み込みに失敗: %v", err)
+	}
+
+	manaGainCount := 0
+	for _, s := range skills {
+		for _, e := range s.Effects {
+			if e.ManaGain > 0 {
+				manaGainCount++
+				break
+			}
+		}
+	}
+
+	if manaGainCount == 0 {
+		t.Error("mana_gain付きのスキルが存在しません")
 	}
 }

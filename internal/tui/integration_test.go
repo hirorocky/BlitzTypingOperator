@@ -14,8 +14,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// newTestDamageModule はテスト用のダメージモジュールを作成するヘルパー関数です。
-func newTestDamageModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+// newTestDamageSkill はテスト用のダメージスキルを作成するヘルパー関数です。
+func newTestDamageSkill(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
@@ -34,8 +34,8 @@ func newTestDamageModule(id, name string, tags []string, statCoef float64, statR
 	}, nil)
 }
 
-// newTestHealModule はテスト用の回復モジュールを作成するヘルパー関数です。
-func newTestHealModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+// newTestHealSkill はテスト用の回復スキルを作成するヘルパー関数です。
+func newTestHealSkill(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
@@ -54,8 +54,8 @@ func newTestHealModule(id, name string, tags []string, statCoef float64, statRef
 	}, nil)
 }
 
-// newTestBuffModule はテスト用のバフモジュールを作成するヘルパー関数です。
-func newTestBuffModule(id, name string, tags []string, value float64, statRef, description string) *domain.SkillModel {
+// newTestBuffSkill はテスト用のバフスキルを作成するヘルパー関数です。
+func newTestBuffSkill(id, name string, tags []string, value float64, statRef, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
@@ -142,11 +142,11 @@ func TestIntegrationBattleScreen(t *testing.T) {
 	if !containsS(rendered, enemy.Name) {
 		t.Error("敵情報エリアが表示されていません")
 	}
-	if !containsS(rendered, "プレイヤー") {
-		t.Error("プレイヤー情報エリアが表示されていません")
+	if !containsS(rendered, "Mana:") {
+		t.Error("マナ情報エリアが表示されていません")
 	}
-	if !containsS(rendered, "モジュール") {
-		t.Error("モジュールエリアが表示されていません")
+	if !containsS(rendered, "スキル") {
+		t.Error("スキルエリアが表示されていません")
 	}
 }
 
@@ -300,13 +300,13 @@ func createTestAgents() []*domain.AgentModel {
 
 	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
 
-	modules := []*domain.SkillModel{
-		newTestDamageModule("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ"),
-		newTestDamageModule("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "MAG", "魔法ダメージ"),
-		newTestHealModule("m3", "回復", []string{"heal_low"}, 1.0, "MAG", "HP回復"),
-		newTestBuffModule("m4", "バフ", []string{"buff_low"}, 10, "SPD", "攻撃力UP"),
+	skills := []*domain.SkillModel{
+		newTestDamageSkill("m1", "物理攻撃", []string{"physical_low"}, 1.0, "STR", "物理ダメージ"),
+		newTestDamageSkill("m2", "魔法攻撃", []string{"magic_low"}, 1.0, "MAG", "魔法ダメージ"),
+		newTestHealSkill("m3", "回復", []string{"heal_low"}, 1.0, "MAG", "HP回復"),
+		newTestBuffSkill("m4", "バフ", []string{"buff_low"}, 10, "SPD", "攻撃力UP"),
 	}
 
-	agent := domain.NewAgent("agent1", core, modules)
+	agent := domain.NewAgent("agent1", core, skills)
 	return []*domain.AgentModel{agent}
 }

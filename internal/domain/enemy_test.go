@@ -804,7 +804,7 @@ func TestEnemyType_ドロップカテゴリバリデーション(t *testing.T) {
 		expected bool // true = 有効、false = 無効
 	}{
 		{"core（有効）", "core", true},
-		{"module（有効）", "module", true},
+		{"skill（有効）", "skill", true},
 		{"空文字（無効）", "", false},
 		{"不正な値（無効）", "invalid", false},
 	}

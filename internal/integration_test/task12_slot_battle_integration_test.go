@@ -172,8 +172,8 @@ func TestSlotBattle_BuildAgentsForBattle_SingleAgent(t *testing.T) {
 	}
 
 	// スキル数が一致
-	if len(agent.Modules) != 2 {
-		t.Errorf("スキル数が不正: got %d, want 2", len(agent.Modules))
+	if len(agent.Skills) != 2 {
+		t.Errorf("スキル数が不正: got %d, want 2", len(agent.Skills))
 	}
 }
 
@@ -323,8 +323,8 @@ func TestSlotBattle_BuildAgentsForBattle_CoreOnlyNoSkill(t *testing.T) {
 	}
 
 	// スキルは空
-	if len(agents[0].Modules) != 0 {
-		t.Errorf("スキル数が不正: got %d, want 0", len(agents[0].Modules))
+	if len(agents[0].Skills) != 0 {
+		t.Errorf("スキル数が不正: got %d, want 0", len(agents[0].Skills))
 	}
 }
 
@@ -449,8 +449,8 @@ func TestSlotBattle_SkillChangeReflectsOnBattle(t *testing.T) {
 
 	// バトル用エージェントを構築
 	agents1 := slotManager.BuildAgentsForBattle()
-	if len(agents1[0].Modules) != 1 {
-		t.Fatalf("初期スキル数が不正: got %d, want 1", len(agents1[0].Modules))
+	if len(agents1[0].Skills) != 1 {
+		t.Fatalf("初期スキル数が不正: got %d, want 1", len(agents1[0].Skills))
 	}
 
 	// スキルを追加
@@ -460,8 +460,8 @@ func TestSlotBattle_SkillChangeReflectsOnBattle(t *testing.T) {
 	agents2 := slotManager.BuildAgentsForBattle()
 
 	// スキルが追加されている
-	if len(agents2[0].Modules) != 2 {
-		t.Errorf("変更後スキル数が不正: got %d, want 2", len(agents2[0].Modules))
+	if len(agents2[0].Skills) != 2 {
+		t.Errorf("変更後スキル数が不正: got %d, want 2", len(agents2[0].Skills))
 	}
 }
 

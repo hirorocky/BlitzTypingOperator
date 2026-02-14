@@ -495,8 +495,8 @@ type AgentCard struct {
 	AgentLevel int
 	// CoreTypeName はコア特性の名前です
 	CoreTypeName string
-	// ModuleIcons はモジュールのアイコンリストです
-	ModuleIcons []string
+	// SkillIcons はスキルのアイコンリストです
+	SkillIcons []string
 	// Style はカードのスタイルです
 	Style AgentCardStyle
 	// Selected は選択状態かどうかです
@@ -579,9 +579,9 @@ func (c *AgentCard) renderCompact(width int) string {
 	content.WriteString(nameStyle.Render(fmt.Sprintf("%s Lv.%d", c.AgentName, c.AgentLevel)))
 	content.WriteString("\n")
 
-	// モジュールアイコン
-	if len(c.ModuleIcons) > 0 {
-		content.WriteString(strings.Join(c.ModuleIcons, ""))
+	// スキルアイコン
+	if len(c.SkillIcons) > 0 {
+		content.WriteString(strings.Join(c.SkillIcons, ""))
 		content.WriteString("\n")
 	}
 
@@ -627,10 +627,10 @@ func (c *AgentCard) renderDetailed(width int) string {
 	content.WriteString(dividerStyle.Render(divider))
 	content.WriteString("\n")
 
-	// モジュールアイコン
-	if len(c.ModuleIcons) > 0 {
-		content.WriteString("モジュール: ")
-		content.WriteString(strings.Join(c.ModuleIcons, " "))
+	// スキルアイコン
+	if len(c.SkillIcons) > 0 {
+		content.WriteString("スキル: ")
+		content.WriteString(strings.Join(c.SkillIcons, " "))
 		content.WriteString("\n")
 	}
 

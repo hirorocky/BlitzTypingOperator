@@ -93,7 +93,7 @@ func (a *EnemyProgressAdapter) GetSelectableLevelRange(enemyTypeID string) (min,
 }
 
 // GetDropItemName はドロップアイテムの日本語名を返します。
-// category: "core" または "module"
+// category: "core" または "skill"
 // typeID: コアまたはスキルのTypeID
 func (a *EnemyProgressAdapter) GetDropItemName(category, typeID string) string {
 	switch category {
@@ -102,7 +102,7 @@ func (a *EnemyProgressAdapter) GetDropItemName(category, typeID string) string {
 			return ct.Name
 		}
 		return typeID
-	case "module":
+	case "skill":
 		if st, ok := a.skillTypes[typeID]; ok {
 			return st.Name
 		}

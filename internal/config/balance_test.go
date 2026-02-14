@@ -70,14 +70,14 @@ func TestDropRates(t *testing.T) {
 		t.Errorf("コアドロップ率は0〜1の範囲であるべきです: got %f", config.CoreDropRate)
 	}
 
-	// モジュールドロップ率は0〜1の範囲
-	if config.ModuleDropRate < 0 || config.ModuleDropRate > 1 {
-		t.Errorf("モジュールドロップ率は0〜1の範囲であるべきです: got %f", config.ModuleDropRate)
+	// スキルドロップ率は0〜1の範囲
+	if config.SkillDropRate < 0 || config.SkillDropRate > 1 {
+		t.Errorf("スキルドロップ率は0〜1の範囲であるべきです: got %f", config.SkillDropRate)
 	}
 
-	// モジュールドロップ率 >= コアドロップ率（モジュールの方がドロップしやすい）
-	if config.ModuleDropRate < config.CoreDropRate {
-		t.Error("モジュールドロップ率はコアドロップ率以上であるべきです")
+	// スキルドロップ率 >= コアドロップ率（スキルの方がドロップしやすい）
+	if config.SkillDropRate < config.CoreDropRate {
+		t.Error("スキルドロップ率はコアドロップ率以上であるべきです")
 	}
 }
 
@@ -154,12 +154,12 @@ func TestMaxEquippedAgents(t *testing.T) {
 	}
 }
 
-func TestModulesPerAgent(t *testing.T) {
-	// エージェントあたりのモジュール数
+func TestSkillsPerAgent(t *testing.T) {
+	// エージェントあたりのスキル数
 	config := DefaultBalanceConfig()
 
-	if config.ModulesPerAgent != 4 {
-		t.Errorf("エージェントあたりのモジュール数は4であるべきです: got %d", config.ModulesPerAgent)
+	if config.SkillsPerAgent != 4 {
+		t.Errorf("エージェントあたりのスキル数は4であるべきです: got %d", config.SkillsPerAgent)
 	}
 }
 
@@ -246,7 +246,7 @@ func TestBalanceConfigCustomization(t *testing.T) {
 	config := NewBalanceConfig(
 		WithHPCoefficient(50.0),
 		WithCoreDropRate(0.6),
-		WithModuleDropRate(0.8),
+		WithSkillDropRate(0.8),
 	)
 
 	if config.HPCoefficient != 50.0 {
@@ -255,7 +255,7 @@ func TestBalanceConfigCustomization(t *testing.T) {
 	if config.CoreDropRate != 0.6 {
 		t.Errorf("カスタムコアドロップ率: expected 0.6, got %f", config.CoreDropRate)
 	}
-	if config.ModuleDropRate != 0.8 {
-		t.Errorf("カスタムモジュールドロップ率: expected 0.8, got %f", config.ModuleDropRate)
+	if config.SkillDropRate != 0.8 {
+		t.Errorf("カスタムスキルドロップ率: expected 0.8, got %f", config.SkillDropRate)
 	}
 }

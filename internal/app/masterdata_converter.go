@@ -99,14 +99,14 @@ func ConvertCoreTypes(types []masterdata.CoreTypeData) []domain.CoreType {
 	return result
 }
 
-// ConvertSkillTypes はmasterdata.ModuleDefinitionDataのスライスをreward.ModuleDropInfoのスライスに変換します。
-func ConvertSkillTypes(types []masterdata.ModuleDefinitionData) []rewarding.ModuleDropInfo {
-	result := make([]rewarding.ModuleDropInfo, len(types))
+// ConvertSkillTypes はmasterdata.SkillDefinitionDataのスライスをreward.SkillDropInfoのスライスに変換します。
+func ConvertSkillTypes(types []masterdata.SkillDefinitionData) []rewarding.SkillDropInfo {
+	result := make([]rewarding.SkillDropInfo, len(types))
 	for i, t := range types {
 		// マスターデータからドメインモデルのSkillTypeを取得し、そこからEffectsを使う
-		moduleType := t.ToDomainType()
+		skillType := t.ToDomainType()
 
-		result[i] = rewarding.ModuleDropInfo{
+		result[i] = rewarding.SkillDropInfo{
 			ID:              t.ID,
 			Name:            t.Name,
 			Icon:            t.Icon,
@@ -116,7 +116,8 @@ func ConvertSkillTypes(types []masterdata.ModuleDefinitionData) []rewarding.Modu
 			MinDropLevel:    t.MinDropLevel,
 			DifficultyRate:  t.DifficultyRate,
 			ChallengeType:   domain.ChallengeTypeID(t.Challenge.Type),
-			Effects:         moduleType.Effects,
+			ManaCost:        t.ManaCost,
+			Effects:         skillType.Effects,
 		}
 	}
 	return result
@@ -126,7 +127,7 @@ func ConvertSkillTypes(types []masterdata.ModuleDefinitionData) []rewarding.Modu
 func ConvertExternalDataToDomain(ext *masterdata.ExternalData) (
 	[]domain.EnemyType,
 	[]domain.CoreType,
-	[]rewarding.ModuleDropInfo,
+	[]rewarding.SkillDropInfo,
 ) {
 	if ext == nil {
 		return nil, nil, nil
@@ -135,9 +136,9 @@ func ConvertExternalDataToDomain(ext *masterdata.ExternalData) (
 	// 敵タイプとパッシブスキルを変換（パッシブを解決）
 	enemyTypes := ConvertEnemyTypesWithPassives(ext.EnemyTypes, ext.EnemyPassiveSkills)
 	coreTypes := ConvertCoreTypes(ext.CoreTypes)
-	moduleTypes := ConvertSkillTypes(ext.ModuleDefinitions)
+	skillTypes := ConvertSkillTypes(ext.SkillDefinitions)
 
-	return enemyTypes, coreTypes, moduleTypes
+	return enemyTypes, coreTypes, skillTypes
 }
 
 // ConvertChainEffects はmasterdata.ChainEffectDataのスライスをrewarding.ChainEffectDefinitionのスライスに変換します。
@@ -183,19 +184,19 @@ func ConvertTimedEffects(types []masterdata.TimedEffectData) map[string]domain.T
 	return result
 }
 
-// ResolveModuleTimedEffects はモジュールのEffectColumnSpecにTimedEffectからColumn/Valueを解決します。
-func ResolveModuleTimedEffects(modules []rewarding.ModuleDropInfo, timedEffects map[string]domain.TimedEffect) {
-	for i := range modules {
-		for j := range modules[i].Effects {
-			spec := modules[i].Effects[j].ColumnSpec
+// ResolveSkillTimedEffects はスキルのEffectColumnSpecにTimedEffectからColumn/Valueを解決します。
+func ResolveSkillTimedEffects(skills []rewarding.SkillDropInfo, timedEffects map[string]domain.TimedEffect) {
+	for i := range skills {
+		for j := range skills[i].Effects {
+			spec := skills[i].Effects[j].ColumnSpec
 			if spec != nil && spec.TimedEffectID != "" {
 				if te, ok := timedEffects[spec.TimedEffectID]; ok {
-					modules[i].Effects[j].ColumnSpec.Column = te.Column
-					modules[i].Effects[j].ColumnSpec.Value = te.Value
+					skills[i].Effects[j].ColumnSpec.Column = te.Column
+					skills[i].Effects[j].ColumnSpec.Value = te.Value
 				} else {
-					slog.Error("マスタデータ不整合: モジュールの時限効果IDが見つかりません",
+					slog.Error("マスタデータ不整合: スキルの時限効果IDが見つかりません",
 						slog.String("timedEffectID", spec.TimedEffectID),
-						slog.String("moduleID", modules[i].ID))
+						slog.String("skillID", skills[i].ID))
 				}
 			}
 		}

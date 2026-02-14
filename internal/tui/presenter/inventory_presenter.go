@@ -23,9 +23,9 @@ func (a *InventoryProviderAdapter) GetCores() []*domain.CoreModel {
 	return []*domain.CoreModel{}
 }
 
-// GetModules はモジュール一覧を返します。
+// GetSkills はスキル一覧を返します。
 // 空のリストを返します（スキルはスロットに設定済みのもののみ）。
-func (a *InventoryProviderAdapter) GetModules() []*domain.SkillModel {
+func (a *InventoryProviderAdapter) GetSkills() []*domain.SkillModel {
 	return []*domain.SkillModel{}
 }
 
@@ -51,9 +51,9 @@ func (a *InventoryProviderAdapter) RemoveCore(_ string) error {
 	return nil
 }
 
-// RemoveModule はモジュールをインベントリから削除します。
+// RemoveSkill はスキルをインベントリから削除します。
 // ユニーク管理のため使用されません。
-func (a *InventoryProviderAdapter) RemoveModule(_ string) error {
+func (a *InventoryProviderAdapter) RemoveSkill(_ string) error {
 	return nil
 }
 

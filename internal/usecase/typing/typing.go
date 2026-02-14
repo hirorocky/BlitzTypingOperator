@@ -12,15 +12,15 @@ import (
 type Difficulty int
 
 const (
-	// DifficultyEasy は弱いモジュール用（3-6文字）
+	// DifficultyEasy は弱いスキル用（3-6文字）
 
 	DifficultyEasy Difficulty = 1
 
-	// DifficultyMedium は中程度のモジュール用（7-11文字）
+	// DifficultyMedium は中程度のスキル用（7-11文字）
 
 	DifficultyMedium Difficulty = 2
 
-	// DifficultyHard は強力なモジュール用（12-20文字）
+	// DifficultyHard は強力なスキル用（12-20文字）
 
 	DifficultyHard Difficulty = 3
 )
@@ -152,9 +152,9 @@ func (g *ChallengeGenerator) selectWithoutDuplication(candidates []string) strin
 	return candidates[0]
 }
 
-// GetDifficultyForModuleLevel はモジュールレベルに応じた難易度を返します。
+// GetDifficultyForSkillLevel はスキルレベルに応じた難易度を返します。
 
-func GetDifficultyForModuleLevel(level int) Difficulty {
+func GetDifficultyForSkillLevel(level int) Difficulty {
 	switch level {
 	case 1:
 		return DifficultyEasy
@@ -165,7 +165,7 @@ func GetDifficultyForModuleLevel(level int) Difficulty {
 	}
 }
 
-// GetDefaultTimeLimit はモジュール難易度に応じたデフォルト制限時間を返します。
+// GetDefaultTimeLimit はスキル難易度に応じたデフォルト制限時間を返します。
 
 func GetDefaultTimeLimit(difficulty Difficulty) time.Duration {
 	switch difficulty {

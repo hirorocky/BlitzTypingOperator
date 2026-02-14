@@ -14,12 +14,12 @@ import (
 // InventoryProvider は画面に必要なインベントリ操作を提供するインターフェースです。
 type InventoryProvider interface {
 	GetCores() []*domain.CoreModel
-	GetModules() []*domain.SkillModel
+	GetSkills() []*domain.SkillModel
 	GetAgents() []*domain.AgentModel
 	GetEquippedAgents() []*domain.AgentModel
 	AddAgent(agent *domain.AgentModel) error
 	RemoveCore(id string) error
-	RemoveModule(id string) error
+	RemoveSkill(id string) error
 	EquipAgent(slot int, agent *domain.AgentModel) error
 	UnequipAgent(slot int) error
 }

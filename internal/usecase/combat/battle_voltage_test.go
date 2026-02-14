@@ -34,8 +34,8 @@ func TestBattleEngine_VoltageInitialization(t *testing.T) {
 		Name:  "テストコア",
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
-	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := newTestDamageSkill("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	state, err := engine.initializeBattleForTest(1, agents)
@@ -72,8 +72,8 @@ func TestBattleEngine_UpdateEffects_VoltageRise(t *testing.T) {
 		Name:  "テストコア",
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
-	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := newTestDamageSkill("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	state, err := engine.initializeBattleForTest(1, agents)
@@ -112,8 +112,8 @@ func TestBattleEngine_UpdateEffects_VoltageContinuesOnPhaseTransition(t *testing
 		Name:  "テストコア",
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
-	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := newTestDamageSkill("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	state, err := engine.initializeBattleForTest(1, agents)
@@ -162,8 +162,8 @@ func TestBattleEngine_UpdateEffects_VoltageSmallIncrement(t *testing.T) {
 		Name:  "テストコア",
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
-	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := newTestDamageSkill("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	state, err := engine.initializeBattleForTest(1, agents)
@@ -202,8 +202,8 @@ func TestBattleEngine_UpdateEffects_VoltageZeroRise(t *testing.T) {
 		Name:  "テストコア",
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
-	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := newTestDamageSkill("m1", "ダメージスキル", []string{"physical"}, 1.0, "STR", "テスト")
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	state, err := engine.initializeBattleForTest(1, agents)
@@ -260,8 +260,8 @@ func TestBattleEngine_VoltageDamageMultiplier_100Percent(t *testing.T) {
 		Name:  "テストコア",
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
-	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 10.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := newTestDamageSkill("m1", "ダメージスキル", []string{"physical"}, 10.0, "STR", "テスト")
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	state, err := engine.initializeBattleForTest(1, agents)
@@ -308,8 +308,8 @@ func TestBattleEngine_VoltageDamageMultiplier_150Percent(t *testing.T) {
 		Name:  "テストコア",
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
-	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 10.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := newTestDamageSkill("m1", "ダメージスキル", []string{"physical"}, 10.0, "STR", "テスト")
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	state, err := engine.initializeBattleForTest(1, agents)
@@ -358,8 +358,8 @@ func TestBattleEngine_VoltageDamageMultiplier_200Percent(t *testing.T) {
 		Name:  "テストコア",
 		Stats: domain.Stats{STR: 10, INT: 10, WIL: 10, LUK: 10},
 	}
-	module := newTestDamageModule("m1", "ダメージスキル", []string{"physical"}, 10.0, "STR", "テスト")
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := newTestDamageSkill("m1", "ダメージスキル", []string{"physical"}, 10.0, "STR", "テスト")
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	state, err := engine.initializeBattleForTest(1, agents)

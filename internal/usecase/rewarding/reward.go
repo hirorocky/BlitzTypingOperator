@@ -1,5 +1,5 @@
 // Package reward はドロップ・報酬システムを提供します。
-// バトル勝利時の報酬計算、コア/モジュールのドロップ判定を担当します。
+// バトル勝利時の報酬計算、コア/スキルのドロップ判定を担当します。
 package rewarding
 
 import (
@@ -47,7 +47,7 @@ type ChainEffectDefinition struct {
 }
 
 // ChainEffectPool はチェイン効果のプール管理を担当する構造体です。
-// モジュール入手時にランダムなチェイン効果を生成します。
+// スキル入手時にランダムなチェイン効果を生成します。
 type ChainEffectPool struct {
 	// Effects は利用可能なチェイン効果定義のリストです。
 	Effects []ChainEffectDefinition
@@ -167,8 +167,8 @@ type RewardResult struct {
 	// DroppedCores はドロップしたコアのリストです。
 	DroppedCores []*domain.CoreModel
 
-	// DroppedModules はドロップしたモジュールのリストです。
-	DroppedModules []*domain.SkillModel
+	// DroppedSkills はドロップしたスキルのリストです。
+	DroppedSkills []*domain.SkillModel
 
 	// EnemyLevel は撃破した敵のレベルです。
 	EnemyLevel int
@@ -207,8 +207,8 @@ type TempStorage struct {
 	// Cores は一時保管中のコアリストです。
 	Cores []*domain.CoreModel
 
-	// Modules は一時保管中のモジュールリストです。
-	Modules []*domain.SkillModel
+	// Skills は一時保管中のスキルリストです。
+	Skills []*domain.SkillModel
 }
 
 // AddCore はコアを一時保管に追加します。
@@ -216,9 +216,9 @@ func (s *TempStorage) AddCore(core *domain.CoreModel) {
 	s.Cores = append(s.Cores, core)
 }
 
-// AddModule はモジュールを一時保管に追加します。
-func (s *TempStorage) AddModule(module *domain.SkillModel) {
-	s.Modules = append(s.Modules, module)
+// AddSkill はスキルを一時保管に追加します。
+func (s *TempStorage) AddSkill(skill *domain.SkillModel) {
+	s.Skills = append(s.Skills, skill)
 }
 
 // RetrieveCores は一時保管中のコアを全て取り出します。
@@ -228,36 +228,36 @@ func (s *TempStorage) RetrieveCores() []*domain.CoreModel {
 	return cores
 }
 
-// RetrieveModules は一時保管中のモジュールを全て取り出します。
-func (s *TempStorage) RetrieveModules() []*domain.SkillModel {
-	modules := s.Modules
-	s.Modules = nil
-	return modules
+// RetrieveSkills は一時保管中のスキルを全て取り出します。
+func (s *TempStorage) RetrieveSkills() []*domain.SkillModel {
+	skills := s.Skills
+	s.Skills = nil
+	return skills
 }
 
 // HasItems は一時保管にアイテムがあるかどうかを返します。
 func (s *TempStorage) HasItems() bool {
-	return len(s.Cores) > 0 || len(s.Modules) > 0
+	return len(s.Cores) > 0 || len(s.Skills) > 0
 }
 
-// ModuleDropInfo はモジュールドロップに必要な情報を持つ構造体です。
-type ModuleDropInfo struct {
-	// ID はモジュールの一意識別子です。
+// SkillDropInfo はスキルドロップに必要な情報を持つ構造体です。
+type SkillDropInfo struct {
+	// ID はスキルの一意識別子です。
 	ID string
 
-	// Name はモジュールの表示名です。
+	// Name はスキルの表示名です。
 	Name string
 
-	// Icon はモジュールのアイコン（絵文字）です。
+	// Icon はスキルのアイコン（絵文字）です。
 	Icon string
 
-	// Tags はモジュールのタグリストです。
+	// Tags はスキルのタグリストです。
 	Tags []string
 
-	// Description はモジュールの効果説明です。
+	// Description はスキルの効果説明です。
 	Description string
 
-	// CooldownSeconds はモジュールのクールダウン時間（秒）です。
+	// CooldownSeconds はスキルのクールダウン時間（秒）です。
 	CooldownSeconds float64
 
 	// DifficultyRate はタイピングの難易度です（50-200、100=標準）。
@@ -266,15 +266,18 @@ type ModuleDropInfo struct {
 	// ChallengeType はチャレンジタイプのIDです。
 	ChallengeType domain.ChallengeTypeID
 
-	// MinDropLevel はこのモジュールがドロップする最低敵レベルです。
+	// ManaCost はスキル使用時に消費するマナ量です。
+	ManaCost int
+
+	// MinDropLevel はこのスキルがドロップする最低敵レベルです。
 	MinDropLevel int
 
-	// Effects はモジュールの効果リストです。
+	// Effects はスキルの効果リストです。
 	Effects []domain.SkillEffect
 }
 
-// ToSkillType はModuleDropInfoをドメインモデルのSkillTypeに変換します。
-func (m *ModuleDropInfo) ToSkillType() domain.SkillType {
+// ToSkillType はSkillDropInfoをドメインモデルのSkillTypeに変換します。
+func (m *SkillDropInfo) ToSkillType() domain.SkillType {
 	// Tagsをコピー（スライスの参照共有を避ける）
 	tagsCopy := make([]string, len(m.Tags))
 	copy(tagsCopy, m.Tags)
@@ -292,21 +295,22 @@ func (m *ModuleDropInfo) ToSkillType() domain.SkillType {
 		CooldownSeconds: m.CooldownSeconds,
 		DifficultyRate:  m.DifficultyRate,
 		ChallengeType:   m.ChallengeType,
+		ManaCost:        m.ManaCost,
 		MinDropLevel:    m.MinDropLevel,
 		Effects:         effectsCopy,
 	}
 }
 
-// ToDomain はModuleDropInfoをドメインモデルのSkillModelに変換します。
-func (m *ModuleDropInfo) ToDomain() *domain.SkillModel {
-	moduleType := m.ToSkillType()
-	return domain.NewSkillFromType(moduleType, nil)
+// ToDomain はSkillDropInfoをドメインモデルのSkillModelに変換します。
+func (m *SkillDropInfo) ToDomain() *domain.SkillModel {
+	skillType := m.ToSkillType()
+	return domain.NewSkillFromType(skillType, nil)
 }
 
 // ToDomainWithChainEffect はチェイン効果付きでドメインモデルに変換します。
-func (m *ModuleDropInfo) ToDomainWithChainEffect(chainEffect *domain.ChainEffect) *domain.SkillModel {
-	moduleType := m.ToSkillType()
-	return domain.NewSkillFromType(moduleType, chainEffect)
+func (m *SkillDropInfo) ToDomainWithChainEffect(chainEffect *domain.ChainEffect) *domain.SkillModel {
+	skillType := m.ToSkillType()
+	return domain.NewSkillFromType(skillType, chainEffect)
 }
 
 // RewardCalculator はドメイン型を使用した報酬計算を担当する構造体です。
@@ -314,8 +318,8 @@ type RewardCalculator struct {
 	// coreTypes はコア特性定義リストです（ドメイン型）。
 	coreTypes []domain.CoreType
 
-	// moduleTypes はモジュール定義リストです。
-	moduleTypes []ModuleDropInfo
+	// skillTypes はスキル定義リストです。
+	skillTypes []SkillDropInfo
 
 	// passiveSkills はパッシブスキル定義マップです。
 	passiveSkills map[string]domain.PassiveSkill
@@ -330,12 +334,12 @@ type RewardCalculator struct {
 // NewRewardCalculator はドメイン型を使用する新しいRewardCalculatorを作成します。
 func NewRewardCalculator(
 	coreTypes []domain.CoreType,
-	moduleTypes []ModuleDropInfo,
+	skillTypes []SkillDropInfo,
 	passiveSkills map[string]domain.PassiveSkill,
 ) *RewardCalculator {
 	return &RewardCalculator{
 		coreTypes:     coreTypes,
-		moduleTypes:   moduleTypes,
+		skillTypes:    skillTypes,
 		passiveSkills: passiveSkills,
 		rng:           rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
@@ -354,11 +358,11 @@ func (c *RewardCalculator) GetChainEffectPool() *ChainEffectPool {
 // CreateRewardResult は報酬結果を作成します。
 func (c *RewardCalculator) CreateRewardResult(isVictory bool, stats *BattleStatistics, enemyLevel int) *RewardResult {
 	result := &RewardResult{
-		IsVictory:      isVictory,
-		Stats:          stats,
-		EnemyLevel:     enemyLevel,
-		DroppedCores:   make([]*domain.CoreModel, 0),
-		DroppedModules: make([]*domain.SkillModel, 0),
+		IsVictory:     isVictory,
+		Stats:         stats,
+		EnemyLevel:    enemyLevel,
+		DroppedCores:  make([]*domain.CoreModel, 0),
+		DroppedSkills: make([]*domain.SkillModel, 0),
 	}
 
 	if !isVictory {
@@ -381,12 +385,12 @@ func (c *RewardCalculator) GetEligibleCoreTypes(enemyLevel int) []domain.CoreTyp
 	return eligible
 }
 
-// GetEligibleSkillTypes は指定レベルでドロップ可能なモジュールを返します。
-func (c *RewardCalculator) GetEligibleSkillTypes(enemyLevel int) []ModuleDropInfo {
-	eligible := make([]ModuleDropInfo, 0)
-	for _, moduleType := range c.moduleTypes {
-		if moduleType.MinDropLevel <= enemyLevel {
-			eligible = append(eligible, moduleType)
+// GetEligibleSkillTypes は指定レベルでドロップ可能なスキルを返します。
+func (c *RewardCalculator) GetEligibleSkillTypes(enemyLevel int) []SkillDropInfo {
+	eligible := make([]SkillDropInfo, 0)
+	for _, skillType := range c.skillTypes {
+		if skillType.MinDropLevel <= enemyLevel {
+			eligible = append(eligible, skillType)
 		}
 	}
 	return eligible
@@ -405,8 +409,8 @@ func (c *RewardCalculator) CheckInventoryFull(
 // CreateTempStorage は一時保管を作成します。
 func (c *RewardCalculator) CreateTempStorage() *TempStorage {
 	return &TempStorage{
-		Cores:   make([]*domain.CoreModel, 0),
-		Modules: make([]*domain.SkillModel, 0),
+		Cores:  make([]*domain.CoreModel, 0),
+		Skills: make([]*domain.SkillModel, 0),
 	}
 }
 
@@ -429,7 +433,7 @@ func (c *RewardCalculator) CalculateGuaranteedReward(
 		Stats:            stats,
 		EnemyLevel:       enemyLevel,
 		DroppedCores:     make([]*domain.CoreModel, 0),
-		DroppedModules:   make([]*domain.SkillModel, 0),
+		DroppedSkills:    make([]*domain.SkillModel, 0),
 	}
 
 	// 確定ドロップ処理
@@ -441,12 +445,12 @@ func (c *RewardCalculator) CalculateGuaranteedReward(
 		}
 		result.DroppedCores = append(result.DroppedCores, core)
 
-	case "module":
-		module := c.RollModuleDropWithTypeID(enemyType.DropItemTypeID, enemyLevel)
-		if module == nil {
-			panic("敵タイプ " + enemyType.ID + " のモジュールTypeID " + enemyType.DropItemTypeID + " が見つかりません")
+	case "skill":
+		skill := c.RollSkillDropWithTypeID(enemyType.DropItemTypeID, enemyLevel)
+		if skill == nil {
+			panic("敵タイプ " + enemyType.ID + " のスキルTypeID " + enemyType.DropItemTypeID + " が見つかりません")
 		}
-		result.DroppedModules = append(result.DroppedModules, module)
+		result.DroppedSkills = append(result.DroppedSkills, skill)
 
 	default:
 		panic("敵タイプ " + enemyType.ID + " のドロップカテゴリ " + enemyType.DropItemCategory + " が不正です")
@@ -487,14 +491,14 @@ func (c *RewardCalculator) RollCoreDropWithTypeID(typeID string, enemyLevel int)
 	)
 }
 
-// RollModuleDropWithTypeID は指定されたTypeIDのモジュールを生成します。
+// RollSkillDropWithTypeID は指定されたTypeIDのスキルを生成します。
 // 敵レベルに応じたチェイン効果をランダムに選択します。
-func (c *RewardCalculator) RollModuleDropWithTypeID(typeID string, enemyLevel int) *domain.SkillModel {
-	// 指定されたTypeIDのモジュールを検索
-	var selectedType *ModuleDropInfo
-	for i := range c.moduleTypes {
-		if c.moduleTypes[i].ID == typeID {
-			selectedType = &c.moduleTypes[i]
+func (c *RewardCalculator) RollSkillDropWithTypeID(typeID string, enemyLevel int) *domain.SkillModel {
+	// 指定されたTypeIDのスキルを検索
+	var selectedType *SkillDropInfo
+	for i := range c.skillTypes {
+		if c.skillTypes[i].ID == typeID {
+			selectedType = &c.skillTypes[i]
 			break
 		}
 	}
@@ -509,7 +513,7 @@ func (c *RewardCalculator) RollModuleDropWithTypeID(typeID string, enemyLevel in
 		chainEffect = c.generateLevelBasedChainEffect(enemyLevel)
 	}
 
-	// モジュールをインスタンス化
+	// スキルをインスタンス化
 	return selectedType.ToDomainWithChainEffect(chainEffect)
 }
 
@@ -637,19 +641,19 @@ func AddRewardsToInventory(
 		}
 	}
 
-	// モジュール（スキル）をインベントリに追加
-	for _, module := range result.DroppedModules {
-		skillInv.AddSkill(module.TypeID)
+	// スキル（スキル）をインベントリに追加
+	for _, skill := range result.DroppedSkills {
+		skillInv.AddSkill(skill.TypeID)
 		slog.Info("スキルをインベントリに追加",
-			slog.String("skill_type_id", module.TypeID),
+			slog.String("skill_type_id", skill.TypeID),
 		)
 
 		// チェイン効果を独立インベントリに追加
-		if chainEffectInv != nil && module.HasChainEffect() {
-			added := chainEffectInv.AddChainEffect(module.ChainEffect.ID)
+		if chainEffectInv != nil && skill.HasChainEffect() {
+			added := chainEffectInv.AddChainEffect(skill.ChainEffect.ID)
 			if added {
 				slog.Info("チェイン効果をインベントリに追加",
-					slog.String("chain_effect_id", module.ChainEffect.ID),
+					slog.String("chain_effect_id", skill.ChainEffect.ID),
 				)
 			}
 		}

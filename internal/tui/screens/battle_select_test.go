@@ -11,8 +11,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// newTestDamageModule はテスト用のダメージモジュールを作成するヘルパー関数です。
-func newTestDamageModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+// newTestDamageSkill はテスト用のダメージスキルを作成するヘルパー関数です。
+func newTestDamageSkill(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
@@ -38,8 +38,8 @@ func containsString(s, substr string) bool {
 	return strings.Contains(s, substr)
 }
 
-// newTestHealModule はテスト用の回復モジュールを作成するヘルパー関数です。
-func newTestHealModule(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+// newTestHealSkill はテスト用の回復スキルを作成するヘルパー関数です。
+func newTestHealSkill(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
@@ -60,8 +60,8 @@ func newTestHealModule(id, name string, tags []string, statCoef float64, statRef
 	}, nil)
 }
 
-// newTestBuffModule はテスト用のバフモジュールを作成するヘルパー関数です。
-func newTestBuffModule(id, name string, tags []string, description string) *domain.SkillModel {
+// newTestBuffSkill はテスト用のバフスキルを作成するヘルパー関数です。
+func newTestBuffSkill(id, name string, tags []string, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
@@ -86,8 +86,8 @@ func newTestBuffModule(id, name string, tags []string, description string) *doma
 	}, nil)
 }
 
-// newTestModuleWithChainEffect はチェイン効果付きモジュールを作成するヘルパー関数です。
-func newTestModuleWithChainEffect(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.SkillModel {
+// newTestSkillWithChainEffect はチェイン効果付きスキルを作成するヘルパー関数です。
+func newTestSkillWithChainEffect(id, name string, tags []string, statCoef float64, statRef, description string, chainEffect *domain.ChainEffect) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:              id,
 		Name:            name,
@@ -211,13 +211,13 @@ func TestBattleSelectWithAgentEquipped(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
-	modules := []*domain.SkillModel{
-		newTestDamageModule("m1", "モジュール1", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageModule("m2", "モジュール2", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageModule("m3", "モジュール3", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageModule("m4", "モジュール4", []string{"physical_low"}, 1.0, "STR", ""),
+	skills := []*domain.SkillModel{
+		newTestDamageSkill("m1", "スキル1", []string{"physical_low"}, 1.0, "STR", ""),
+		newTestDamageSkill("m2", "スキル2", []string{"physical_low"}, 1.0, "STR", ""),
+		newTestDamageSkill("m3", "スキル3", []string{"physical_low"}, 1.0, "STR", ""),
+		newTestDamageSkill("m4", "スキル4", []string{"physical_low"}, 1.0, "STR", ""),
 	}
-	agent := domain.NewAgent("agent1", core, modules)
+	agent := domain.NewAgent("agent1", core, skills)
 
 	screen := NewBattleSelectScreen(10, &mockAgentProvider{agents: []*domain.AgentModel{agent}})
 	screen.input.Value = "5"
@@ -239,13 +239,13 @@ func TestBattleSelectConfirmScreen(t *testing.T) {
 		AllowedTags: []string{"physical_low"},
 	}
 	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
-	modules := []*domain.SkillModel{
-		newTestDamageModule("m1", "モジュール1", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageModule("m2", "モジュール2", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageModule("m3", "モジュール3", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageModule("m4", "モジュール4", []string{"physical_low"}, 1.0, "STR", ""),
+	skills := []*domain.SkillModel{
+		newTestDamageSkill("m1", "スキル1", []string{"physical_low"}, 1.0, "STR", ""),
+		newTestDamageSkill("m2", "スキル2", []string{"physical_low"}, 1.0, "STR", ""),
+		newTestDamageSkill("m3", "スキル3", []string{"physical_low"}, 1.0, "STR", ""),
+		newTestDamageSkill("m4", "スキル4", []string{"physical_low"}, 1.0, "STR", ""),
 	}
-	agent := domain.NewAgent("agent1", core, modules)
+	agent := domain.NewAgent("agent1", core, skills)
 
 	screen := NewBattleSelectScreen(10, &mockAgentProvider{agents: []*domain.AgentModel{agent}})
 	screen.input.Value = "5"
@@ -521,13 +521,13 @@ func createTestAgent() *domain.AgentModel {
 		AllowedTags: []string{"physical_low"},
 	}
 	core := domain.NewCoreWithTypeID("core1", coreType, domain.PassiveSkill{})
-	modules := []*domain.SkillModel{
-		newTestDamageModule("m1", "モジュール1", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageModule("m2", "モジュール2", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageModule("m3", "モジュール3", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageModule("m4", "モジュール4", []string{"physical_low"}, 1.0, "STR", ""),
+	skills := []*domain.SkillModel{
+		newTestDamageSkill("m1", "スキル1", []string{"physical_low"}, 1.0, "STR", ""),
+		newTestDamageSkill("m2", "スキル2", []string{"physical_low"}, 1.0, "STR", ""),
+		newTestDamageSkill("m3", "スキル3", []string{"physical_low"}, 1.0, "STR", ""),
+		newTestDamageSkill("m4", "スキル4", []string{"physical_low"}, 1.0, "STR", ""),
 	}
-	return domain.NewAgent("agent1", core, modules)
+	return domain.NewAgent("agent1", core, skills)
 }
 
 // ==================== タスク2.3: 敵情報パネルのテスト ====================

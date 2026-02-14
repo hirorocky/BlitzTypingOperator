@@ -232,7 +232,7 @@ func (p PassiveSkill) buildCondition() func(*EffectContext) bool {
 
 	case TriggerConditionOnSkillUse:
 		return func(ctx *EffectContext) bool {
-			return ctx.EventType == EventOnModuleUse
+			return ctx.EventType == EventOnSkillUse
 		}
 
 	case TriggerConditionOnTypingMiss:
@@ -258,12 +258,12 @@ func (p PassiveSkill) buildCondition() func(*EffectContext) bool {
 
 	case TriggerConditionOnPhysicalAttack:
 		return func(ctx *EffectContext) bool {
-			return ctx.EventType == EventOnModuleUse && ctx.IsPhysical
+			return ctx.EventType == EventOnSkillUse && ctx.IsPhysical
 		}
 
 	case TriggerConditionOnBuffDebuffUse:
 		return func(ctx *EffectContext) bool {
-			return ctx.EventType == EventOnModuleUse && ctx.HasBuffDebuffEffect
+			return ctx.EventType == EventOnSkillUse && ctx.HasBuffDebuffEffect
 		}
 
 	case TriggerConditionSameAttackCount:

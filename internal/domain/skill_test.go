@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// ==================== Task 1.1: Module → Skill ユビキタス言語変更テスト ====================
+// ==================== Task 1.1: Skill → Skill ユビキタス言語変更テスト ====================
 
 // TestSkillType_フィールドの確認 はSkillType構造体のフィールドが正しく設定されることを確認します。
 func TestSkillType_フィールドの確認(t *testing.T) {

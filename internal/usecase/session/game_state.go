@@ -3,6 +3,7 @@
 package session
 
 import (
+	"hirorocky/type-battle/internal/config"
 	"hirorocky/type-battle/internal/domain"
 	"hirorocky/type-battle/internal/usecase/achievement"
 	"hirorocky/type-battle/internal/usecase/rewarding"
@@ -48,7 +49,7 @@ type GameState struct {
 // 初回起動時やセーブデータが存在しない場合に使用されます。
 func NewGameState(
 	coreTypes []domain.CoreType,
-	moduleTypes []rewarding.ModuleDropInfo,
+	skillTypes []rewarding.SkillDropInfo,
 	passiveSkills map[string]domain.PassiveSkill,
 ) *GameState {
 	// インベントリマネージャーを作成
@@ -58,7 +59,7 @@ func NewGameState(
 	achievementMgr := achievement.NewAchievementManager()
 
 	// RewardCalculatorを作成
-	rewardCalc := rewarding.NewRewardCalculator(coreTypes, moduleTypes, passiveSkills)
+	rewardCalc := rewarding.NewRewardCalculator(coreTypes, skillTypes, passiveSkills)
 
 	// EnemyGeneratorを作成（デフォルト敵タイプを使用）
 	enemyGen := spawning.NewEnemyGenerator(nil)
@@ -114,9 +115,9 @@ func (g *GameState) UpdateEnemyGenerator(enemyTypes []domain.EnemyType) {
 }
 
 // UpdateRewardCalculator は報酬計算器を更新します。
-func (g *GameState) UpdateRewardCalculator(coreTypes []domain.CoreType, moduleTypes []rewarding.ModuleDropInfo, passiveSkills map[string]domain.PassiveSkill) {
-	if len(coreTypes) > 0 || len(moduleTypes) > 0 {
-		g.rewardCalculator = rewarding.NewRewardCalculator(coreTypes, moduleTypes, passiveSkills)
+func (g *GameState) UpdateRewardCalculator(coreTypes []domain.CoreType, skillTypes []rewarding.SkillDropInfo, passiveSkills map[string]domain.PassiveSkill) {
+	if len(coreTypes) > 0 || len(skillTypes) > 0 {
+		g.rewardCalculator = rewarding.NewRewardCalculator(coreTypes, skillTypes, passiveSkills)
 	}
 }
 
@@ -207,6 +208,7 @@ func (g *GameState) PreparePlayerForBattle(agents []*domain.AgentModel) {
 	if g.player.MaxHP == 0 && len(agents) > 0 {
 		g.player.InitializeHP(domain.InitialMaxHP)
 	}
+	g.player.MaxMana = config.DefaultMaxMana
 	g.player.PrepareForBattle()
 }
 

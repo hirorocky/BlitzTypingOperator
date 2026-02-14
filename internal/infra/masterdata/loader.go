@@ -1,5 +1,5 @@
 // Package masterdata はマスタデータのロード処理を提供します。
-// コア特性、モジュール定義、敵タイプ定義、タイピング辞書などを
+// コア特性、スキル定義、敵タイプ定義、タイピング辞書などを
 // JSONファイルから読み込みます。
 
 package masterdata
@@ -68,7 +68,7 @@ func (l *DataLoader) readFile(filename string) ([]byte, error) {
 // ExternalData は外部データファイルから読み込んだ全データを格納する構造体です。
 type ExternalData struct {
 	CoreTypes          []CoreTypeData
-	ModuleDefinitions  []ModuleDefinitionData
+	SkillDefinitions   []SkillDefinitionData
 	EnemyTypes         []EnemyTypeData
 	EnemyActions       []EnemyActionData
 	EnemyPassiveSkills []EnemyPassiveSkillData
@@ -165,7 +165,7 @@ func (c *CoreTypeData) ToDomain() domain.CoreType {
 	}
 }
 
-// ==================== スキル（モジュール）定義 ====================
+// ==================== スキル（スキル）定義 ====================
 
 // HPFormulaData はHP増減計算式のJSONデータ構造体です。
 type HPFormulaData struct {
@@ -187,6 +187,7 @@ type SkillEffectData struct {
 	EffectColumn *EffectColumnData `json:"effect_column,omitempty"`
 	Probability  float64           `json:"probability"`
 	LUKFactor    float64           `json:"luk_factor"`
+	ManaGain     int               `json:"mana_gain"`
 	Icon         string            `json:"icon"`
 }
 
@@ -197,7 +198,7 @@ type ChallengeData struct {
 	Options map[string]string `json:"options,omitempty"`
 }
 
-// SkillDefinitionData はskills.json（またはmodules.json）から読み込むスキル定義データの構造体です。
+// SkillDefinitionData はskills.jsonから読み込むスキル定義データの構造体です。
 type SkillDefinitionData struct {
 	ID              string            `json:"id"`
 	Name            string            `json:"name"`
@@ -208,29 +209,25 @@ type SkillDefinitionData struct {
 	DifficultyRate  int               `json:"difficulty"`
 	Challenge       ChallengeData     `json:"challenge"`
 	MinDropLevel    int               `json:"min_drop_level"`
+	ManaCost        int               `json:"mana_cost"`
 	Effects         []SkillEffectData `json:"effects"`
 }
 
-// ModuleDefinitionData はSkillDefinitionDataのエイリアスです。
-// 後方互換性のために残されています。新規コードではSkillDefinitionDataを使用してください。
-type ModuleDefinitionData = SkillDefinitionData
-
-// modulesFileData はmodules.jsonのルート構造です。
-type modulesFileData struct {
-	SkillTypes []ModuleDefinitionData `json:"module_types"`
+// skillsFileData はskills.jsonのルート構造です。
+type skillsFileData struct {
+	SkillTypes []SkillDefinitionData `json:"skill_types"`
 }
 
-// LoadModuleDefinitions はmodules.jsonからモジュール定義を読み込みます。
-
-func (l *DataLoader) LoadModuleDefinitions() ([]ModuleDefinitionData, error) {
-	data, err := l.readFile("modules.json")
+// LoadSkillDefinitions はskills.jsonからスキル定義を読み込みます。
+func (l *DataLoader) LoadSkillDefinitions() ([]SkillDefinitionData, error) {
+	data, err := l.readFile("skills.json")
 	if err != nil {
-		return nil, fmt.Errorf("modules.jsonの読み込みに失敗: %w", err)
+		return nil, fmt.Errorf("skills.jsonの読み込みに失敗: %w", err)
 	}
 
-	var fileData modulesFileData
+	var fileData skillsFileData
 	if err := json.Unmarshal(data, &fileData); err != nil {
-		return nil, fmt.Errorf("modules.jsonのパースに失敗: %w", err)
+		return nil, fmt.Errorf("skills.jsonのパースに失敗: %w", err)
 	}
 
 	return fileData.SkillTypes, nil
@@ -267,6 +264,7 @@ func (m *SkillDefinitionData) ToDomainType() domain.SkillType {
 		DifficultyRate:   m.DifficultyRate,
 		ChallengeType:    domain.ChallengeTypeID(m.Challenge.Type),
 		ChallengeOptions: challengeOptions,
+		ManaCost:         m.ManaCost,
 		MinDropLevel:     m.MinDropLevel,
 		Effects:          effects,
 	}
@@ -278,6 +276,7 @@ func (e *SkillEffectData) ToDomain() domain.SkillEffect {
 		Target:      convertEffectTarget(e.Target),
 		Probability: e.Probability,
 		LUKFactor:   e.LUKFactor,
+		ManaGain:    e.ManaGain,
 		Icon:        e.Icon,
 	}
 
@@ -899,22 +898,22 @@ func (l *DataLoader) LoadTypingDictionary() (*TypingDictionary, error) {
 
 // FirstAgentData はfirst_agent.jsonから読み込む初期エージェントデータの構造体です。
 type FirstAgentData struct {
-	ID         string                 `json:"id"`
-	CoreTypeID string                 `json:"core_type_id"`
-	CoreLevel  int                    `json:"core_level"`
-	Modules    []FirstAgentModuleData `json:"modules"`
+	ID         string                `json:"id"`
+	CoreTypeID string                `json:"core_type_id"`
+	CoreLevel  int                   `json:"core_level"`
+	Skills     []FirstAgentSkillData `json:"skills"`
 }
 
-// FirstAgentModuleData は初期エージェントのモジュールデータの構造体です。
-// ChainEffectはモジュールと密結合しているため、同じ構造体で定義します。
-type FirstAgentModuleData struct {
+// FirstAgentSkillData は初期エージェントのスキルデータの構造体です。
+// ChainEffectはスキルと密結合しているため、同じ構造体で定義します。
+type FirstAgentSkillData struct {
 	TypeID           string  `json:"type_id"`
 	ChainEffectType  string  `json:"chain_effect_type,omitempty"`
 	ChainEffectValue float64 `json:"chain_effect_value,omitempty"`
 }
 
 // HasChainEffect はチェイン効果を持つかどうかを返します。
-func (m *FirstAgentModuleData) HasChainEffect() bool {
+func (m *FirstAgentSkillData) HasChainEffect() bool {
 	return m.ChainEffectType != ""
 }
 
@@ -948,9 +947,9 @@ func (l *DataLoader) LoadAllExternalData() (*ExternalData, error) {
 		return nil, fmt.Errorf("コア特性のロードに失敗: %w", err)
 	}
 
-	modules, err := l.LoadModuleDefinitions()
+	skills, err := l.LoadSkillDefinitions()
 	if err != nil {
-		return nil, fmt.Errorf("モジュール定義のロードに失敗: %w", err)
+		return nil, fmt.Errorf("スキル定義のロードに失敗: %w", err)
 	}
 
 	enemyTypes, err := l.LoadEnemyTypes()
@@ -1000,7 +999,7 @@ func (l *DataLoader) LoadAllExternalData() (*ExternalData, error) {
 
 	return &ExternalData{
 		CoreTypes:          coreTypes,
-		ModuleDefinitions:  modules,
+		SkillDefinitions:   skills,
 		EnemyTypes:         enemyTypes,
 		EnemyActions:       enemyActions,
 		EnemyPassiveSkills: enemyPassiveSkills,
@@ -1042,13 +1041,15 @@ func ValidateSkillDefinitionData(data SkillDefinitionData) error {
 	if len(data.Effects) == 0 {
 		return fmt.Errorf("スキル効果が空です: ID=%s", data.ID)
 	}
+	if data.ManaCost < 0 {
+		return fmt.Errorf("マナコストが負の値です: ID=%s, ManaCost=%d", data.ID, data.ManaCost)
+	}
+	for i, effect := range data.Effects {
+		if effect.ManaGain < 0 {
+			return fmt.Errorf("マナ獲得量が負の値です: ID=%s, Effect[%d].ManaGain=%d", data.ID, i, effect.ManaGain)
+		}
+	}
 	return nil
-}
-
-// ValidateModuleDefinitionData はValidateSkillDefinitionDataの後方互換ラッパーです。
-// 後方互換性のために残されています。新規コードではValidateSkillDefinitionDataを使用してください。
-func ValidateModuleDefinitionData(data ModuleDefinitionData) error {
-	return ValidateSkillDefinitionData(data)
 }
 
 // ValidateEnemyTypeData は敵タイプデータのバリデーションを行います。

@@ -4,7 +4,7 @@ package domain
 import "fmt"
 
 // ChainEffectType はチェイン効果の種別を表す型です。
-// モジュール使用後のリキャスト期間中に発動する追加効果の種類を定義します。
+// スキル使用後のリキャスト期間中に発動する追加効果の種類を定義します。
 type ChainEffectType string
 
 // ChainEffectCategory はチェイン効果のカテゴリを表す型です。
@@ -125,8 +125,8 @@ const (
 	ChainEffectDoubleCast ChainEffectType = "double_cast"
 )
 
-// ChainEffect はモジュールインスタンスに紐づくチェイン効果を表す値オブジェクトです。
-// モジュール取得時にランダム決定され、変更不可のイミュータブルな構造体です。
+// ChainEffect はスキルインスタンスに紐づくチェイン効果を表す値オブジェクトです。
+// スキル取得時にランダム決定され、変更不可のイミュータブルな構造体です。
 type ChainEffect struct {
 	// ID はチェイン効果の一意識別子です（マスタデータ参照用）。
 	// セーブデータにはこのIDが保存されます。
@@ -226,11 +226,11 @@ func (c ChainEffect) ToEntry(agentIndex int) EffectEntry {
 		SourceIndex: idx,
 		Name:        c.Description,
 		EnableCondition: func(ctx *EffectContext) bool {
-			// 他エージェントがモジュールを使った時に発動
-			if ctx.EventType != EventOnModuleUse {
+			// 他エージェントがスキルを使った時に発動
+			if ctx.EventType != EventOnSkillUse {
 				return false
 			}
-			return ctx.LastModuleAgent != idx && ctx.LastModuleAgent >= 0
+			return ctx.LastSkillAgent != idx && ctx.LastSkillAgent >= 0
 		},
 		Values:  c.buildValues(),
 		Flags:   c.buildFlags(),

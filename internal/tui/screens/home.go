@@ -64,7 +64,7 @@ type EnemyProgressProvider interface {
 	// GetSelectableLevelRange は敵の選択可能レベル範囲を取得します。
 	GetSelectableLevelRange(enemyTypeID string) (min, max int)
 	// GetDropItemName はドロップアイテムの日本語名を返します。
-	// category: "core" または "module"
+	// category: "core" または "skill"
 	// typeID: コアまたはスキルのTypeID
 	GetDropItemName(category, typeID string) string
 }

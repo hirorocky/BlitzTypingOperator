@@ -15,7 +15,7 @@ func (m *mockInventoryProvider) GetCores() []*domain.CoreModel {
 	return []*domain.CoreModel{}
 }
 
-func (m *mockInventoryProvider) GetModules() []*domain.SkillModel {
+func (m *mockInventoryProvider) GetSkills() []*domain.SkillModel {
 	return []*domain.SkillModel{}
 }
 
@@ -35,7 +35,7 @@ func (m *mockInventoryProvider) RemoveCore(id string) error {
 	return nil
 }
 
-func (m *mockInventoryProvider) RemoveModule(id string) error {
+func (m *mockInventoryProvider) RemoveSkill(id string) error {
 	return nil
 }
 

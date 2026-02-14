@@ -38,7 +38,7 @@ func TestBattleEngine_BattleStart_FirstStrike(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_first_strike", Name: "ファーストストライク"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
@@ -53,8 +53,8 @@ func TestBattleEngine_BattleStart_FirstStrike(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := domain.NewSkillFromType(skillType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -93,7 +93,7 @@ func TestBattleEngine_BattleStart_FirstStrike_NotEquipped(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_other", Name: "その他"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
@@ -108,8 +108,8 @@ func TestBattleEngine_BattleStart_FirstStrike_NotEquipped(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := domain.NewSkillFromType(skillType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -162,7 +162,7 @@ func TestBattleEngine_TypoRecovery(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_typo_recovery", Name: "タイポリカバリー"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
@@ -177,8 +177,8 @@ func TestBattleEngine_TypoRecovery(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := domain.NewSkillFromType(skillType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -233,7 +233,7 @@ func TestBattleEngine_SecondChance(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_second_chance", Name: "セカンドチャンス"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
@@ -248,8 +248,8 @@ func TestBattleEngine_SecondChance(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := domain.NewSkillFromType(skillType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{

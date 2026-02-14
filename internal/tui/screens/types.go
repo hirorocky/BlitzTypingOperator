@@ -74,7 +74,7 @@ type EncyclopediaData struct {
 	EncounteredEnemies []string
 }
 
-// SkillTypeInfo はモジュールタイプ情報です。
+// SkillTypeInfo はスキルタイプ情報です。
 type SkillTypeInfo struct {
 	ID          string
 	Name        string

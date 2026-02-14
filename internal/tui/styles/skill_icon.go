@@ -1,4 +1,4 @@
-// Package styles はTUIスタイリングのモジュールアイコン機能を提供します。
+// Package styles はTUIスタイリングのスキルアイコン機能を提供します。
 
 package styles
 
@@ -29,9 +29,9 @@ func RenderColoredIcon(icon string, color lipgloss.Color) string {
 	return style.Render(icon)
 }
 
-// RenderModuleIcon はモジュールのアイコンをカラー付きで描画します。
+// RenderSkillIcon はスキルのアイコンをカラー付きで描画します。
 // effectType: "damage", "heal", "buff", "debuff" のいずれか
-func RenderModuleIcon(icon string, effectType string) string {
+func RenderSkillIcon(icon string, effectType string) string {
 	color := GetEffectColor(effectType)
 	return RenderColoredIcon(icon, color)
 }

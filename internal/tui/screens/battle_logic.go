@@ -178,20 +178,20 @@ func (s *BattleScreen) updateEffectDurations(deltaSeconds float64) {
 
 // UpdateCooldowns はクールダウンを更新します。
 func (s *BattleScreen) UpdateCooldowns(deltaSeconds float64) {
-	for i := range s.moduleSlots {
-		if s.moduleSlots[i].CooldownRemaining > 0 {
-			s.moduleSlots[i].CooldownRemaining -= deltaSeconds
-			if s.moduleSlots[i].CooldownRemaining < 0 {
-				s.moduleSlots[i].CooldownRemaining = 0
+	for i := range s.skillSlots {
+		if s.skillSlots[i].CooldownRemaining > 0 {
+			s.skillSlots[i].CooldownRemaining -= deltaSeconds
+			if s.skillSlots[i].CooldownRemaining < 0 {
+				s.skillSlots[i].CooldownRemaining = 0
 			}
 		}
 	}
 }
 
-// StartCooldown はモジュールのクールダウンを開始します。
+// StartCooldown はスキルのクールダウンを開始します。
 // EffectTableからCooldownReduceを取得して初期値を短縮します。
 func (s *BattleScreen) StartCooldown(slotIndex int, duration float64) {
-	if slotIndex >= 0 && slotIndex < len(s.moduleSlots) {
+	if slotIndex >= 0 && slotIndex < len(s.skillSlots) {
 		reducedDuration := duration
 
 		// CooldownReduceを取得して初期値を短縮
@@ -213,8 +213,8 @@ func (s *BattleScreen) StartCooldown(slotIndex int, duration float64) {
 			}
 		}
 
-		s.moduleSlots[slotIndex].CooldownRemaining = reducedDuration
-		s.moduleSlots[slotIndex].CooldownTotal = duration // 表示用に元の値を保持
+		s.skillSlots[slotIndex].CooldownRemaining = reducedDuration
+		s.skillSlots[slotIndex].CooldownTotal = duration // 表示用に元の値を保持
 	}
 }
 
@@ -231,16 +231,16 @@ func (s *BattleScreen) UpdateRecasts(deltaSeconds float64) {
 	s.recastManager.UpdateRecast(delta)
 }
 
-// isModuleUsable は指定スロットのモジュールが使用可能かを判定します。
-// モジュールのクールダウンとエージェントのリキャスト状態を両方チェックします。
-func (s *BattleScreen) isModuleUsable(slotIndex int) bool {
-	if slotIndex < 0 || slotIndex >= len(s.moduleSlots) {
+// isSkillUsable は指定スロットのスキルが使用可能かを判定します。
+// スキルのクールダウンとエージェントのリキャスト状態を両方チェックします。
+func (s *BattleScreen) isSkillUsable(slotIndex int) bool {
+	if slotIndex < 0 || slotIndex >= len(s.skillSlots) {
 		return false
 	}
 
-	slot := s.moduleSlots[slotIndex]
+	slot := s.skillSlots[slotIndex]
 
-	// モジュールのクールダウンチェック
+	// スキルのクールダウンチェック
 	if !slot.IsReady() {
 		return false
 	}
@@ -250,30 +250,35 @@ func (s *BattleScreen) isModuleUsable(slotIndex int) bool {
 		return false
 	}
 
+	// マナ不足チェック
+	if slot.Skill.Type.ManaCost > 0 && s.player.Mana < slot.Skill.Type.ManaCost {
+		return false
+	}
+
 	return true
 }
 
 // startAgentRecast はエージェントのリキャストを開始し、チェイン効果を登録します。
-func (s *BattleScreen) startAgentRecast(agentIndex int, module *domain.SkillModel) {
+func (s *BattleScreen) startAgentRecast(agentIndex int, skill *domain.SkillModel) {
 	if s.recastManager == nil {
 		return
 	}
 
-	// モジュールのクールダウン秒数を使用してリキャストを開始
-	cooldownDuration := time.Duration(module.CooldownSeconds() * float64(time.Second))
+	// スキルのクールダウン秒数を使用してリキャストを開始
+	cooldownDuration := time.Duration(skill.CooldownSeconds() * float64(time.Second))
 	s.recastManager.StartRecast(agentIndex, cooldownDuration)
 
 	// チェイン効果の管理: スキルにチェイン効果があれば登録、なければ既存効果をクリア
 	if s.chainEffectManager != nil {
-		if module.ChainEffect != nil {
-			s.chainEffectManager.RegisterChainEffect(agentIndex, module.ChainEffect, module.TypeID)
+		if skill.ChainEffect != nil {
+			s.chainEffectManager.RegisterChainEffect(agentIndex, skill.ChainEffect, skill.TypeID)
 		} else {
 			s.chainEffectManager.ClearEffectForAgent(agentIndex)
 		}
 	}
 }
 
-// triggerChainEffects はモジュール使用時に他エージェントのチェイン効果を発動します。
+// triggerChainEffects はスキル使用時に他エージェントのチェイン効果を発動します。
 func (s *BattleScreen) triggerChainEffects(usingAgentIndex int, effectFlags chain.SkillEffectFlags) {
 	if s.chainEffectManager == nil {
 		return
@@ -411,7 +416,7 @@ func (s *BattleScreen) registerChainEffectToTable(effect *chain.TriggeredChainEf
 
 // startChallenge はChallengeInputを構築してチャレンジを開始します。
 // EffectTableからTimeExtend、AutoCorrect、TypingDifficultyを取得して適用します。
-func (s *BattleScreen) startChallenge(module *domain.SkillModel) tea.Cmd {
+func (s *BattleScreen) startChallenge(skill *domain.SkillModel) tea.Cmd {
 	// EffectTableから効果を取得
 	var effects domain.EffectResult
 	if s.player != nil && s.player.EffectTable != nil {
@@ -425,14 +430,14 @@ func (s *BattleScreen) startChallenge(module *domain.SkillModel) tea.Cmd {
 	}
 
 	// 基礎DifficultyRateにTypingDifficulty修正を適用
-	baseDifficulty := float64(module.GetDifficultyRate())
+	baseDifficulty := float64(skill.GetDifficultyRate())
 	adjustedDifficulty := baseDifficulty * effects.TypingDifficulty
 	difficultyRate := domain.DifficultyRate(int(adjustedDifficulty)).Clamp()
 
 	// パッシブスキル: ps_typo_recovery（ミス時の時間延長）
 	mistakeTimeExtendSec := 0.0
 	if s.battleEngine != nil && s.battleState != nil {
-		slot := s.moduleSlots[s.selectedModuleIdx]
+		slot := s.skillSlots[s.selectedSkillIdx]
 		agent := slot.Agent
 		mistakeTimeExtendSec = s.battleEngine.EvaluateTypoRecovery(s.battleState, agent)
 	}
@@ -441,7 +446,7 @@ func (s *BattleScreen) startChallenge(module *domain.SkillModel) tea.Cmd {
 	retryOnTimeout := false
 	retryTimeLimitMultiplier := 0.5
 	if s.battleEngine != nil && s.battleState != nil {
-		slot := s.moduleSlots[s.selectedModuleIdx]
+		slot := s.skillSlots[s.selectedSkillIdx]
 		agent := slot.Agent
 		if s.battleEngine.EvaluateSecondChance(s.battleState, agent) {
 			retryOnTimeout = true
@@ -456,10 +461,10 @@ func (s *BattleScreen) startChallenge(module *domain.SkillModel) tea.Cmd {
 		MistakeTimeExtendSec:     mistakeTimeExtendSec,
 		RetryOnTimeout:           retryOnTimeout,
 		RetryTimeLimitMultiplier: retryTimeLimitMultiplier,
-		ChallengeOptions:         module.Type.ChallengeOptions,
+		ChallengeOptions:         skill.Type.ChallengeOptions,
 	}
 
-	challengeType := module.GetChallengeType()
+	challengeType := skill.GetChallengeType()
 	s.activeChallenge = challenges.New(challengeType, input)
 
 	if s.activeChallenge != nil {
@@ -469,7 +474,7 @@ func (s *BattleScreen) startChallenge(module *domain.SkillModel) tea.Cmd {
 }
 
 // handleChallengeComplete はチャレンジ完了時の処理を行います。
-// ChallengeOutputをTypingResultに変換し、モジュール効果パイプラインを実行します。
+// ChallengeOutputをTypingResultに変換し、スキル効果パイプラインを実行します。
 func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
 	// チャレンジをクリア
 	s.activeChallenge = nil
@@ -508,16 +513,16 @@ func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
 		s.battleEngine.RecordTypingResult(s.battleState, typingResult)
 	}
 
-	// モジュール効果を適用
-	slot := s.moduleSlots[s.selectedModuleIdx]
+	// スキル効果を適用
+	slot := s.skillSlots[s.selectedSkillIdx]
 	agent := slot.Agent
-	module := slot.Module
+	skill := slot.Skill
 	agentIndex := slot.AgentIndex
 
-	// モジュールの効果フラグを取得
-	effectFlags := getSkillEffectFlags(module)
+	// スキルの効果フラグを取得
+	effectFlags := getSkillEffectFlags(skill)
 
-	// 他エージェントの待機中チェイン効果を発動（モジュール効果適用前）
+	// 他エージェントの待機中チェイン効果を発動（スキル効果適用前）
 	s.triggerChainEffects(agentIndex, effectFlags)
 
 	// DoubleCast判定
@@ -548,22 +553,27 @@ func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
 	// ps_miracle_heal判定（回復スキル時HP全回復）
 	miracleHealTriggered := false
 	if s.battleEngine != nil && s.battleState != nil {
-		if s.battleEngine.EvaluateMiracleHeal(s.battleState, agent, module) {
+		if s.battleEngine.EvaluateMiracleHeal(s.battleState, agent, skill) {
 			miracleHealTriggered = true
 		}
 	}
 
+	// マナ消費（Echo/DoubleCastの追加発動ではコストを消費しない）
+	if skill.Type.ManaCost > 0 && s.player != nil {
+		s.player.ConsumeMana(skill.Type.ManaCost)
+	}
+
 	var effectAmount int
 	if s.battleEngine != nil && s.battleState != nil {
-		effectAmount = s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, module, typingResult, s.comboCount)
+		effectAmount = s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, skill, typingResult, s.comboCount)
 
 		for i := 1; i < echoSkillRepeat; i++ {
-			additionalEffect := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, module, typingResult, s.comboCount)
+			additionalEffect := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, skill, typingResult, s.comboCount)
 			effectAmount += additionalEffect
 		}
 
 		if doubleCastTriggered {
-			secondEffect := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, module, typingResult, s.comboCount)
+			secondEffect := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, skill, typingResult, s.comboCount)
 			effectAmount += secondEffect
 		}
 
@@ -585,7 +595,7 @@ func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
 	}
 
 	// メッセージを表示
-	s.message = s.formatEffectMessage(module, effectAmount, typingResult, effectFlags)
+	s.message = s.formatEffectMessage(skill, effectAmount, typingResult, effectFlags)
 	if s.comboCount > 0 {
 		s.message += fmt.Sprintf(" [コンボ:%d]", s.comboCount)
 	}
@@ -640,16 +650,16 @@ func (s *BattleScreen) processEnemyAttackWithDefense(dp challenges.DefenseProvid
 }
 
 // formatEffectMessage は効果メッセージをフォーマットします。
-func (s *BattleScreen) formatEffectMessage(module *domain.SkillModel, effectAmount int, result *typing.TypingResult, flags chain.SkillEffectFlags) string {
+func (s *BattleScreen) formatEffectMessage(skill *domain.SkillModel, effectAmount int, result *typing.TypingResult, flags chain.SkillEffectFlags) string {
 	var action string
 	if flags.HasDamage {
 		action = fmt.Sprintf("%dダメージを与えた！", effectAmount)
 	} else if flags.HasHeal {
 		action = fmt.Sprintf("%d回復した！", effectAmount)
 	} else if flags.HasBuff {
-		action = fmt.Sprintf("%sを付与した！", module.Name())
+		action = fmt.Sprintf("%sを付与した！", skill.Name())
 	} else if flags.HasDebuff {
-		action = fmt.Sprintf("敵に%sを付与した！", module.Name())
+		action = fmt.Sprintf("敵に%sを付与した！", skill.Name())
 	} else {
 		action = "効果を発動した！"
 	}
@@ -744,11 +754,11 @@ func (s *BattleScreen) getDefenseActionDisplay() (icon string, text string, colo
 	}
 }
 
-// ==================== ゲームロジック: モジュール選択ナビゲーション ====================
+// ==================== ゲームロジック: スキル選択ナビゲーション ====================
 
-// selectFirstModuleOfAgent は指定エージェントの最初のモジュールを選択します。
-func (s *BattleScreen) selectFirstModuleOfAgent(agentIdx int) {
-	for i, slot := range s.moduleSlots {
+// selectFirstSkillOfAgent は指定エージェントの最初のスキルを選択します。
+func (s *BattleScreen) selectFirstSkillOfAgent(agentIdx int) {
+	for i, slot := range s.skillSlots {
 		if slot.AgentIndex == agentIdx {
 			s.selectedSlot = i
 			return
@@ -756,70 +766,70 @@ func (s *BattleScreen) selectFirstModuleOfAgent(agentIdx int) {
 	}
 }
 
-// moveToPrevModuleInAgent は現在のエージェント内で前のモジュールに移動します。
-func (s *BattleScreen) moveToPrevModuleInAgent() {
-	if len(s.moduleSlots) == 0 {
+// moveToPrevSkillInAgent は現在のエージェント内で前のスキルに移動します。
+func (s *BattleScreen) moveToPrevSkillInAgent() {
+	if len(s.skillSlots) == 0 {
 		return
 	}
 
 	currentAgentIdx := s.selectedAgentIdx
-	agentModules := s.getModuleIndicesForAgent(currentAgentIdx)
+	agentSkills := s.getSkillIndicesForAgent(currentAgentIdx)
 
-	if len(agentModules) == 0 {
+	if len(agentSkills) == 0 {
 		return
 	}
 
-	// 現在のモジュールの位置を見つける
+	// 現在のスキルの位置を見つける
 	currentPos := 0
-	for i, idx := range agentModules {
+	for i, idx := range agentSkills {
 		if idx == s.selectedSlot {
 			currentPos = i
 			break
 		}
 	}
 
-	// 前のモジュールに移動（ループ）
+	// 前のスキルに移動（ループ）
 	newPos := currentPos - 1
 	if newPos < 0 {
-		newPos = len(agentModules) - 1
+		newPos = len(agentSkills) - 1
 	}
-	s.selectedSlot = agentModules[newPos]
+	s.selectedSlot = agentSkills[newPos]
 }
 
-// moveToNextModuleInAgent は現在のエージェント内で次のモジュールに移動します。
-func (s *BattleScreen) moveToNextModuleInAgent() {
-	if len(s.moduleSlots) == 0 {
+// moveToNextSkillInAgent は現在のエージェント内で次のスキルに移動します。
+func (s *BattleScreen) moveToNextSkillInAgent() {
+	if len(s.skillSlots) == 0 {
 		return
 	}
 
 	currentAgentIdx := s.selectedAgentIdx
-	agentModules := s.getModuleIndicesForAgent(currentAgentIdx)
+	agentSkills := s.getSkillIndicesForAgent(currentAgentIdx)
 
-	if len(agentModules) == 0 {
+	if len(agentSkills) == 0 {
 		return
 	}
 
-	// 現在のモジュールの位置を見つける
+	// 現在のスキルの位置を見つける
 	currentPos := 0
-	for i, idx := range agentModules {
+	for i, idx := range agentSkills {
 		if idx == s.selectedSlot {
 			currentPos = i
 			break
 		}
 	}
 
-	// 次のモジュールに移動（ループ）
+	// 次のスキルに移動（ループ）
 	newPos := currentPos + 1
-	if newPos >= len(agentModules) {
+	if newPos >= len(agentSkills) {
 		newPos = 0
 	}
-	s.selectedSlot = agentModules[newPos]
+	s.selectedSlot = agentSkills[newPos]
 }
 
-// getModuleIndicesForAgent は指定エージェントのモジュールスロットのインデックスを返します。
-func (s *BattleScreen) getModuleIndicesForAgent(agentIdx int) []int {
+// getSkillIndicesForAgent は指定エージェントのスキルスロットのインデックスを返します。
+func (s *BattleScreen) getSkillIndicesForAgent(agentIdx int) []int {
 	var indices []int
-	for i, slot := range s.moduleSlots {
+	for i, slot := range s.skillSlots {
 		if slot.AgentIndex == agentIdx {
 			indices = append(indices, i)
 		}
@@ -827,11 +837,11 @@ func (s *BattleScreen) getModuleIndicesForAgent(agentIdx int) []int {
 	return indices
 }
 
-// getSkillEffectFlags はモジュールが持つ効果の種別フラグを取得します。
-func getSkillEffectFlags(module *domain.SkillModel) chain.SkillEffectFlags {
+// getSkillEffectFlags はスキルが持つ効果の種別フラグを取得します。
+func getSkillEffectFlags(skill *domain.SkillModel) chain.SkillEffectFlags {
 	flags := chain.SkillEffectFlags{}
 
-	for _, effect := range module.Type.Effects {
+	for _, effect := range skill.Type.Effects {
 		if effect.IsDamageEffect() {
 			flags.HasDamage = true
 		}

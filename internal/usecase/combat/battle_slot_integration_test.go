@@ -363,8 +363,8 @@ func TestBattleIntegration_AgentModelConstruction(t *testing.T) {
 	if agent0.Core.Type.ID != "all_rounder" {
 		t.Errorf("エージェント0のコアTypeID: 期待 all_rounder, 実際 %s", agent0.Core.Type.ID)
 	}
-	if len(agent0.Modules) != 3 {
-		t.Errorf("エージェント0のスキル数: 期待 3, 実際 %d", len(agent0.Modules))
+	if len(agent0.Skills) != 3 {
+		t.Errorf("エージェント0のスキル数: 期待 3, 実際 %d", len(agent0.Skills))
 	}
 
 	// 2番目のエージェントを検証
@@ -372,8 +372,8 @@ func TestBattleIntegration_AgentModelConstruction(t *testing.T) {
 	if agent1.Core.Type.ID != "attacker" {
 		t.Errorf("エージェント1のコアTypeID: 期待 attacker, 実際 %s", agent1.Core.Type.ID)
 	}
-	if len(agent1.Modules) != 1 {
-		t.Errorf("エージェント1のスキル数: 期待 1, 実際 %d", len(agent1.Modules))
+	if len(agent1.Skills) != 1 {
+		t.Errorf("エージェント1のスキル数: 期待 1, 実際 %d", len(agent1.Skills))
 	}
 }
 

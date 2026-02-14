@@ -18,13 +18,13 @@ func NewGameStateForTest() *GameState {
 			MinDropLevel:   1,
 		},
 	}
-	moduleTypes := []rewarding.ModuleDropInfo{
+	skillTypes := []rewarding.SkillDropInfo{
 		{
-			ID:          "test_module",
-			Name:        "テストモジュール",
+			ID:          "test_skill",
+			Name:        "テストスキル",
 			Icon:        "⚔️",
 			Tags:        []string{"physical_low"},
-			Description: "テスト用モジュール",
+			Description: "テスト用スキル",
 			Effects: []domain.SkillEffect{
 				{
 					Target:      domain.TargetEnemy,
@@ -44,5 +44,5 @@ func NewGameStateForTest() *GameState {
 			Description: "テスト用パッシブスキル",
 		},
 	}
-	return NewGameState(coreTypes, moduleTypes, passiveSkills)
+	return NewGameState(coreTypes, skillTypes, passiveSkills)
 }

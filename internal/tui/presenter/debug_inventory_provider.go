@@ -10,10 +10,10 @@ import (
 
 // DebugInventoryProvider はデバッグモード用のInventoryProviderです。
 // マスターデータから全CoreType/SkillType/ChainEffectを提供し、
-// 任意のパラメータでコア・モジュールを作成できます。
+// 任意のパラメータでコア・スキルを作成できます。
 type DebugInventoryProvider struct {
 	coreTypes     []masterdata.CoreTypeData
-	moduleTypes   []masterdata.ModuleDefinitionData
+	skillTypes    []masterdata.SkillDefinitionData
 	chainEffects  []masterdata.ChainEffectData
 	passiveSkills map[string]domain.PassiveSkill
 
@@ -28,13 +28,13 @@ type DebugInventoryProvider struct {
 // NewDebugInventoryProvider は新しいDebugInventoryProviderを作成します。
 func NewDebugInventoryProvider(
 	coreTypes []masterdata.CoreTypeData,
-	moduleTypes []masterdata.ModuleDefinitionData,
+	skillTypes []masterdata.SkillDefinitionData,
 	chainEffects []masterdata.ChainEffectData,
 	passiveSkills map[string]domain.PassiveSkill,
 ) *DebugInventoryProvider {
 	return &DebugInventoryProvider{
 		coreTypes:     coreTypes,
-		moduleTypes:   moduleTypes,
+		skillTypes:    skillTypes,
 		chainEffects:  chainEffects,
 		passiveSkills: passiveSkills,
 		agents:        make([]*domain.AgentModel, 0),
@@ -55,9 +55,9 @@ func (p *DebugInventoryProvider) GetCores() []*domain.CoreModel {
 	return nil
 }
 
-// GetModules はデバッグモードでは空のスライスを返します。
+// GetSkills はデバッグモードでは空のスライスを返します。
 // デバッグモードではSkillType選択UIを使用するため。
-func (p *DebugInventoryProvider) GetModules() []*domain.SkillModel {
+func (p *DebugInventoryProvider) GetSkills() []*domain.SkillModel {
 	return nil
 }
 
@@ -95,8 +95,8 @@ func (p *DebugInventoryProvider) RemoveCore(id string) error {
 	return nil
 }
 
-// RemoveModule はデバッグモードでは何もしません（モジュールは無限）。
-func (p *DebugInventoryProvider) RemoveModule(id string) error {
+// RemoveSkill はデバッグモードでは何もしません（スキルは無限）。
+func (p *DebugInventoryProvider) RemoveSkill(id string) error {
 	return nil
 }
 
@@ -126,8 +126,8 @@ func (p *DebugInventoryProvider) GetCoreTypes() []masterdata.CoreTypeData {
 }
 
 // GetSkillTypes はすべてのSkillTypeを返します（デバッグモード専用）。
-func (p *DebugInventoryProvider) GetSkillTypes() []masterdata.ModuleDefinitionData {
-	return p.moduleTypes
+func (p *DebugInventoryProvider) GetSkillTypes() []masterdata.SkillDefinitionData {
+	return p.skillTypes
 }
 
 // GetChainEffects はすべてのChainEffectを返します（デバッグモード専用）。
@@ -147,12 +147,12 @@ func (p *DebugInventoryProvider) CreateCoreFromType(typeID string) *domain.CoreM
 	return nil
 }
 
-// CreateModuleFromType はSkillTypeとChainEffectからSkillModelを作成します。
-func (p *DebugInventoryProvider) CreateModuleFromType(typeID string, chainEffect *domain.ChainEffect) *domain.SkillModel {
-	for _, mt := range p.moduleTypes {
+// CreateSkillFromType はSkillTypeとChainEffectからSkillModelを作成します。
+func (p *DebugInventoryProvider) CreateSkillFromType(typeID string, chainEffect *domain.ChainEffect) *domain.SkillModel {
+	for _, mt := range p.skillTypes {
 		if mt.ID == typeID {
-			moduleType := mt.ToDomainType()
-			return domain.NewSkillFromType(moduleType, chainEffect)
+			skillType := mt.ToDomainType()
+			return domain.NewSkillFromType(skillType, chainEffect)
 		}
 	}
 	return nil

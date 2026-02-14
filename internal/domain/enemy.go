@@ -90,7 +90,7 @@ type EnemyType struct {
 	// EnhancedPassive は強化状態で適用されるパッシブスキルです。
 	EnhancedPassive *EnemyPassiveSkill
 
-	// DropItemCategory はドロップアイテムのカテゴリ（"core" または "module"）です。
+	// DropItemCategory はドロップアイテムのカテゴリ（"core" または "skill"）です。
 	DropItemCategory string
 
 	// DropItemTypeID はドロップアイテムのTypeIDです。
@@ -132,7 +132,7 @@ func (e EnemyType) GetEnhancedActions() []EnemyAction {
 
 // IsValidDropItemCategory はドロップカテゴリが有効かどうかを判定します。
 func (e EnemyType) IsValidDropItemCategory() bool {
-	return e.DropItemCategory == "core" || e.DropItemCategory == "module"
+	return e.DropItemCategory == "core" || e.DropItemCategory == "skill"
 }
 
 // GetVoltageRisePer10s は10秒あたりのボルテージ上昇量を返します。

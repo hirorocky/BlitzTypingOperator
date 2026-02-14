@@ -37,8 +37,8 @@ func TestRenderColoredIcon(t *testing.T) {
 	}
 }
 
-// TestRenderModuleIcon はモジュールアイコンの描画をテストします。
-func TestRenderModuleIcon(t *testing.T) {
+// TestRenderSkillIcon はスキルアイコンの描画をテストします。
+func TestRenderSkillIcon(t *testing.T) {
 	tests := []struct {
 		icon       string
 		effectType string
@@ -52,9 +52,9 @@ func TestRenderModuleIcon(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.icon, func(t *testing.T) {
-			result := RenderModuleIcon(tt.icon, tt.effectType)
+			result := RenderSkillIcon(tt.icon, tt.effectType)
 			if result == "" {
-				t.Errorf("RenderModuleIcon(%s, %s)が空文字列を返しました", tt.icon, tt.effectType)
+				t.Errorf("RenderSkillIcon(%s, %s)が空文字列を返しました", tt.icon, tt.effectType)
 			}
 		})
 	}

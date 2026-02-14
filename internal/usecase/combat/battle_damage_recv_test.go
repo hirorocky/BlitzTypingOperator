@@ -40,7 +40,7 @@ func TestBattleEngine_DamageRecv_LastStand(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_last_stand", Name: "ラストスタンド"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
@@ -55,8 +55,8 @@ func TestBattleEngine_DamageRecv_LastStand(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := domain.NewSkillFromType(skillType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -116,7 +116,7 @@ func TestBattleEngine_DamageRecv_LastStand_HPAbove25(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_last_stand", Name: "ラストスタンド"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
@@ -131,8 +131,8 @@ func TestBattleEngine_DamageRecv_LastStand_HPAbove25(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := domain.NewSkillFromType(skillType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{
@@ -190,7 +190,7 @@ func TestBattleEngine_DamageRecv_CounterCharge(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "ps_counter_charge", Name: "カウンターチャージ"}
 	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
 
-	moduleType := domain.SkillType{
+	skillType := domain.SkillType{
 		ID:          "test_attack",
 		Name:        "テスト攻撃",
 		Icon:        "⚔️",
@@ -205,8 +205,8 @@ func TestBattleEngine_DamageRecv_CounterCharge(t *testing.T) {
 			},
 		},
 	}
-	module := domain.NewSkillFromType(moduleType, nil)
-	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{module})
+	skill := domain.NewSkillFromType(skillType, nil)
+	agent := domain.NewAgent("agent_001", core, []*domain.SkillModel{skill})
 	agents := []*domain.AgentModel{agent}
 
 	enemyTypes := []domain.EnemyType{

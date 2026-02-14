@@ -1,5 +1,5 @@
 {
-  "module_types": [
+  "skill_types": [
     {
       "id": "physical_strike_lv1",
       "name": "軽斬撃",
@@ -70,6 +70,7 @@
       "difficulty": 80,
       "challenge": { "type": "shape", "options": { "shape": "flame" } },
       "min_drop_level": 1,
+      "mana_cost": 1,
       "effects": [
         {
           "target": "enemy",
@@ -90,6 +91,7 @@
       "difficulty": 120,
       "challenge": { "type": "shape", "options": { "shape": "flame" } },
       "min_drop_level": 10,
+      "mana_cost": 1,
       "effects": [
         {
           "target": "enemy",
@@ -110,6 +112,7 @@
       "difficulty": 170,
       "challenge": { "type": "shape", "options": { "shape": "flame" } },
       "min_drop_level": 20,
+      "mana_cost": 1,
       "effects": [
         {
           "target": "enemy",
@@ -391,6 +394,48 @@
           "probability": 1.0,
           "luk_factor": 0,
           "icon": "💀"
+        }
+      ]
+    },
+    {
+      "id": "martial_strike_lv1",
+      "name": "拳打",
+      "icon": "👊",
+      "tags": ["physical_low"],
+      "description": "素手による格闘攻撃。威力は低いがマナを獲得できる。",
+      "cooldown_seconds": 8.0,
+      "difficulty": 60,
+      "challenge": { "type": "standard" },
+      "min_drop_level": 1,
+      "effects": [
+        {
+          "target": "enemy",
+          "hp_formula": { "base": 0, "stat_coef": 0.5, "stat_ref": "STR" },
+          "probability": 1.0,
+          "luk_factor": 0,
+          "mana_gain": 1,
+          "icon": "👊"
+        }
+      ]
+    },
+    {
+      "id": "martial_strike_lv2",
+      "name": "練気拳",
+      "icon": "👊",
+      "tags": ["physical_mid"],
+      "description": "気を込めた格闘攻撃。威力は控えめだがマナを獲得できる。",
+      "cooldown_seconds": 12.0,
+      "difficulty": 100,
+      "challenge": { "type": "standard" },
+      "min_drop_level": 10,
+      "effects": [
+        {
+          "target": "enemy",
+          "hp_formula": { "base": 0, "stat_coef": 1.0, "stat_ref": "STR" },
+          "probability": 1.0,
+          "luk_factor": 0,
+          "mana_gain": 1,
+          "icon": "👊"
         }
       ]
     }

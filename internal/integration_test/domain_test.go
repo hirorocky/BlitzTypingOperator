@@ -8,8 +8,8 @@ import (
 	"hirorocky/type-battle/internal/domain"
 )
 
-// newTestDamageModuleDomain はテスト用のダメージモジュールを作成するヘルパー関数です。
-func newTestDamageModuleDomain(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+// newTestDamageSkillDomain はテスト用のダメージスキルを作成するヘルパー関数です。
+func newTestDamageSkillDomain(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
@@ -27,8 +27,8 @@ func newTestDamageModuleDomain(id, name string, tags []string, statCoef float64,
 	}, nil)
 }
 
-// newTestHealModuleDomain はテスト用の回復モジュールを作成するヘルパー関数です。
-func newTestHealModuleDomain(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
+// newTestHealSkillDomain はテスト用の回復スキルを作成するヘルパー関数です。
+func newTestHealSkillDomain(id, name string, tags []string, statCoef float64, statRef, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
@@ -46,8 +46,8 @@ func newTestHealModuleDomain(id, name string, tags []string, statCoef float64, s
 	}, nil)
 }
 
-// newTestBuffModuleDomain はテスト用のバフモジュールを作成するヘルパー関数です。
-func newTestBuffModuleDomain(id, name string, tags []string, value float64, statRef, description string) *domain.SkillModel {
+// newTestBuffSkillDomain はテスト用のバフスキルを作成するヘルパー関数です。
+func newTestBuffSkillDomain(id, name string, tags []string, value float64, statRef, description string) *domain.SkillModel {
 	return domain.NewSkillFromType(domain.SkillType{
 		ID:          id,
 		Name:        name,
@@ -117,7 +117,7 @@ func TestCoreModel_StatsCalculation(t *testing.T) {
 }
 
 func TestCoreModel_TagAllowance(t *testing.T) {
-	// コア特性とモジュールタグの互換性チェック
+	// コア特性とスキルタグの互換性チェック
 	coreType := domain.CoreType{
 		ID:          "test_type",
 		Name:        "テスト特性",
@@ -143,8 +143,8 @@ func TestCoreModel_TagAllowance(t *testing.T) {
 
 func TestSkillModel_EffectsAndTags(t *testing.T) {
 
-	module := newTestDamageModuleDomain(
-		"module_1",
+	skill := newTestDamageSkillDomain(
+		"skill_1",
 		"物理打撃Lv1",
 		[]string{"physical_low"},
 		1.0,
@@ -153,7 +153,7 @@ func TestSkillModel_EffectsAndTags(t *testing.T) {
 	)
 
 	// 効果チェック
-	effects := module.Effects()
+	effects := skill.Effects()
 	if len(effects) != 1 {
 		t.Errorf("Expected 1 effect, got %d", len(effects))
 	}
@@ -162,16 +162,16 @@ func TestSkillModel_EffectsAndTags(t *testing.T) {
 	}
 
 	// タグチェック
-	if !module.HasTag("physical_low") {
-		t.Error("Module should have physical_low tag")
+	if !skill.HasTag("physical_low") {
+		t.Error("Skill should have physical_low tag")
 	}
-	if module.HasTag("magic_low") {
-		t.Error("Module should not have magic_low tag")
+	if skill.HasTag("magic_low") {
+		t.Error("Skill should not have magic_low tag")
 	}
 }
 
 func TestSkillModel_CoreCompatibility(t *testing.T) {
-	// モジュールとコアの互換性テスト
+	// スキルとコアの互換性テスト
 	coreType := domain.CoreType{
 		ID:          "test_type",
 		AllowedTags: []string{"physical_low", "magic_low"},
@@ -180,22 +180,22 @@ func TestSkillModel_CoreCompatibility(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "test", Name: "テスト", Description: ""}
 	core := domain.NewCoreWithTypeID("core_1", coreType, passiveSkill)
 
-	// 互換性のあるモジュール
-	compatibleModule := newTestDamageModuleDomain(
-		"module_1", "物理打撃Lv1",
+	// 互換性のあるスキル
+	compatibleSkill := newTestDamageSkillDomain(
+		"skill_1", "物理打撃Lv1",
 		[]string{"physical_low"}, 1.0, "STR", "物理攻撃",
 	)
-	if !compatibleModule.IsCompatibleWithCore(core) {
-		t.Error("Module should be compatible with core")
+	if !compatibleSkill.IsCompatibleWithCore(core) {
+		t.Error("Skill should be compatible with core")
 	}
 
-	// 互換性のないモジュール
-	incompatibleModule := newTestHealModuleDomain(
-		"module_2", "ヒールLv2",
+	// 互換性のないスキル
+	incompatibleSkill := newTestHealSkillDomain(
+		"skill_2", "ヒールLv2",
 		[]string{"heal_mid"}, 1.5, "MAG", "回復",
 	)
-	if incompatibleModule.IsCompatibleWithCore(core) {
-		t.Error("Module should not be compatible with core")
+	if incompatibleSkill.IsCompatibleWithCore(core) {
+		t.Error("Skill should not be compatible with core")
 	}
 }
 
@@ -209,14 +209,14 @@ func TestAgentModel_LevelEqualsCore(t *testing.T) {
 	passiveSkill := domain.PassiveSkill{ID: "test", Name: "テスト", Description: ""}
 	core := domain.NewCoreWithTypeID("core_1", coreType, passiveSkill)
 
-	modules := []*domain.SkillModel{
-		newTestDamageModuleDomain("m1", "物理打撃Lv1", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageModuleDomain("m2", "ファイアボールLv1", []string{"magic_low"}, 1.0, "MAG", ""),
-		newTestHealModuleDomain("m3", "ヒールLv1", []string{"heal_low"}, 0.8, "MAG", ""),
-		newTestBuffModuleDomain("m4", "バフLv1", []string{"buff_low"}, 5.0, "SPD", ""),
+	skills := []*domain.SkillModel{
+		newTestDamageSkillDomain("m1", "物理打撃Lv1", []string{"physical_low"}, 1.0, "STR", ""),
+		newTestDamageSkillDomain("m2", "ファイアボールLv1", []string{"magic_low"}, 1.0, "MAG", ""),
+		newTestHealSkillDomain("m3", "ヒールLv1", []string{"heal_low"}, 0.8, "MAG", ""),
+		newTestBuffSkillDomain("m4", "バフLv1", []string{"buff_low"}, 5.0, "SPD", ""),
 	}
 
-	agent := domain.NewAgent("agent_1", core, modules)
+	agent := domain.NewAgent("agent_1", core, skills)
 
 	// 基礎ステータスがコアから導出される
 	if agent.BaseStats.STR != core.Stats.STR {

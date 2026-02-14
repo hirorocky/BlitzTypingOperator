@@ -37,7 +37,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				MinDropLevel:   4,
 			},
 		},
-		ModuleDefinitions: []masterdata.ModuleDefinitionData{
+		SkillDefinitions: []masterdata.SkillDefinitionData{
 			{
 				ID:          "physical_strike_lv1",
 				Name:        "物理打撃Lv1",
@@ -117,7 +117,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				ID:         "agent_first_1",
 				CoreTypeID: "all_rounder",
 				CoreLevel:  1,
-				Modules: []masterdata.FirstAgentModuleData{
+				Skills: []masterdata.FirstAgentSkillData{
 					{TypeID: "physical_strike_lv1"},
 				},
 			},
@@ -125,7 +125,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				ID:         "agent_first_2",
 				CoreTypeID: "healer",
 				CoreLevel:  1,
-				Modules: []masterdata.FirstAgentModuleData{
+				Skills: []masterdata.FirstAgentSkillData{
 					{TypeID: "heal_lv1"},
 				},
 			},
@@ -133,7 +133,7 @@ func createTestExternalData() *masterdata.ExternalData {
 				ID:         "agent_first_3",
 				CoreTypeID: "quick_recoverer",
 				CoreLevel:  1,
-				Modules: []masterdata.FirstAgentModuleData{
+				Skills: []masterdata.FirstAgentSkillData{
 					{TypeID: "attack_buff_lv1"},
 				},
 			},
@@ -166,9 +166,9 @@ func TestNewGameInitializer_CreateInitialAgents(t *testing.T) {
 			continue
 		}
 
-		// エージェントが1つのモジュールを持つこと
-		if len(agent.Modules) != 1 {
-			t.Errorf("初期エージェント%dは1つのモジュールを持つべきです: got %d", i+1, len(agent.Modules))
+		// エージェントが1つのスキルを持つこと
+		if len(agent.Skills) != 1 {
+			t.Errorf("初期エージェント%dは1つのスキルを持つべきです: got %d", i+1, len(agent.Skills))
 		}
 
 		// 期待するコア特性であること
@@ -244,16 +244,16 @@ func TestNewGameInitializer_InitialAchievements(t *testing.T) {
 	}
 }
 
-func TestInitialAgent_ModulesCompatibleWithCore(t *testing.T) {
-	// 初期エージェントのモジュールがコアと互換性があること
+func TestInitialAgent_SkillsCompatibleWithCore(t *testing.T) {
+	// 初期エージェントのスキルがコアと互換性があること
 	initializer := NewNewGameInitializer(createTestExternalData())
 
 	agents := initializer.CreateInitialAgents()
 
 	for agentIdx, agent := range agents {
-		for i, module := range agent.Modules {
-			if !module.IsCompatibleWithCore(agent.Core) {
-				t.Errorf("エージェント%dのモジュール%dはコアと互換性があるべきです", agentIdx+1, i)
+		for i, skill := range agent.Skills {
+			if !skill.IsCompatibleWithCore(agent.Core) {
+				t.Errorf("エージェント%dのスキル%dはコアと互換性があるべきです", agentIdx+1, i)
 			}
 		}
 	}

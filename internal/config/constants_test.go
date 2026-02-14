@@ -15,10 +15,10 @@ func TestBattleConstants(t *testing.T) {
 		}
 	})
 
-	t.Run("DefaultModuleCooldownが5.0である", func(t *testing.T) {
+	t.Run("DefaultSkillCooldownが5.0である", func(t *testing.T) {
 		expected := 5.0
-		if DefaultModuleCooldown != expected {
-			t.Errorf("DefaultModuleCooldownが期待値と異なります: got %f, want %f", DefaultModuleCooldown, expected)
+		if DefaultSkillCooldown != expected {
+			t.Errorf("DefaultSkillCooldownが期待値と異なります: got %f, want %f", DefaultSkillCooldown, expected)
 		}
 	})
 
@@ -63,10 +63,10 @@ func TestInventoryConstants(t *testing.T) {
 		}
 	})
 
-	t.Run("ModulesPerAgentが4である", func(t *testing.T) {
+	t.Run("SkillsPerAgentが4である", func(t *testing.T) {
 		expected := 4
-		if ModulesPerAgent != expected {
-			t.Errorf("ModulesPerAgentが期待値と異なります: got %d, want %d", ModulesPerAgent, expected)
+		if SkillsPerAgent != expected {
+			t.Errorf("SkillsPerAgentが期待値と異なります: got %d, want %d", SkillsPerAgent, expected)
 		}
 	})
 }

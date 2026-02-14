@@ -57,12 +57,12 @@ When 敵HPが50%以下になる, the enemy system shall:
 
 When 敵を撃破する, the enemy system shall:
 - 確定で1つのアイテムをドロップ
-- 敵タイプのDropItemCategory（core/module）に基づいて決定
+- 敵タイプのDropItemCategory（core/skill）に基づいて決定
 - 敵タイプのDropItemTypeIDで指定されたタイプを生成
 
 **受け入れ基準**:
 1. コア: 指定TypeIDのコアをドロップ（レベル概念なし）
-2. モジュール: 敵レベルに応じたチェイン効果を付与
+2. スキル: 敵レベルに応じたチェイン効果を付与
 3. ドロップ設定がない場合は既存確率ドロップにフォールバック
 
 ### REQ-ENEMY-5: EffectTable管理
@@ -147,7 +147,7 @@ The enemy system shall apply passive skills:
 - ResolvedEnhancedActions: 解決済み強化行動パターン
 - NormalPassive: 通常パッシブスキル
 - EnhancedPassive: 強化パッシブスキル
-- DropItemCategory: ドロップカテゴリ（"core" / "module"）
+- DropItemCategory: ドロップカテゴリ（"core" / "skill"）
 - DropItemTypeID: ドロップアイテムTypeID
 - VoltageRisePer10s: 10秒あたりのボルテージ上昇量
 
@@ -283,7 +283,7 @@ damage = DamageBase + Level × DamagePerLevel
 **確定ドロップ**:
 1. 敵タイプのDropItemCategoryとDropItemTypeIDに基づいて決定
 2. コア: 指定TypeIDのコアをドロップ（レベル概念なし）
-3. モジュール: 敵レベルに応じたチェイン効果を付与
+3. スキル: 敵レベルに応じたチェイン効果を付与
 
 **フォールバック**:
 - ドロップ設定がない場合は既存の確率ドロップを使用

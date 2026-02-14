@@ -65,19 +65,19 @@ func (i *NewGameInitializer) CreateInitialAgents() []*domain.AgentModel {
 			passiveSkill,
 		)
 
-		// モジュールを作成
-		modules := make([]*domain.SkillModel, 0, len(firstAgentData.Modules))
-		for _, modData := range firstAgentData.Modules {
-			// モジュール定義を検索
-			var moduleDef *masterdata.ModuleDefinitionData
-			for j := range i.externalData.ModuleDefinitions {
-				if i.externalData.ModuleDefinitions[j].ID == modData.TypeID {
-					moduleDef = &i.externalData.ModuleDefinitions[j]
+		// スキルを作成
+		skills := make([]*domain.SkillModel, 0, len(firstAgentData.Skills))
+		for _, modData := range firstAgentData.Skills {
+			// スキル定義を検索
+			var skillDef *masterdata.SkillDefinitionData
+			for j := range i.externalData.SkillDefinitions {
+				if i.externalData.SkillDefinitions[j].ID == modData.TypeID {
+					skillDef = &i.externalData.SkillDefinitions[j]
 					break
 				}
 			}
-			if moduleDef == nil {
-				slog.Warn("モジュール定義が見つかりません",
+			if skillDef == nil {
+				slog.Warn("スキル定義が見つかりません",
 					slog.String("type_id", modData.TypeID),
 				)
 				continue
@@ -110,12 +110,12 @@ func (i *NewGameInitializer) CreateInitialAgents() []*domain.AgentModel {
 				}
 			}
 
-			// モジュールを作成
-			module := domain.NewSkillFromType(moduleDef.ToDomainType(), chainEffect)
-			modules = append(modules, module)
+			// スキルを作成
+			skill := domain.NewSkillFromType(skillDef.ToDomainType(), chainEffect)
+			skills = append(skills, skill)
 		}
 
-		agent := domain.NewAgent(firstAgentData.ID, core, modules)
+		agent := domain.NewAgent(firstAgentData.ID, core, skills)
 		agents = append(agents, agent)
 	}
 
@@ -237,7 +237,7 @@ func (i *NewGameInitializer) CreateNewGameWithExtraItems() *savedata.SaveData {
 	)
 
 	// 追加のスキルをユニークスキルインベントリに追加
-	for _, skill := range extraAgent.Modules {
+	for _, skill := range extraAgent.Skills {
 		saveData.Inventory.UniqueSkills.Skills = append(
 			saveData.Inventory.UniqueSkills.Skills,
 			skill.TypeID,

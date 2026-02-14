@@ -194,32 +194,32 @@ func (s *RewardScreen) renderDrops() string {
 		items = append(items, "")
 	}
 
-	// モジュールドロップ
-	if len(s.result.DroppedModules) > 0 {
-		moduleStyle := lipgloss.NewStyle().
+	// スキルドロップ
+	if len(s.result.DroppedSkills) > 0 {
+		skillStyle := lipgloss.NewStyle().
 			Bold(true).
 			Foreground(styles.ColorInfo)
-		items = append(items, moduleStyle.Render("【モジュール】"))
+		items = append(items, skillStyle.Render("【スキル】"))
 
-		for _, module := range s.result.DroppedModules {
-			// モジュール基本情報
-			moduleInfo := fmt.Sprintf("  %s %s", module.Icon(), module.Name())
+		for _, skill := range s.result.DroppedSkills {
+			// スキル基本情報
+			skillInfo := fmt.Sprintf("  %s %s", skill.Icon(), skill.Name())
 
 			items = append(items, lipgloss.NewStyle().
 				Foreground(styles.ColorSecondary).
-				Render(moduleInfo))
+				Render(skillInfo))
 
 			// チェイン効果の詳細説明を追加
-			if module.HasChainEffect() {
+			if skill.HasChainEffect() {
 				items = append(items, lipgloss.NewStyle().
 					Foreground(lipgloss.Color("#FFFFFF")).
-					Render(fmt.Sprintf("    + %s", module.ChainEffect.Description)))
+					Render(fmt.Sprintf("    + %s", skill.ChainEffect.Description)))
 			}
 		}
 	}
 
 	// ドロップなしの場合
-	if len(s.result.DroppedCores) == 0 && len(s.result.DroppedModules) == 0 {
+	if len(s.result.DroppedCores) == 0 && len(s.result.DroppedSkills) == 0 {
 		items = append(items, lipgloss.NewStyle().
 			Foreground(styles.ColorSubtle).
 			Render("ドロップアイテムなし"))

@@ -1,5 +1,5 @@
 // Package domain はゲームのドメインモデルを定義します。
-// コア、モジュール、エージェント、敵、プレイヤーなどのエンティティとそのビジネスルールを含みます。
+// コア、スキル、エージェント、敵、プレイヤーなどのエンティティとそのビジネスルールを含みます。
 package domain
 
 // BaseStatValue はステータス計算で使用する基礎値です。
@@ -10,15 +10,15 @@ const BaseStatValue = 100
 // 各ステータスはコアのレベルと特性の重みによって計算されます。
 type Stats struct {
 	// STR は物理攻撃力を表します。
-	// 物理攻撃モジュールのダメージ計算に使用されます。
+	// 物理攻撃スキルのダメージ計算に使用されます。
 	STR int
 
 	// INT は魔法攻撃力を表します。
-	// 攻撃魔法モジュールとデバフモジュールの効果計算に使用されます。
+	// 攻撃魔法スキルとデバフスキルの効果計算に使用されます。
 	INT int
 
 	// WIL は意志力を表します。
-	// 回復魔法モジュールとバフモジュールの効果計算に使用されます。
+	// 回復魔法スキルとバフスキルの効果計算に使用されます。
 	WIL int
 
 	// LUK は運を表します。
@@ -49,7 +49,7 @@ type CoreType struct {
 	// PassiveSkillID はこのコア特性に紐づくパッシブスキルのIDです。
 	PassiveSkillID string
 
-	// AllowedTags はこのコア特性に装備可能なモジュールタグのリストです。
+	// AllowedTags はこのコア特性に装備可能なスキルタグのリストです。
 	// 例: ["physical_low", "magic_low"]
 	AllowedTags []string
 
@@ -83,7 +83,7 @@ type CoreModel struct {
 	// PassiveSkill はこのコアに紐づくパッシブスキルです。
 	PassiveSkill PassiveSkill
 
-	// AllowedTags はこのコアに装備可能なモジュールタグのリストです。
+	// AllowedTags はこのコアに装備可能なスキルタグのリストです。
 	// 通常はType.AllowedTagsと同じですが、直接参照用にコピーされます。
 	AllowedTags []string
 }
@@ -119,7 +119,7 @@ func CalculateStats(coreType CoreType) Stats {
 }
 
 // IsTagAllowed は指定されたタグがこのコアに許可されているかを判定します。
-// モジュール装備時の互換性チェックに使用されます。
+// スキル装備時の互換性チェックに使用されます。
 func (c *CoreModel) IsTagAllowed(tag string) bool {
 	for _, allowedTag := range c.AllowedTags {
 		if allowedTag == tag {

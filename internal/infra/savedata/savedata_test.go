@@ -497,10 +497,10 @@ func TestLoadGame_VersionCheck(t *testing.T) {
 		},
 		"inventory": {
 			"core_instances": [],
-			"module_instances": [],
+			"skill_instances": [],
 			"agent_instances": [],
 			"max_core_slots": 100,
-			"max_module_slots": 200,
+			"max_skill_slots": 200,
 			"max_agent_slots": 20
 		},
 		"statistics": {

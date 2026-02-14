@@ -123,7 +123,7 @@ type RootModel struct {
 //
 // dataDir: 外部データディレクトリのパス（空の場合は埋め込みデータを使用）
 // embeddedFS: 埋め込みファイルシステム（dataDir が空の場合に使用）
-// debugMode: デバッグモードを有効化（全コア・モジュール・チェイン効果を選択可能）
+// debugMode: デバッグモードを有効化（全コア・スキル・チェイン効果を選択可能）
 func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath string) *RootModel {
 	// セーブディレクトリを決定（デバッグモードでは専用のセーブファイルを使用）
 	homeDir, _ := os.UserHomeDir()
@@ -149,19 +149,19 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 	var passiveSkills map[string]domain.PassiveSkill
 	var typingDict *typing.Dictionary
 	if loadErr == nil && externalData != nil {
-		enemyTypes, coreTypes, moduleTypes := ConvertExternalDataToDomain(externalData)
+		enemyTypes, coreTypes, skillTypes := ConvertExternalDataToDomain(externalData)
 		// 敵行動パターンを解決（IDからEnemyActionオブジェクトへ）
 		enemyActions := ConvertEnemyActions(externalData.EnemyActions)
 		ResolveEnemyTypeActions(enemyTypes, enemyActions)
 		// 時限効果の解決（TimedEffectIDからColumn/Valueへ）
 		timedEffects := ConvertTimedEffects(externalData.TimedEffects)
-		ResolveModuleTimedEffects(moduleTypes, timedEffects)
+		ResolveSkillTimedEffects(skillTypes, timedEffects)
 		ResolveEnemyActionTimedEffects(enemyTypes, timedEffects)
 		passiveSkills = ConvertPassiveSkills(externalData.PassiveSkills)
 		chainEffectDefs := ConvertChainEffects(chainEffects)
 		domainSources = &gamestate.DomainDataSources{
 			CoreTypes:              coreTypes,
-			SkillTypes:             moduleTypes,
+			SkillTypes:             skillTypes,
 			EnemyTypes:             enemyTypes,
 			PassiveSkills:          passiveSkills,
 			ChainEffectDefinitions: chainEffectDefs,
@@ -263,7 +263,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 			invManager.AddCore(ct.ID)
 		}
 		// 全スキルを追加
-		for _, mt := range externalData.ModuleDefinitions {
+		for _, mt := range externalData.SkillDefinitions {
 			invManager.AddSkill(mt.ID)
 		}
 		// 全チェイン効果を追加
@@ -272,7 +272,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		}
 		slog.Info("デバッグモード: 全コア・スキル・チェイン効果を追加",
 			slog.Int("cores", len(externalData.CoreTypes)),
-			slog.Int("skills", len(externalData.ModuleDefinitions)),
+			slog.Int("skills", len(externalData.SkillDefinitions)),
 			slog.Int("chain_effects", len(chainEffects)),
 		)
 	}
@@ -286,19 +286,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 			coreTypesMap[ct.ID] = ct
 		}
 		for _, mt := range domainSources.SkillTypes {
-			// ModuleDropInfoからSkillTypeへの変換
-			skillTypesMap[mt.ID] = domain.SkillType{
-				ID:              mt.ID,
-				Name:            mt.Name,
-				Icon:            mt.Icon,
-				Tags:            mt.Tags,
-				Description:     mt.Description,
-				CooldownSeconds: mt.CooldownSeconds,
-				DifficultyRate:  mt.DifficultyRate,
-				ChallengeType:   mt.ChallengeType,
-				MinDropLevel:    mt.MinDropLevel,
-				Effects:         mt.Effects,
-			}
+			skillTypesMap[mt.ID] = mt.ToSkillType()
 		}
 		for _, et := range domainSources.EnemyTypes {
 			enemyTypesMap[et.ID] = et
@@ -373,7 +361,7 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		passiveSkills := ConvertPassiveSkills(externalData.PassiveSkills)
 		debugInvProvider = presenter.NewDebugInventoryProvider(
 			externalData.CoreTypes,
-			externalData.ModuleDefinitions,
+			externalData.SkillDefinitions,
 			chainEffects,
 			passiveSkills,
 		)

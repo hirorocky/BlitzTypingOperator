@@ -563,28 +563,28 @@ func (m *AgentSlotManager) buildAgentFromSlot(slot int) *domain.AgentModel {
 	)
 
 	// スキルを構築
-	modules := make([]*domain.SkillModel, 0, domain.MaxSkillSlotCount)
+	skills := make([]*domain.SkillModel, 0, domain.MaxSkillSlotCount)
 	for i := range domain.MaxSkillSlotCount {
 		skillConfig := targetSlot.GetSkill(i)
 		if skillConfig == nil || skillConfig.IsEmpty() {
 			continue
 		}
 
-		module := m.buildModuleFromConfig(targetSlot, i, skillConfig)
-		if module != nil {
-			modules = append(modules, module)
+		skill := m.buildSkillFromConfig(targetSlot, i, skillConfig)
+		if skill != nil {
+			skills = append(skills, skill)
 		}
 	}
 
 	// エージェントIDを生成（スロット番号ベース）
 	agentID := "agent_slot_" + string(rune('0'+slot))
 
-	return domain.NewAgent(agentID, core, modules)
+	return domain.NewAgent(agentID, core, skills)
 }
 
-// buildModuleFromConfig はスキルスロット構成からSkillModelを構築します。
+// buildSkillFromConfig はスキルスロット構成からSkillModelを構築します。
 // AgentSlotのChainEffectsスロットからチェイン効果を解決します。
-func (m *AgentSlotManager) buildModuleFromConfig(agentSlot *domain.AgentSlot, skillSlotIdx int, config *domain.SkillSlotConfig) *domain.SkillModel {
+func (m *AgentSlotManager) buildSkillFromConfig(agentSlot *domain.AgentSlot, skillSlotIdx int, config *domain.SkillSlotConfig) *domain.SkillModel {
 	skillType, exists := m.skillTypes[config.TypeID]
 	if !exists {
 		return nil

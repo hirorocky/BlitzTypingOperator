@@ -1,5 +1,5 @@
 // Package battle はバトルエンジンを提供します。
-// バトル初期化、敵攻撃、モジュール効果、勝敗判定を担当します。
+// バトル初期化、敵攻撃、スキル効果、勝敗判定を担当します。
 
 package combat
 
@@ -523,7 +523,7 @@ func (e *BattleEngine) UpdateEffects(state *BattleState, deltaSeconds float64) {
 	}
 }
 
-// ==================== モジュール効果計算 ====================
+// ==================== スキル効果計算 ====================
 
 // getStatValue はステータス参照名に応じたステータス値を取得します。
 func (e *BattleEngine) getStatValue(stats domain.Stats, statRef string) int {
@@ -585,12 +585,12 @@ func (e *BattleEngine) calculateHPChange(
 	return int(baseHP)
 }
 
-// ApplySkillEffect はモジュール効果を適用します。
+// ApplySkillEffect はスキル効果を適用します。
 // 新しいエフェクトベースのシステムで各効果を順に評価・適用します。
 func (e *BattleEngine) ApplySkillEffect(
 	state *BattleState,
 	agent *domain.AgentModel,
-	module *domain.SkillModel,
+	skill *domain.SkillModel,
 	typingResult *typing.TypingResult,
 ) int {
 	// プレイヤーの効果を取得
@@ -608,7 +608,7 @@ func (e *BattleEngine) ApplySkillEffect(
 	totalEffect := 0
 
 	// 各効果を評価・適用
-	for _, effect := range module.Type.Effects {
+	for _, effect := range skill.Type.Effects {
 		// LUKに基づく発動判定
 		if !effect.ShouldTrigger(agent.BaseStats.LUK, e.rng) {
 			continue
@@ -693,22 +693,27 @@ func (e *BattleEngine) ApplySkillEffect(
 				state.Enemy.EffectTable.AddDebuff(statusID, description, duration, values)
 			}
 		}
+
+		// マナ獲得（効果発動時、ManaGain > 0の場合）
+		if effect.ManaGain > 0 {
+			state.Player.GainMana(effect.ManaGain)
+		}
 	}
 
 	return totalEffect
 }
 
-// ApplySkillEffectWithCombo はコンボカウントを考慮してモジュール効果を適用します。
+// ApplySkillEffectWithCombo はコンボカウントを考慮してスキル効果を適用します。
 // スタック型パッシブスキル（ps_combo_master等）の効果を正しく計算します。
 func (e *BattleEngine) ApplySkillEffectWithCombo(
 	state *BattleState,
 	agent *domain.AgentModel,
-	module *domain.SkillModel,
+	skill *domain.SkillModel,
 	typingResult *typing.TypingResult,
 	comboCount int,
 ) int {
 	// 基本効果を適用
-	baseDamage := e.ApplySkillEffect(state, agent, module, typingResult)
+	baseDamage := e.ApplySkillEffect(state, agent, skill, typingResult)
 
 	// コンボ乗算を計算
 	comboMultiplier := e.calculateStackMultiplier(state, comboCount)
@@ -839,12 +844,12 @@ func (e *BattleEngine) GetPlayerFinalStats(state *BattleState) domain.EffectResu
 	return state.Player.EffectTable.Aggregate(ctx)
 }
 
-// CalculateSkillEffectWithPassive はパッシブスキル効果を適用したモジュール効果を計算します。
+// CalculateSkillEffectWithPassive はパッシブスキル効果を適用したスキル効果を計算します。
 // 新しいエフェクトベースシステムでは、全ての効果の合計値を返します。
 // 注意: この関数は基礎計算のみを行い、実際のバトル中のエフェクト適用はApplySkillEffectで行われます。
 func (e *BattleEngine) CalculateSkillEffectWithPassive(
 	agent *domain.AgentModel,
-	module *domain.SkillModel,
+	skill *domain.SkillModel,
 	typingResult *typing.TypingResult,
 ) int {
 	totalEffect := 0
@@ -852,7 +857,7 @@ func (e *BattleEngine) CalculateSkillEffectWithPassive(
 	defaultEffects := domain.NewEffectResult()
 
 	// 各効果のHP変化量を合計
-	for _, effect := range module.Type.Effects {
+	for _, effect := range skill.Type.Effects {
 		if effect.HPFormula != nil {
 			hpChange := e.calculateHPChange(&effect, agent.BaseStats, typingResult, defaultEffects)
 			if hpChange < 0 {
@@ -880,17 +885,17 @@ func (e *BattleEngine) EvaluateEchoSkill(state *BattleState, agent *domain.Agent
 	return 1 // 通常は1回
 }
 
-// ApplySkillEffectWithEcho はエコースキルを考慮してモジュール効果を適用します。
+// ApplySkillEffectWithEcho はエコースキルを考慮してスキル効果を適用します。
 func (e *BattleEngine) ApplySkillEffectWithEcho(
 	state *BattleState,
 	agent *domain.AgentModel,
-	module *domain.SkillModel,
+	skill *domain.SkillModel,
 	typingResult *typing.TypingResult,
 	repeatCount int,
 ) int {
 	totalEffect := 0
 	for i := 0; i < repeatCount; i++ {
-		effect := e.ApplySkillEffect(state, agent, module, typingResult)
+		effect := e.ApplySkillEffect(state, agent, skill, typingResult)
 		totalEffect += effect
 	}
 	return totalEffect
@@ -898,10 +903,10 @@ func (e *BattleEngine) ApplySkillEffectWithEcho(
 
 // EvaluateMiracleHeal はps_miracle_healの発動を評価します。
 // 回復スキル使用時のみ確率で発動します。
-func (e *BattleEngine) EvaluateMiracleHeal(state *BattleState, agent *domain.AgentModel, module *domain.SkillModel) bool {
+func (e *BattleEngine) EvaluateMiracleHeal(state *BattleState, agent *domain.AgentModel, skill *domain.SkillModel) bool {
 	// 回復効果を持たないスキルでは発動しない
 	hasHeal := false
-	for _, effect := range module.Type.Effects {
+	for _, effect := range skill.Type.Effects {
 		if effect.IsHealEffect() {
 			hasHeal = true
 			break

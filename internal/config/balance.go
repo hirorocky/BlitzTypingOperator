@@ -28,8 +28,8 @@ type BalanceConfig struct {
 
 	CoreDropRate float64
 
-	// ModuleDropRate はモジュールのドロップ確率です。
-	ModuleDropRate float64
+	// SkillDropRate はスキルのドロップ確率です。
+	SkillDropRate float64
 
 	// MaxLevel は敵の最大レベルです。
 
@@ -38,8 +38,8 @@ type BalanceConfig struct {
 	// MaxEquippedAgents は装備可能なエージェント数です。
 	MaxEquippedAgents int
 
-	// ModulesPerAgent はエージェントあたりのモジュール数です。
-	ModulesPerAgent int
+	// SkillsPerAgent はエージェントあたりのスキル数です。
+	SkillsPerAgent int
 
 	// TextLengthByDifficulty は難易度ごとのテキスト長さ範囲[min, max]です。
 
@@ -57,10 +57,10 @@ func DefaultBalanceConfig() *BalanceConfig {
 		EnemyAttackIntervalScale: 0.95, // レベルごとに5%短縮
 		MinAttackIntervalMS:      1000, // 最小1秒
 		CoreDropRate:             0.5,  // 50%
-		ModuleDropRate:           0.7,  // 70%
+		SkillDropRate:            0.7,  // 70%
 		MaxLevel:                 100,
 		MaxEquippedAgents:        3,
-		ModulesPerAgent:          4,
+		SkillsPerAgent:           4,
 		TextLengthByDifficulty: map[int][2]int{
 			1: {3, 6},   // Easy
 			2: {7, 11},  // Medium
@@ -100,10 +100,10 @@ func WithCoreDropRate(rate float64) BalanceConfigOption {
 	}
 }
 
-// WithModuleDropRate はモジュールドロップ率を設定するオプションです。
-func WithModuleDropRate(rate float64) BalanceConfigOption {
+// WithSkillDropRate はスキルドロップ率を設定するオプションです。
+func WithSkillDropRate(rate float64) BalanceConfigOption {
 	return func(c *BalanceConfig) {
-		c.ModuleDropRate = rate
+		c.SkillDropRate = rate
 	}
 }
 

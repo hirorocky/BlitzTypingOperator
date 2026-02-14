@@ -753,11 +753,15 @@ func (s *AgentCustomizationScreen) renderAgentCard(slotIndex int, isSelected boo
 			} else {
 				skillName := skillConfig.TypeID
 				icon := "?"
+				manaCostMark := ""
 				if skillType, ok := s.skillTypes[skillConfig.TypeID]; ok {
 					skillName = skillType.Name
 					icon = skillType.Icon
+					if skillType.ManaCost > 0 {
+						manaCostMark = fmt.Sprintf(" ⭐x%d", skillType.ManaCost)
+					}
 				}
-				skillContent = fmt.Sprintf("%s %s", icon, skillName)
+				skillContent = fmt.Sprintf("%s %s%s", icon, skillName, manaCostMark)
 			}
 
 			cardContent.WriteString(skillStyle.Render(prefix + skillContent))
@@ -1075,7 +1079,11 @@ func (s *AgentCustomizationScreen) renderSkillDetail() string {
 		builder.WriteString(labelStyle.Render(skillType.Description))
 		builder.WriteString("\n\n")
 
-		// チェイン効果情報はチェイン効果タブで確認
+		if skillType.ManaCost > 0 {
+			manaStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff)
+			builder.WriteString(manaStyle.Render(fmt.Sprintf("消費マナ: ⭐x%d", skillType.ManaCost)))
+			builder.WriteString("\n\n")
+		}
 	}
 
 	return builder.String()

@@ -32,18 +32,19 @@ func convertExternalDataToDomainSources(ext *masterdata.ExternalData) *gamestate
 	}
 
 	// SkillTypes の変換
-	moduleTypes := make([]rewarding.ModuleDropInfo, len(ext.ModuleDefinitions))
-	for i, md := range ext.ModuleDefinitions {
+	skillTypes := make([]rewarding.SkillDropInfo, len(ext.SkillDefinitions))
+	for i, md := range ext.SkillDefinitions {
 		// マスタデータからドメインモデルに変換
-		domainModule := md.ToDomain()
-		moduleTypes[i] = rewarding.ModuleDropInfo{
+		domainSkill := md.ToDomain()
+		skillTypes[i] = rewarding.SkillDropInfo{
 			ID:           md.ID,
 			Name:         md.Name,
-			Icon:         domainModule.Icon(),
+			Icon:         domainSkill.Icon(),
 			Tags:         md.Tags,
 			Description:  md.Description,
+			ManaCost:     md.ManaCost,
 			MinDropLevel: md.MinDropLevel,
-			Effects:      domainModule.Effects(),
+			Effects:      domainSkill.Effects(),
 		}
 	}
 
@@ -72,7 +73,7 @@ func convertExternalDataToDomainSources(ext *masterdata.ExternalData) *gamestate
 
 	return &gamestate.DomainDataSources{
 		CoreTypes:     coreTypes,
-		SkillTypes:    moduleTypes,
+		SkillTypes:    skillTypes,
 		EnemyTypes:    enemyTypes,
 		PassiveSkills: nil,
 	}
@@ -219,7 +220,7 @@ func TestRefactoring_BattleFlowUnchanged(t *testing.T) {
 		t.Error("プレイヤーHPが減少するべき")
 	}
 
-	// モジュール効果の検証
+	// スキル効果の検証
 	typingResult := &typing.TypingResult{
 		Completed:      true,
 		WPM:            80,
@@ -229,10 +230,10 @@ func TestRefactoring_BattleFlowUnchanged(t *testing.T) {
 	}
 	initialEnemyHP := state.Enemy.HP
 	agent := agents[0]
-	module := agent.Modules[0]
-	moduleDamage := engine.ApplySkillEffect(state, agent, module, typingResult)
-	if moduleDamage <= 0 {
-		t.Error("モジュールダメージは正の値であるべき")
+	skill := agent.Skills[0]
+	skillDamage := engine.ApplySkillEffect(state, agent, skill, typingResult)
+	if skillDamage <= 0 {
+		t.Error("スキルダメージは正の値であるべき")
 	}
 	if state.Enemy.HP >= initialEnemyHP {
 		t.Error("敵HPが減少するべき")
@@ -246,8 +247,8 @@ func TestRefactoring_ConstantsIntegration(t *testing.T) {
 	if config.BattleTickInterval != 100*time.Millisecond {
 		t.Errorf("BattleTickInterval expected 100ms, got %v", config.BattleTickInterval)
 	}
-	if config.DefaultModuleCooldown != 5.0 {
-		t.Errorf("DefaultModuleCooldown expected 5.0, got %f", config.DefaultModuleCooldown)
+	if config.DefaultSkillCooldown != 5.0 {
+		t.Errorf("DefaultSkillCooldown expected 5.0, got %f", config.DefaultSkillCooldown)
 	}
 	if config.AccuracyPenaltyThreshold != 0.5 {
 		t.Errorf("AccuracyPenaltyThreshold expected 0.5, got %f", config.AccuracyPenaltyThreshold)
@@ -268,8 +269,8 @@ func TestRefactoring_ConstantsIntegration(t *testing.T) {
 	if config.MaxAgentEquipSlots != 3 {
 		t.Errorf("MaxAgentEquipSlots expected 3, got %d", config.MaxAgentEquipSlots)
 	}
-	if config.ModulesPerAgent != 4 {
-		t.Errorf("ModulesPerAgent expected 4, got %d", config.ModulesPerAgent)
+	if config.SkillsPerAgent != 4 {
+		t.Errorf("SkillsPerAgent expected 4, got %d", config.SkillsPerAgent)
 	}
 }
 
@@ -292,13 +293,13 @@ func TestRefactoring_ScreenInterfaceCompliance(t *testing.T) {
 	}
 }
 
-// TestRefactoring_ModuleIconMethod はモジュールのIcon()メソッドを検証します。
-// 要件7.3: Module.Icon()メソッドの追加
-func TestRefactoring_ModuleIconMethod(t *testing.T) {
-	// 新しいモジュールシステムでは、各効果にアイコンが設定されます
-	module := domain.NewSkillFromType(domain.SkillType{
-		ID:   "test_module",
-		Name: "テストモジュール",
+// TestRefactoring_SkillIconMethod はスキルのIcon()メソッドを検証します。
+// 要件7.3: Skill.Icon()メソッドの追加
+func TestRefactoring_SkillIconMethod(t *testing.T) {
+	// 新しいスキルシステムでは、各効果にアイコンが設定されます
+	skill := domain.NewSkillFromType(domain.SkillType{
+		ID:   "test_skill",
+		Name: "テストスキル",
 		Icon: "⚔️",
 		Tags: []string{"physical_low"},
 		Effects: []domain.SkillEffect{
@@ -311,13 +312,13 @@ func TestRefactoring_ModuleIconMethod(t *testing.T) {
 		},
 	}, nil)
 
-	// モジュールタイプからアイコンが取得できること
-	if module.Icon() == "" {
-		t.Error("Module should return non-empty icon")
+	// スキルタイプからアイコンが取得できること
+	if skill.Icon() == "" {
+		t.Error("Skill should return non-empty icon")
 	}
 
 	// 効果からアイコンが取得できること
-	effects := module.Effects()
+	effects := skill.Effects()
 	if len(effects) > 0 && effects[0].Icon == "" {
 		t.Error("Effect should have non-empty icon")
 	}
@@ -363,7 +364,7 @@ func TestRefactoring_TypeRenaming(t *testing.T) {
 		AllSkillTypes:      []screens.SkillTypeInfo{},
 		AllEnemyTypes:      []domain.EnemyType{},
 		AcquiredCoreTypes:  []string{"core1"},
-		AcquiredSkillTypes: []string{"module1"},
+		AcquiredSkillTypes: []string{"skill1"},
 		EncounteredEnemies: []string{"enemy1"},
 	}
 	if len(encycDataFull.AcquiredCoreTypes) != 1 {
@@ -477,7 +478,7 @@ func TestRefactoring_AllComponentsIntegrated(t *testing.T) {
 	}
 
 	for battleState.Enemy.IsAlive() {
-		engine.ApplySkillEffect(battleState, agent, agent.Modules[0], typingResult)
+		engine.ApplySkillEffect(battleState, agent, agent.Skills[0], typingResult)
 		engine.RecordTypingResult(battleState, typingResult)
 	}
 

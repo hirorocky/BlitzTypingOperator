@@ -69,7 +69,7 @@ func TestSaveLoadFlow_InventoryPersistence(t *testing.T) {
 	saveData.Inventory.UniqueCores.Cores = append(saveData.Inventory.UniqueCores.Cores, "test_type")
 
 	// ユニークスキルを追加
-	saveData.Inventory.UniqueSkills.Skills = append(saveData.Inventory.UniqueSkills.Skills, "module_1")
+	saveData.Inventory.UniqueSkills.Skills = append(saveData.Inventory.UniqueSkills.Skills, "skill_1")
 
 	// ユニークチェイン効果を追加
 	saveData.Inventory.UniqueChainEffects.ChainEffects = append(saveData.Inventory.UniqueChainEffects.ChainEffects, "damage_bonus")
@@ -98,8 +98,8 @@ func TestSaveLoadFlow_InventoryPersistence(t *testing.T) {
 	if len(loadedData.Inventory.UniqueSkills.Skills) != 1 {
 		t.Fatalf("ユニークスキル数 expected 1, got %d", len(loadedData.Inventory.UniqueSkills.Skills))
 	}
-	if loadedData.Inventory.UniqueSkills.Skills[0] != "module_1" {
-		t.Errorf("Skill TypeID expected 'module_1', got '%s'", loadedData.Inventory.UniqueSkills.Skills[0])
+	if loadedData.Inventory.UniqueSkills.Skills[0] != "skill_1" {
+		t.Errorf("Skill TypeID expected 'skill_1', got '%s'", loadedData.Inventory.UniqueSkills.Skills[0])
 	}
 
 	// ユニークチェイン効果確認

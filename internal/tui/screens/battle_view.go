@@ -70,7 +70,7 @@ func (s *BattleScreen) View() string {
 	} else if s.activeChallenge != nil {
 		hint = "タイピング中...  Esc: キャンセル"
 	} else {
-		hint = "←/→: エージェント切替  ↑/↓: モジュール選択  Enter: 使用  Esc: 中断"
+		hint = "←/→: エージェント切替  ↑/↓: スキル選択  Enter: 使用  Esc: 中断"
 	}
 	builder.WriteString(hintStyle.Render(hint))
 
@@ -271,47 +271,50 @@ func (s *BattleScreen) renderAgentArea() string {
 				cardContent.WriteString("\n")
 			}
 
-			// エージェントのモジュール一覧（2行表示）
+			// エージェントのスキル一覧（2行表示）
 			// 待機中チェイン効果を取得（発動中の強調表示判定用）
 			pendingChain := s.chainEffectManager.GetPendingEffectForAgent(i)
 
-			agentModules := s.getModulesForAgent(i)
-			for j, slot := range agentModules {
-				isModuleSelected := isSelected && j == s.getSelectedModuleInAgent(i)
+			agentSkills := s.getSkillsForAgent(i)
+			for j, slot := range agentSkills {
+				isSkillSelected := isSelected && j == s.getSelectedSkillInAgent(i)
 
-				// モジュールアイコン
-				icon := slot.Module.Icon()
+				// スキルアイコン
+				icon := slot.Skill.Icon()
 
-				// モジュール名のスタイル
-				var moduleStyle lipgloss.Style
-				if isModuleSelected {
-					moduleStyle = lipgloss.NewStyle().
+				// スキル名のスタイル
+				var skillStyle lipgloss.Style
+				if isSkillSelected {
+					skillStyle = lipgloss.NewStyle().
 						Bold(true).
 						Foreground(styles.ColorSelectedFg).
 						Background(styles.ColorSelectedBg)
 				} else if !slot.IsReady() || recastState != nil {
 					// クールダウン中またはリキャスト中は淡い色
-					moduleStyle = lipgloss.NewStyle().Foreground(styles.ColorSubtle)
+					skillStyle = lipgloss.NewStyle().Foreground(styles.ColorSubtle)
+				} else if slot.Skill.Type.ManaCost > 0 && s.player.Mana < slot.Skill.Type.ManaCost {
+					// マナ不足時は淡い色
+					skillStyle = lipgloss.NewStyle().Foreground(styles.ColorSubtle)
 				} else {
-					moduleStyle = lipgloss.NewStyle().Foreground(styles.ColorSecondary)
+					skillStyle = lipgloss.NewStyle().Foreground(styles.ColorSecondary)
 				}
 
 				prefix := "  "
-				if isModuleSelected {
+				if isSkillSelected {
 					prefix = "> "
 				}
 
-				// 1行目: プレフィックス + アイコン + モジュール名
-				cardContent.WriteString(moduleStyle.Render(fmt.Sprintf("%s%s %s", prefix, icon, slot.Module.Name())))
+				// 1行目: プレフィックス + アイコン + スキル名
+				cardContent.WriteString(skillStyle.Render(fmt.Sprintf("%s%s %s", prefix, icon, slot.Skill.Name())))
 				cardContent.WriteString("\n")
 
 				// 2行目: チェイン効果（あれば）または空行
-				if slot.Module.HasChainEffect() {
-					chainBadge := components.NewChainEffectBadge(slot.Module.ChainEffect)
-					// このモジュールのチェイン効果が発動中かチェック
-					// リキャスト中 かつ 待機中チェイン効果がこのモジュールのものなら発動中
+				if slot.Skill.HasChainEffect() {
+					chainBadge := components.NewChainEffectBadge(slot.Skill.ChainEffect)
+					// このスキルのチェイン効果が発動中かチェック
+					// リキャスト中 かつ 待機中チェイン効果がこのスキルのものなら発動中
 					isChainActive := pendingChain != nil &&
-						pendingChain.Effect.Type == slot.Module.ChainEffect.Type
+						pendingChain.Effect.Type == slot.Skill.ChainEffect.Type
 					cardContent.WriteString("    ") // インデント（prefixと同じ幅 + アイコン分）
 					if isChainActive {
 						cardContent.WriteString(chainBadge.RenderActive())
@@ -374,9 +377,14 @@ func (s *BattleScreen) renderAgentArea() string {
 func (s *BattleScreen) renderPlayerArea() string {
 	var builder strings.Builder
 
-	// プレイヤー名
+	// マナ表示
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorHPHigh)
-	builder.WriteString(titleStyle.Render("プレイヤー"))
+	manaLabel := "Mana:"
+	if s.player.Mana > 0 {
+		manaStars := strings.Repeat("⭐", s.player.Mana)
+		manaLabel += " " + manaStars
+	}
+	builder.WriteString(titleStyle.Render(manaLabel))
 	builder.WriteString("\n")
 
 	// HP表示（UI改善: アニメーション付きHPバー + フローティングダメージ/回復）
@@ -561,35 +569,35 @@ func (s *BattleScreen) renderEnemyActionBar(remainingSeconds float64, ratio floa
 
 // ==================== UIヘルパー ====================
 
-// getModulesForAgent は指定エージェントのモジュールスロットを取得します。
-func (s *BattleScreen) getModulesForAgent(agentIdx int) []ModuleSlot {
-	var modules []ModuleSlot
-	for _, slot := range s.moduleSlots {
+// getSkillsForAgent は指定エージェントのスキルスロットを取得します。
+func (s *BattleScreen) getSkillsForAgent(agentIdx int) []SkillSlot {
+	var skills []SkillSlot
+	for _, slot := range s.skillSlots {
 		if slot.AgentIndex == agentIdx {
-			modules = append(modules, slot)
+			skills = append(skills, slot)
 		}
 	}
-	return modules
+	return skills
 }
 
-// getSelectedModuleInAgent は選択中エージェント内でのモジュール選択位置を返します。
-func (s *BattleScreen) getSelectedModuleInAgent(agentIdx int) int {
+// getSelectedSkillInAgent は選択中エージェント内でのスキル選択位置を返します。
+func (s *BattleScreen) getSelectedSkillInAgent(agentIdx int) int {
 	if s.selectedAgentIdx != agentIdx {
 		return -1
 	}
 
 	// 現在選択されているスロットがこのエージェントのものか確認
-	if s.selectedSlot >= 0 && s.selectedSlot < len(s.moduleSlots) {
-		slot := s.moduleSlots[s.selectedSlot]
+	if s.selectedSlot >= 0 && s.selectedSlot < len(s.skillSlots) {
+		slot := s.skillSlots[s.selectedSlot]
 		if slot.AgentIndex == agentIdx {
 			// このエージェント内での相対位置を計算
-			moduleIdx := 0
+			skillIdx := 0
 			for i := 0; i < s.selectedSlot; i++ {
-				if s.moduleSlots[i].AgentIndex == agentIdx {
-					moduleIdx++
+				if s.skillSlots[i].AgentIndex == agentIdx {
+					skillIdx++
 				}
 			}
-			return moduleIdx
+			return skillIdx
 		}
 	}
 	return 0
