@@ -301,3 +301,53 @@ func TestSkillTagsMatchCoreAllowedTags(t *testing.T) {
 		}
 	}
 }
+
+// ===== 受け入れ基準 6: shapeチャレンジタイプの全スキルにmana_cost:1が設定されている =====
+
+func TestShapeSkillsHaveManaCost(t *testing.T) {
+	loader := createTestLoader()
+
+	skills, err := loader.LoadSkillDefinitions()
+	if err != nil {
+		t.Fatalf("skills.jsonの読み込みに失敗: %v", err)
+	}
+
+	shapeCount := 0
+	for _, s := range skills {
+		if s.Challenge.Type == "shape" {
+			shapeCount++
+			if s.ManaCost != 1 {
+				t.Errorf("shapeスキル %s のManaCostが1ではありません: got %d", s.ID, s.ManaCost)
+			}
+		}
+	}
+
+	if shapeCount == 0 {
+		t.Error("shapeチャレンジタイプのスキルが存在しません")
+	}
+}
+
+// ===== 受け入れ基準 9: mana_gain付きスキルが存在する =====
+
+func TestManaGainSkillsExist(t *testing.T) {
+	loader := createTestLoader()
+
+	skills, err := loader.LoadSkillDefinitions()
+	if err != nil {
+		t.Fatalf("skills.jsonの読み込みに失敗: %v", err)
+	}
+
+	manaGainCount := 0
+	for _, s := range skills {
+		for _, e := range s.Effects {
+			if e.ManaGain > 0 {
+				manaGainCount++
+				break
+			}
+		}
+	}
+
+	if manaGainCount == 0 {
+		t.Error("mana_gain付きのスキルが存在しません")
+	}
+}

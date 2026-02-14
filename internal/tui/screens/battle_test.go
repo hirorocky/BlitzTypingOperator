@@ -530,9 +530,9 @@ func TestBattleScreen3AreaLayout(t *testing.T) {
 		t.Error("敵情報エリアに敵の名前が表示されていません")
 	}
 
-	// プレイヤー情報が含まれること
-	if !strings.Contains(rendered, "プレイヤー") {
-		t.Error("プレイヤー情報エリアが表示されていません")
+	// マナ情報が含まれること
+	if !strings.Contains(rendered, "Mana:") {
+		t.Error("マナ情報エリアが表示されていません")
 	}
 
 	// モジュール情報が含まれること
@@ -750,8 +750,8 @@ func TestBattleScreenViewSeparation(t *testing.T) {
 	if playerArea == "" {
 		t.Error("renderPlayerAreaが空を返しました")
 	}
-	if !strings.Contains(playerArea, "プレイヤー") {
-		t.Error("プレイヤーエリアにプレイヤー情報が含まれていません")
+	if !strings.Contains(playerArea, "Mana:") {
+		t.Error("プレイヤーエリアにマナ情報が含まれていません")
 	}
 }
 

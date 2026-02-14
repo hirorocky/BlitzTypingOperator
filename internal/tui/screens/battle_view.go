@@ -374,9 +374,14 @@ func (s *BattleScreen) renderAgentArea() string {
 func (s *BattleScreen) renderPlayerArea() string {
 	var builder strings.Builder
 
-	// プレイヤー名
+	// マナ表示
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorHPHigh)
-	builder.WriteString(titleStyle.Render("プレイヤー"))
+	manaLabel := "Mana:"
+	if s.player.Mana > 0 {
+		manaStars := strings.Repeat("⭐", s.player.Mana)
+		manaLabel += " " + manaStars
+	}
+	builder.WriteString(titleStyle.Render(manaLabel))
 	builder.WriteString("\n")
 
 	// HP表示（UI改善: アニメーション付きHPバー + フローティングダメージ/回復）

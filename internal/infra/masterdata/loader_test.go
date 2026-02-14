@@ -1196,3 +1196,146 @@ func TestLoadEnemyActionsWithTimedEffectID(t *testing.T) {
 		t.Errorf("TimedEffectID: got %s, want st_skeleton_bone_dust", debuffAction.TimedEffectID)
 	}
 }
+
+// ===== 受け入れ基準 5: ManaCostパース直接検証 =====
+
+func TestLoadSkillDefinitions_ManaCostパース(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	skillsJSON := `{
+		"skill_types": [
+			{
+				"id": "fireball_lv1",
+				"name": "ファイアボール",
+				"icon": "🔥",
+				"tags": ["magic_low"],
+				"description": "炎の魔法",
+				"cooldown_seconds": 10.0,
+				"difficulty": 80,
+				"challenge": { "type": "shape" },
+				"min_drop_level": 1,
+				"mana_cost": 1,
+				"effects": [
+					{
+						"target": "enemy",
+						"hp_formula": {"base": 0, "stat_coef": 1.2, "stat_ref": "INT"},
+						"probability": 1.0,
+						"luk_factor": 0,
+						"icon": "🔥"
+					}
+				]
+			}
+		]
+	}`
+
+	os.WriteFile(filepath.Join(tmpDir, "skills.json"), []byte(skillsJSON), 0644)
+
+	loader := NewDataLoader(tmpDir)
+	skills, err := loader.LoadSkillDefinitions()
+	if err != nil {
+		t.Fatalf("スキル定義のロードに失敗: %v", err)
+	}
+
+	if skills[0].ManaCost != 1 {
+		t.Errorf("ManaCost: got %d, want 1", skills[0].ManaCost)
+	}
+
+	// ToDomainTypeでもManaCostが変換されること
+	domainType := skills[0].ToDomainType()
+	if domainType.ManaCost != 1 {
+		t.Errorf("ToDomainType ManaCost: got %d, want 1", domainType.ManaCost)
+	}
+}
+
+// ===== 受け入れ基準 7: ManaCost未設定はデフォルト0 =====
+
+func TestLoadSkillDefinitions_ManaCost未設定はデフォルト0(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	skillsJSON := `{
+		"skill_types": [
+			{
+				"id": "physical_strike_lv1",
+				"name": "斬撃",
+				"icon": "⚔️",
+				"tags": ["physical_low"],
+				"description": "物理攻撃",
+				"cooldown_seconds": 5.0,
+				"difficulty": 80,
+				"challenge": { "type": "standard" },
+				"min_drop_level": 1,
+				"effects": [
+					{
+						"target": "enemy",
+						"hp_formula": {"base": 0, "stat_coef": 1.0, "stat_ref": "STR"},
+						"probability": 1.0,
+						"luk_factor": 0,
+						"icon": "⚔️"
+					}
+				]
+			}
+		]
+	}`
+
+	os.WriteFile(filepath.Join(tmpDir, "skills.json"), []byte(skillsJSON), 0644)
+
+	loader := NewDataLoader(tmpDir)
+	skills, err := loader.LoadSkillDefinitions()
+	if err != nil {
+		t.Fatalf("スキル定義のロードに失敗: %v", err)
+	}
+
+	if skills[0].ManaCost != 0 {
+		t.Errorf("ManaCost未設定時: got %d, want 0", skills[0].ManaCost)
+	}
+}
+
+// ===== 受け入れ基準 8: ManaGainパース直接検証 =====
+
+func TestLoadSkillDefinitions_ManaGainパース(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	skillsJSON := `{
+		"skill_types": [
+			{
+				"id": "martial_strike",
+				"name": "格闘打撃",
+				"icon": "👊",
+				"tags": ["physical_low"],
+				"description": "マナを獲得する格闘攻撃",
+				"cooldown_seconds": 5.0,
+				"difficulty": 80,
+				"challenge": { "type": "standard" },
+				"min_drop_level": 1,
+				"effects": [
+					{
+						"target": "enemy",
+						"hp_formula": {"base": 0, "stat_coef": 0.5, "stat_ref": "STR"},
+						"probability": 1.0,
+						"luk_factor": 0,
+						"mana_gain": 1,
+						"icon": "👊"
+					}
+				]
+			}
+		]
+	}`
+
+	os.WriteFile(filepath.Join(tmpDir, "skills.json"), []byte(skillsJSON), 0644)
+
+	loader := NewDataLoader(tmpDir)
+	skills, err := loader.LoadSkillDefinitions()
+	if err != nil {
+		t.Fatalf("スキル定義のロードに失敗: %v", err)
+	}
+
+	if skills[0].Effects[0].ManaGain != 1 {
+		t.Errorf("ManaGain: got %d, want 1", skills[0].Effects[0].ManaGain)
+	}
+
+	// ToDomainでもManaGainが変換されること
+	domainEffect := skills[0].Effects[0].ToDomain()
+	if domainEffect.ManaGain != 1 {
+		t.Errorf("ToDomain ManaGain: got %d, want 1", domainEffect.ManaGain)
+	}
+}

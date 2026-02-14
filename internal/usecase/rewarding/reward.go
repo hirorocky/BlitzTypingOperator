@@ -266,6 +266,9 @@ type ModuleDropInfo struct {
 	// ChallengeType はチャレンジタイプのIDです。
 	ChallengeType domain.ChallengeTypeID
 
+	// ManaCost はスキル使用時に消費するマナ量です。
+	ManaCost int
+
 	// MinDropLevel はこのモジュールがドロップする最低敵レベルです。
 	MinDropLevel int
 
@@ -292,6 +295,7 @@ func (m *ModuleDropInfo) ToSkillType() domain.SkillType {
 		CooldownSeconds: m.CooldownSeconds,
 		DifficultyRate:  m.DifficultyRate,
 		ChallengeType:   m.ChallengeType,
+		ManaCost:        m.ManaCost,
 		MinDropLevel:    m.MinDropLevel,
 		Effects:         effectsCopy,
 	}

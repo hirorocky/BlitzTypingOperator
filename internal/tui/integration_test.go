@@ -142,8 +142,8 @@ func TestIntegrationBattleScreen(t *testing.T) {
 	if !containsS(rendered, enemy.Name) {
 		t.Error("敵情報エリアが表示されていません")
 	}
-	if !containsS(rendered, "プレイヤー") {
-		t.Error("プレイヤー情報エリアが表示されていません")
+	if !containsS(rendered, "Mana:") {
+		t.Error("マナ情報エリアが表示されていません")
 	}
 	if !containsS(rendered, "モジュール") {
 		t.Error("モジュールエリアが表示されていません")

@@ -250,6 +250,11 @@ func (s *BattleScreen) isModuleUsable(slotIndex int) bool {
 		return false
 	}
 
+	// マナ不足チェック
+	if slot.Module.Type.ManaCost > 0 && s.player.Mana < slot.Module.Type.ManaCost {
+		return false
+	}
+
 	return true
 }
 

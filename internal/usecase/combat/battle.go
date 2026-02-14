@@ -605,6 +605,11 @@ func (e *BattleEngine) ApplySkillEffect(
 	playerEffects := state.Player.EffectTable.Aggregate(ctx)
 	enemyEffects := state.Enemy.EffectTable.Aggregate(ctx)
 
+	// マナ消費（効果適用の前に消費）
+	if module.Type.ManaCost > 0 {
+		state.Player.ConsumeMana(module.Type.ManaCost)
+	}
+
 	totalEffect := 0
 
 	// 各効果を評価・適用
@@ -692,6 +697,11 @@ func (e *BattleEngine) ApplySkillEffect(
 			case domain.TargetEnemy:
 				state.Enemy.EffectTable.AddDebuff(statusID, description, duration, values)
 			}
+		}
+
+		// マナ獲得（効果発動時、ManaGain > 0の場合）
+		if effect.ManaGain > 0 {
+			state.Player.GainMana(effect.ManaGain)
 		}
 	}
 

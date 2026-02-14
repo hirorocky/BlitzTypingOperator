@@ -187,6 +187,7 @@ type SkillEffectData struct {
 	EffectColumn *EffectColumnData `json:"effect_column,omitempty"`
 	Probability  float64           `json:"probability"`
 	LUKFactor    float64           `json:"luk_factor"`
+	ManaGain     int               `json:"mana_gain"`
 	Icon         string            `json:"icon"`
 }
 
@@ -208,6 +209,7 @@ type SkillDefinitionData struct {
 	DifficultyRate  int               `json:"difficulty"`
 	Challenge       ChallengeData     `json:"challenge"`
 	MinDropLevel    int               `json:"min_drop_level"`
+	ManaCost        int               `json:"mana_cost"`
 	Effects         []SkillEffectData `json:"effects"`
 }
 
@@ -262,6 +264,7 @@ func (m *SkillDefinitionData) ToDomainType() domain.SkillType {
 		DifficultyRate:   m.DifficultyRate,
 		ChallengeType:    domain.ChallengeTypeID(m.Challenge.Type),
 		ChallengeOptions: challengeOptions,
+		ManaCost:         m.ManaCost,
 		MinDropLevel:     m.MinDropLevel,
 		Effects:          effects,
 	}
@@ -273,6 +276,7 @@ func (e *SkillEffectData) ToDomain() domain.SkillEffect {
 		Target:      convertEffectTarget(e.Target),
 		Probability: e.Probability,
 		LUKFactor:   e.LUKFactor,
+		ManaGain:    e.ManaGain,
 		Icon:        e.Icon,
 	}
 

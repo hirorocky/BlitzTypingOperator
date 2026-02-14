@@ -3,6 +3,7 @@
 package session
 
 import (
+	"hirorocky/type-battle/internal/config"
 	"hirorocky/type-battle/internal/domain"
 	"hirorocky/type-battle/internal/usecase/achievement"
 	"hirorocky/type-battle/internal/usecase/rewarding"
@@ -207,6 +208,7 @@ func (g *GameState) PreparePlayerForBattle(agents []*domain.AgentModel) {
 	if g.player.MaxHP == 0 && len(agents) > 0 {
 		g.player.InitializeHP(domain.InitialMaxHP)
 	}
+	g.player.MaxMana = config.DefaultMaxMana
 	g.player.PrepareForBattle()
 }
 
