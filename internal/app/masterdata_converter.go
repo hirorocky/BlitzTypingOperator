@@ -269,13 +269,7 @@ func ConvertRankRewards(
 
 		items := make([]domain.RankRewardItem, 0, len(rd.Rewards))
 		for _, item := range rd.Rewards {
-			category := item.Category
-			// "module"は"skill"と同義
-			if category == "module" {
-				category = "skill"
-			}
-
-			switch category {
+			switch item.Category {
 			case "core":
 				if !coreMap[item.TypeID] {
 					slog.Warn("ランクアップ報酬の未知コアTypeID、スキップします",
@@ -305,7 +299,7 @@ func ConvertRankRewards(
 			}
 
 			items = append(items, domain.RankRewardItem{
-				Category: category,
+				Category: item.Category,
 				TypeID:   item.TypeID,
 			})
 		}

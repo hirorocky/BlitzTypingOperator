@@ -137,5 +137,4 @@ type RankRewardItem struct {
 - 撃破報酬のドロップはコア/スキル/チェイン効果のいずれか1つが基本（敵タイプのDropItemCategory/DropItemTypeIDで決定）
 - `RewardResult`のランクアップ報酬フィールドは既存パターンに合わせて型別に分離（`RankUpRewardCores []*domain.CoreModel`、`RankUpRewardSkills []*domain.SkillModel`、`RankUpRewardChainEffects`）
 - `RewardCalculator.SetRankRewards()`は既存の`SetChainEffectPool()`と同じManagerパターン
-- `rank_rewards.json`内で`category: "module"`は`category: "skill"`と同義として受け入れる（既存enemies.jsonとの互換性）
 - 現在の報酬画面は左右並び（統計+ドロップ）だが、新レイアウトは全て縦並びにする

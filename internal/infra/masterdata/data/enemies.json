@@ -28,7 +28,7 @@
         "act_bat_attack_phys",
         "act_bat_buff_speed"
       ],
-      "drop_item_category": "module",
+      "drop_item_category": "skill",
       "drop_item_type_id": "heal_lv1",
       "voltage_rise_per_10s": 12
     },
@@ -47,7 +47,7 @@
         "act_goblin_attack_phys",
         "act_goblin_debuff_slow"
       ],
-      "drop_item_category": "module",
+      "drop_item_category": "skill",
       "drop_item_type_id": "physical_strike_lv1",
       "voltage_rise_per_10s": 15
     },
