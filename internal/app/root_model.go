@@ -21,6 +21,7 @@ import (
 	gamestate "hirorocky/type-battle/internal/usecase/session"
 	"hirorocky/type-battle/internal/usecase/slot"
 	"hirorocky/type-battle/internal/usecase/typing"
+	"hirorocky/type-battle/internal/usecase/unlocking"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -105,6 +106,9 @@ type RootModel struct {
 
 	// invManager はユニークインベントリ管理を担当します
 	invManager *inventory.InventoryManager
+
+	// unlockManager は機能解放状態を管理します
+	unlockManager *unlocking.Manager
 
 	// coreTypes はコアTypeマスタデータです
 	coreTypes map[string]domain.CoreType
@@ -288,6 +292,33 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		)
 	}
 
+	// 機能解放マネージャーの初期化
+	var unlockMgr *unlocking.Manager
+	if externalData != nil {
+		unlockRules := ConvertFeatureUnlocks(externalData.FeatureUnlocks)
+		tutorialDefs := ConvertTutorials(externalData.Tutorials)
+
+		// セーブデータから解放状態を復元
+		var unlockState domain.FeatureUnlockState
+		if loadedSaveData != nil && loadedSaveData.FeatureUnlock != nil {
+			unlockState = unlocking.SaveToSnapshot(*loadedSaveData.FeatureUnlock)
+		} else if loadedSaveData != nil && loadedSaveData.EnemyProgress != nil {
+			// 旧セーブ互換: CurrentRankから解放状態を再構築
+			unlockState = unlocking.RebuildFromRank(unlockRules, loadedSaveData.EnemyProgress.CurrentRank)
+		} else {
+			unlockState = domain.NewFeatureUnlockState()
+		}
+
+		unlockMgr, _ = unlocking.NewManager(unlockRules, tutorialDefs, unlockState)
+
+		// Reconcile: マスタデータ追加分の反映
+		if loadedSaveData != nil && loadedSaveData.EnemyProgress != nil {
+			if _, err := unlockMgr.Reconcile(loadedSaveData.EnemyProgress.CurrentRank); err != nil {
+				slog.Error("機能解放のReconcileに失敗", slog.Any("error", err))
+			}
+		}
+	}
+
 	// コアType、スキルType、敵Typeをマップに変換
 	coreTypesMap := make(map[string]domain.CoreType)
 	skillTypesMap := make(map[string]domain.SkillType)
@@ -453,11 +484,12 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		externalData:             externalData,
 		chainEffects:             chainEffects,
 		// 新システムのマネージャー
-		slotManager: slotManager,
-		invManager:  invManager,
-		coreTypes:   coreTypesMap,
-		skillTypes:  skillTypesMap,
-		enemyTypes:  enemyTypesMap,
+		slotManager:   slotManager,
+		invManager:    invManager,
+		unlockManager: unlockMgr,
+		coreTypes:     coreTypesMap,
+		skillTypes:    skillTypesMap,
+		enemyTypes:    enemyTypesMap,
 	}
 
 	// メッセージハンドラーと画面マップを初期化
@@ -634,6 +666,13 @@ func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 		}
 	}
 	saveData.Inventory.UniqueChainEffects.ChainEffects = m.invManager.ChainEffects().GetOwnedChainEffects()
+
+	// FeatureUnlockを追加
+	if m.unlockManager != nil {
+		snap := m.unlockManager.Snapshot()
+		featureUnlockSave := unlocking.SnapshotToSave(snap)
+		saveData.FeatureUnlock = &featureUnlockSave
+	}
 
 	// AgentSlotsを追加（3スロットの構成）
 	slots := m.slotManager.GetSlots()
