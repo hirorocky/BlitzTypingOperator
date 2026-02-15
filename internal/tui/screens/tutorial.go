@@ -70,7 +70,7 @@ func (s *TutorialScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "enter", " ":
 		return s.handleNext()
 	case "right", "l":
-		return s.handleNext()
+		return s.handlePageForward()
 	case "left", "h":
 		return s.handlePrev()
 	case "esc":
@@ -88,6 +88,14 @@ func (s *TutorialScreen) handleNext() (tea.Model, tea.Cmd) {
 	}
 	// 最終ページ
 	return s.handleComplete()
+}
+
+// handlePageForward はページ送りのみ行います（最終ページでは何もしない）。
+func (s *TutorialScreen) handlePageForward() (tea.Model, tea.Cmd) {
+	if s.currentPage < len(s.tutorial.Pages)-1 {
+		s.currentPage++
+	}
+	return s, nil
 }
 
 func (s *TutorialScreen) handlePrev() (tea.Model, tea.Cmd) {
