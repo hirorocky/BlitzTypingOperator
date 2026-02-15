@@ -82,6 +82,8 @@ type RootModel struct {
 	statsAchievementsScreen  *screens.StatsAchievementsScreen
 	settingsScreen           *screens.SettingsScreen
 	rewardScreen             *screens.RewardScreen
+	tipsScreen               *screens.TipsScreen
+	tutorialScreen           *screens.TutorialScreen
 
 	// パッシブスキル定義（バトル開始時に BattleEngine へ渡す）
 	passiveSkills map[string]domain.PassiveSkill
