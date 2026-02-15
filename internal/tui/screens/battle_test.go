@@ -520,6 +520,7 @@ func TestBattleScreen3AreaLayout(t *testing.T) {
 	agents := createTestAgents()
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
+	screen.SetFeatureUnlockProvider(allFeaturesUnlockedProvider())
 	screen.width = 120
 	screen.height = 40
 
@@ -727,6 +728,7 @@ func TestBattleScreenViewSeparation(t *testing.T) {
 	agents := createTestAgents()
 
 	screen := NewBattleScreen(enemy, player, agents, nil)
+	screen.SetFeatureUnlockProvider(allFeaturesUnlockedProvider())
 	screen.width = 120
 	screen.height = 40
 

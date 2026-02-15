@@ -11,6 +11,16 @@ import (
 	"hirorocky/type-battle/internal/usecase/combat/recast"
 )
 
+// allFeaturesUnlockedProvider は全機能解放済みのプロバイダーを返します。
+func allFeaturesUnlockedProvider() FeatureUnlockProvider {
+	return &mockUnlockProvider{unlocked: map[domain.FeatureID]bool{
+		domain.FeatureDefenseSkill:       true,
+		domain.FeatureAgentCustomization: true,
+		domain.FeatureChainEffect:        true,
+		domain.FeatureManaSystem:         true,
+	}}
+}
+
 // ==================== タスク9: バトル画面UI拡張テスト ====================
 
 // createTestAgentWithPassive はパッシブスキル付きテスト用エージェントを作成します。
@@ -180,6 +190,7 @@ func TestBattleScreen_ManaAffectsSkillUsability(t *testing.T) {
 	player := createTestPlayer()
 	player.MaxMana = 10
 	screen := NewBattleScreen(createTestEnemy(), player, []*domain.AgentModel{agent}, nil)
+	screen.SetFeatureUnlockProvider(allFeaturesUnlockedProvider())
 
 	// マナ不足時は使用不可
 	screen.player.Mana = 0

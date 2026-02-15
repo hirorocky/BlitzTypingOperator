@@ -293,6 +293,7 @@ func TestAgentCustomizationScreen_SkillSelectMode_SetsSkillToSlot(t *testing.T) 
 
 func TestAgentCustomizationScreen_ChainSelectMode_IndependentFlow(t *testing.T) {
 	screen, coreInv, skillInv, chainEffectInv, slotManager := setupTestCustomizationScreen()
+	screen.SetFeatureUnlockProvider(allFeaturesUnlockedProvider())
 
 	// コアとスキルを設定
 	coreInv.AddCore("balance")
