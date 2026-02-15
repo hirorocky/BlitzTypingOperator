@@ -237,6 +237,36 @@ func ConvertChainEffectsToMap(effects []masterdata.ChainEffectData) map[string]d
 	return result
 }
 
+// ConvertFeatureUnlocks はmasterdata.FeatureUnlockDataのスライスをdomain.UnlockRuleのスライスに変換します。
+func ConvertFeatureUnlocks(data []masterdata.FeatureUnlockData) []domain.UnlockRule {
+	result := make([]domain.UnlockRule, len(data))
+	for i, d := range data {
+		result[i] = domain.UnlockRule{
+			FeatureID:  domain.FeatureID(d.FeatureID),
+			UnlockRank: d.UnlockRank,
+			TutorialID: d.TutorialID,
+		}
+	}
+	return result
+}
+
+// ConvertTutorials はmasterdata.TutorialDataのスライスをdomain.TutorialDefのスライスに変換します。
+func ConvertTutorials(data []masterdata.TutorialData) []domain.TutorialDef {
+	result := make([]domain.TutorialDef, len(data))
+	for i, d := range data {
+		pages := make([]string, len(d.Pages))
+		copy(pages, d.Pages)
+		result[i] = domain.TutorialDef{
+			ID:             d.ID,
+			Title:          d.Title,
+			Pages:          pages,
+			DefaultVisible: d.DefaultVisible,
+			FeatureID:      domain.FeatureID(d.FeatureID),
+		}
+	}
+	return result
+}
+
 // ConvertRankRewards はmasterdata.RankRewardDataのスライスをmap[int]domain.RankRewardに変換します。
 // キーはランク番号です。未知のcategoryや不正ランクはログ警告してスキップします。
 func ConvertRankRewards(

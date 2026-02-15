@@ -1,0 +1,24 @@
+{
+  "feature_unlocks": [
+    {
+      "feature_id": "defense_skill",
+      "unlock_rank": 2,
+      "tutorial_id": "tut_defense_skill"
+    },
+    {
+      "feature_id": "agent_customization",
+      "unlock_rank": 3,
+      "tutorial_id": "tut_agent_customization"
+    },
+    {
+      "feature_id": "chain_effect",
+      "unlock_rank": 4,
+      "tutorial_id": "tut_chain_effect"
+    },
+    {
+      "feature_id": "mana_system",
+      "unlock_rank": 5,
+      "tutorial_id": "tut_mana_system"
+    }
+  ]
+}
