@@ -22,6 +22,12 @@ type AgentProvider interface {
 	GetEquippedAgents() []*domain.AgentModel
 }
 
+// FeatureUnlockProvider は機能解放状態を提供するインターフェースです。
+// ホーム画面やバトル画面でメニュー/機能のゲート判定に使用します。
+type FeatureUnlockProvider interface {
+	IsUnlocked(id domain.FeatureID) bool
+}
+
 // SlotReadinessProvider はエージェントスロットの準備状態を提供するインターフェースです。
 // internal/usecase/slot.AgentSlotManagerで実装されます。
 type SlotReadinessProvider interface {
@@ -79,6 +85,7 @@ type HomeScreen struct {
 	maxHP           int                   // プレイヤーの最大HP
 	agentProvider   AgentProvider         // 装備エージェントを取得するプロバイダー
 	slotProvider    SlotReadinessProvider // スロット準備状態プロバイダー
+	unlockProvider  FeatureUnlockProvider // 機能解放状態プロバイダー
 	styles          *styles.GameStyles
 	width           int
 	height          int
@@ -104,26 +111,7 @@ type SaveRequestMsg struct{}
 
 // UI-Improvement Requirement 1.6, 5.3: 装備エージェントが空の場合、バトル選択メニューを無効化
 func NewHomeScreen(maxLevelReached int, agentProvider AgentProvider) *HomeScreen {
-	// 装備エージェントがあるかチェック
-	hasEquippedAgents := false
-	if agentProvider != nil {
-		equippedAgents := agentProvider.GetEquippedAgents()
-		hasEquippedAgents = len(equippedAgents) > 0
-	}
-
-	// UI-Improvement Requirement 1.6, 5.3: 装備がない場合はバトル選択を無効化
-	items := []components.MenuItem{
-		{Label: "エージェントカスタマイズ", Value: "agent_customization"},
-		{Label: "インベントリ", Value: "inventory"},
-		{Label: "バトル選択", Value: "battle_select", Disabled: !hasEquippedAgents},
-		{Label: "図鑑", Value: "encyclopedia"},
-		{Label: "統計/実績", Value: "stats_achievements"},
-		{Label: "セーブ", Value: "save"},
-		{Label: "設定", Value: "settings"},
-	}
-
-	return &HomeScreen{
-		menu:            components.NewMenuWithTitle("メインメニュー", items),
+	s := &HomeScreen{
 		maxLevelReached: maxLevelReached,
 		agentProvider:   agentProvider,
 		styles:          styles.NewGameStyles(),
@@ -139,6 +127,9 @@ func NewHomeScreen(maxLevelReached int, agentProvider AgentProvider) *HomeScreen
 			"ゲームの進行状況をセーブしますか？",
 		),
 	}
+	items := s.buildMenuItems()
+	s.menu = components.NewMenuWithTitle("メインメニュー", items)
+	return s
 }
 
 // Init は画面の初期化を行います。
@@ -404,26 +395,50 @@ func (s *HomeScreen) SetSlotProvider(provider SlotReadinessProvider) {
 	s.slotProvider = provider
 }
 
-// RefreshMenuState はメニューの有効/無効状態を最新の装備状態に基づいて更新します。
-func (s *HomeScreen) RefreshMenuState() {
-	hasEquippedAgents := false
+// SetFeatureUnlockProvider は機能解放状態プロバイダーを設定します。
+func (s *HomeScreen) SetFeatureUnlockProvider(provider FeatureUnlockProvider) {
+	s.unlockProvider = provider
+}
 
-	// slotProviderがある場合は優先使用（AgentSlotManager経由）
+// buildMenuItems は現在の状態に基づいてメニュー項目を構築します。
+func (s *HomeScreen) buildMenuItems() []components.MenuItem {
+	hasEquippedAgents := false
 	if s.slotProvider != nil {
 		hasEquippedAgents = s.slotProvider.GetReadySlotCount() > 0
 	} else if s.agentProvider != nil {
-		// 後方互換: 旧来のagentProvider経由
 		equippedAgents := s.agentProvider.GetEquippedAgents()
 		hasEquippedAgents = len(equippedAgents) > 0
 	}
 
-	// "バトル選択"メニュー項目の無効状態を更新
-	for i := range s.menu.Items {
-		if s.menu.Items[i].Value == "battle_select" {
-			s.menu.Items[i].Disabled = !hasEquippedAgents
-			break
-		}
+	agentCustomizationUnlocked := s.unlockProvider != nil &&
+		s.unlockProvider.IsUnlocked(domain.FeatureAgentCustomization)
+
+	var items []components.MenuItem
+
+	// エージェントカスタマイズ・インベントリ: agent_customization解放時のみ表示
+	if agentCustomizationUnlocked {
+		items = append(items,
+			components.MenuItem{Label: "エージェントカスタマイズ", Value: "agent_customization"},
+			components.MenuItem{Label: "インベントリ", Value: "inventory"},
+		)
 	}
+
+	items = append(items,
+		components.MenuItem{Label: "バトル選択", Value: "battle_select", Disabled: !hasEquippedAgents},
+		components.MenuItem{Label: "TIPS", Value: "tips"},
+		components.MenuItem{Label: "図鑑", Value: "encyclopedia"},
+		components.MenuItem{Label: "統計/実績", Value: "stats_achievements"},
+		components.MenuItem{Label: "セーブ", Value: "save"},
+		components.MenuItem{Label: "設定", Value: "settings"},
+	)
+
+	return items
+}
+
+// RefreshMenuState はメニューの有効/無効状態を最新の装備状態に基づいて更新します。
+func (s *HomeScreen) RefreshMenuState() {
+	items := s.buildMenuItems()
+	s.menu = components.NewMenuWithTitle("メインメニュー", items)
 }
 
 // SetStatusMessage はステータスメッセージを設定します。

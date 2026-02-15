@@ -427,6 +427,11 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 	homeScreen.SetStatusMessage(statusMessage)
 	// スロット準備状態プロバイダーを設定（バトル選択の有効/無効判定に使用）
 	homeScreen.SetSlotProvider(slotManager)
+	// 機能解放プロバイダーを設定（メニューゲート判定に使用）
+	if unlockMgr != nil {
+		homeScreen.SetFeatureUnlockProvider(unlockMgr)
+	}
+	homeScreen.RefreshMenuState()
 	// ランク進行情報を設定（ホーム画面での進行状況表示用）
 	homeScreen.SetCurrentRank(gs.EnemyProgress().CurrentRank)
 	homeScreen.SetMaxHP(gs.Player().MaxHP)
