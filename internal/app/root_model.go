@@ -591,8 +591,34 @@ func (m *RootModel) handleBattleResult(result screens.BattleResultMsg) {
 			)
 		}
 
-		// 報酬画面を作成
-		m.rewardScreen = screens.NewRewardScreen(rewardResult)
+		// ランクアップ時は機能解放を適用
+		if rewardResult.RankUnlocked && m.unlockManager != nil {
+			delta, err := m.unlockManager.ApplyRank(rewardResult.NewRank)
+			if err != nil {
+				slog.Error("機能解放のApplyRankに失敗", slog.Any("error", err))
+			}
+
+			// 報酬画面を作成
+			m.rewardScreen = screens.NewRewardScreen(rewardResult)
+
+			// PendingTutorialがあれば報酬画面に設定
+			if len(delta.QueuedTutorials) > 0 {
+				allTutorials := ConvertTutorials(m.externalData.Tutorials)
+				var pendingTuts []domain.TutorialDef
+				for _, tutID := range delta.QueuedTutorials {
+					for _, t := range allTutorials {
+						if t.ID == tutID {
+							pendingTuts = append(pendingTuts, t)
+							break
+						}
+					}
+				}
+				m.rewardScreen.SetPendingTutorials(pendingTuts)
+			}
+		} else {
+			// ランクアップなし: 通常の報酬画面
+			m.rewardScreen = screens.NewRewardScreen(rewardResult)
+		}
 
 		// 報酬画面へ遷移
 		m.currentScene = SceneReward
@@ -802,6 +828,12 @@ func (m *RootModel) prepareSceneTransition(sceneName string) {
 	case "inventory":
 		// インベントリデータを最新状態に更新
 		m.inventoryScreen.RefreshData()
+	case "tips":
+		// TIPS画面を閲覧可能なチュートリアルで初期化
+		if m.unlockManager != nil {
+			tutorials := m.unlockManager.ListVisibleTutorials()
+			m.tipsScreen = screens.NewTipsScreen(tutorials)
+		}
 	}
 }
 
