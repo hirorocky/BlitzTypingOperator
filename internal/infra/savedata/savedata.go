@@ -274,9 +274,6 @@ func NewSaveData() *SaveData {
 type FeatureUnlockSave struct {
 	// Features は各機能IDの解放状態です（FeatureID→FeatureStatus文字列）。
 	Features map[string]string `json:"features"`
-
-	// LastAppliedRank は最後にApplyRankで適用されたランクです。
-	LastAppliedRank int `json:"last_applied_rank"`
 }
 
 // SaveDataIO はセーブデータのI/Oを担当する構造体です。

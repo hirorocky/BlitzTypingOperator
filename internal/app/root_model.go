@@ -615,13 +615,15 @@ func (m *RootModel) handleBattleResult(result screens.BattleResultMsg) {
 			// PendingTutorialがあれば報酬画面に設定
 			if len(delta.QueuedTutorials) > 0 {
 				allTutorials := ConvertTutorials(m.externalData.Tutorials)
+				tutorialMap := make(map[string]domain.TutorialDef, len(allTutorials))
+				for _, t := range allTutorials {
+					tutorialMap[t.ID] = t
+				}
+
 				var pendingTuts []domain.TutorialDef
 				for _, tutID := range delta.QueuedTutorials {
-					for _, t := range allTutorials {
-						if t.ID == tutID {
-							pendingTuts = append(pendingTuts, t)
-							break
-						}
+					if t, ok := tutorialMap[tutID]; ok {
+						pendingTuts = append(pendingTuts, t)
 					}
 				}
 				m.rewardScreen.SetPendingTutorials(pendingTuts)

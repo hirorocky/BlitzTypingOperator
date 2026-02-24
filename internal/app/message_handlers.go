@@ -191,7 +191,6 @@ func (mh *MessageHandlers) handleCompleteTutorialMsg(msg tea.Msg) (tea.Model, te
 	// 次のPendingチュートリアルがあれば遷移
 	if tutID, ok := m.unlockManager.NextPendingTutorial(); ok {
 		// チュートリアル定義を探す
-		tutorials := m.unlockManager.ListVisibleTutorials()
 		allTutorials := ConvertTutorials(m.externalData.Tutorials)
 		for _, t := range allTutorials {
 			if t.ID == tutID {
@@ -200,14 +199,7 @@ func (mh *MessageHandlers) handleCompleteTutorialMsg(msg tea.Msg) (tea.Model, te
 				return m, nil
 			}
 		}
-		// 見つからない場合はvisibleから検索
-		for _, t := range tutorials {
-			if t.ID == tutID {
-				m.tutorialScreen = screens.NewTutorialScreen(t, screens.UnlockFlow)
-				m.currentScene = SceneTutorial
-				return m, nil
-			}
-		}
+		slog.Error("Pendingなチュートリアル定義が見つかりません", slog.String("tutorialID", tutID))
 	}
 
 	// 全チュートリアル完了→ホーム遷移
