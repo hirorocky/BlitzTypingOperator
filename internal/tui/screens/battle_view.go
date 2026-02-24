@@ -277,6 +277,11 @@ func (s *BattleScreen) renderAgentArea() string {
 
 			agentSkills := s.getSkillsForAgent(i)
 			for j, slot := range agentSkills {
+				// ディフェンススキル未解放時は非表示
+				if !s.isDefenseSkillUnlocked() && slot.Skill.GetChallengeType() == domain.ChallengeTypeDefense {
+					continue
+				}
+
 				isSkillSelected := isSelected && j == s.getSelectedSkillInAgent(i)
 
 				// スキルアイコン
@@ -292,8 +297,8 @@ func (s *BattleScreen) renderAgentArea() string {
 				} else if !slot.IsReady() || recastState != nil {
 					// クールダウン中またはリキャスト中は淡い色
 					skillStyle = lipgloss.NewStyle().Foreground(styles.ColorSubtle)
-				} else if slot.Skill.Type.ManaCost > 0 && s.player.Mana < slot.Skill.Type.ManaCost {
-					// マナ不足時は淡い色
+				} else if s.isManaSystemUnlocked() && slot.Skill.Type.ManaCost > 0 && s.player.Mana < slot.Skill.Type.ManaCost {
+					// マナ不足時は淡い色（マナシステム解放時のみ判定）
 					skillStyle = lipgloss.NewStyle().Foreground(styles.ColorSubtle)
 				} else {
 					skillStyle = lipgloss.NewStyle().Foreground(styles.ColorSecondary)
@@ -377,15 +382,17 @@ func (s *BattleScreen) renderAgentArea() string {
 func (s *BattleScreen) renderPlayerArea() string {
 	var builder strings.Builder
 
-	// マナ表示
+	// マナ表示（マナシステム解放時のみ）
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(styles.ColorHPHigh)
-	manaLabel := "Mana:"
-	if s.player.Mana > 0 {
-		manaStars := strings.Repeat("⭐", s.player.Mana)
-		manaLabel += " " + manaStars
+	if s.isManaSystemUnlocked() {
+		manaLabel := "Mana:"
+		if s.player.Mana > 0 {
+			manaStars := strings.Repeat("⭐", s.player.Mana)
+			manaLabel += " " + manaStars
+		}
+		builder.WriteString(titleStyle.Render(manaLabel))
+		builder.WriteString("\n")
 	}
-	builder.WriteString(titleStyle.Render(manaLabel))
-	builder.WriteString("\n")
 
 	// HP表示（UI改善: アニメーション付きHPバー + フローティングダメージ/回復）
 	hpBar := s.playerHPBar.Render(s.styles, 50)

@@ -45,6 +45,14 @@ const (
 	// SceneInventory はインベントリ画面を表します。
 	// 保有コアとスキルの一覧を確認できます。
 	SceneInventory
+
+	// SceneTips はTIPS画面を表します。
+	// チュートリアル一覧から再閲覧可能です。
+	SceneTips
+
+	// SceneTutorial はチュートリアル表示画面を表します。
+	// 報酬導線モード（UnlockFlow）またはTIPS再閲覧モード（TipsView）で動作します。
+	SceneTutorial
 )
 
 // String はシーンの文字列表現を返します。
@@ -70,6 +78,10 @@ func (s Scene) String() string {
 		return "AgentCustomization"
 	case SceneInventory:
 		return "Inventory"
+	case SceneTips:
+		return "Tips"
+	case SceneTutorial:
+		return "Tutorial"
 	default:
 		return "Unknown"
 	}

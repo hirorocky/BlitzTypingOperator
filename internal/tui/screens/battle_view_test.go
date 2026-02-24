@@ -11,6 +11,170 @@ import (
 	"hirorocky/type-battle/internal/usecase/combat/recast"
 )
 
+// allFeaturesUnlockedProvider は全機能解放済みのプロバイダーを返します。
+func allFeaturesUnlockedProvider() FeatureUnlockProvider {
+	return &mockUnlockProvider{unlocked: map[domain.FeatureID]bool{
+		domain.FeatureDefenseSkill:       true,
+		domain.FeatureAgentCustomization: true,
+		domain.FeatureChainEffect:        true,
+		domain.FeatureManaSystem:         true,
+	}}
+}
+
+// noFeaturesUnlockedProvider は全機能ロック状態のプロバイダーを返します。
+func noFeaturesUnlockedProvider() FeatureUnlockProvider {
+	return &mockUnlockProvider{unlocked: map[domain.FeatureID]bool{}}
+}
+
+// ==================== 機能ゲートテスト（ロック状態） ====================
+
+// TestBattleScreen_DefenseSkillFilteredWhenLocked はdefense_skillロック時にディフェンススキルが使用不可になることをテストします。
+func TestBattleScreen_DefenseSkillFilteredWhenLocked(t *testing.T) {
+	// ディフェンスタイプスキルを作成
+	defenseSkill := domain.NewSkillFromType(domain.SkillType{
+		ID:            "defense_skill_1",
+		Name:          "物理カット",
+		Icon:          "🛡️",
+		Tags:          []string{"defense_low"},
+		ChallengeType: domain.ChallengeTypeDefense,
+		Effects: []domain.SkillEffect{
+			{
+				Target:      domain.TargetSelf,
+				Probability: 1.0,
+				Icon:        "🛡️",
+			},
+		},
+	}, nil)
+	attackSkill := createTestSkillWithChain("攻撃A", nil)
+	skills := []*domain.SkillModel{attackSkill, defenseSkill}
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
+
+	screen := NewBattleScreen(createTestEnemy(), createTestPlayer(), []*domain.AgentModel{agent}, nil)
+
+	// ロック状態: ディフェンススキルは使用不可
+	screen.SetFeatureUnlockProvider(noFeaturesUnlockedProvider())
+	if screen.isSkillUsable(1) {
+		t.Error("defense_skillロック時にディフェンススキルが使用可能になっています")
+	}
+	// 通常スキルは使用可能
+	if !screen.isSkillUsable(0) {
+		t.Error("defense_skillロック時に通常スキルが使用不可になっています")
+	}
+
+	// 解放状態: ディフェンススキルは使用可能
+	screen.SetFeatureUnlockProvider(allFeaturesUnlockedProvider())
+	if !screen.isSkillUsable(1) {
+		t.Error("defense_skill解放時にディフェンススキルが使用不可になっています")
+	}
+}
+
+// TestBattleScreen_DefenseSkillHiddenInViewWhenLocked はdefense_skillロック時にディフェンススキルが表示から除外されることをテストします。
+func TestBattleScreen_DefenseSkillHiddenInViewWhenLocked(t *testing.T) {
+	defenseSkill := domain.NewSkillFromType(domain.SkillType{
+		ID:            "defense_skill_1",
+		Name:          "物理カット",
+		Icon:          "🛡️",
+		Tags:          []string{"defense_low"},
+		ChallengeType: domain.ChallengeTypeDefense,
+		Effects: []domain.SkillEffect{
+			{
+				Target:      domain.TargetSelf,
+				Probability: 1.0,
+				Icon:        "🛡️",
+			},
+		},
+	}, nil)
+	attackSkill := createTestSkillWithChain("攻撃A", nil)
+	skills := []*domain.SkillModel{attackSkill, defenseSkill}
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
+
+	screen := NewBattleScreen(createTestEnemy(), createTestPlayer(), []*domain.AgentModel{agent}, nil)
+	screen.width = 120
+	screen.height = 40
+
+	// ロック状態: ディフェンススキル名が表示されない
+	screen.SetFeatureUnlockProvider(noFeaturesUnlockedProvider())
+	lockedView := screen.View()
+	if strings.Contains(lockedView, "物理カット") {
+		t.Error("defense_skillロック時にディフェンススキル名が表示されています")
+	}
+	if !strings.Contains(lockedView, "攻撃A") {
+		t.Error("defense_skillロック時に通常スキルが表示されていません")
+	}
+
+	// 解放状態: ディフェンススキル名が表示される
+	screen.SetFeatureUnlockProvider(allFeaturesUnlockedProvider())
+	unlockedView := screen.View()
+	if !strings.Contains(unlockedView, "物理カット") {
+		t.Error("defense_skill解放時にディフェンススキル名が表示されていません")
+	}
+}
+
+// TestBattleScreen_ManaCostSkippedWhenManaSystemLocked はmana_systemロック時にマナコスト制限がスキップされることをテストします。
+func TestBattleScreen_ManaCostSkippedWhenManaSystemLocked(t *testing.T) {
+	manaSkill := domain.NewSkillFromType(domain.SkillType{
+		ID:       "mana_skill",
+		Name:     "マナスキル",
+		Icon:     "🔮",
+		Tags:     []string{"magic_low"},
+		ManaCost: 3,
+		Effects: []domain.SkillEffect{
+			{
+				Target:      domain.TargetEnemy,
+				HPFormula:   &domain.HPFormula{Base: 50.0, StatCoef: 1.0, StatRef: "MAG"},
+				Probability: 1.0,
+				Icon:        "🔮",
+			},
+		},
+	}, nil)
+	skills := []*domain.SkillModel{manaSkill}
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
+
+	player := createTestPlayer()
+	player.MaxMana = 10
+	screen := NewBattleScreen(createTestEnemy(), player, []*domain.AgentModel{agent}, nil)
+	screen.player.Mana = 0
+
+	// ロック状態: マナ0でもManaCost>0のスキルが使用可能
+	screen.SetFeatureUnlockProvider(noFeaturesUnlockedProvider())
+	if !screen.isSkillUsable(0) {
+		t.Error("mana_systemロック時にマナコストスキルが使用不可になっています")
+	}
+
+	// 解放状態: マナ0ではManaCost>0のスキルが使用不可
+	screen.SetFeatureUnlockProvider(allFeaturesUnlockedProvider())
+	if screen.isSkillUsable(0) {
+		t.Error("mana_system解放時にマナ不足でスキルが使用可能になっています")
+	}
+}
+
+// TestBattleScreen_ManaDisplayHiddenWhenLocked はmana_systemロック時にマナ表示が非表示になることをテストします。
+func TestBattleScreen_ManaDisplayHiddenWhenLocked(t *testing.T) {
+	skills := []*domain.SkillModel{createTestSkillWithChain("攻撃A", nil)}
+	agent := createTestAgentWithPassive(domain.PassiveSkill{}, skills)
+
+	player := createTestPlayer()
+	player.MaxMana = 10
+	screen := NewBattleScreen(createTestEnemy(), player, []*domain.AgentModel{agent}, nil)
+	screen.player.Mana = 5
+	screen.width = 120
+	screen.height = 40
+
+	// ロック状態: マナ表示なし
+	screen.SetFeatureUnlockProvider(noFeaturesUnlockedProvider())
+	lockedView := screen.View()
+	if strings.Contains(lockedView, "Mana:") {
+		t.Error("mana_systemロック時にマナ表示がされています")
+	}
+
+	// 解放状態: マナ表示あり
+	screen.SetFeatureUnlockProvider(allFeaturesUnlockedProvider())
+	unlockedView := screen.View()
+	if !strings.Contains(unlockedView, "Mana:") {
+		t.Error("mana_system解放時にマナ表示がされていません")
+	}
+}
+
 // ==================== タスク9: バトル画面UI拡張テスト ====================
 
 // createTestAgentWithPassive はパッシブスキル付きテスト用エージェントを作成します。
@@ -180,6 +344,7 @@ func TestBattleScreen_ManaAffectsSkillUsability(t *testing.T) {
 	player := createTestPlayer()
 	player.MaxMana = 10
 	screen := NewBattleScreen(createTestEnemy(), player, []*domain.AgentModel{agent}, nil)
+	screen.SetFeatureUnlockProvider(allFeaturesUnlockedProvider())
 
 	// マナ不足時は使用不可
 	screen.player.Mana = 0

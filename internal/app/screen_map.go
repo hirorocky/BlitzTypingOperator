@@ -58,6 +58,12 @@ func (sm *ScreenMap) registerScreens() {
 	sm.screens[SceneInventory] = func() ScreenGetter {
 		return sm.model.inventoryScreen
 	}
+	sm.screens[SceneTips] = func() ScreenGetter {
+		return sm.model.tipsScreen
+	}
+	sm.screens[SceneTutorial] = func() ScreenGetter {
+		return sm.model.tutorialScreen
+	}
 }
 
 // GetScreen は指定されたシーンの画面を返します。

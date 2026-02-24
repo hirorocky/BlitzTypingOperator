@@ -78,6 +78,8 @@ type ExternalData struct {
 	FirstAgents        []FirstAgentData
 	TimedEffects       []TimedEffectData
 	RankRewards        []RankRewardData
+	FeatureUnlocks     []FeatureUnlockData
+	Tutorials          []TutorialData
 }
 
 // ==================== 時限効果定義 ====================
@@ -972,6 +974,66 @@ func (l *DataLoader) LoadRankRewards() ([]RankRewardData, error) {
 	return fileData.RankRewards, nil
 }
 
+// ==================== 機能解放定義 ====================
+
+// FeatureUnlockData はfeature_unlocks.jsonから読み込む機能解放データの構造体です。
+type FeatureUnlockData struct {
+	FeatureID  string `json:"feature_id"`
+	UnlockRank int    `json:"unlock_rank"`
+	TutorialID string `json:"tutorial_id"`
+}
+
+// featureUnlocksFileData はfeature_unlocks.jsonのルート構造です。
+type featureUnlocksFileData struct {
+	FeatureUnlocks []FeatureUnlockData `json:"feature_unlocks"`
+}
+
+// LoadFeatureUnlocks はfeature_unlocks.jsonから機能解放定義を読み込みます。
+func (l *DataLoader) LoadFeatureUnlocks() ([]FeatureUnlockData, error) {
+	data, err := l.readFile("feature_unlocks.json")
+	if err != nil {
+		return nil, fmt.Errorf("feature_unlocks.jsonの読み込みに失敗: %w", err)
+	}
+
+	var fileData featureUnlocksFileData
+	if err := json.Unmarshal(data, &fileData); err != nil {
+		return nil, fmt.Errorf("feature_unlocks.jsonのパースに失敗: %w", err)
+	}
+
+	return fileData.FeatureUnlocks, nil
+}
+
+// ==================== チュートリアル定義 ====================
+
+// TutorialData はtutorials.jsonから読み込むチュートリアルデータの構造体です。
+type TutorialData struct {
+	ID             string   `json:"id"`
+	Title          string   `json:"title"`
+	DefaultVisible bool     `json:"default_visible"`
+	FeatureID      string   `json:"feature_id"`
+	Pages          []string `json:"pages"`
+}
+
+// tutorialsFileData はtutorials.jsonのルート構造です。
+type tutorialsFileData struct {
+	Tutorials []TutorialData `json:"tutorials"`
+}
+
+// LoadTutorials はtutorials.jsonからチュートリアル定義を読み込みます。
+func (l *DataLoader) LoadTutorials() ([]TutorialData, error) {
+	data, err := l.readFile("tutorials.json")
+	if err != nil {
+		return nil, fmt.Errorf("tutorials.jsonの読み込みに失敗: %w", err)
+	}
+
+	var fileData tutorialsFileData
+	if err := json.Unmarshal(data, &fileData); err != nil {
+		return nil, fmt.Errorf("tutorials.jsonのパースに失敗: %w", err)
+	}
+
+	return fileData.Tutorials, nil
+}
+
 // ==================== 全データ一括ロード ====================
 
 // LoadAllExternalData は全ての外部データファイルを一括でロードします。
@@ -1038,6 +1100,18 @@ func (l *DataLoader) LoadAllExternalData() (*ExternalData, error) {
 		rankRewards = []RankRewardData{}
 	}
 
+	// 機能解放データのロード（オプショナル：ファイルが存在しない場合は空配列）
+	featureUnlocks, err := l.LoadFeatureUnlocks()
+	if err != nil {
+		featureUnlocks = []FeatureUnlockData{}
+	}
+
+	// チュートリアルデータのロード（オプショナル：ファイルが存在しない場合は空配列）
+	tutorials, err := l.LoadTutorials()
+	if err != nil {
+		tutorials = []TutorialData{}
+	}
+
 	return &ExternalData{
 		CoreTypes:          coreTypes,
 		SkillDefinitions:   skills,
@@ -1050,6 +1124,8 @@ func (l *DataLoader) LoadAllExternalData() (*ExternalData, error) {
 		FirstAgents:        firstAgents,
 		TimedEffects:       timedEffects,
 		RankRewards:        rankRewards,
+		FeatureUnlocks:     featureUnlocks,
+		Tutorials:          tutorials,
 	}, nil
 }
 

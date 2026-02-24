@@ -20,22 +20,22 @@ func TestNewHomeScreen(t *testing.T) {
 		t.Fatal("HomeScreenがnilです")
 	}
 
-	// 初期状態で7つのメニューアイテムがあること
-
-	if len(screen.menu.Items) != 7 { // エージェントカスタマイズ、インベントリ、バトル選択、図鑑、統計/実績、セーブ、設定
-		t.Errorf("メニューアイテム数が不正: got %d, want 7", len(screen.menu.Items))
+	// unlockProvider未設定時: agent_customization/inventoryは非表示、TIPSは表示
+	// バトル選択、TIPS、図鑑、統計/実績、セーブ、設定 = 6アイテム
+	if len(screen.menu.Items) != 6 {
+		t.Errorf("メニューアイテム数が不正: got %d, want 6", len(screen.menu.Items))
 	}
 }
 
 // TestHomeScreenMenuItems はメニューアイテムをテストします。
 
 func TestHomeScreenMenuItems(t *testing.T) {
+	// unlockProvider未設定時: agent_customization/inventoryは非表示
 	screen := NewHomeScreen(0, nil)
 
 	expectedItems := []string{
-		"agent_customization",
-		"inventory",
 		"battle_select",
+		"tips",
 		"encyclopedia",
 		"stats_achievements",
 		"save",
@@ -47,6 +47,36 @@ func TestHomeScreenMenuItems(t *testing.T) {
 			t.Errorf("メニューアイテム%dが存在しません", i)
 			continue
 		}
+		if screen.menu.Items[i].Value != expected {
+			t.Errorf("メニューアイテム%d: got %s, want %s", i, screen.menu.Items[i].Value, expected)
+		}
+	}
+}
+
+// TestHomeScreenMenuItemsWithUnlock はagent_customization解放時のメニューをテストします。
+func TestHomeScreenMenuItemsWithUnlock(t *testing.T) {
+	screen := NewHomeScreen(0, nil)
+	screen.SetFeatureUnlockProvider(&mockUnlockProvider{unlocked: map[domain.FeatureID]bool{
+		domain.FeatureAgentCustomization: true,
+	}})
+	screen.RefreshMenuState()
+
+	expectedItems := []string{
+		"agent_customization",
+		"inventory",
+		"battle_select",
+		"tips",
+		"encyclopedia",
+		"stats_achievements",
+		"save",
+		"settings",
+	}
+
+	if len(screen.menu.Items) != len(expectedItems) {
+		t.Fatalf("メニューアイテム数が不正: got %d, want %d", len(screen.menu.Items), len(expectedItems))
+	}
+
+	for i, expected := range expectedItems {
 		if screen.menu.Items[i].Value != expected {
 			t.Errorf("メニューアイテム%d: got %s, want %s", i, screen.menu.Items[i].Value, expected)
 		}
@@ -351,4 +381,13 @@ func TestHomeScreenGuidanceMessageWhenNoAgent(t *testing.T) {
 	if !containsAny(rendered, "エージェント管理", "装備") {
 		t.Error("誘導メッセージが表示されていません")
 	}
+}
+
+// mockUnlockProvider はFeatureUnlockProviderのテスト用モックです。
+type mockUnlockProvider struct {
+	unlocked map[domain.FeatureID]bool
+}
+
+func (m *mockUnlockProvider) IsUnlocked(id domain.FeatureID) bool {
+	return m.unlocked[id]
 }

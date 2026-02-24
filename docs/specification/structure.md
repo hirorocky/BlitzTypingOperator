@@ -49,7 +49,7 @@ config       ← 横断的関心事（全層から参照可能）
   - `ResolveSkillTimedEffects`: スキルのEffectColumnSpec.Column/ValueをTimedEffectから解決（ManaCost/ManaGainフィールド込み）
   - `ResolveEnemyActionTimedEffects`: 敵行動のEffectColumn/EffectValueをTimedEffectから解決
   - `ConvertRankRewards`: rank_rewards.jsonのランクアップ報酬定義をRankRewardマップに変換
-- `*_adapter.go`: 層間データ変換アダプター（例: enemy_progress_adapter.go）
+- `*_adapter.go`: 層間データ変換アダプター（例: enemy_progress_adapter.go, feature_unlock_adapter.go）
 
 ### domain層 - ドメインモデル
 **場所**: `/internal/domain/`
@@ -65,6 +65,7 @@ config       ← 横断的関心事（全層から参照可能）
   - chain_effect_inventory.go: チェイン効果の保有管理（TypeIDの保有フラグ）
 - **敵進行システム**: enemy_progress.go - 敵撃破記録・ランク進行・選択可能レベル範囲
 - **ランクアップ報酬**: rank_reward.go（RankReward / RankRewardItem VO）- ランクアップ時の報酬定義
+- **機能解放**: feature_unlock.go - FeatureID、FeatureStatus、UnlockRule、TutorialDef、FeatureUnlockState。状態遷移の不変条件（CanTransition/TransitionTo）
 - **効果システム**: effect_table.go, effect_column.go, effect_context.go, effect_entry.go
   - EffectTableパターン: バフ、デバフ、パッシブ、チェイン効果を統一的に管理
   - 列指向設計: 効果種別を EffectColumn として定義
@@ -95,13 +96,14 @@ config       ← 横断的関心事（全層から参照可能）
 - `progress`: 敵進行管理（EnemyProgressManager）- 撃破状況・ランク進行・HP成長
 - `achievement`: 実績解除
 - `session`: セッション管理（統計・設定含む）
+- `unlocking`: 機能解放管理（FeatureUnlockManager）- ApplyRank、CompleteTutorial、NextPendingTutorial、ListVisibleTutorials
 
 ### infra層 - インフラストラクチャ
 **場所**: `/internal/infra/`
 **目的**: 外部リソース（ファイル、ターミナル等）とのやり取り
 **サブパッケージ**:
 - `infra/savedata/`: セーブ/ロード永続化
-  - `savedata.go`: セーブデータ構造体（CoreInventorySave, SkillInventorySave, ChainEffectInventorySave, AgentSlotSave）
+  - `savedata.go`: セーブデータ構造体（CoreInventorySave, SkillInventorySave, ChainEffectInventorySave, AgentSlotSave, FeatureUnlockSave）
   - `unique_inventory_converter.go`: 各インベントリのセーブ/ロード変換関数
 - `infra/masterdata/`: JSONマスタデータローダー＋埋め込みデータ（Go embed.FS）
   - timed_effects.json: 時限効果定義（ID、名前、説明、効果列、効果値）
@@ -109,6 +111,8 @@ config       ← 横断的関心事（全層から参照可能）
   - enemy_actions.json: 敵行動定義（各バフ/デバフ行動にtimed_effect_idを参照）
   - chain_effects.json: チェイン効果定義（ID、名前、説明、効果）
   - rank_rewards.json: ランクアップ報酬定義（ランクごとのコア・スキル・チェイン効果報酬）
+  - feature_unlocks.json: 機能解放定義（FeatureID→解放ランク→チュートリアルID）
+  - tutorials.json: チュートリアル定義（ID、タイトル、ページ、初期表示フラグ、対応FeatureID）
 - `infra/errorhandler/`: エラーハンドリング
 - `infra/startup/`: 起動処理
 - `infra/terminal/`: ターミナル環境検証
@@ -118,7 +122,7 @@ config       ← 横断的関心事（全層から参照可能）
 **目的**: 各シーンの画面実装、コンポーネント、スタイル、プレゼンター
 **サブディレクトリ**:
 - `screens/`: 各シーンの画面実装（Bubbleteaの`tea.Model`実装）
-  - 画面タイプ: home, battle_select, battle, agent_customization, inventory, reward, encyclopedia, settings, stats_achievements
+  - 画面タイプ: home, battle_select, battle, agent_customization, inventory, reward, encyclopedia, settings, stats_achievements, tips, tutorial
     - reward: バトル勝利後の報酬画面（撃破報酬・ランクアップ・タイピング統計の3セクション、縦並びレイアウト）
   - 大きな画面は分割: battle.go（状態）、battle_view.go（描画）、battle_logic.go（ロジック）
   - agent_customization: 3スロットエージェントのコア・スキル・チェイン効果付け替えUI
@@ -129,6 +133,7 @@ config       ← 横断的関心事（全層から参照可能）
   - 表示ヘルパー: position_indicator.go（位置インジケーター）, stats_display.go（ステータス表示）
 - `styles/`: lipglossスタイル定義（カラーパレット含む）
 - `presenter/`: UI向けデータ変換（GameState→ViewModel）
+  - tutorial_presenter.go: TIPS/チュートリアル表示用データ整形
 - `ascii/`: ASCIIアート
 
 ### config - 横断的関心事
@@ -195,6 +200,7 @@ import (
 - `typing.md`: タイピング評価・入力処理
 - `enemy.md`: 敵・ステージシステム
 - `collection.md`: 図鑑・実績システム
+- `feature_unlock.md`: 機能解放システム
 
 ---
 _パターンを記述。新規ファイルがパターンに従えばドキュメントの更新は不要_

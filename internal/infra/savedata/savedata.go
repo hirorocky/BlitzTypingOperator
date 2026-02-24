@@ -64,6 +64,10 @@ type SaveData struct {
 	// Settings はゲーム設定です。
 
 	Settings *SettingsSaveData `json:"settings"`
+
+	// FeatureUnlock は機能解放状態です。
+	// 旧セーブデータには存在しないため omitempty で互換性を確保します。
+	FeatureUnlock *FeatureUnlockSave `json:"feature_unlock,omitempty"`
 }
 
 // PlayerSaveData はプレイヤーのセーブデータです。
@@ -264,6 +268,12 @@ func NewSaveData() *SaveData {
 			KeyBindings: make(map[string]string),
 		},
 	}
+}
+
+// FeatureUnlockSave は機能解放状態のセーブデータです。
+type FeatureUnlockSave struct {
+	// Features は各機能IDの解放状態です（FeatureID→FeatureStatus文字列）。
+	Features map[string]string `json:"features"`
 }
 
 // SaveDataIO はセーブデータのI/Oを担当する構造体です。

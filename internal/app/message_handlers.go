@@ -3,6 +3,8 @@
 package app
 
 import (
+	"log/slog"
+
 	"hirorocky/type-battle/internal/infra/terminal"
 	"hirorocky/type-battle/internal/tui/screens"
 
@@ -63,6 +65,10 @@ func (mh *MessageHandlers) Handle(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return mh.handleBattleResultMsg(msg)
 	case screens.SaveRequestMsg:
 		return mh.handleSaveRequestMsg(msg)
+	case screens.CompleteTutorialMsg:
+		return mh.handleCompleteTutorialMsg(msg)
+	case screens.OpenTutorialMsg:
+		return mh.handleOpenTutorialMsg(msg)
 	}
 	return mh.model, nil
 }
@@ -161,6 +167,58 @@ func (mh *MessageHandlers) handleBattleMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return mh.handleBattleResultMsg(m)
 	}
 	return mh.model, nil
+}
+
+// handleCompleteTutorialMsg はチュートリアル完了メッセージを処理します。
+// 機能をUnlockedに遷移→セーブ→次のPendingチュートリアルまたはホームに遷移します。
+func (mh *MessageHandlers) handleCompleteTutorialMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	completeMsg := msg.(screens.CompleteTutorialMsg)
+	m := mh.model
+
+	if m.unlockManager == nil {
+		m.currentScene = SceneHome
+		return m, nil
+	}
+
+	// チュートリアル完了→機能Unlocked
+	if _, err := m.unlockManager.CompleteTutorial(completeMsg.TutorialID); err != nil {
+		slog.Error("チュートリアル完了処理に失敗", slog.Any("error", err))
+	}
+
+	// セーブ実行
+	m.performAutoSave()
+
+	// 次のPendingチュートリアルがあれば遷移
+	if tutID, ok := m.unlockManager.NextPendingTutorial(); ok {
+		// チュートリアル定義を探す
+		allTutorials := ConvertTutorials(m.externalData.Tutorials)
+		for _, t := range allTutorials {
+			if t.ID == tutID {
+				m.tutorialScreen = screens.NewTutorialScreen(t, screens.UnlockFlow)
+				m.currentScene = SceneTutorial
+				return m, nil
+			}
+		}
+		slog.Error("Pendingなチュートリアル定義が見つかりません", slog.String("tutorialID", tutID))
+	}
+
+	// 全チュートリアル完了→ホーム遷移
+	m.homeScreen.SetMaxLevelReached(m.gameState.GetMaxLevelReached())
+	m.homeScreen.SetCurrentRank(m.gameState.EnemyProgress().CurrentRank)
+	m.homeScreen.SetMaxHP(m.gameState.Player().MaxHP)
+	m.homeScreen.RefreshMenuState()
+	m.currentScene = SceneHome
+	return m, nil
+}
+
+// handleOpenTutorialMsg はチュートリアル表示要求を処理します。
+func (mh *MessageHandlers) handleOpenTutorialMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	openMsg := msg.(screens.OpenTutorialMsg)
+	m := mh.model
+
+	m.tutorialScreen = screens.NewTutorialScreen(openMsg.Tutorial, openMsg.Mode)
+	m.currentScene = SceneTutorial
+	return m, nil
 }
 
 // forwardToCurrentScene は現在のシーンにメッセージを転送します。

@@ -135,6 +135,7 @@ func TestIntegrationBattleScreen(t *testing.T) {
 	agents := createTestAgents()
 
 	screen := screens.NewBattleScreen(enemy, player, agents, nil)
+	screen.SetFeatureUnlockProvider(&allUnlockedProvider{})
 	screen.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 
 	rendered := screen.View()
@@ -250,6 +251,13 @@ func TestIntegrationASCIIArt(t *testing.T) {
 }
 
 // ==================== ヘルパー関数 ====================
+
+// allUnlockedProvider は全機能解放済みのテスト用プロバイダーです。
+type allUnlockedProvider struct{}
+
+func (p *allUnlockedProvider) IsUnlocked(id domain.FeatureID) bool {
+	return true
+}
 
 type testAgentProvider struct {
 	agents []*domain.AgentModel

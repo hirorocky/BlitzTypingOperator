@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"hirorocky/type-battle/internal/domain"
 	"hirorocky/type-battle/internal/tui/ascii"
 	"hirorocky/type-battle/internal/tui/styles"
 	"hirorocky/type-battle/internal/usecase/rewarding"
@@ -18,10 +19,11 @@ import (
 // RewardScreen は報酬画面を表します。
 
 type RewardScreen struct {
-	result *rewarding.RewardResult
-	styles *styles.GameStyles
-	width  int
-	height int
+	result           *rewarding.RewardResult
+	styles           *styles.GameStyles
+	width            int
+	height           int
+	pendingTutorials []domain.TutorialDef
 }
 
 // NewRewardScreen は新しいRewardScreenを作成します。
@@ -57,13 +59,20 @@ func (s *RewardScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // handleKeyMsg はキーボード入力を処理します。
 func (s *RewardScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "enter", " ":
-		// ホーム画面へ遷移
+	case "enter":
+		if s.hasPendingTutorials() {
+			// PendingTutorial時: 最初のチュートリアルを開く
+			tut := s.pendingTutorials[0]
+			return s, func() tea.Msg {
+				return CompleteTutorialMsg{TutorialID: tut.ID}
+			}
+		}
+		// PendingTutorialなし: ホーム画面へ遷移
 		return s, func() tea.Msg {
 			return ChangeSceneMsg{Scene: "home"}
 		}
-	case "esc":
-		// Escでもホーム画面へ
+	case " ", "esc":
+		// Space/Escでホーム画面へ（PendingTutorialの有無に関わらず）
 		return s, func() tea.Msg {
 			return ChangeSceneMsg{Scene: "home"}
 		}
@@ -99,6 +108,11 @@ func (s *RewardScreen) View() string {
 		sections = append(sections, s.renderRankUpSection())
 	}
 
+	// チュートリアル誘導セクション（PendingTutorialがある場合のみ）
+	if s.hasPendingTutorials() {
+		sections = append(sections, s.renderTutorialGuidanceSection())
+	}
+
 	// タイピング統計セクション（常に表示）
 	sections = append(sections, s.renderTypingStatsSection())
 
@@ -108,7 +122,11 @@ func (s *RewardScreen) View() string {
 		Align(lipgloss.Center).
 		Width(s.width)
 
-	sections = append(sections, hintStyle.Render("Enter: 続行"))
+	if s.hasPendingTutorials() {
+		sections = append(sections, hintStyle.Render("Enter: チュートリアルを見る  Space/Esc: スキップ"))
+	} else {
+		sections = append(sections, hintStyle.Render("Enter: 続行"))
+	}
 
 	return strings.Join(sections, "\n\n")
 }
@@ -255,6 +273,43 @@ func (s *RewardScreen) hasRankUpRewards() bool {
 		len(s.result.RankUpRewardChainEffects) > 0
 }
 
+// renderTutorialGuidanceSection はチュートリアル誘導セクションをレンダリングします。
+func (s *RewardScreen) renderTutorialGuidanceSection() string {
+	var items []string
+
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(ascii.GoldColor)
+
+	items = append(items, titleStyle.Render("🔓 新機能が解放されました！"))
+	items = append(items, "")
+
+	featureStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary)
+	for _, tut := range s.pendingTutorials {
+		items = append(items, featureStyle.Render(fmt.Sprintf("  📖 %s", tut.Title)))
+	}
+
+	items = append(items, "")
+	guideStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorSubtle).
+		Italic(true)
+	items = append(items, guideStyle.Render("  Enterでチュートリアルを見る"))
+
+	content := strings.Join(items, "\n")
+
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(ascii.GoldColor).
+		Padding(1).
+		Width(sectionBoxWidth).
+		Render(content)
+
+	return lipgloss.NewStyle().
+		Width(s.width).
+		Align(lipgloss.Center).
+		Render(box)
+}
+
 // renderTypingStatsSection はタイピング統計セクションをレンダリングします。
 func (s *RewardScreen) renderTypingStatsSection() string {
 	var items []string
@@ -296,6 +351,17 @@ func (s *RewardScreen) renderTypingStatsSection() string {
 		Width(s.width).
 		Align(lipgloss.Center).
 		Render(box)
+}
+
+// SetPendingTutorials はPendingTutorial情報を設定します。
+// ランクアップで新たにPendingTutorialになったチュートリアルを渡します。
+func (s *RewardScreen) SetPendingTutorials(tutorials []domain.TutorialDef) {
+	s.pendingTutorials = tutorials
+}
+
+// hasPendingTutorials はPendingTutorialがあるかを返します。
+func (s *RewardScreen) hasPendingTutorials() bool {
+	return len(s.pendingTutorials) > 0
 }
 
 // SetSize はウィンドウサイズを設定します。

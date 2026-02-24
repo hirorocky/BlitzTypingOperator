@@ -293,6 +293,7 @@ func TestAgentCustomizationScreen_SkillSelectMode_SetsSkillToSlot(t *testing.T) 
 
 func TestAgentCustomizationScreen_ChainSelectMode_IndependentFlow(t *testing.T) {
 	screen, coreInv, skillInv, chainEffectInv, slotManager := setupTestCustomizationScreen()
+	screen.SetFeatureUnlockProvider(allFeaturesUnlockedProvider())
 
 	// コアとスキルを設定
 	coreInv.AddCore("balance")
@@ -486,6 +487,85 @@ func TestAgentCustomizationScreen_ShowsCompatibilityIndicator(t *testing.T) {
 	// 実装では互換スキルのみ表示するのでこのテストは確認のみ
 	if strings.Contains(view, "ファイアボール") {
 		t.Error("非互換スキルが表示されています（互換スキルのみ表示されるべき）")
+	}
+}
+
+// ==================== 機能ゲートテスト（チェイン効果ロック状態） ====================
+
+func TestAgentCustomizationScreen_ChainEffectHiddenWhenLocked(t *testing.T) {
+	screen, coreInv, skillInv, _, slotManager := setupTestCustomizationScreen()
+
+	// コアとスキルを設定
+	coreInv.AddCore("balance")
+	slotManager.SetCore(0, "balance")
+	skillInv.AddSkill("strike")
+	slotManager.SetSkill(0, 0, "strike")
+
+	// チェイン効果ロック状態
+	screen.SetFeatureUnlockProvider(&mockUnlockProvider{unlocked: map[domain.FeatureID]bool{}})
+	screen.selectedSlotIndex = 0
+	screen.focusPosition = 1 // スキルスロット
+
+	// 下に移動してもチェイン効果位置（偶数位置）をスキップする
+	screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+	// focusPosition=2（チェイン効果）をスキップして3（次のスキル）に移動するはず
+	if screen.focusPosition == 2 {
+		t.Error("chain_effectロック時にチェイン効果位置にフォーカスが移動しています")
+	}
+
+	// チェイン効果位置でEnterを押してもチェイン選択モードに入らない
+	screen.focusPosition = 2
+	screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	if screen.currentMode == ModeChainSelect {
+		t.Error("chain_effectロック時にチェイン効果選択モードに遷移しています")
+	}
+}
+
+func TestAgentCustomizationScreen_ChainEffectVisibleWhenUnlocked(t *testing.T) {
+	screen, coreInv, skillInv, chainEffectInv, slotManager := setupTestCustomizationScreen()
+
+	// コアとスキルを設定
+	coreInv.AddCore("balance")
+	slotManager.SetCore(0, "balance")
+	skillInv.AddSkill("strike")
+	slotManager.SetSkill(0, 0, "strike")
+	chainEffectInv.AddChainEffect("damage_bonus")
+
+	// チェイン効果解放状態
+	screen.SetFeatureUnlockProvider(allFeaturesUnlockedProvider())
+	screen.selectedSlotIndex = 0
+	screen.focusPosition = 1
+
+	// 下に移動するとチェイン効果位置（2）に移動できる
+	screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+	if screen.focusPosition != 2 {
+		t.Errorf("chain_effect解放時にチェイン効果位置に移動できません: got %d, want 2", screen.focusPosition)
+	}
+
+	// チェイン効果位置でEnterを押すとチェイン選択モードに入る
+	screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	if screen.currentMode != ModeChainSelect {
+		t.Error("chain_effect解放時にチェイン効果選択モードに遷移できません")
+	}
+}
+
+func TestAgentCustomizationScreen_ManaCostHiddenWhenLocked(t *testing.T) {
+	screen, coreInv, skillInv, _, slotManager := setupTestCustomizationScreen()
+
+	// コアとスキルを設定
+	coreInv.AddCore("balance")
+	slotManager.SetCore(0, "balance")
+	skillInv.AddSkill("strike")
+	slotManager.SetSkill(0, 0, "strike")
+
+	screen.selectedSlotIndex = 0
+	screen.focusPosition = 0
+
+	// マナシステムロック状態: マナコスト表示なし
+	screen.SetFeatureUnlockProvider(&mockUnlockProvider{unlocked: map[domain.FeatureID]bool{}})
+	view := screen.View()
+	if strings.Contains(view, "⭐x") {
+		t.Error("mana_systemロック時にマナコスト表示がされています")
 	}
 }
 

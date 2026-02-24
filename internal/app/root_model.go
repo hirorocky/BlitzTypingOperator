@@ -21,6 +21,7 @@ import (
 	gamestate "hirorocky/type-battle/internal/usecase/session"
 	"hirorocky/type-battle/internal/usecase/slot"
 	"hirorocky/type-battle/internal/usecase/typing"
+	"hirorocky/type-battle/internal/usecase/unlocking"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -81,6 +82,8 @@ type RootModel struct {
 	statsAchievementsScreen  *screens.StatsAchievementsScreen
 	settingsScreen           *screens.SettingsScreen
 	rewardScreen             *screens.RewardScreen
+	tipsScreen               *screens.TipsScreen
+	tutorialScreen           *screens.TutorialScreen
 
 	// パッシブスキル定義（バトル開始時に BattleEngine へ渡す）
 	passiveSkills map[string]domain.PassiveSkill
@@ -105,6 +108,9 @@ type RootModel struct {
 
 	// invManager はユニークインベントリ管理を担当します
 	invManager *inventory.InventoryManager
+
+	// unlockManager は機能解放状態を管理します
+	unlockManager *unlocking.Manager
 
 	// coreTypes はコアTypeマスタデータです
 	coreTypes map[string]domain.CoreType
@@ -288,6 +294,35 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		)
 	}
 
+	// 機能解放マネージャーの初期化
+	var unlockMgr *unlocking.Manager
+	if externalData != nil {
+		unlockRules := ConvertFeatureUnlocks(externalData.FeatureUnlocks)
+		tutorialDefs := ConvertTutorials(externalData.Tutorials)
+
+		// セーブデータから解放状態を復元
+		var unlockState domain.FeatureUnlockState
+		if loadedSaveData != nil && loadedSaveData.FeatureUnlock != nil {
+			unlockState = FeatureUnlockSaveToSnapshot(*loadedSaveData.FeatureUnlock)
+		} else if loadedSaveData != nil && loadedSaveData.EnemyProgress != nil {
+			// 旧セーブ互換: CurrentRankから解放状態を再構築
+			slog.Warn("旧セーブ形式から機能解放状態を復元",
+				slog.Int("currentRank", loadedSaveData.EnemyProgress.CurrentRank))
+			unlockState = RebuildFeatureUnlockFromRank(unlockRules, loadedSaveData.EnemyProgress.CurrentRank)
+		} else {
+			unlockState = domain.NewFeatureUnlockState()
+		}
+
+		unlockMgr, _ = unlocking.NewManager(unlockRules, tutorialDefs, unlockState)
+
+		// Reconcile: マスタデータ追加分の反映
+		if loadedSaveData != nil && loadedSaveData.EnemyProgress != nil {
+			if _, err := unlockMgr.Reconcile(loadedSaveData.EnemyProgress.CurrentRank); err != nil {
+				slog.Error("機能解放のReconcileに失敗", slog.Any("error", err))
+			}
+		}
+	}
+
 	// コアType、スキルType、敵Typeをマップに変換
 	coreTypesMap := make(map[string]domain.CoreType)
 	skillTypesMap := make(map[string]domain.SkillType)
@@ -394,6 +429,11 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 	homeScreen.SetStatusMessage(statusMessage)
 	// スロット準備状態プロバイダーを設定（バトル選択の有効/無効判定に使用）
 	homeScreen.SetSlotProvider(slotManager)
+	// 機能解放プロバイダーを設定（メニューゲート判定に使用）
+	if unlockMgr != nil {
+		homeScreen.SetFeatureUnlockProvider(unlockMgr)
+	}
+	homeScreen.RefreshMenuState()
 	// ランク進行情報を設定（ホーム画面での進行状況表示用）
 	homeScreen.SetCurrentRank(gs.EnemyProgress().CurrentRank)
 	homeScreen.SetMaxHP(gs.Player().MaxHP)
@@ -420,6 +460,10 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		passiveSkills,
 		chainEffectsMap,
 	)
+	// 機能解放プロバイダーを設定（チェイン効果・マナシステムのゲート判定に使用）
+	if unlockMgr != nil {
+		agentCustomizationScreen.SetFeatureUnlockProvider(unlockMgr)
+	}
 
 	// インベントリ画面を初期化
 	inventoryScreen := screenFactory.CreateInventoryScreen(
@@ -453,11 +497,12 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		externalData:             externalData,
 		chainEffects:             chainEffects,
 		// 新システムのマネージャー
-		slotManager: slotManager,
-		invManager:  invManager,
-		coreTypes:   coreTypesMap,
-		skillTypes:  skillTypesMap,
-		enemyTypes:  enemyTypesMap,
+		slotManager:   slotManager,
+		invManager:    invManager,
+		unlockManager: unlockMgr,
+		coreTypes:     coreTypesMap,
+		skillTypes:    skillTypesMap,
+		enemyTypes:    enemyTypesMap,
 	}
 
 	// メッセージハンドラーと画面マップを初期化
@@ -557,8 +602,36 @@ func (m *RootModel) handleBattleResult(result screens.BattleResultMsg) {
 			)
 		}
 
-		// 報酬画面を作成
-		m.rewardScreen = screens.NewRewardScreen(rewardResult)
+		// ランクアップ時は機能解放を適用
+		if rewardResult.RankUnlocked && m.unlockManager != nil {
+			delta, err := m.unlockManager.ApplyRank(rewardResult.NewRank)
+			if err != nil {
+				slog.Error("機能解放のApplyRankに失敗", slog.Any("error", err))
+			}
+
+			// 報酬画面を作成
+			m.rewardScreen = screens.NewRewardScreen(rewardResult)
+
+			// PendingTutorialがあれば報酬画面に設定
+			if len(delta.QueuedTutorials) > 0 {
+				allTutorials := ConvertTutorials(m.externalData.Tutorials)
+				tutorialMap := make(map[string]domain.TutorialDef, len(allTutorials))
+				for _, t := range allTutorials {
+					tutorialMap[t.ID] = t
+				}
+
+				var pendingTuts []domain.TutorialDef
+				for _, tutID := range delta.QueuedTutorials {
+					if t, ok := tutorialMap[tutID]; ok {
+						pendingTuts = append(pendingTuts, t)
+					}
+				}
+				m.rewardScreen.SetPendingTutorials(pendingTuts)
+			}
+		} else {
+			// ランクアップなし: 通常の報酬画面
+			m.rewardScreen = screens.NewRewardScreen(rewardResult)
+		}
 
 		// 報酬画面へ遷移
 		m.currentScene = SceneReward
@@ -634,6 +707,13 @@ func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 		}
 	}
 	saveData.Inventory.UniqueChainEffects.ChainEffects = m.invManager.ChainEffects().GetOwnedChainEffects()
+
+	// FeatureUnlockを追加
+	if m.unlockManager != nil {
+		snap := m.unlockManager.Snapshot()
+		featureUnlockSave := FeatureUnlockSnapshotToSave(snap)
+		saveData.FeatureUnlock = &featureUnlockSave
+	}
 
 	// AgentSlotsを追加（3スロットの構成）
 	slots := m.slotManager.GetSlots()
@@ -714,6 +794,11 @@ func (m *RootModel) startBattle(level int, enemyTypeID string) tea.Cmd {
 		m.battleScreen.SetPassiveSkills(m.passiveSkills)
 	}
 
+	// 機能解放プロバイダーを設定（ゲート判定に使用）
+	if m.unlockManager != nil {
+		m.battleScreen.SetFeatureUnlockProvider(m.unlockManager)
+	}
+
 	// シーンを切り替え
 	m.currentScene = SceneBattle
 
@@ -761,6 +846,12 @@ func (m *RootModel) prepareSceneTransition(sceneName string) {
 	case "inventory":
 		// インベントリデータを最新状態に更新
 		m.inventoryScreen.RefreshData()
+	case "tips":
+		// TIPS画面を閲覧可能なチュートリアルで初期化
+		if m.unlockManager != nil {
+			tutorials := m.unlockManager.ListVisibleTutorials()
+			m.tipsScreen = screens.NewTipsScreen(tutorials)
+		}
 	}
 }
 

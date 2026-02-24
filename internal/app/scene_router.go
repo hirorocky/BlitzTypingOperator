@@ -22,6 +22,8 @@ func NewSceneRouter() *SceneRouter {
 			"reward":              SceneReward,
 			"agent_customization": SceneAgentCustomization,
 			"inventory":           SceneInventory,
+			"tips":                SceneTips,
+			"tutorial":            SceneTutorial,
 		},
 	}
 }
