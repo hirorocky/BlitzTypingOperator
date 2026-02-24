@@ -303,10 +303,12 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		// セーブデータから解放状態を復元
 		var unlockState domain.FeatureUnlockState
 		if loadedSaveData != nil && loadedSaveData.FeatureUnlock != nil {
-			unlockState = unlocking.SaveToSnapshot(*loadedSaveData.FeatureUnlock)
+			unlockState = FeatureUnlockSaveToSnapshot(*loadedSaveData.FeatureUnlock)
 		} else if loadedSaveData != nil && loadedSaveData.EnemyProgress != nil {
 			// 旧セーブ互換: CurrentRankから解放状態を再構築
-			unlockState = unlocking.RebuildFromRank(unlockRules, loadedSaveData.EnemyProgress.CurrentRank)
+			slog.Warn("旧セーブ形式から機能解放状態を復元",
+				slog.Int("currentRank", loadedSaveData.EnemyProgress.CurrentRank))
+			unlockState = RebuildFeatureUnlockFromRank(unlockRules, loadedSaveData.EnemyProgress.CurrentRank)
 		} else {
 			unlockState = domain.NewFeatureUnlockState()
 		}
@@ -458,6 +460,10 @@ func NewRootModel(dataDir string, embeddedFS fs.FS, debugMode bool, saveFilePath
 		passiveSkills,
 		chainEffectsMap,
 	)
+	// 機能解放プロバイダーを設定（チェイン効果・マナシステムのゲート判定に使用）
+	if unlockMgr != nil {
+		agentCustomizationScreen.SetFeatureUnlockProvider(unlockMgr)
+	}
 
 	// インベントリ画面を初期化
 	inventoryScreen := screenFactory.CreateInventoryScreen(
@@ -703,7 +709,7 @@ func (m *RootModel) appendNewSchemaToSaveData(saveData *savedata.SaveData) {
 	// FeatureUnlockを追加
 	if m.unlockManager != nil {
 		snap := m.unlockManager.Snapshot()
-		featureUnlockSave := unlocking.SnapshotToSave(snap)
+		featureUnlockSave := FeatureUnlockSnapshotToSave(snap)
 		saveData.FeatureUnlock = &featureUnlockSave
 	}
 
@@ -784,6 +790,11 @@ func (m *RootModel) startBattle(level int, enemyTypeID string) tea.Cmd {
 	// パッシブスキル定義を設定（EffectTable登録に使用）
 	if m.passiveSkills != nil {
 		m.battleScreen.SetPassiveSkills(m.passiveSkills)
+	}
+
+	// 機能解放プロバイダーを設定（ゲート判定に使用）
+	if m.unlockManager != nil {
+		m.battleScreen.SetFeatureUnlockProvider(m.unlockManager)
 	}
 
 	// シーンを切り替え

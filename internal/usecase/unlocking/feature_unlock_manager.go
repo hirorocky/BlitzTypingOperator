@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"hirorocky/type-battle/internal/domain"
-	"hirorocky/type-battle/internal/infra/savedata"
 )
 
 // UnlockDelta はApplyRank/Reconcileの結果を返す構造体です。
@@ -150,15 +149,15 @@ func (m *Manager) IsPendingOrUnlocked(id domain.FeatureID) bool {
 
 // ListVisibleTutorials はTIPS画面に表示可能なチュートリアルを返します。
 // default_visibleなもの + Unlocked機能のチュートリアルが対象です。
+// 返却値はディープコピーされるため、呼び出し側で安全に使用できます。
 func (m *Manager) ListVisibleTutorials() []domain.TutorialDef {
 	var result []domain.TutorialDef
 	for _, t := range m.tutorials {
-		if t.DefaultVisible {
-			result = append(result, t)
-			continue
-		}
-		if t.FeatureID != "" && m.IsUnlocked(t.FeatureID) {
-			result = append(result, t)
+		if t.DefaultVisible || (t.FeatureID != "" && m.IsUnlocked(t.FeatureID)) {
+			copied := t
+			copied.Pages = make([]string, len(t.Pages))
+			copy(copied.Pages, t.Pages)
+			result = append(result, copied)
 		}
 	}
 	return result
@@ -176,64 +175,5 @@ func (m *Manager) removeFromQueue(tutorialID string) {
 			m.pendingQueue = append(m.pendingQueue[:i], m.pendingQueue[i+1:]...)
 			return
 		}
-	}
-}
-
-// SnapshotToSave はFeatureUnlockStateをセーブデータ形式に変換します。
-func SnapshotToSave(snap domain.FeatureUnlockState) savedata.FeatureUnlockSave {
-	features := snap.AllFeatures()
-	featureStrings := make(map[string]string, len(features))
-	for id, status := range features {
-		featureStrings[string(id)] = statusToString(status)
-	}
-	return savedata.FeatureUnlockSave{
-		Features: featureStrings,
-	}
-}
-
-// SaveToSnapshot はセーブデータからFeatureUnlockStateを復元します。
-func SaveToSnapshot(save savedata.FeatureUnlockSave) domain.FeatureUnlockState {
-	features := make(map[domain.FeatureID]domain.FeatureStatus, len(save.Features))
-	for id, statusStr := range save.Features {
-		features[domain.FeatureID(id)] = stringToStatus(statusStr)
-	}
-	return domain.NewFeatureUnlockStateFrom(features)
-}
-
-// RebuildFromRank は旧セーブデータ互換用に、ランクから解放状態を再構築します。
-// 該当ランク以下の機能はUnlocked扱いにします。
-func RebuildFromRank(rules []domain.UnlockRule, currentRank int) domain.FeatureUnlockState {
-	features := make(map[domain.FeatureID]domain.FeatureStatus)
-	for _, rule := range rules {
-		if rule.UnlockRank <= currentRank {
-			features[rule.FeatureID] = domain.FeatureUnlocked
-		}
-	}
-	return domain.NewFeatureUnlockStateFrom(features)
-}
-
-func statusToString(s domain.FeatureStatus) string {
-	switch s {
-	case domain.FeatureLocked:
-		return "locked"
-	case domain.FeaturePendingTutorial:
-		return "pending_tutorial"
-	case domain.FeatureUnlocked:
-		return "unlocked"
-	default:
-		return "locked"
-	}
-}
-
-func stringToStatus(s string) domain.FeatureStatus {
-	switch s {
-	case "locked":
-		return domain.FeatureLocked
-	case "pending_tutorial":
-		return domain.FeaturePendingTutorial
-	case "unlocked":
-		return domain.FeatureUnlocked
-	default:
-		return domain.FeatureLocked
 	}
 }

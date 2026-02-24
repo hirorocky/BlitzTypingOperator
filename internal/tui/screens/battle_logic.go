@@ -240,6 +240,11 @@ func (s *BattleScreen) isSkillUsable(slotIndex int) bool {
 
 	slot := s.skillSlots[slotIndex]
 
+	// ディフェンススキル未解放時はディフェンスタイプを使用不可
+	if !s.isDefenseSkillUnlocked() && slot.Skill.GetChallengeType() == domain.ChallengeTypeDefense {
+		return false
+	}
+
 	// スキルのクールダウンチェック
 	if !slot.IsReady() {
 		return false
@@ -250,8 +255,8 @@ func (s *BattleScreen) isSkillUsable(slotIndex int) bool {
 		return false
 	}
 
-	// マナ不足チェック
-	if slot.Skill.Type.ManaCost > 0 && s.player.Mana < slot.Skill.Type.ManaCost {
+	// マナ不足チェック（マナシステム未解放時はスキップ）
+	if s.isManaSystemUnlocked() && slot.Skill.Type.ManaCost > 0 && s.player.Mana < slot.Skill.Type.ManaCost {
 		return false
 	}
 

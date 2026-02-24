@@ -108,6 +108,24 @@ type AgentCustomizationScreen struct {
 	// ステータス/エラーメッセージ
 	statusMessage string
 	errorMessage  string
+
+	// 機能解放状態プロバイダー（ゲート判定用）
+	unlockProvider FeatureUnlockProvider
+}
+
+// SetFeatureUnlockProvider は機能解放状態プロバイダーを設定します。
+func (s *AgentCustomizationScreen) SetFeatureUnlockProvider(provider FeatureUnlockProvider) {
+	s.unlockProvider = provider
+}
+
+// isChainEffectUnlocked はチェイン効果が解放済みかを返します。
+func (s *AgentCustomizationScreen) isChainEffectUnlocked() bool {
+	return s.unlockProvider != nil && s.unlockProvider.IsUnlocked(domain.FeatureChainEffect)
+}
+
+// isManaSystemUnlocked はマナシステムが解放済みかを返します。
+func (s *AgentCustomizationScreen) isManaSystemUnlocked() bool {
+	return s.unlockProvider != nil && s.unlockProvider.IsUnlocked(domain.FeatureManaSystem)
 }
 
 // NewAgentCustomizationScreen は新しいAgentCustomizationScreenを作成します。
@@ -195,15 +213,28 @@ func (s *AgentCustomizationScreen) handleCardSelectKey(msg tea.KeyMsg) (tea.Mode
 		// カード内フォーカス移動（上）
 		if s.focusPosition > 0 {
 			s.focusPosition--
+			// チェイン効果未解放時は偶数位置（チェイン効果）をスキップ
+			if !s.isChainEffectUnlocked() && s.focusPosition >= 2 && s.focusPosition%2 == 0 {
+				s.focusPosition--
+			}
 		}
 	case "down", "j":
 		// カード内フォーカス移動（下）
 		// コアが設定されていない場合はコア位置から動かさない
 		currentSlot := s.slotManager.GetSlot(s.selectedSlotIndex)
 		if currentSlot != nil && !currentSlot.IsEmpty() {
-			maxPos := 2 * domain.MaxSkillSlotCount // 8
+			var maxPos int
+			if s.isChainEffectUnlocked() {
+				maxPos = 2 * domain.MaxSkillSlotCount // 8（スキル+チェイン効果）
+			} else {
+				maxPos = 2*domain.MaxSkillSlotCount - 1 // 7（スキルのみ、奇数位置のみ使用）
+			}
 			if s.focusPosition < maxPos {
 				s.focusPosition++
+				// チェイン効果未解放時は偶数位置（チェイン効果）をスキップ
+				if !s.isChainEffectUnlocked() && s.focusPosition >= 2 && s.focusPosition%2 == 0 {
+					s.focusPosition++
+				}
 			}
 		}
 	case "enter":
@@ -211,8 +242,8 @@ func (s *AgentCustomizationScreen) handleCardSelectKey(msg tea.KeyMsg) (tea.Mode
 		if s.focusPosition == 0 {
 			// コア選択
 			s.enterCoreSelectMode()
-		} else if s.isChainFocusPosition() {
-			// チェイン効果選択（独立フロー）
+		} else if s.isChainEffectUnlocked() && s.isChainFocusPosition() {
+			// チェイン効果選択（独立フロー、解放時のみ）
 			s.enterChainSelectMode()
 		} else {
 			// スキル選択
@@ -227,7 +258,7 @@ func (s *AgentCustomizationScreen) handleCardSelectKey(msg tea.KeyMsg) (tea.Mode
 		// 選択中のコア/スキル/チェイン効果を外す
 		if s.focusPosition == 0 {
 			s.clearCurrentSlotCore()
-		} else if s.isChainFocusPosition() {
+		} else if s.isChainEffectUnlocked() && s.isChainFocusPosition() {
 			s.clearChainEffectSlot()
 		} else {
 			currentSlot := s.slotManager.GetSlot(s.selectedSlotIndex)
@@ -757,7 +788,8 @@ func (s *AgentCustomizationScreen) renderAgentCard(slotIndex int, isSelected boo
 				if skillType, ok := s.skillTypes[skillConfig.TypeID]; ok {
 					skillName = skillType.Name
 					icon = skillType.Icon
-					if skillType.ManaCost > 0 {
+					// マナコスト表示（マナシステム解放時のみ）
+					if s.isManaSystemUnlocked() && skillType.ManaCost > 0 {
 						manaCostMark = fmt.Sprintf(" ⭐x%d", skillType.ManaCost)
 					}
 				}
@@ -767,34 +799,36 @@ func (s *AgentCustomizationScreen) renderAgentCard(slotIndex int, isSelected boo
 			cardContent.WriteString(skillStyle.Render(prefix + skillContent))
 			cardContent.WriteString("\n")
 
-			// チェイン効果行
-			chainEffectCfg := agentSlot.GetChainEffect(j)
-			chainStyle := lipgloss.NewStyle()
-			chainPrefix := "    "
+			// チェイン効果行（チェイン効果解放時のみ表示）
+			if s.isChainEffectUnlocked() {
+				chainEffectCfg := agentSlot.GetChainEffect(j)
+				chainStyle := lipgloss.NewStyle()
+				chainPrefix := "    "
 
-			if isSelected && s.focusPosition == chainFocusPos {
-				chainStyle = chainStyle.Bold(true).
-					Foreground(styles.ColorSelectedFg).
-					Background(styles.ColorSelectedBg)
-				chainPrefix = "  > "
-			}
+				if isSelected && s.focusPosition == chainFocusPos {
+					chainStyle = chainStyle.Bold(true).
+						Foreground(styles.ColorSelectedFg).
+						Background(styles.ColorSelectedBg)
+					chainPrefix = "  > "
+				}
 
-			if chainEffectCfg != nil && !chainEffectCfg.IsEmpty() {
-				if !isSelected || s.focusPosition != chainFocusPos {
-					chainStyle = chainStyle.Foreground(styles.ColorBuff)
+				if chainEffectCfg != nil && !chainEffectCfg.IsEmpty() {
+					if !isSelected || s.focusPosition != chainFocusPos {
+						chainStyle = chainStyle.Foreground(styles.ColorBuff)
+					}
+					chainText := chainEffectCfg.TypeID
+					if ce, ok := s.chainEffects[chainEffectCfg.TypeID]; ok {
+						chainText = ce.ShortDescription
+					}
+					cardContent.WriteString(chainStyle.Render(fmt.Sprintf("%s[%s]", chainPrefix, chainText)))
+				} else if isSelected && s.focusPosition == chainFocusPos {
+					// フォーカス中の空チェイン効果スロット
+					cardContent.WriteString(chainStyle.Render(chainPrefix + "[チェイン: 空]"))
+				} else {
+					cardContent.WriteString("")
 				}
-				chainText := chainEffectCfg.TypeID
-				if ce, ok := s.chainEffects[chainEffectCfg.TypeID]; ok {
-					chainText = ce.ShortDescription
-				}
-				cardContent.WriteString(chainStyle.Render(fmt.Sprintf("%s[%s]", chainPrefix, chainText)))
-			} else if isSelected && s.focusPosition == chainFocusPos {
-				// フォーカス中の空チェイン効果スロット
-				cardContent.WriteString(chainStyle.Render(chainPrefix + "[チェイン: 空]"))
-			} else {
-				cardContent.WriteString("")
+				cardContent.WriteString("\n")
 			}
-			cardContent.WriteString("\n")
 		}
 	}
 
@@ -1079,7 +1113,8 @@ func (s *AgentCustomizationScreen) renderSkillDetail() string {
 		builder.WriteString(labelStyle.Render(skillType.Description))
 		builder.WriteString("\n\n")
 
-		if skillType.ManaCost > 0 {
+		// マナコスト表示（マナシステム解放時のみ）
+		if s.isManaSystemUnlocked() && skillType.ManaCost > 0 {
 			manaStyle := lipgloss.NewStyle().Foreground(styles.ColorBuff)
 			builder.WriteString(manaStyle.Render(fmt.Sprintf("消費マナ: ⭐x%d", skillType.ManaCost)))
 			builder.WriteString("\n\n")

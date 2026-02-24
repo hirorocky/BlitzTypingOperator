@@ -57,6 +57,21 @@ func (s *SkillSlot) IsReady() bool {
 	return s.CooldownRemaining <= 0
 }
 
+// SetFeatureUnlockProvider は機能解放状態プロバイダーを設定します。
+func (s *BattleScreen) SetFeatureUnlockProvider(provider FeatureUnlockProvider) {
+	s.unlockProvider = provider
+}
+
+// isDefenseSkillUnlocked はディフェンススキルが解放済みかを返します。
+func (s *BattleScreen) isDefenseSkillUnlocked() bool {
+	return s.unlockProvider != nil && s.unlockProvider.IsUnlocked(domain.FeatureDefenseSkill)
+}
+
+// isManaSystemUnlocked はマナシステムが解放済みかを返します。
+func (s *BattleScreen) isManaSystemUnlocked() bool {
+	return s.unlockProvider != nil && s.unlockProvider.IsUnlocked(domain.FeatureManaSystem)
+}
+
 // SetPassiveSkills はパッシブスキル定義を設定します。
 // これにより、RegisterPassiveSkills で条件付きパッシブスキルが EffectTable に登録されます。
 func (s *BattleScreen) SetPassiveSkills(skills map[string]domain.PassiveSkill) {
@@ -116,6 +131,9 @@ type BattleScreen struct {
 	floatingDamageManager *styles.FloatingDamageManager
 	playerHPBar           *styles.AnimatedHPBar
 	enemyHPBar            *styles.AnimatedHPBar
+
+	// 機能解放状態プロバイダー（ゲート判定用）
+	unlockProvider FeatureUnlockProvider
 }
 
 // ==================== コンストラクタ ====================

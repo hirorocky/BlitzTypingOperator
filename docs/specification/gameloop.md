@@ -21,6 +21,8 @@ The game loop shall manage scene transitions between:
 - Encyclopedia（図鑑）
 - Achievement（統計・実績）
 - Settings（設定）
+- Tips（TIPS一覧）
+- Tutorial（チュートリアル表示）
 
 **受け入れ基準**:
 1. 各シーンはtea.Modelインターフェースを実装
@@ -35,6 +37,7 @@ The game loop shall maintain GameState including:
 - インベントリ（コア、スキル、チェイン効果）
 - 敵進行状態（EnemyProgress: ランク・撃破記録）
 - ランクアップ報酬マスタデータ（RankReward配列）
+- 機能解放マネージャー（FeatureUnlockManager）
 - 統計情報（バトル/タイピング統計）
 - 実績状態
 - 設定
@@ -58,12 +61,15 @@ When ゲームを終了する or 特定のタイミング, the game loop shall:
 3. チェイン効果はTypeIDリストで保存（スキルと独立）
 4. エージェントスロット設定はコア+スキル+チェイン効果IDリストで保存
 5. 敵進行状態（CurrentRank、DefeatRecords）を保存
+6. 機能解放状態（各FeatureIDのステータス）を保存
+7. 旧セーブデータ（FeatureUnlockフィールドなし）のロード時、CurrentRankから解放状態を再構築
+8. 起動時にReconcile処理を実行し、マスタデータ追加分を反映
 
 ### REQ-GAMELOOP-4: バトル結果処理
 **種別**: Event-Driven
 
 When バトルが終了する, the game loop shall:
-- 勝利: 統計更新、撃破記録更新、HP成長、ランク解放チェック、ランクアップ報酬配給、実績チェック、報酬画面へ遷移
+- 勝利: 統計更新、撃破記録更新、HP成長、ランク解放チェック、ランクアップ報酬配給、機能解放チェック（ApplyRank）、実績チェック、報酬画面へ遷移
 - 敗北: 統計更新、ホーム画面へ直接遷移
 
 **受け入れ基準**:
@@ -74,6 +80,9 @@ When バトルが終了する, the game loop shall:
 5. ランクアップ報酬のコア・スキル・チェイン効果をインベントリに追加
 6. タイピング結果を統計に反映
 7. 実績達成条件を自動チェック
+8. ランクアップ時にApplyRankで該当ランク以下の未解放機能をPendingTutorial化
+9. PendingTutorial機能がある場合、報酬画面にチュートリアル誘導を表示
+10. 報酬画面からチュートリアル画面へ遷移し、完了後に機能をUnlocked化
 
 ## 仕様
 
@@ -92,6 +101,10 @@ const (
     SceneAchievement
     SceneSettings
     SceneReward
+    SceneAgentCustomization
+    SceneInventory
+    SceneTips
+    SceneTutorial
 )
 ```
 
@@ -121,10 +134,16 @@ stateDiagram-v2
     Home --> Encyclopedia: 図鑑
     Home --> Achievement: 統計・実績
     Home --> Settings: 設定
+    Home --> Tips: TIPS
     BattleSelect --> Battle: レベル決定
     Battle --> Reward: 勝利
     Battle --> Home: 敗北
-    Reward --> Home: 確認
+    Reward --> Home: 確認（PendingTutorialなし）
+    Reward --> Tutorial: 確認（PendingTutorialあり）
+    Tutorial --> Tutorial: 次のチュートリアル
+    Tutorial --> Home: 全チュートリアル完了
+    Tips --> Tutorial: チュートリアル選択（TipsViewモード）
+    Tips --> Home: 戻る
     AgentManagement --> Home: 戻る
     Encyclopedia --> Home: 戻る
     Achievement --> Home: 戻る
@@ -136,4 +155,5 @@ stateDiagram-v2
 - **Battle**: バトル結果の受け取りと統計更新
 - **Agent**: 装備エージェントの取得
 - **Collection**: 実績チェックのトリガー
+- **Feature Unlock**: 機能解放チェック・チュートリアル遷移
 - **All Domains**: 各シーンへのルーティング

@@ -1,14 +1,14 @@
 {
   "feature_unlocks": [
     {
-      "feature_id": "defense_skill",
+      "feature_id": "agent_customization",
       "unlock_rank": 2,
-      "tutorial_id": "tut_defense_skill"
+      "tutorial_id": "tut_agent_customization"
     },
     {
-      "feature_id": "agent_customization",
+      "feature_id": "defense_skill",
       "unlock_rank": 3,
-      "tutorial_id": "tut_agent_customization"
+      "tutorial_id": "tut_defense_skill"
     },
     {
       "feature_id": "chain_effect",
