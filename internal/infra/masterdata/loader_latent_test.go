@@ -22,7 +22,7 @@ func TestLoadSkillDefinitions_IsLatentField(t *testing.T) {
 				"tags": ["physical_low"],
 				"description": "テスト用",
 				"cooldown_seconds": 3.0,
-				"difficulty_rate": 100,
+				"difficulty": 100,
 				"challenge": {"type": "standard"},
 				"effects": [
 					{
@@ -75,7 +75,7 @@ func TestLoadSkillDefinitions_IsLatentDefault(t *testing.T) {
 				"tags": ["physical_low"],
 				"description": "テスト用",
 				"cooldown_seconds": 3.0,
-				"difficulty_rate": 100,
+				"difficulty": 100,
 				"challenge": {"type": "standard"},
 				"effects": [
 					{

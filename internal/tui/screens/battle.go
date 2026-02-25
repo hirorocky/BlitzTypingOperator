@@ -26,6 +26,9 @@ import (
 // config.BattleTickIntervalを参照しています。
 var tickInterval = config.BattleTickInterval
 
+// perfectDisplayTicks はパーフェクト演出の表示tick数です（約0.5秒 = 5 tick × 100ms）。
+const perfectDisplayTicks = 5
+
 // ==================== メッセージ型 ====================
 
 // BattleTickMsg はバトル画面の定期更新メッセージです。
@@ -334,10 +337,10 @@ func (s *BattleScreen) handleTick() (tea.Model, tea.Cmd) {
 		return s, s.tick()
 	}
 
-	// パーフェクト演出タイマー（約0.5秒 = 5 tick後に消去）
+	// パーフェクト演出タイマー
 	if s.showingPerfect {
 		s.perfectTimer++
-		if s.perfectTimer >= 5 {
+		if s.perfectTimer >= perfectDisplayTicks {
 			s.showingPerfect = false
 		}
 	}

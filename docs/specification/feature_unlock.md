@@ -35,6 +35,7 @@ When ランクアップが発生する, the system shall:
 | 3 | defense_skill（ディフェンススキル） |
 | 4 | chain_effect（チェイン効果） |
 | 5 | mana_system（マナシステム） |
+| 6 | latent_effect（潜在効果） |
 
 **受け入れ基準**:
 1. 解放処理は冪等（同一ランクで再度呼ばれても二重解放されない）
@@ -65,6 +66,7 @@ When `PendingTutorial` の機能がある場合, the system shall:
 2. `agent_customization` 未解放時: ホームメニューの「エージェント管理」が非表示
 3. `chain_effect` 未解放時: エージェントカスタマイズ画面でチェイン効果スロットが非表示
 4. `mana_system` 未解放時: バトル中のマナ表示が非表示、ManaCostによるスキル制限が無効（全スキル使用可能）
+5. `latent_effect` 未解放時: パーフェクトタイピング時でもIsLatent=trueの効果が発動しない（パーフェクト演出は表示される）
 
 ### REQ-UNLOCK-5: TIPS画面
 **種別**: State-Based
@@ -97,7 +99,7 @@ When `PendingTutorial` の機能がある場合, the system shall:
 
 **定義**:
 ```go
-type FeatureID string // "defense_skill", "agent_customization", "chain_effect", "mana_system"
+type FeatureID string // "defense_skill", "agent_customization", "chain_effect", "mana_system", "latent_effect"
 
 const (
     FeatureLocked          FeatureStatus = iota // 未解放

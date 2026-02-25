@@ -82,7 +82,8 @@ func TestApplySkillEffect_NormalEffect_AlwaysTriggered(t *testing.T) {
 // TestApplySkillEffect_MultipleLatentEffects_IndependentTrigger は
 // 複数の潜在効果が独立して判定されることを確認します。
 func TestApplySkillEffect_MultipleLatentEffects_IndependentTrigger(t *testing.T) {
-	// 2つの潜在効果: 1つはダメージ、1つはバフ
+	// 2つの潜在効果: 確率1.0（必ず発動）と確率0.0（絶対に発動しない）
+	// 各効果が独立して判定されることを検証
 	skillType := domain.SkillType{
 		ID:   "multi_latent",
 		Name: "複数潜在効果スキル",
@@ -99,7 +100,7 @@ func TestApplySkillEffect_MultipleLatentEffects_IndependentTrigger(t *testing.T)
 			{
 				Target:      domain.TargetSelf,
 				HPFormula:   &domain.HPFormula{Base: 30, StatCoef: 0, StatRef: "WIL"},
-				Probability: 1.0,
+				Probability: 0.0,
 				IsLatent:    true,
 				Icon:        "💚",
 			},
@@ -127,13 +128,13 @@ func TestApplySkillEffect_MultipleLatentEffects_IndependentTrigger(t *testing.T)
 
 	engine.ApplySkillEffect(state, agent, skill, typingResult)
 
-	// 敵にダメージが入った（潜在効果1が発動）
+	// 敵にダメージが入った（確率1.0の潜在効果が発動）
 	if state.Enemy.HP >= initialEnemyHP {
-		t.Error("潜在効果のダメージが敵に適用されるべき")
+		t.Error("確率1.0の潜在効果が敵にダメージを与えるべき")
 	}
-	// プレイヤーが回復した（潜在効果2が発動）
-	if state.Player.HP <= initialPlayerHP {
-		t.Error("潜在効果の回復がプレイヤーに適用されるべき")
+	// プレイヤーは回復しない（確率0.0の潜在効果は発動しない）
+	if state.Player.HP != initialPlayerHP {
+		t.Errorf("確率0.0の潜在効果は発動しないべき: got HP=%d, want HP=%d", state.Player.HP, initialPlayerHP)
 	}
 }
 
@@ -162,6 +163,33 @@ func TestApplySkillEffectWithEcho_LatentEffect_PerfectInherited(t *testing.T) {
 	}
 	if state.Enemy.HP >= initialHP {
 		t.Error("エコースキルの追加発動でも潜在効果が発動するべき")
+	}
+}
+
+// TestApplySkillEffectWithCombo_LatentEffect_PerfectInherited は
+// DoubleCast（ApplySkillEffectWithCombo）の追加発動でパーフェクト状態が引き継がれることを確認します。
+func TestApplySkillEffectWithCombo_LatentEffect_PerfectInherited(t *testing.T) {
+	engine, state, agent, skill := setupLatentEffectTest(t, true)
+
+	typingResult := &typing.TypingResult{
+		Completed:      true,
+		WPM:            60.0,
+		Accuracy:       1.0,
+		SpeedFactor:    1.0,
+		AccuracyFactor: 1.0,
+		IsPerfect:      true,
+	}
+
+	initialHP := state.Enemy.HP
+	// DoubleCast経路: ApplySkillEffectWithComboを2回呼び出し
+	effect1 := engine.ApplySkillEffectWithCombo(state, agent, skill, typingResult, 0)
+	effect2 := engine.ApplySkillEffectWithCombo(state, agent, skill, typingResult, 0)
+
+	if effect1 == 0 || effect2 == 0 {
+		t.Errorf("DoubleCastの両方の発動で潜在効果がダメージを与えるべき: effect1=%d, effect2=%d", effect1, effect2)
+	}
+	if state.Enemy.HP >= initialHP {
+		t.Error("DoubleCastの追加発動でも潜在効果が発動するべき")
 	}
 }
 
