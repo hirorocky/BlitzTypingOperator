@@ -513,13 +513,29 @@ func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
 		s.comboCount = 0
 	}
 
+	// パーフェクト判定（ディフェンスタイプ除外）
+	slot := s.skillSlots[s.selectedSkillIdx]
+	isDefenseType := slot.Skill.GetChallengeType() == domain.ChallengeTypeDefense
+	isPerfect := !isDefenseType && typingResult.Accuracy >= 1.0
+
+	// パーフェクト演出（解放状態に関係なく表示）
+	if isPerfect {
+		s.showingPerfect = true
+		s.perfectTimer = 0
+	}
+
+	// 潜在効果の解放チェック（未解放時はisPerfect=falseにリセット）
+	if isPerfect && !s.isLatentEffectUnlocked() {
+		isPerfect = false
+	}
+	typingResult.IsPerfect = isPerfect
+
 	// バトル統計に記録
 	if s.battleEngine != nil && s.battleState != nil {
 		s.battleEngine.RecordTypingResult(s.battleState, typingResult)
 	}
 
 	// スキル効果を適用
-	slot := s.skillSlots[s.selectedSkillIdx]
 	agent := slot.Agent
 	skill := slot.Skill
 	agentIndex := slot.AgentIndex

@@ -37,6 +37,14 @@
           "probability": 1.0,
           "luk_factor": 0,
           "icon": "🔪"
+        },
+        {
+          "target": "enemy",
+          "hp_formula": { "base": 10, "stat_coef": 1.0, "stat_ref": "STR" },
+          "probability": 0.5,
+          "luk_factor": 0.02,
+          "icon": "🔪",
+          "is_latent": true
         }
       ]
     },
@@ -57,6 +65,14 @@
           "probability": 1.0,
           "luk_factor": 0,
           "icon": "🔪"
+        },
+        {
+          "target": "enemy",
+          "hp_formula": { "base": 20, "stat_coef": 2.0, "stat_ref": "STR" },
+          "probability": 0.3,
+          "luk_factor": 0.02,
+          "icon": "🔪",
+          "is_latent": true
         }
       ]
     },
@@ -99,6 +115,14 @@
           "probability": 1.0,
           "luk_factor": 0,
           "icon": "💥"
+        },
+        {
+          "target": "enemy",
+          "hp_formula": { "base": 10, "stat_coef": 1.0, "stat_ref": "INT" },
+          "probability": 0.5,
+          "luk_factor": 0.02,
+          "icon": "💥",
+          "is_latent": true
         }
       ]
     },
@@ -120,6 +144,14 @@
           "probability": 1.0,
           "luk_factor": 0,
           "icon": "💥"
+        },
+        {
+          "target": "enemy",
+          "hp_formula": { "base": 20, "stat_coef": 2.0, "stat_ref": "INT" },
+          "probability": 0.3,
+          "luk_factor": 0.02,
+          "icon": "💥",
+          "is_latent": true
         }
       ]
     },
@@ -160,6 +192,14 @@
           "probability": 1.0,
           "luk_factor": 0,
           "icon": "💚"
+        },
+        {
+          "target": "self",
+          "hp_formula": { "base": 5, "stat_coef": 0.8, "stat_ref": "WIL" },
+          "probability": 0.5,
+          "luk_factor": 0.02,
+          "icon": "💚",
+          "is_latent": true
         }
       ]
     },

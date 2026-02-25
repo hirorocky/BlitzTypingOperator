@@ -229,6 +229,9 @@ type TypingResult struct {
 
 	// Timeout はタイムアウトしたかどうかです。
 	Timeout bool
+
+	// IsPerfect はパーフェクトタイピング（ミスなし完了）かどうかです。
+	IsPerfect bool
 }
 
 // Evaluator はタイピング評価を担当する構造体です。

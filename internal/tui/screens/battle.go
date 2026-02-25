@@ -72,6 +72,11 @@ func (s *BattleScreen) isManaSystemUnlocked() bool {
 	return s.unlockProvider != nil && s.unlockProvider.IsUnlocked(domain.FeatureManaSystem)
 }
 
+// isLatentEffectUnlocked は潜在効果が解放済みかを返します。
+func (s *BattleScreen) isLatentEffectUnlocked() bool {
+	return s.unlockProvider != nil && s.unlockProvider.IsUnlocked(domain.FeatureLatentEffect)
+}
+
 // SetPassiveSkills はパッシブスキル定義を設定します。
 // これにより、RegisterPassiveSkills で条件付きパッシブスキルが EffectTable に登録されます。
 func (s *BattleScreen) SetPassiveSkills(skills map[string]domain.PassiveSkill) {
@@ -119,6 +124,11 @@ type BattleScreen struct {
 	gameOver      bool
 	victory       bool
 	showingResult bool
+
+	// パーフェクト演出状態
+	showingPerfect  bool
+	perfectTimer    int
+	perfectRenderer ascii.PerfectRenderer
 
 	// UI
 	styles          *styles.GameStyles
@@ -172,6 +182,7 @@ func NewBattleScreen(enemy *domain.EnemyModel, player *domain.PlayerModel, agent
 		firstStrikeAgentIndex: -1, // 無効値で初期化
 		styles:                gs,
 		winLoseRenderer:       ascii.NewWinLoseRenderer(gs),
+		perfectRenderer:       ascii.NewPerfectRenderer(gs),
 		width:                 140,
 		height:                40,
 		// UI改善: アニメーション初期化
@@ -321,6 +332,14 @@ func (s *BattleScreen) handleTick() (tea.Model, tea.Cmd) {
 	// 結果表示中はtickを継続するが、ゲーム進行はしない
 	if s.showingResult {
 		return s, s.tick()
+	}
+
+	// パーフェクト演出タイマー（約0.2秒 = 2 tick後に消去）
+	if s.showingPerfect {
+		s.perfectTimer++
+		if s.perfectTimer >= 2 {
+			s.showingPerfect = false
+		}
 	}
 
 	deltaSeconds := tickInterval.Seconds()

@@ -192,6 +192,7 @@ type SkillEffectData struct {
 	LUKFactor    float64           `json:"luk_factor"`
 	ManaGain     int               `json:"mana_gain"`
 	Icon         string            `json:"icon"`
+	IsLatent     bool              `json:"is_latent"`
 }
 
 // ChallengeData はチャレンジ設定のJSONデータ構造体です。
@@ -281,6 +282,7 @@ func (e *SkillEffectData) ToDomain() domain.SkillEffect {
 		LUKFactor:   e.LUKFactor,
 		ManaGain:    e.ManaGain,
 		Icon:        e.Icon,
+		IsLatent:    e.IsLatent,
 	}
 
 	if e.HPFormula != nil {
