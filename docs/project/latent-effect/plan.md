@@ -8,7 +8,7 @@
 | 2 | ディフェンスタイプ除外 | TUI test | セッション内 | 手順記載済 |
 | 3 | コンボカウントと同一タイミング | Go test（既存テストで保証） | - | 既存 |
 | 4 | パーフェクトASCIIアート表示 | TUI test | セッション内 | 手順記載済 |
-| 5 | 約0.2秒後にASCIIアート消去 | TUI test | セッション内 | 手順記載済 |
+| 5 | 約0.5秒後にASCIIアート消去 | TUI test | セッション内 | 手順記載済 |
 | 6 | 解放状態に関係なく演出表示 | TUI test | セッション内 | 手順記載済 |
 | 7 | IsLatent=trueはパーフェクト時のみ発動 | Go test | `combat/battle_latent_effect_test.go` | 作成済 |
 | 8 | IsLatent=falseは常に発動 | Go test | `combat/battle_latent_effect_test.go` | 作成済 |
@@ -81,7 +81,7 @@
   - `isLatentEffectUnlocked()`メソッド追加
   - `perfectRenderer ascii.PerfectRenderer`フィールド追加
   - `handleChallengeComplete()`内: コンボカウント判定と同じ`Accuracy >= 1.0`チェックで`isPerfect`判定。ディフェンスタイプは除外。`showingPerfect = true`設定。未解放時は`isPerfect = false`にリセット。`typingResult.IsPerfect`を設定
-  - `handleTick()`内: `showingPerfect`時にタイマーをカウントし、約0.2秒後に`showingPerfect = false`に
+  - `handleTick()`内: `showingPerfect`時にタイマーをカウントし、約0.5秒後に`showingPerfect = false`に
   - `View()`内: `showingPerfect`時にエージェントエリアの代わりにPERFECT! ASCIIアートを表示
 - **関連テスト**: 基準 1, 2, 3, 4, 5, 6, 13, 15
 - **状態**: 完了
@@ -114,7 +114,7 @@ send_keys("\r", delay=1)
 # パーフェクト達成後（上記の続き）
 # PERFECT! ASCIIアートが中央エリアに表示されていることを確認
 assert_contains("PERFECT")
-# 約0.2秒後にASCIIアートが消え、エージェントエリアに戻ることを確認
+# 約0.5秒後にASCIIアートが消え、エージェントエリアに戻ることを確認
 # （次のtickで確認）
 ```
 

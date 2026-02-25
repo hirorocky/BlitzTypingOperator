@@ -334,10 +334,10 @@ func (s *BattleScreen) handleTick() (tea.Model, tea.Cmd) {
 		return s, s.tick()
 	}
 
-	// パーフェクト演出タイマー（約0.2秒 = 2 tick後に消去）
+	// パーフェクト演出タイマー（約0.5秒 = 5 tick後に消去）
 	if s.showingPerfect {
 		s.perfectTimer++
-		if s.perfectTimer >= 2 {
+		if s.perfectTimer >= 5 {
 			s.showingPerfect = false
 		}
 	}
