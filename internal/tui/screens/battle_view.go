@@ -483,27 +483,6 @@ func (s *BattleScreen) renderPlayerArea() string {
 }
 
 // renderResultArea は結果表示（WIN/LOSE ASCIIアート）をレンダリングします。
-// UI-Improvement Requirement 3.9: WIN/LOSE ASCIIアート表示
-// renderPerfectArea はパーフェクト演出エリアを描画します。
-func (s *BattleScreen) renderPerfectArea() string {
-	perfectArt := s.perfectRenderer.RenderPerfect()
-
-	// 中央揃え
-	centeredArt := lipgloss.NewStyle().
-		Width(s.width - 8).
-		Align(lipgloss.Center).
-		Render(perfectArt)
-
-	// エリアボックス
-	areaStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorPrimary).
-		Padding(2, 2).
-		Width(s.width - 4)
-
-	return areaStyle.Render(centeredArt)
-}
-
 func (s *BattleScreen) renderResultArea() string {
 	var resultArt string
 	if s.victory {
@@ -517,6 +496,26 @@ func (s *BattleScreen) renderResultArea() string {
 		Width(s.width - 8).
 		Align(lipgloss.Center).
 		Render(resultArt)
+
+	// エリアボックス
+	areaStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorPrimary).
+		Padding(2, 2).
+		Width(s.width - 4)
+
+	return areaStyle.Render(centeredArt)
+}
+
+// renderPerfectArea はパーフェクト演出エリアを描画します。
+func (s *BattleScreen) renderPerfectArea() string {
+	perfectArt := s.perfectRenderer.RenderPerfect()
+
+	// 中央揃え
+	centeredArt := lipgloss.NewStyle().
+		Width(s.width - 8).
+		Align(lipgloss.Center).
+		Render(perfectArt)
 
 	// エリアボックス
 	areaStyle := lipgloss.NewStyle().

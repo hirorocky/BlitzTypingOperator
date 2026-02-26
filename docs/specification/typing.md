@@ -206,7 +206,7 @@ The typing system shall calculate speed factor as:
 - SpeedFactor: 速度係数（上限2.0）
 - AccuracyFactor: 正確性係数（ダメージ計算用）
 - Timeout: タイムアウトフラグ
-- IsPerfect: パーフェクトタイピングフラグ（Success かつ Accuracy >= 1.0 かつ非ディフェンスかつ`latent_effect`解放済みの場合 true）
+- IsPerfect: パーフェクトタイピングフラグ（Success かつ Accuracy >= 1.0 かつ非ディフェンスかつ`latent_effect`解放済みの場合 true）。パーフェクト演出は解放状態に関わらず表示される
 
 ### ChallengeModel
 
