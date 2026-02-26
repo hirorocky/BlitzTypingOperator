@@ -609,6 +609,11 @@ func (e *BattleEngine) ApplySkillEffect(
 
 	// 各効果を評価・適用
 	for _, effect := range skill.Type.Effects {
+		// 潜在効果はパーフェクト時のみ発動判定
+		if effect.IsLatent && !typingResult.IsPerfect {
+			continue
+		}
+
 		// LUKに基づく発動判定
 		if !effect.ShouldTrigger(agent.BaseStats.LUK, e.rng) {
 			continue

@@ -14,6 +14,8 @@ const (
 	FeatureChainEffect FeatureID = "chain_effect"
 	// マナシステム（ランク5で解放）
 	FeatureManaSystem FeatureID = "mana_system"
+	// 潜在効果（ランク6で解放）
+	FeatureLatentEffect FeatureID = "latent_effect"
 )
 
 // FeatureStatus は機能の解放状態を表します。

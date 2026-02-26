@@ -107,7 +107,7 @@ config       ← 横断的関心事（全層から参照可能）
   - `unique_inventory_converter.go`: 各インベントリのセーブ/ロード変換関数
 - `infra/masterdata/`: JSONマスタデータローダー＋埋め込みデータ（Go embed.FS）
   - timed_effects.json: 時限効果定義（ID、名前、説明、効果列、効果値）
-  - skills.json: スキル定義（skill_typesキーで定義、ManaCost/ManaGainフィールド、各effect_columnにtimed_effect_idを参照）
+  - skills.json: スキル定義（skill_typesキーで定義、ManaCost/ManaGain/is_latentフィールド、各effect_columnにtimed_effect_idを参照）
   - enemy_actions.json: 敵行動定義（各バフ/デバフ行動にtimed_effect_idを参照）
   - chain_effects.json: チェイン効果定義（ID、名前、説明、効果）
   - rank_rewards.json: ランクアップ報酬定義（ランクごとのコア・スキル・チェイン効果報酬）
@@ -134,7 +134,7 @@ config       ← 横断的関心事（全層から参照可能）
 - `styles/`: lipglossスタイル定義（カラーパレット含む）
 - `presenter/`: UI向けデータ変換（GameState→ViewModel）
   - tutorial_presenter.go: TIPS/チュートリアル表示用データ整形
-- `ascii/`: ASCIIアート
+- `ascii/`: ASCIIアート（winlose.go: WIN/LOSEアート、perfect.go: PERFECT!アート）
 
 ### config - 横断的関心事
 **場所**: `/internal/config/`

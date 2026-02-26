@@ -47,9 +47,6 @@ type EffectColumnSpec struct {
 	TimedEffectID string
 }
 
-// BaseLUK はLUK補正の基準値です。
-const BaseLUK = 10
-
 // SkillEffect はスキルの1つの効果を表します。
 // 各スキルは複数のSkillEffectを持つことができます。
 type SkillEffect struct {
@@ -76,6 +73,9 @@ type SkillEffect struct {
 
 	// Icon は表示用アイコンです。
 	Icon string
+
+	// IsLatent はパーフェクト時にのみ発動する潜在効果かどうかです。
+	IsLatent bool
 }
 
 // CalculateHPChange はステータス値からHP変化量を計算します。
@@ -101,10 +101,10 @@ func (e *SkillEffect) CalculateHPChange(stats Stats) int {
 }
 
 // AdjustedProbability はLUK補正を適用した発動確率を計算します。
-// 計算式: Probability + (LUK - 10) × LUKFactor
+// 計算式: Probability + LUK × LUKFactor
 // 結果は0.0-1.0の範囲にクランプされます。
 func (e *SkillEffect) AdjustedProbability(luk int) float64 {
-	adjustedProb := e.Probability + float64(luk-BaseLUK)*e.LUKFactor
+	adjustedProb := e.Probability + float64(luk)*e.LUKFactor
 
 	// 0.0-1.0の範囲にクランプ
 	if adjustedProb < 0.0 {

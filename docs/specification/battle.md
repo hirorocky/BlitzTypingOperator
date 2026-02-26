@@ -30,13 +30,15 @@ When プレイヤーがバトルを開始する, the battle system shall:
 The battle system shall calculate skill effects using:
 - HP変化量 = (base + stat_coef × STAT) × SpeedFactor × AccuracyFactor
 - 各スキルは複数のEffectsを持ち、それぞれが独立して発動判定される
-- LUKによる確率補正: 補正後確率 = ベース確率 + (LUK - 10) × luk_factor
+- LUKによる確率補正: 補正後確率 = ベース確率 + LUK × luk_factor
+- 潜在効果（IsLatent=true）はパーフェクトタイピング時にのみ発動判定される
 - スキル使用可否判定: ManaCost > 0 かつ Mana < ManaCost の場合、スキル選択不可
 
 **受け入れ基準**:
 1. 正確性50%未満で効果半減
 2. ダメージは最低1保証
 3. Effectのtargetに応じた対象（enemy→敵、self→自分）
+4. 潜在効果（IsLatent=true）はIsPerfect=true時のみ発動判定（false時はスキップ）
 
 ### REQ-BATTLE-3: 敵攻撃システム
 **種別**: State-Driven
@@ -140,6 +142,21 @@ stateDiagram-v2
 1. 自己バフ持続時間: 10秒
 2. プレイヤーデバフ持続時間: 8秒
 3. 行動予告を事前表示
+
+### パーフェクトタイピング判定
+
+**定義**:
+- パーフェクトタイピング: ChallengeStatus=Success かつ Accuracy >= 1.0（ミスなし）の非ディフェンスタイプチャレンジ
+- ディフェンスタイプは除外（Accuracyが防御率を表すため）
+
+**処理フロー**:
+1. チャレンジ完了時（Success時）に、Accuracy >= 1.0 かつディフェンスタイプでない場合、パーフェクトと判定
+2. パーフェクト判定はコンボ判定（既存のAccuracy >= 1.0チェック）と同一タイミング
+3. パーフェクト時は "PERFECT!" ASCIIアート演出を表示（約0.5秒間、解放状態に関係なく常に表示）
+4. TUI層で`latent_effect`機能の解放状態をチェック:
+   - 解放済みの場合: `typingResult.IsPerfect = true`
+   - 未解放の場合: `typingResult.IsPerfect = false` にリセット
+5. BattleEngineへ渡すTypingResultはIsPerfect値を反映
 
 ### チャレンジ完了時の効果適用
 

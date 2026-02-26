@@ -19,6 +19,11 @@
       "feature_id": "mana_system",
       "unlock_rank": 5,
       "tutorial_id": "tut_mana_system"
+    },
+    {
+      "feature_id": "latent_effect",
+      "unlock_rank": 6,
+      "tutorial_id": "tut_latent_effect"
     }
   ]
 }

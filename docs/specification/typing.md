@@ -193,6 +193,21 @@ The typing system shall calculate speed factor as:
 - CompletionTime: 完了時間
 - Status: ChallengeStatus（Success/Fail/Cancel）
 
+### TypingResult
+
+**責務**: チャレンジ結果からバトル層への入力データ
+
+**実装**: `/internal/usecase/typing/typing.go`
+
+**フィールド**:
+- Completed: 完了フラグ
+- WPM: Words Per Minute
+- Accuracy: 正確性（0.0-1.0）
+- SpeedFactor: 速度係数（上限2.0）
+- AccuracyFactor: 正確性係数（ダメージ計算用）
+- Timeout: タイムアウトフラグ
+- IsPerfect: パーフェクトタイピングフラグ（Success かつ Accuracy >= 1.0 かつ非ディフェンスかつ`latent_effect`解放済みの場合 true）。パーフェクト演出は解放状態に関わらず表示される
+
 ### ChallengeModel
 
 **責務**: チャレンジの共通インターフェース（tui層に配置）
