@@ -64,8 +64,8 @@ type EffectContext struct {
 
 	// ========== タイピング結果 ==========
 
-	// Accuracy は正確性 (0.0〜1.0) です。
-	Accuracy float64
+	// IsPerfect はパーフェクトタイピング（ミスなし完了）かどうかです。
+	IsPerfect bool
 
 	// WPM はWords Per Minuteです。
 	WPM float64
@@ -156,8 +156,8 @@ func (ctx *EffectContext) UpdateHP(playerHP, enemyHP int) {
 }
 
 // SetTypingResult はタイピング結果を設定します。
-func (ctx *EffectContext) SetTypingResult(accuracy float64, wpm float64, combo int) {
-	ctx.Accuracy = accuracy
+func (ctx *EffectContext) SetTypingResult(isPerfect bool, wpm float64, combo int) {
+	ctx.IsPerfect = isPerfect
 	ctx.WPM = wpm
 	ctx.ComboCount = combo
 }

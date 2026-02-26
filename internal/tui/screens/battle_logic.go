@@ -422,6 +422,8 @@ func (s *BattleScreen) registerChainEffectToTable(effect *chain.TriggeredChainEf
 // startChallenge はChallengeInputを構築してチャレンジを開始します。
 // EffectTableからTimeExtend、AutoCorrect、TypingDifficultyを取得して適用します。
 func (s *BattleScreen) startChallenge(skill *domain.SkillModel) tea.Cmd {
+	// 新しいチャレンジ開始時に既存のリザルト表示をクリア
+	s.resultDisplay = nil
 	// EffectTableから効果を取得
 	var effects domain.EffectResult
 	if s.player != nil && s.player.EffectTable != nil {
@@ -500,29 +502,21 @@ func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
 	typingResult := &typing.TypingResult{
 		Completed:      true,
 		WPM:            result.WPM,
-		Accuracy:       result.Accuracy,
-		SpeedFactor:    result.SpeedFactor,
-		AccuracyFactor: result.Accuracy,
+		Score:          result.Score,
 		CompletionTime: result.CompletionTime,
 	}
 
 	// コンボカウントの更新（ps_combo_master用）
-	if typingResult.Accuracy >= 1.0 {
+	if result.Status == domain.ChallengePerfect {
 		s.comboCount++
 	} else {
 		s.comboCount = 0
 	}
 
-	// パーフェクト判定（ディフェンスタイプ除外）
-	slot := s.skillSlots[s.selectedSkillIdx]
-	isDefenseType := slot.Skill.GetChallengeType() == domain.ChallengeTypeDefense
-	isPerfect := !isDefenseType && typingResult.Accuracy >= 1.0
+	// パーフェクト判定（Status==ChallengePerfect で判定）
+	isPerfect := result.Status == domain.ChallengePerfect
 
-	// パーフェクト演出（解放状態に関係なく表示）
-	if isPerfect {
-		s.showingPerfect = true
-		s.perfectTimer = 0
-	}
+	slot := s.skillSlots[s.selectedSkillIdx]
 
 	// 潜在効果の解放チェック（未解放時はisPerfect=falseにリセット）
 	if isPerfect && !s.isLatentEffectUnlocked() {
@@ -584,18 +578,30 @@ func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
 		s.player.ConsumeMana(skill.Type.ManaCost)
 	}
 
+	// 効果結果を集約（ResultDisplayState用）
+	combinedEffectResult := &combat.SkillEffectResult{}
 	var effectAmount int
 	if s.battleEngine != nil && s.battleState != nil {
-		effectAmount = s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, skill, typingResult, s.comboCount)
+		effectResult := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, skill, typingResult, s.comboCount)
+		effectAmount = effectResult.TotalDamage
+		combinedEffectResult.TotalDamage += effectResult.TotalDamage
+		combinedEffectResult.NormalEffects = append(combinedEffectResult.NormalEffects, effectResult.NormalEffects...)
+		combinedEffectResult.LatentEffects = append(combinedEffectResult.LatentEffects, effectResult.LatentEffects...)
 
 		for i := 1; i < echoSkillRepeat; i++ {
-			additionalEffect := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, skill, typingResult, s.comboCount)
-			effectAmount += additionalEffect
+			additionalResult := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, skill, typingResult, s.comboCount)
+			effectAmount += additionalResult.TotalDamage
+			combinedEffectResult.TotalDamage += additionalResult.TotalDamage
+			combinedEffectResult.NormalEffects = append(combinedEffectResult.NormalEffects, additionalResult.NormalEffects...)
+			combinedEffectResult.LatentEffects = append(combinedEffectResult.LatentEffects, additionalResult.LatentEffects...)
 		}
 
 		if doubleCastTriggered {
-			secondEffect := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, skill, typingResult, s.comboCount)
-			effectAmount += secondEffect
+			secondResult := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, skill, typingResult, s.comboCount)
+			effectAmount += secondResult.TotalDamage
+			combinedEffectResult.TotalDamage += secondResult.TotalDamage
+			combinedEffectResult.NormalEffects = append(combinedEffectResult.NormalEffects, secondResult.NormalEffects...)
+			combinedEffectResult.LatentEffects = append(combinedEffectResult.LatentEffects, secondResult.LatentEffects...)
 		}
 
 		if miracleHealTriggered {
@@ -636,6 +642,19 @@ func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
 			s.battleEngine.SwitchEnemyPassive(s.battleState)
 			s.message += " [敵が強化フェーズに突入！]"
 		}
+	}
+
+	// リザルト表示を設定
+	s.resultDisplay = &ResultDisplayState{
+		AgentIndex:   agentIndex,
+		Status:       result.Status,
+		EffectResult: combinedEffectResult,
+		StartTime:    time.Now(),
+	}
+
+	// カーソルを別エージェントに移動（複数エージェントの場合のみ）
+	if len(s.equippedAgents) > 1 {
+		s.moveToNextAvailableAgent(agentIndex)
 	}
 }
 
@@ -685,7 +704,7 @@ func (s *BattleScreen) formatEffectMessage(skill *domain.SkillModel, effectAmoun
 		action = "効果を発動した！"
 	}
 
-	return fmt.Sprintf("%s (WPM:%.0f 正確性:%.0f%%)", action, result.WPM, result.Accuracy*100)
+	return fmt.Sprintf("%s (WPM:%.0f 正確性:%d%%)", action, result.WPM, result.Score)
 }
 
 // ==================== ゲームロジック: 行動表示 ====================
@@ -845,6 +864,20 @@ func (s *BattleScreen) moveToNextSkillInAgent() {
 		newPos = 0
 	}
 	s.selectedSlot = agentSkills[newPos]
+}
+
+// closeResultIfOnAgent はカーソルがリザルト表示中のエージェントに移動した場合にリザルトを閉じます。
+func (s *BattleScreen) closeResultIfOnAgent(agentIdx int) {
+	if s.resultDisplay != nil && s.resultDisplay.AgentIndex == agentIdx {
+		s.resultDisplay = nil
+	}
+}
+
+// moveToNextAvailableAgent はリザルト表示対象以外のエージェントにカーソルを移動します。
+func (s *BattleScreen) moveToNextAvailableAgent(resultAgentIdx int) {
+	nextIdx := (resultAgentIdx + 1) % len(s.equippedAgents)
+	s.selectedAgentIdx = nextIdx
+	s.selectFirstSkillOfAgent(nextIdx)
 }
 
 // getSkillIndicesForAgent は指定エージェントのスキルスロットのインデックスを返します。

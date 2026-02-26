@@ -297,3 +297,56 @@ func TestPassiveSkill_IsStackable(t *testing.T) {
 		})
 	}
 }
+
+// TestAccuracyEquals条件_IsPerfectで判定 はTriggerConditionAccuracyEqualsがIsPerfectを使うことを確認します。
+func TestAccuracyEquals条件_IsPerfectで判定(t *testing.T) {
+	passive := PassiveSkill{
+		TriggerType: PassiveTriggerConditional,
+		TriggerCondition: &TriggerCondition{
+			Type:  TriggerConditionAccuracyEquals,
+			Value: 100,
+		},
+		EffectType:  PassiveEffectMultiplier,
+		EffectValue: 1.5,
+	}
+
+	entry := passive.ToEntry()
+
+	// IsPerfect=trueのとき条件成立
+	ctxPerfect := NewEffectContext(100, 100, 50, 100)
+	ctxPerfect.IsPerfect = true
+	if !entry.EnableCondition(ctxPerfect) {
+		t.Error("IsPerfect=trueのとき条件が成立すべき")
+	}
+
+	// IsPerfect=falseのとき条件不成立
+	ctxNotPerfect := NewEffectContext(100, 100, 50, 100)
+	ctxNotPerfect.IsPerfect = false
+	if entry.EnableCondition(ctxNotPerfect) {
+		t.Error("IsPerfect=falseのとき条件が不成立であるべき")
+	}
+}
+
+// TestSetTypingResult_IsPerfect はSetTypingResultがIsPerfectを設定することを確認します。
+func TestSetTypingResult_IsPerfect(t *testing.T) {
+	ctx := NewEffectContext(100, 100, 50, 100)
+	ctx.SetTypingResult(true, 80.0, 3)
+
+	if !ctx.IsPerfect {
+		t.Error("SetTypingResult(true, ...)でIsPerfectがtrueになるべき")
+	}
+	if ctx.WPM != 80.0 {
+		t.Errorf("WPM = %f, want 80.0", ctx.WPM)
+	}
+	if ctx.ComboCount != 3 {
+		t.Errorf("ComboCount = %d, want 3", ctx.ComboCount)
+	}
+
+	// IsPerfect=falseの場合
+	ctx2 := NewEffectContext(100, 100, 50, 100)
+	ctx2.SetTypingResult(false, 60.0, 0)
+
+	if ctx2.IsPerfect {
+		t.Error("SetTypingResult(false, ...)でIsPerfectがfalseになるべき")
+	}
+}

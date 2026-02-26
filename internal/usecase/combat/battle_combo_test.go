@@ -77,23 +77,21 @@ func TestBattleEngine_ComboMaster_StackedDamage(t *testing.T) {
 
 	// コンボ0でのベースラインダメージ
 	baselineResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       1.0,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
+		Completed: true,
+		WPM:       60.0,
+		Score:     100,
 	}
-	baselineDamage := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 0)
+	baselineResult_ := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 0)
 
 	// 敵HPをリセット
 	state.Enemy.HP = state.Enemy.MaxHP
 
 	// コンボ3でのダメージ（+30% = 1.3倍）
-	combo3Damage := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 3)
+	combo3Result := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 3)
 
 	// Assert: コンボ3で約1.3倍
 	expectedRatio := 1.3
-	actualRatio := float64(combo3Damage) / float64(baselineDamage)
+	actualRatio := float64(combo3Result.TotalDamage) / float64(baselineResult_.TotalDamage)
 
 	if math.Abs(actualRatio-expectedRatio) > 0.1 {
 		t.Errorf("ps_combo_master: コンボ3でのダメージ倍率が期待値と異なります。got=%.2f, want=%.2f", actualRatio, expectedRatio)
@@ -163,33 +161,31 @@ func TestBattleEngine_ComboMaster_MaxStacks(t *testing.T) {
 	engine.RegisterPassiveSkills(state, agents)
 
 	baselineResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       1.0,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
+		Completed: true,
+		WPM:       60.0,
+		Score:     100,
 	}
 
 	// コンボ0でのベースライン
-	baselineDamage := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 0)
+	baselineResult_ := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 0)
 	state.Enemy.HP = state.Enemy.MaxHP
 
 	// コンボ5でのダメージ（最大+50% = 1.5倍）
-	combo5Damage := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 5)
+	combo5Result := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 5)
 	state.Enemy.HP = state.Enemy.MaxHP
 
 	// コンボ7でのダメージ（5で頭打ち、1.5倍のまま）
-	combo7Damage := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 7)
+	combo7Result := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 7)
 
 	// Assert: コンボ5で1.5倍
 	expectedRatio5 := 1.5
-	actualRatio5 := float64(combo5Damage) / float64(baselineDamage)
+	actualRatio5 := float64(combo5Result.TotalDamage) / float64(baselineResult_.TotalDamage)
 	if math.Abs(actualRatio5-expectedRatio5) > 0.1 {
 		t.Errorf("ps_combo_master: コンボ5でのダメージ倍率が期待値と異なります。got=%.2f, want=%.2f", actualRatio5, expectedRatio5)
 	}
 
 	// Assert: コンボ7でも1.5倍（キャップ）
-	actualRatio7 := float64(combo7Damage) / float64(baselineDamage)
+	actualRatio7 := float64(combo7Result.TotalDamage) / float64(baselineResult_.TotalDamage)
 	if math.Abs(actualRatio7-expectedRatio5) > 0.1 {
 		t.Errorf("ps_combo_master: コンボ7でのダメージ倍率が1.5でキャップされるべき。got=%.2f, want=%.2f", actualRatio7, expectedRatio5)
 	}
@@ -258,20 +254,18 @@ func TestBattleEngine_ComboMaster_ZeroCombo(t *testing.T) {
 	engine.RegisterPassiveSkills(state, agents)
 
 	baselineResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       1.0,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
+		Completed: true,
+		WPM:       60.0,
+		Score:     100,
 	}
 
 	// コンボ0で2回実行
-	damage1 := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 0)
+	result1 := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 0)
 	state.Enemy.HP = state.Enemy.MaxHP
-	damage2 := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 0)
+	result2 := engine.ApplySkillEffectWithCombo(state, agent, skill, baselineResult, 0)
 
 	// Assert: コンボ0では一貫したダメージ（倍率なし）
-	ratio := float64(damage2) / float64(damage1)
+	ratio := float64(result2.TotalDamage) / float64(result1.TotalDamage)
 	if math.Abs(ratio-1.0) > 0.05 {
 		t.Errorf("ps_combo_master: コンボ0でダメージが変動してはいけません。ratio=%.2f", ratio)
 	}

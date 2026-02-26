@@ -74,11 +74,9 @@ func TestBattleEngine_SkillUse_EchoSkill(t *testing.T) {
 	engine.RegisterPassiveSkills(state, agents)
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       1.0,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
+		Completed: true,
+		WPM:       60.0,
+		Score:     100,
 	}
 
 	// Act: スキル使用
@@ -91,13 +89,13 @@ func TestBattleEngine_SkillUse_EchoSkill(t *testing.T) {
 
 	// ダメージが2倍（2回発動）になることを確認
 	initialHP := state.Enemy.HP
-	_ = engine.ApplySkillEffectWithEcho(state, agent, skill, typingResult, repeatCount)
-	damageDealt := initialHP - state.Enemy.HP
+	echoResult := engine.ApplySkillEffectWithEcho(state, agent, skill, typingResult, repeatCount)
+	damageDealt := echoResult.TotalDamage
 
 	// 通常ダメージと比較
 	state.Enemy.HP = initialHP
-	_ = engine.ApplySkillEffectWithEcho(state, agent, skill, typingResult, 1)
-	singleDamage := initialHP - state.Enemy.HP
+	singleResult := engine.ApplySkillEffectWithEcho(state, agent, skill, typingResult, 1)
+	singleDamage := singleResult.TotalDamage
 
 	// 2回発動で約2倍のダメージ
 	ratio := float64(damageDealt) / float64(singleDamage)

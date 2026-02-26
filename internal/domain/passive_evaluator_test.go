@@ -43,12 +43,12 @@ func TestPassiveEvaluator_条件付き_パーフェクトリズム_条件満た�
 	}
 
 	ctx := &PassiveEvaluationContext{
-		Accuracy: 100,
+		IsPerfect: true,
 	}
 	result := EvaluatePassive(def, ctx)
 
 	if !result.IsActive {
-		t.Error("正確性100%の場合、パーフェクトリズムは発動するべきです")
+		t.Error("パーフェクトの場合、パーフェクトリズムは発動するべきです")
 	}
 	if result.EffectMultiplier != 1.5 {
 		t.Errorf("EffectMultiplierが期待値と異なります: got %f, want 1.5", result.EffectMultiplier)
@@ -71,12 +71,12 @@ func TestPassiveEvaluator_条件付き_パーフェクトリズム_条件満た�
 	}
 
 	ctx := &PassiveEvaluationContext{
-		Accuracy: 95, // 100%未満
+		IsPerfect: false,
 	}
 	result := EvaluatePassive(def, ctx)
 
 	if result.IsActive {
-		t.Error("正確性100%未満の場合、パーフェクトリズムは発動しないべきです")
+		t.Error("非パーフェクトの場合、パーフェクトリズムは発動しないべきです")
 	}
 }
 
@@ -615,7 +615,7 @@ func TestPassiveEvaluator_複数パッシブスキル併存(t *testing.T) {
 
 	// 同一コンテキストで両方を評価
 	ctx := &PassiveEvaluationContext{
-		Accuracy: 100,
+		IsPerfect: true,
 	}
 
 	result1 := EvaluatePassive(buffExtender, ctx)
@@ -637,9 +637,9 @@ func TestPassiveEvaluator_複数パッシブスキル併存(t *testing.T) {
 		t.Errorf("perfectRhythmのEffectMultiplierが期待値と異なります: got %f, want 1.5", result2.EffectMultiplier)
 	}
 
-	// 正確性が100%でない場合、perfectRhythmは不発動
+	// 非パーフェクトの場合、perfectRhythmは不発動
 	ctx2 := &PassiveEvaluationContext{
-		Accuracy: 95,
+		IsPerfect: false,
 	}
 	result3 := EvaluatePassive(buffExtender, ctx2)
 	result4 := EvaluatePassive(perfectRhythm, ctx2)

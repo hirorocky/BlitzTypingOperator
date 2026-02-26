@@ -26,7 +26,7 @@ func TestPassiveSkill_PermanentEffect(t *testing.T) {
 		}
 
 		ctx := &domain.PassiveEvaluationContext{
-			Accuracy:        80,
+			IsPerfect:       false,
 			WPM:             60,
 			PlayerHPPercent: 100,
 			EnemyHPPercent:  100,
@@ -63,9 +63,9 @@ func TestPassiveSkill_ConditionalMultiplier(t *testing.T) {
 			},
 		}
 
-		// 正確性100%の場合
+		// パーフェクトの場合
 		ctx100 := &domain.PassiveEvaluationContext{
-			Accuracy: 100,
+			IsPerfect: true,
 		}
 		result100 := domain.EvaluatePassive(def, ctx100)
 
@@ -76,9 +76,9 @@ func TestPassiveSkill_ConditionalMultiplier(t *testing.T) {
 			t.Errorf("EffectMultiplier expected 1.5, got %f", result100.EffectMultiplier)
 		}
 
-		// 正確性100%未満の場合
+		// 非パーフェクトの場合
 		ctx95 := &domain.PassiveEvaluationContext{
-			Accuracy: 95,
+			IsPerfect: false,
 		}
 		result95 := domain.EvaluatePassive(def, ctx95)
 

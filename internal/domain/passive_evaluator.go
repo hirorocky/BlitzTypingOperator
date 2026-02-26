@@ -39,8 +39,8 @@ const (
 // PassiveEvaluationContext はパッシブスキル評価時のコンテキストを表す構造体です。
 // バトル状態、プレイヤー状態、敵状態など、評価に必要な情報を含みます。
 type PassiveEvaluationContext struct {
-	// Accuracy は現在のタイピング正確性（0-100）です。
-	Accuracy float64
+	// IsPerfect はパーフェクトタイピング（ミスなし完了）かどうかです。
+	IsPerfect bool
 
 	// WPM は現在のWPM（Words Per Minute）です。
 	WPM float64
@@ -226,7 +226,7 @@ func evaluateReactive(def PassiveSkill, ctx *PassiveEvaluationContext) PassiveEv
 func checkCondition(cond *TriggerCondition, ctx *PassiveEvaluationContext) bool {
 	switch cond.Type {
 	case TriggerConditionAccuracyEquals:
-		return ctx.Accuracy == cond.Value
+		return ctx.IsPerfect
 	case TriggerConditionWPMAbove:
 		return ctx.WPM >= cond.Value
 	case TriggerConditionHPBelowPercent:

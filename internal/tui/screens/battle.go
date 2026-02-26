@@ -20,14 +20,29 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// resultDisplayDuration はリザルト表示の自動クローズ時間です。
+const resultDisplayDuration = 5 * time.Second
+
+// ResultDisplayState はチャレンジ完了後のリザルト表示状態を保持します。
+type ResultDisplayState struct {
+	// AgentIndex はリザルト表示対象のエージェントインデックスです。
+	AgentIndex int
+
+	// Status はチャレンジステータスです。
+	Status domain.ChallengeStatus
+
+	// EffectResult は効果結果です。
+	EffectResult *combat.SkillEffectResult
+
+	// StartTime は表示開始時刻（自動クローズ用）です。
+	StartTime time.Time
+}
+
 // ==================== Task 10.3: バトル画面 ====================
 
 // tickInterval はバトル画面の更新間隔です。
 // config.BattleTickIntervalを参照しています。
 var tickInterval = config.BattleTickInterval
-
-// perfectDisplayTicks はパーフェクト演出の表示tick数です（約0.5秒 = 5 tick × 100ms）。
-const perfectDisplayTicks = 5
 
 // ==================== メッセージ型 ====================
 
@@ -128,10 +143,8 @@ type BattleScreen struct {
 	victory       bool
 	showingResult bool
 
-	// パーフェクト演出状態
-	showingPerfect  bool
-	perfectTimer    int
-	perfectRenderer ascii.PerfectRenderer
+	// リザルト表示状態（チャレンジ完了後のエージェントボックス内表示）
+	resultDisplay *ResultDisplayState
 
 	// UI
 	styles          *styles.GameStyles
@@ -185,7 +198,6 @@ func NewBattleScreen(enemy *domain.EnemyModel, player *domain.PlayerModel, agent
 		firstStrikeAgentIndex: -1, // 無効値で初期化
 		styles:                gs,
 		winLoseRenderer:       ascii.NewWinLoseRenderer(gs),
-		perfectRenderer:       ascii.NewPerfectRenderer(gs),
 		width:                 140,
 		height:                40,
 		// UI改善: アニメーション初期化
@@ -337,11 +349,10 @@ func (s *BattleScreen) handleTick() (tea.Model, tea.Cmd) {
 		return s, s.tick()
 	}
 
-	// パーフェクト演出タイマー
-	if s.showingPerfect {
-		s.perfectTimer++
-		if s.perfectTimer >= perfectDisplayTicks {
-			s.showingPerfect = false
+	// リザルト表示の5秒自動クローズ
+	if s.resultDisplay != nil {
+		if time.Since(s.resultDisplay.StartTime) >= resultDisplayDuration {
+			s.resultDisplay = nil
 		}
 	}
 
@@ -464,6 +475,8 @@ func (s *BattleScreen) handleSkillSelection(msg tea.KeyMsg) (tea.Model, tea.Cmd)
 		}
 		// そのエージェントの最初のスキルを選択
 		s.selectFirstSkillOfAgent(s.selectedAgentIdx)
+		// リザルト表示中のエージェントにカーソルが移動したらリザルトを閉じる
+		s.closeResultIfOnAgent(s.selectedAgentIdx)
 	case "right", "l":
 		// 次のエージェントに切り替え
 		s.selectedAgentIdx++
@@ -472,6 +485,8 @@ func (s *BattleScreen) handleSkillSelection(msg tea.KeyMsg) (tea.Model, tea.Cmd)
 		}
 		// そのエージェントの最初のスキルを選択
 		s.selectFirstSkillOfAgent(s.selectedAgentIdx)
+		// リザルト表示中のエージェントにカーソルが移動したらリザルトを閉じる
+		s.closeResultIfOnAgent(s.selectedAgentIdx)
 	case "up", "k":
 		// 現在のエージェント内で前のスキルに移動
 		s.moveToPrevSkillInAgent()

@@ -51,7 +51,7 @@ func TestCalculateGuaranteedRewardWithProgress_RankUpRewards(t *testing.T) {
 
 	stats := &BattleStatistics{
 		TotalWPM:         80.0,
-		TotalAccuracy:    0.95,
+		TotalScore:       95,
 		TotalTypingCount: 10,
 	}
 
@@ -106,7 +106,7 @@ func TestCalculateGuaranteedRewardWithProgress_RankUpNoRewards(t *testing.T) {
 
 	stats := &BattleStatistics{
 		TotalWPM:         80.0,
-		TotalAccuracy:    0.95,
+		TotalScore:       95,
 		TotalTypingCount: 10,
 	}
 
@@ -193,7 +193,7 @@ func TestCalculateGuaranteedRewardWithProgress_RankUpSkillNoChainEffect(t *testi
 
 	stats := &BattleStatistics{
 		TotalWPM:         80.0,
-		TotalAccuracy:    0.95,
+		TotalScore:       95,
 		TotalTypingCount: 10,
 	}
 

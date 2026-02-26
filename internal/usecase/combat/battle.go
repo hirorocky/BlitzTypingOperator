@@ -16,11 +16,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// AccuracyPenaltyThreshold は効果半減の正確性閾値です。
-
-// config.AccuracyPenaltyThresholdを参照するためのエイリアス
-const AccuracyPenaltyThreshold = config.AccuracyPenaltyThreshold
-
 // calculateDamage はダメージを計算します（最低1ダメージ保証）。
 func calculateDamage(baseDamage int, damageReduction float64) int {
 	damage := int(float64(baseDamage) * (1.0 - damageReduction))
@@ -102,8 +97,8 @@ type BattleStatistics struct {
 	// TotalWPM はWPMの合計値です。
 	TotalWPM float64
 
-	// TotalAccuracy は正確性の合計値です。
-	TotalAccuracy float64
+	// TotalScore はスコアの合計値です。
+	TotalScore int
 
 	// StartTime はバトル開始時刻です。
 	StartTime time.Time
@@ -126,12 +121,12 @@ func (s *BattleStatistics) GetAverageWPM() float64 {
 	return s.TotalWPM / float64(s.TotalTypingCount)
 }
 
-// GetAverageAccuracy は平均正確性を返します。
-func (s *BattleStatistics) GetAverageAccuracy() float64 {
+// GetAverageScore は平均スコアを返します。
+func (s *BattleStatistics) GetAverageScore() float64 {
 	if s.TotalTypingCount == 0 {
 		return 0
 	}
-	return s.TotalAccuracy / float64(s.TotalTypingCount)
+	return float64(s.TotalScore) / float64(s.TotalTypingCount)
 }
 
 // GetClearTime はクリア時間を返します。
@@ -573,16 +568,43 @@ func (e *BattleEngine) calculateHPChange(
 	statValue := e.getModifiedStatValue(stats, effect.HPFormula.StatRef, effects)
 	baseHP := effect.HPFormula.Base + effect.HPFormula.StatCoef*float64(statValue)
 
-	// タイピング結果による補正
-	if typingResult != nil {
-		baseHP *= typingResult.SpeedFactor * typingResult.AccuracyFactor
-		if typingResult.AccuracyFactor < AccuracyPenaltyThreshold {
-			baseHP *= 0.5
-		}
+	return int(baseHP)
+}
+
+// calculateRawHPChange はEffectTable補正なしの素のHP変化量を計算します。
+// リザルト表示用（補正前の値を表示するため）。
+func (e *BattleEngine) calculateRawHPChange(effect *domain.SkillEffect, stats domain.Stats) int {
+	if effect.HPFormula == nil {
+		return 0
 	}
 
-	// スケール係数を適用
-	return int(baseHP)
+	statValue := e.getStatValue(stats, effect.HPFormula.StatRef)
+	return int(effect.HPFormula.Base + effect.HPFormula.StatCoef*float64(statValue))
+}
+
+// SkillEffectResult はスキル効果適用結果です。
+// 通常効果と潜在効果を分離して記録します。
+type SkillEffectResult struct {
+	// TotalDamage は総HP変動量です。
+	TotalDamage int
+
+	// NormalEffects は通常効果の詳細リストです。
+	NormalEffects []EffectDetail
+
+	// LatentEffects は潜在効果の詳細リストです。
+	LatentEffects []EffectDetail
+}
+
+// EffectDetail は個別効果の詳細です。
+type EffectDetail struct {
+	// TargetIsEnemy はtrueなら敵対象、falseならプレイヤー対象です。
+	TargetIsEnemy bool
+
+	// HPChange はHP変動量です（正=回復、負=ダメージ）。
+	HPChange int
+
+	// Description はバフ/デバフなどの効果説明テキストです。
+	Description string
 }
 
 // ApplySkillEffect はスキル効果を適用します。
@@ -592,20 +614,20 @@ func (e *BattleEngine) ApplySkillEffect(
 	agent *domain.AgentModel,
 	skill *domain.SkillModel,
 	typingResult *typing.TypingResult,
-) int {
+) SkillEffectResult {
 	// プレイヤーの効果を取得
 	ctx := domain.NewEffectContext(state.Player.HP, state.Player.MaxHP, state.Enemy.HP, state.Enemy.MaxHP)
 
 	// タイピング結果をコンテキストに設定（パッシブスキル評価用）
 	if typingResult != nil {
-		ctx.SetTypingResult(typingResult.Accuracy, typingResult.WPM, 0)
+		ctx.SetTypingResult(typingResult.IsPerfect, typingResult.WPM, 0)
 		ctx.SetEvent(domain.EventOnTypingDone)
 	}
 
 	playerEffects := state.Player.EffectTable.Aggregate(ctx)
 	enemyEffects := state.Enemy.EffectTable.Aggregate(ctx)
 
-	totalEffect := 0
+	result := SkillEffectResult{}
 
 	// 各効果を評価・適用
 	for _, effect := range skill.Type.Effects {
@@ -622,6 +644,8 @@ func (e *BattleEngine) ApplySkillEffect(
 		// HP変化効果の適用
 		if effect.HPFormula != nil {
 			hpChange := e.calculateHPChange(&effect, agent.BaseStats, typingResult, playerEffects)
+			// リザルト表示用: EffectTable補正なしの素の値
+			rawHPChange := e.calculateRawHPChange(&effect, agent.BaseStats)
 
 			switch effect.Target {
 			case domain.TargetEnemy:
@@ -643,7 +667,14 @@ func (e *BattleEngine) ApplySkillEffect(
 
 				state.Enemy.TakeDamage(damage)
 				state.Stats.TotalDamageDealt += damage
-				totalEffect += damage
+				result.TotalDamage += damage
+
+				detail := EffectDetail{TargetIsEnemy: true, HPChange: -rawHPChange}
+				if effect.IsLatent {
+					result.LatentEffects = append(result.LatentEffects, detail)
+				} else {
+					result.NormalEffects = append(result.NormalEffects, detail)
+				}
 
 				// ライフスティール処理
 				if playerEffects.LifeSteal > 0 && damage > 0 {
@@ -668,7 +699,14 @@ func (e *BattleEngine) ApplySkillEffect(
 						state.Player.Heal(healAmount)
 					}
 					state.Stats.TotalHealAmount += healAmount
-					totalEffect += healAmount
+					result.TotalDamage += healAmount
+
+					detail := EffectDetail{TargetIsEnemy: false, HPChange: rawHPChange}
+					if effect.IsLatent {
+						result.LatentEffects = append(result.LatentEffects, detail)
+					} else {
+						result.NormalEffects = append(result.NormalEffects, detail)
+					}
 				} else if hpChange < 0 {
 					// 自傷ダメージ
 					state.Player.TakeDamage(-hpChange)
@@ -697,6 +735,16 @@ func (e *BattleEngine) ApplySkillEffect(
 			case domain.TargetEnemy:
 				state.Enemy.EffectTable.AddDebuff(statusID, description, duration, values)
 			}
+
+			detail := EffectDetail{
+				TargetIsEnemy: effect.Target == domain.TargetEnemy,
+				Description:   description,
+			}
+			if effect.IsLatent {
+				result.LatentEffects = append(result.LatentEffects, detail)
+			} else {
+				result.NormalEffects = append(result.NormalEffects, detail)
+			}
 		}
 
 		// マナ獲得（効果発動時、ManaGain > 0の場合）
@@ -705,7 +753,7 @@ func (e *BattleEngine) ApplySkillEffect(
 		}
 	}
 
-	return totalEffect
+	return result
 }
 
 // ApplySkillEffectWithCombo はコンボカウントを考慮してスキル効果を適用します。
@@ -716,27 +764,26 @@ func (e *BattleEngine) ApplySkillEffectWithCombo(
 	skill *domain.SkillModel,
 	typingResult *typing.TypingResult,
 	comboCount int,
-) int {
+) SkillEffectResult {
 	// 基本効果を適用
-	baseDamage := e.ApplySkillEffect(state, agent, skill, typingResult)
+	result := e.ApplySkillEffect(state, agent, skill, typingResult)
 
 	// コンボ乗算を計算
 	comboMultiplier := e.calculateStackMultiplier(state, comboCount)
 	if comboMultiplier > 1.0 {
 		// 既に適用された基本ダメージに対して、追加分のダメージを計算
-		// baseDamage × (comboMultiplier - 1) = 追加ダメージ
-		additionalDamage := int(float64(baseDamage) * (comboMultiplier - 1.0))
+		additionalDamage := int(float64(result.TotalDamage) * (comboMultiplier - 1.0))
 		if additionalDamage > 0 {
 			// 追加ダメージを敵に適用
 			state.Enemy.HP -= additionalDamage
 			if state.Enemy.HP < 0 {
 				state.Enemy.HP = 0
 			}
-			return baseDamage + additionalDamage
+			result.TotalDamage += additionalDamage
 		}
 	}
 
-	return baseDamage
+	return result
 }
 
 // calculateStackMultiplier はスタック型パッシブの効果倍率を計算します。
@@ -799,7 +846,7 @@ func (e *BattleEngine) CheckBattleEnd(state *BattleState) (bool, *BattleResult) 
 func (e *BattleEngine) RecordTypingResult(state *BattleState, result *typing.TypingResult) {
 	state.Stats.TotalTypingCount++
 	state.Stats.TotalWPM += result.WPM
-	state.Stats.TotalAccuracy += result.Accuracy
+	state.Stats.TotalScore += result.Score
 }
 
 // ShouldUpdateMaxLevel は最高レベルを更新すべきかを判定します。
@@ -897,13 +944,15 @@ func (e *BattleEngine) ApplySkillEffectWithEcho(
 	skill *domain.SkillModel,
 	typingResult *typing.TypingResult,
 	repeatCount int,
-) int {
-	totalEffect := 0
+) SkillEffectResult {
+	combined := SkillEffectResult{}
 	for i := 0; i < repeatCount; i++ {
 		effect := e.ApplySkillEffect(state, agent, skill, typingResult)
-		totalEffect += effect
+		combined.TotalDamage += effect.TotalDamage
+		combined.NormalEffects = append(combined.NormalEffects, effect.NormalEffects...)
+		combined.LatentEffects = append(combined.LatentEffects, effect.LatentEffects...)
 	}
-	return totalEffect
+	return combined
 }
 
 // EvaluateMiracleHeal はps_miracle_healの発動を評価します。

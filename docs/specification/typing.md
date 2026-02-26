@@ -3,7 +3,7 @@
 ## 概要
 
 タイピングシステムはプレイヤーの入力評価を担当するドメインです。
-チャレンジタイプごとに専用のタイピングミニゲームを定義し、共通のI/F（入力: 難易度・辞書、出力: 正確性・スピード・成否）で統一します。
+チャレンジタイプごとに専用のタイピングミニゲームを定義し、共通のI/F（入力: 難易度・辞書、出力: スコア・スピード・成否）で統一します。
 
 **実装**:
 - ドメイン型: `/internal/domain/challenge.go`
@@ -46,16 +46,19 @@ The typing system shall use DifficultyRate for difficulty scaling:
 ### REQ-TYPING-3: チャレンジステータス
 **種別**: Ubiquitous
 
-The typing system shall use a 3-state challenge status:
-- **Success**: 全文字入力完了（タイムアウトと同フレーム競合時は成功優先）
-- **Fail**: 制限時間超過（タイムアウト）
-- **Cancel**: ESCキーによるキャンセル
+The typing system shall use a 4-state challenge status:
+- **Success** (=0): 全文字入力完了（ミスあり。タイムアウトと同フレーム競合時は成功優先）
+- **Fail** (=1): 制限時間超過（タイムアウト）
+- **Cancel** (=2): ESCキーによるキャンセル
+- **Perfect** (=3): ミスなし全文字入力完了（Standard/Shapeのみ。Defenseでは発生しない）
 
 **受け入れ基準**:
-1. Success時: 効果適用パイプライン実行
+1. Success/Perfect時: 効果適用パイプライン実行
 2. Fail時: 効果なし
 3. Cancel時: 効果なし
 4. ディフェンスタイプはFail状態にならない（制限時間なし）
+5. ディフェンスタイプはPerfect状態にならない（常にSuccess）
+6. IsSuccess()メソッドがSuccess/Perfect両方でtrueを返す
 
 ### REQ-TYPING-4: 入力評価
 **種別**: State-Driven
@@ -81,27 +84,17 @@ The typing system shall calculate WPM as:
 1. 標準的なWPM計算式に準拠
 2. 完了時間0の場合は0を返す
 
-### REQ-TYPING-6: 正確性計算
+### REQ-TYPING-6: スコア計算
 **種別**: Ubiquitous
 
-The typing system shall calculate accuracy as:
-- 正確性 = 正しい入力数 / 総入力数
+The typing system shall calculate score as:
+- Standard/Shape: Score = int(正しい入力数 / 総入力数 × 100)（切り捨て）
+- Defense: Score = int(最終防御率 × 100)（切り捨て）
 
 **受け入れ基準**:
-1. 0.0〜1.0の範囲で表現
-2. 入力なしの場合は1.0（ペナルティなし）
-
-### REQ-TYPING-7: 速度係数計算
-**種別**: Ubiquitous
-
-The typing system shall calculate speed factor as:
-- 速度係数 = 基準時間 / 実際完了時間
-- 上限: 2.0
-
-**受け入れ基準**:
-1. 速くクリアするほど高い係数
-2. 上限2.0でキャップ
-3. スキル効果の乗算に使用
+1. 0〜100の整数値
+2. ミスなしの場合はScore=100
+3. Cancel時はScore=0
 
 ## チャレンジタイプ
 
@@ -117,9 +110,9 @@ The typing system shall calculate speed factor as:
 - RetryOnTimeout（タイムアウト時の再挑戦）対応
 
 **評価**:
-- Accuracy: 正しい入力数 / 総入力数
-- SpeedFactor: 基準時間 / 実際完了時間（上限2.0）
+- Score: int(正しい入力数 / 総入力数 × 100)
 - WPM: パッシブスキル判定用
+- ミスなし完了時: Status=ChallengePerfect
 
 ### シェイプ（shape）
 
@@ -143,7 +136,7 @@ The typing system shall calculate speed factor as:
 - 新形状はshapeパッケージ内にファイル追加で拡張可能
 
 **評価**:
-- スタンダードと共通
+- スタンダードと共通（Score算出、ミスなし→ChallengePerfect）
 
 ### ディフェンス（defense）
 
@@ -157,7 +150,7 @@ The typing system shall calculate speed factor as:
 - 全文字入力完了で次の単語が自動生成される（繰り返し）
 - 敵の攻撃を受けた時点の防御率でダメージ軽減
   - 実効軽減率 = `damage_cut値 × DefenseRate`
-- 敵攻撃後にチャレンジが自動終了（Status=Success, Accuracy=攻撃時の防御率）
+- 敵攻撃後にチャレンジが自動終了（Status=Success, Score=int(攻撃時の防御率×100)）
 - ESCキーでキャンセル可能（Status=Cancel、ダメージ軽減なし）
 
 **特殊仕様**:
@@ -187,11 +180,10 @@ The typing system shall calculate speed factor as:
 **責務**: チャレンジの出力結果
 
 **フィールド**:
-- Accuracy: 正確性（0.0-1.0。ディフェンスでは最終防御率）
-- SpeedFactor: 速度係数（上限2.0）
+- Score: スコア（0-100の整数。Standard/Shape: int(accuracy×100)、Defense: int(defenseRate×100)）
 - WPM: Words Per Minute
 - CompletionTime: 完了時間
-- Status: ChallengeStatus（Success/Fail/Cancel）
+- Status: ChallengeStatus（Success/Fail/Cancel/Perfect）
 
 ### TypingResult
 
@@ -202,11 +194,9 @@ The typing system shall calculate speed factor as:
 **フィールド**:
 - Completed: 完了フラグ
 - WPM: Words Per Minute
-- Accuracy: 正確性（0.0-1.0）
-- SpeedFactor: 速度係数（上限2.0）
-- AccuracyFactor: 正確性係数（ダメージ計算用）
+- Score: スコア（0-100の整数）
 - Timeout: タイムアウトフラグ
-- IsPerfect: パーフェクトタイピングフラグ（Success かつ Accuracy >= 1.0 かつ非ディフェンスかつ`latent_effect`解放済みの場合 true）。パーフェクト演出は解放状態に関わらず表示される
+- IsPerfect: パーフェクトタイピングフラグ（Status==ChallengePerfect かつ非ディフェンス かつ`latent_effect`解放済みの場合 true）
 
 ### ChallengeModel
 
@@ -240,5 +230,5 @@ The typing system shall calculate speed factor as:
 
 - **Battle**: タイピング結果に基づくスキル効果計算、ディフェンス中の敵攻撃処理
 - **Game Loop**: タイピング統計の記録
-- **Collection**: WPM/正確性に基づく実績解除
+- **Collection**: WPM/スコアに基づく実績解除
 - **Agent**: SkillType.ChallengeType/DifficultyRate/ChallengeOptionsの参照

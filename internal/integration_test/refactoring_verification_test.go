@@ -222,17 +222,15 @@ func TestRefactoring_BattleFlowUnchanged(t *testing.T) {
 
 	// スキル効果の検証
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            80,
-		Accuracy:       0.95,
-		SpeedFactor:    1.5,
-		AccuracyFactor: 0.95,
+		Completed: true,
+		WPM:       80,
+		Score:     95,
 	}
 	initialEnemyHP := state.Enemy.HP
 	agent := agents[0]
 	skill := agent.Skills[0]
-	skillDamage := engine.ApplySkillEffect(state, agent, skill, typingResult)
-	if skillDamage <= 0 {
+	skillResult := engine.ApplySkillEffect(state, agent, skill, typingResult)
+	if skillResult.TotalDamage <= 0 {
 		t.Error("スキルダメージは正の値であるべき")
 	}
 	if state.Enemy.HP >= initialEnemyHP {
@@ -249,9 +247,6 @@ func TestRefactoring_ConstantsIntegration(t *testing.T) {
 	}
 	if config.DefaultSkillCooldown != 5.0 {
 		t.Errorf("DefaultSkillCooldown expected 5.0, got %f", config.DefaultSkillCooldown)
-	}
-	if config.AccuracyPenaltyThreshold != 0.5 {
-		t.Errorf("AccuracyPenaltyThreshold expected 0.5, got %f", config.AccuracyPenaltyThreshold)
 	}
 	if config.MinEnemyAttackInterval != 500*time.Millisecond {
 		t.Errorf("MinEnemyAttackInterval expected 500ms, got %v", config.MinEnemyAttackInterval)
@@ -389,7 +384,7 @@ func TestRefactoring_RewardConversion(t *testing.T) {
 	// バトル統計を作成
 	battleStats := &combat.BattleStatistics{
 		TotalWPM:         250.0,
-		TotalAccuracy:    2.85, // 0.95 × 3
+		TotalScore:       285, // 95 × 3
 		TotalTypingCount: 3,
 		TotalDamageDealt: 150,
 		TotalDamageTaken: 30,
@@ -399,7 +394,7 @@ func TestRefactoring_RewardConversion(t *testing.T) {
 	// バトル統計から報酬統計を構築
 	rewardStats := &rewarding.BattleStatistics{
 		TotalWPM:         battleStats.TotalWPM,
-		TotalAccuracy:    battleStats.TotalAccuracy,
+		TotalScore:       battleStats.TotalScore,
 		TotalTypingCount: battleStats.TotalTypingCount,
 		TotalDamageDealt: battleStats.TotalDamageDealt,
 		TotalDamageTaken: battleStats.TotalDamageTaken,
@@ -470,11 +465,9 @@ func TestRefactoring_AllComponentsIntegrated(t *testing.T) {
 
 	// 6. バトル進行
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            80,
-		Accuracy:       0.95,
-		SpeedFactor:    1.5,
-		AccuracyFactor: 0.95,
+		Completed: true,
+		WPM:       80,
+		Score:     95,
 	}
 
 	for battleState.Enemy.IsAlive() {
@@ -494,7 +487,7 @@ func TestRefactoring_AllComponentsIntegrated(t *testing.T) {
 	// 8. 報酬統計の構築（変換が正しく動作することを確認）
 	rewardStats := &rewarding.BattleStatistics{
 		TotalWPM:         result.Stats.TotalWPM,
-		TotalAccuracy:    result.Stats.TotalAccuracy,
+		TotalScore:       result.Stats.TotalScore,
 		TotalTypingCount: result.Stats.TotalTypingCount,
 		TotalDamageDealt: result.Stats.TotalDamageDealt,
 		TotalDamageTaken: result.Stats.TotalDamageTaken,

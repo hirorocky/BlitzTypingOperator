@@ -200,7 +200,7 @@ func (p PassiveSkill) buildCondition() func(*EffectContext) bool {
 
 	case TriggerConditionAccuracyEquals:
 		return func(ctx *EffectContext) bool {
-			return ctx.Accuracy >= 1.0
+			return ctx.IsPerfect
 		}
 
 	case TriggerConditionWPMAbove:

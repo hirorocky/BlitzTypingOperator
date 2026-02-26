@@ -16,10 +16,6 @@ const (
 	// スキル使用後、この期間中はエージェントの全スキルが使用不可になります。
 	DefaultRecastDuration = 5 * time.Second
 
-	// AccuracyPenaltyThreshold は正確性ペナルティ発生閾値です。
-	// この値未満の正確性の場合、効果が半減します。
-	AccuracyPenaltyThreshold = 0.5
-
 	// MinEnemyAttackInterval は敵の最小攻撃間隔です。
 	// 高レベルの敵でもこれ以上短い間隔では攻撃しません。
 	MinEnemyAttackInterval = 500 * time.Millisecond

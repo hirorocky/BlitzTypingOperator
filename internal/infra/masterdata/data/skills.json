@@ -17,6 +17,13 @@
           "probability": 1.0,
           "luk_factor": 0,
           "icon": "🔪"
+        },
+        {
+          "target": "enemy",
+          "hp_formula": { "base": 0, "stat_coef": 0.5, "stat_ref": "STR" },
+          "probability": 1.0,
+          "luk_factor": 0,
+          "icon": "🔪"
         }
       ]
     },

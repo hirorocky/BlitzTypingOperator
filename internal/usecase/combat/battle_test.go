@@ -495,9 +495,8 @@ func TestCalculateAttackDamage(t *testing.T) {
 
 	// タイピング結果を準備
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		SpeedFactor:    1.5,
-		AccuracyFactor: 0.9,
+		Completed: true,
+		Score:     90,
 	}
 
 	// 物理攻撃スキル（STR参照）
@@ -534,9 +533,8 @@ func TestCalculateHealAmount(t *testing.T) {
 	agent := domain.NewAgent("agent_001", core, skills)
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		SpeedFactor:    1.2,
-		AccuracyFactor: 1.0,
+		Completed: true,
+		Score:     100,
 	}
 
 	skill := skills[0]
@@ -544,51 +542,6 @@ func TestCalculateHealAmount(t *testing.T) {
 
 	if healAmount <= 0 {
 		t.Error("回復量が0以下")
-	}
-}
-
-// TestAccuracyPenalty は正確性50%未満での効果半減をテストします。
-
-func TestAccuracyPenalty(t *testing.T) {
-	engine := NewBattleEngine(nil)
-
-	coreType := domain.CoreType{
-		ID:          "all_rounder",
-		Name:        "オールラウンダー",
-		StatWeights: map[string]float64{"STR": 1.0, "INT": 1.0, "WIL": 1.0, "LUK": 1.0},
-		AllowedTags: []string{"physical_low"},
-	}
-	passiveSkill := domain.PassiveSkill{ID: "test", Name: "テスト"}
-	core := domain.NewCoreWithTypeID("core_001", coreType, passiveSkill)
-	skills := []*domain.SkillModel{
-		newTestDamageSkill("m1", "物理打撃", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageSkill("m2", "スキル", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageSkill("m3", "スキル", []string{"physical_low"}, 1.0, "STR", ""),
-		newTestDamageSkill("m4", "スキル", []string{"physical_low"}, 1.0, "STR", ""),
-	}
-	agent := domain.NewAgent("agent_001", core, skills)
-
-	// 正確性100%
-	normalResult := &typing.TypingResult{
-		Completed:      true,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
-	}
-	normalDamage := engine.CalculateSkillEffectWithPassive(agent, skills[0], normalResult)
-
-	// 正確性40%（50%未満）
-	lowAccuracyResult := &typing.TypingResult{
-		Completed:      true,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 0.4,
-	}
-	penalizedDamage := engine.CalculateSkillEffectWithPassive(agent, skills[0], lowAccuracyResult)
-
-	// 半減されているはず
-	expectedPenalizedDamage := normalDamage / 2
-	tolerance := expectedPenalizedDamage / 5 // 20%の誤差許容
-	if penalizedDamage > expectedPenalizedDamage+tolerance {
-		t.Errorf("正確性ペナルティが適用されていない: 通常ダメージ %d, ペナルティダメージ %d", normalDamage, penalizedDamage)
 	}
 }
 
@@ -713,10 +666,9 @@ func TestBattleStatistics(t *testing.T) {
 
 	// タイピング結果を記録
 	typingResult := &typing.TypingResult{
-		Completed:   true,
-		WPM:         80.0,
-		Accuracy:    0.95,
-		SpeedFactor: 1.2,
+		Completed: true,
+		WPM:       80.0,
+		Score:     95,
 	}
 	engine.RecordTypingResult(state, typingResult)
 
@@ -1091,9 +1043,8 @@ func TestPassiveSkillSTRMultiplier(t *testing.T) {
 
 	// タイピング結果
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
+		Completed: true,
+		Score:     100,
 	}
 
 	// ApplySkillEffectを使用して実際のダメージを計算

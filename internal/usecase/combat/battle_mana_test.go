@@ -41,11 +41,9 @@ func TestApplySkillEffect_マナ消費はApplySkillEffectの責務外(t *testing
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       1.0,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
+		Completed: true,
+		WPM:       60.0,
+		Score:     100,
 	}
 
 	// Act
@@ -88,11 +86,9 @@ func TestApplySkillEffect_ManaGain獲得(t *testing.T) {
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       1.0,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
+		Completed: true,
+		WPM:       60.0,
+		Score:     100,
 	}
 
 	// Act
@@ -135,11 +131,9 @@ func TestApplySkillEffect_ManaGain確率で不発(t *testing.T) {
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       1.0,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
+		Completed: true,
+		WPM:       60.0,
+		Score:     100,
 	}
 
 	// Act
@@ -183,11 +177,9 @@ func TestApplySkillEffect_ManaCostゼロ_マナ不変(t *testing.T) {
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       1.0,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
+		Completed: true,
+		WPM:       60.0,
+		Score:     100,
 	}
 
 	// Act
@@ -231,11 +223,9 @@ func TestApplySkillEffect_ManaGainのみ発生_消費は呼び出し側(t *testi
 	engine.SetRng(rand.New(rand.NewSource(42)))
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       1.0,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
+		Completed: true,
+		WPM:       60.0,
+		Score:     100,
 	}
 
 	// Act
