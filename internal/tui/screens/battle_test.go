@@ -1416,9 +1416,6 @@ func TestBattleScreenChainEffectTimingVerification(t *testing.T) {
 	}
 }
 
-// ==================== テスト用ヘルパー関数（チェイン効果付き） ====================
-
-// createTestAgentsWithChainEffect はチェイン効果付きのエージェントを作成します。
 // ==================== 受け入れテスト: クールタイム開始タイミング変更 ====================
 
 // TestCooldownNotStartedOnSkillSelection はスキル選択時にクールダウン・リキャストが開始されないことを検証します（受け入れ基準1）。
@@ -1449,135 +1446,64 @@ func TestCooldownNotStartedOnSkillSelection(t *testing.T) {
 	}
 }
 
-// TestCooldownStartedOnChallengeSuccess はチャレンジ成功時にクールダウン・リキャストが開始されることを検証します（受け入れ基準2）。
-func TestCooldownStartedOnChallengeSuccess(t *testing.T) {
-	enemy := createTestEnemy()
-	player := createTestPlayer()
-	agents := createTestAgents()
-
-	screen := NewBattleScreen(enemy, player, agents, nil)
-
-	if len(screen.skillSlots) == 0 {
-		t.Skip("スキルスロットがありません")
+// TestCooldownStartedOnChallengeComplete は各種チャレンジ完了時にクールダウン・リキャストが開始されることを検証します（受け入れ基準2-4）。
+func TestCooldownStartedOnChallengeComplete(t *testing.T) {
+	testCases := []struct {
+		name        string
+		output      *domain.ChallengeOutput
+		errorSuffix string
+	}{
+		{
+			name:        "Success",
+			output:      &domain.ChallengeOutput{Status: domain.ChallengeSuccess, Score: 80, WPM: 60},
+			errorSuffix: "成功後",
+		},
+		{
+			name:        "Perfect",
+			output:      &domain.ChallengeOutput{Status: domain.ChallengePerfect, Score: 100, WPM: 80},
+			errorSuffix: "パーフェクト後",
+		},
+		{
+			name:        "Fail",
+			output:      &domain.ChallengeOutput{Status: domain.ChallengeFail, Score: 0, WPM: 0},
+			errorSuffix: "失敗後",
+		},
+		{
+			name:        "Cancel",
+			output:      &domain.ChallengeOutput{Status: domain.ChallengeCancel, Score: 0, WPM: 0},
+			errorSuffix: "キャンセル後",
+		},
 	}
 
-	// スキル選択（チャレンジ開始のみ）
-	screen.selectedSkillIdx = 0
-	slot := screen.skillSlots[screen.selectedSkillIdx]
-	screen.startChallenge(slot.Skill)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			enemy := createTestEnemy()
+			player := createTestPlayer()
+			agents := createTestAgents()
+			screen := NewBattleScreen(enemy, player, agents, nil)
 
-	// チャレンジ完了（Success）
-	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Score: 80, WPM: 60,
-	})
+			if len(screen.skillSlots) == 0 {
+				t.Skip("スキルスロットがありません")
+			}
 
-	// クールダウンが開始されていること
-	if screen.skillSlots[0].CooldownRemaining <= 0 {
-		t.Error("チャレンジ成功後にクールダウンが開始されていません")
-	}
+			// スキル選択（チャレンジ開始のみ）
+			screen.selectedSkillIdx = 0
+			slot := screen.skillSlots[screen.selectedSkillIdx]
+			screen.startChallenge(slot.Skill)
 
-	// リキャストが開始されていること
-	if screen.recastManager.IsAgentReady(slot.AgentIndex) {
-		t.Error("チャレンジ成功後にリキャストが開始されていません")
-	}
-}
+			// チャレンジ完了
+			screen.handleChallengeComplete(tc.output)
 
-// TestCooldownStartedOnChallengePerfect はチャレンジパーフェクト時にクールダウン・リキャストが開始されることを検証します（受け入れ基準2）。
-func TestCooldownStartedOnChallengePerfect(t *testing.T) {
-	enemy := createTestEnemy()
-	player := createTestPlayer()
-	agents := createTestAgents()
+			// クールダウンが開始されていること
+			if screen.skillSlots[0].CooldownRemaining <= 0 {
+				t.Errorf("チャレンジ%sにクールダウンが開始されていません", tc.errorSuffix)
+			}
 
-	screen := NewBattleScreen(enemy, player, agents, nil)
-
-	if len(screen.skillSlots) == 0 {
-		t.Skip("スキルスロットがありません")
-	}
-
-	// スキル選択（チャレンジ開始のみ）
-	screen.selectedSkillIdx = 0
-	slot := screen.skillSlots[screen.selectedSkillIdx]
-	screen.startChallenge(slot.Skill)
-
-	// チャレンジ完了（Perfect）
-	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengePerfect, Score: 100, WPM: 80,
-	})
-
-	// クールダウンが開始されていること
-	if screen.skillSlots[0].CooldownRemaining <= 0 {
-		t.Error("チャレンジパーフェクト後にクールダウンが開始されていません")
-	}
-
-	// リキャストが開始されていること
-	if screen.recastManager.IsAgentReady(slot.AgentIndex) {
-		t.Error("チャレンジパーフェクト後にリキャストが開始されていません")
-	}
-}
-
-// TestCooldownStartedOnChallengeFail はチャレンジ失敗時にクールダウン・リキャストが開始されることを検証します（受け入れ基準3）。
-func TestCooldownStartedOnChallengeFail(t *testing.T) {
-	enemy := createTestEnemy()
-	player := createTestPlayer()
-	agents := createTestAgents()
-
-	screen := NewBattleScreen(enemy, player, agents, nil)
-
-	if len(screen.skillSlots) == 0 {
-		t.Skip("スキルスロットがありません")
-	}
-
-	// スキル選択（チャレンジ開始のみ）
-	screen.selectedSkillIdx = 0
-	slot := screen.skillSlots[screen.selectedSkillIdx]
-	screen.startChallenge(slot.Skill)
-
-	// チャレンジ失敗（Fail）
-	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeFail, Score: 0, WPM: 0,
-	})
-
-	// クールダウンが開始されていること
-	if screen.skillSlots[0].CooldownRemaining <= 0 {
-		t.Error("チャレンジ失敗後にクールダウンが開始されていません")
-	}
-
-	// リキャストが開始されていること
-	if screen.recastManager.IsAgentReady(slot.AgentIndex) {
-		t.Error("チャレンジ失敗後にリキャストが開始されていません")
-	}
-}
-
-// TestCooldownStartedOnChallengeCancel はチャレンジキャンセル時にクールダウン・リキャストが開始されることを検証します（受け入れ基準4）。
-func TestCooldownStartedOnChallengeCancel(t *testing.T) {
-	enemy := createTestEnemy()
-	player := createTestPlayer()
-	agents := createTestAgents()
-
-	screen := NewBattleScreen(enemy, player, agents, nil)
-
-	if len(screen.skillSlots) == 0 {
-		t.Skip("スキルスロットがありません")
-	}
-
-	// スキル選択（チャレンジ開始のみ）
-	screen.selectedSkillIdx = 0
-	slot := screen.skillSlots[screen.selectedSkillIdx]
-	screen.startChallenge(slot.Skill)
-
-	// チャレンジキャンセル
-	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeCancel, Score: 0, WPM: 0,
-	})
-
-	// クールダウンが開始されていること
-	if screen.skillSlots[0].CooldownRemaining <= 0 {
-		t.Error("チャレンジキャンセル後にクールダウンが開始されていません")
-	}
-
-	// リキャストが開始されていること
-	if screen.recastManager.IsAgentReady(slot.AgentIndex) {
-		t.Error("チャレンジキャンセル後にリキャストが開始されていません")
+			// リキャストが開始されていること
+			if screen.recastManager.IsAgentReady(slot.AgentIndex) {
+				t.Errorf("チャレンジ%sにリキャストが開始されていません", tc.errorSuffix)
+			}
+		})
 	}
 }
 
@@ -1598,7 +1524,7 @@ func TestCooldownStartedOnDefenseAutoEnd(t *testing.T) {
 	slot := screen.skillSlots[screen.selectedSkillIdx]
 	screen.startChallenge(slot.Skill)
 
-	// モックDefenseProviderで実パスを通す
+	// モックDefenseProviderでprocessEnemyAttackWithDefenseの実パスを通す
 	dp := &mockDefenseProvider{defenseRate: 0.5}
 	screen.processEnemyAttackWithDefense(dp)
 
@@ -1651,6 +1577,9 @@ func TestChainEffectRegisteredOnChallengeComplete(t *testing.T) {
 	}
 }
 
+// ==================== テスト用ヘルパー関数（チェイン効果付き） ====================
+
+// createTestAgentsWithChainEffect はチェイン効果付きのエージェントを作成します。
 func createTestAgentsWithChainEffect() []*domain.AgentModel {
 	coreType := domain.CoreType{
 		ID:          "test",
