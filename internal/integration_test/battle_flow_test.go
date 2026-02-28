@@ -252,8 +252,8 @@ func TestBattleFlow_SkillUse_Heal(t *testing.T) {
 	result := engine.ApplySkillEffect(state, agent, skill, typingResult)
 
 	// 回復量が正の値
-	if result.TotalDamage <= 0 {
-		t.Errorf("回復量は0より大きいべきです: got %d", result.TotalDamage)
+	if result.TotalHeal <= 0 {
+		t.Errorf("回復量は0より大きいべきです: got %d", result.TotalHeal)
 	}
 
 	// プレイヤーHPが増加

@@ -585,6 +585,7 @@ func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
 		effectResult := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, skill, typingResult, s.comboCount)
 		effectAmount = effectResult.TotalDamage
 		combinedEffectResult.TotalDamage += effectResult.TotalDamage
+		combinedEffectResult.TotalHeal += effectResult.TotalHeal
 		combinedEffectResult.NormalEffects = append(combinedEffectResult.NormalEffects, effectResult.NormalEffects...)
 		combinedEffectResult.LatentEffects = append(combinedEffectResult.LatentEffects, effectResult.LatentEffects...)
 
@@ -592,6 +593,7 @@ func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
 			additionalResult := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, skill, typingResult, s.comboCount)
 			effectAmount += additionalResult.TotalDamage
 			combinedEffectResult.TotalDamage += additionalResult.TotalDamage
+			combinedEffectResult.TotalHeal += additionalResult.TotalHeal
 			combinedEffectResult.NormalEffects = append(combinedEffectResult.NormalEffects, additionalResult.NormalEffects...)
 			combinedEffectResult.LatentEffects = append(combinedEffectResult.LatentEffects, additionalResult.LatentEffects...)
 		}
@@ -600,6 +602,7 @@ func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
 			secondResult := s.battleEngine.ApplySkillEffectWithCombo(s.battleState, agent, skill, typingResult, s.comboCount)
 			effectAmount += secondResult.TotalDamage
 			combinedEffectResult.TotalDamage += secondResult.TotalDamage
+			combinedEffectResult.TotalHeal += secondResult.TotalHeal
 			combinedEffectResult.NormalEffects = append(combinedEffectResult.NormalEffects, secondResult.NormalEffects...)
 			combinedEffectResult.LatentEffects = append(combinedEffectResult.LatentEffects, secondResult.LatentEffects...)
 		}

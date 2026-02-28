@@ -557,7 +557,6 @@ func (e *BattleEngine) getModifiedStatValue(stats domain.Stats, statRef string, 
 func (e *BattleEngine) calculateHPChange(
 	effect *domain.SkillEffect,
 	stats domain.Stats,
-	typingResult *typing.TypingResult,
 	effects domain.EffectResult,
 ) int {
 	if effect.HPFormula == nil {
@@ -585,8 +584,11 @@ func (e *BattleEngine) calculateRawHPChange(effect *domain.SkillEffect, stats do
 // SkillEffectResult はスキル効果適用結果です。
 // 通常効果と潜在効果を分離して記録します。
 type SkillEffectResult struct {
-	// TotalDamage は総HP変動量です。
+	// TotalDamage は敵への総ダメージ量です。
 	TotalDamage int
+
+	// TotalHeal はプレイヤーへの総回復量です。
+	TotalHeal int
 
 	// NormalEffects は通常効果の詳細リストです。
 	NormalEffects []EffectDetail
@@ -643,7 +645,7 @@ func (e *BattleEngine) ApplySkillEffect(
 
 		// HP変化効果の適用
 		if effect.HPFormula != nil {
-			hpChange := e.calculateHPChange(&effect, agent.BaseStats, typingResult, playerEffects)
+			hpChange := e.calculateHPChange(&effect, agent.BaseStats, playerEffects)
 			// リザルト表示用: EffectTable補正なしの素の値
 			rawHPChange := e.calculateRawHPChange(&effect, agent.BaseStats)
 
@@ -699,7 +701,7 @@ func (e *BattleEngine) ApplySkillEffect(
 						state.Player.Heal(healAmount)
 					}
 					state.Stats.TotalHealAmount += healAmount
-					result.TotalDamage += healAmount
+					result.TotalHeal += healAmount
 
 					detail := EffectDetail{TargetIsEnemy: false, HPChange: rawHPChange}
 					if effect.IsLatent {
@@ -911,7 +913,7 @@ func (e *BattleEngine) CalculateSkillEffectWithPassive(
 	// 各効果のHP変化量を合計
 	for _, effect := range skill.Type.Effects {
 		if effect.HPFormula != nil {
-			hpChange := e.calculateHPChange(&effect, agent.BaseStats, typingResult, defaultEffects)
+			hpChange := e.calculateHPChange(&effect, agent.BaseStats, defaultEffects)
 			if hpChange < 0 {
 				hpChange = -hpChange // ダメージの場合は絶対値
 			}
@@ -949,6 +951,7 @@ func (e *BattleEngine) ApplySkillEffectWithEcho(
 	for i := 0; i < repeatCount; i++ {
 		effect := e.ApplySkillEffect(state, agent, skill, typingResult)
 		combined.TotalDamage += effect.TotalDamage
+		combined.TotalHeal += effect.TotalHeal
 		combined.NormalEffects = append(combined.NormalEffects, effect.NormalEffects...)
 		combined.LatentEffects = append(combined.LatentEffects, effect.LatentEffects...)
 	}
