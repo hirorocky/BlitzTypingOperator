@@ -57,7 +57,15 @@ const (
 
 	// ChallengeCancel はESCキーによるキャンセルです。
 	ChallengeCancel
+
+	// ChallengePerfect はミスなし完了（パーフェクト）です。
+	ChallengePerfect
 )
+
+// IsSuccess はチャレンジが成功状態かどうかを返します（Success/Perfect）。
+func (s ChallengeStatus) IsSuccess() bool {
+	return s == ChallengeSuccess || s == ChallengePerfect
+}
 
 // ChallengeInput はチャレンジへの入力パラメータです。
 type ChallengeInput struct {
@@ -101,11 +109,8 @@ func (i ChallengeInput) Validate() error {
 
 // ChallengeOutput はチャレンジの出力結果です。
 type ChallengeOutput struct {
-	// Accuracy は正確性（0.0-1.0）です。ディフェンスタイプでは最終防御率を表します。
-	Accuracy float64
-
-	// SpeedFactor は速度係数（上限2.0）です。
-	SpeedFactor float64
+	// Score はチャレンジスコア（0-100）です。Standard/Shape: int(accuracy×100)、Defense: int(defenseRate×100)。
+	Score int
 
 	// WPM はWords Per Minuteです（パッシブスキル判定用）。
 	WPM float64

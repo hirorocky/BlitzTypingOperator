@@ -37,11 +37,32 @@ func TestStandard_正しい入力で進捗(t *testing.T) {
 	if result == nil {
 		t.Fatal("全文字入力後にResult()がnilです")
 	}
-	if result.Status != domain.ChallengeSuccess {
-		t.Errorf("Status = %d, want ChallengeSuccess", result.Status)
+	if result.Status != domain.ChallengePerfect {
+		t.Errorf("Status = %d, want ChallengePerfect（ミスなし完了）", result.Status)
 	}
-	if result.Accuracy != 1.0 {
-		t.Errorf("Accuracy = %f, want 1.0", result.Accuracy)
+	if result.Score != 100 {
+		t.Errorf("Score = %d, want 100", result.Score)
+	}
+}
+
+func TestStandard_ミスあり完了はChallengeSuccess(t *testing.T) {
+	input := domain.ChallengeInput{
+		Difficulty: domain.DifficultyRateStandard,
+		Words:      []string{"ab"},
+	}
+
+	c := newStandardChallengeForTest(input, 42)
+
+	// ミス + 正解 + 正解
+	c, _ = c.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+	c, _ = c.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+	c, _ = c.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
+	result := c.Result()
+	if result == nil {
+		t.Fatal("Result()がnilです")
+	}
+	if result.Status != domain.ChallengeSuccess {
+		t.Errorf("Status = %d, want ChallengeSuccess（ミスあり完了）", result.Status)
 	}
 }
 
@@ -70,9 +91,9 @@ func TestStandard_誤入力でAccuracyが低下(t *testing.T) {
 	if result == nil {
 		t.Fatal("Result()がnilです")
 	}
-	// 正解2回 / 総入力3回 = 0.666...
-	if result.Accuracy < 0.6 || result.Accuracy > 0.7 {
-		t.Errorf("Accuracy = %f, want ~0.67", result.Accuracy)
+	// 正解2回 / 総入力3回 = 66
+	if result.Score < 60 || result.Score > 70 {
+		t.Errorf("Score = %d, want ~66", result.Score)
 	}
 }
 
@@ -163,8 +184,8 @@ func TestStandard_タイムアウトと全文字入力が同時なら成功優�
 	if result == nil {
 		t.Fatal("Result()がnilです")
 	}
-	if result.Status != domain.ChallengeSuccess {
-		t.Errorf("Status = %d, want ChallengeSuccess（成功が優先されるべき）", result.Status)
+	if !result.Status.IsSuccess() {
+		t.Errorf("Status = %d, want ChallengeSuccess or ChallengePerfect（成功が優先されるべき）", result.Status)
 	}
 }
 
@@ -241,6 +262,49 @@ func TestStandard_View出力(t *testing.T) {
 
 	if view == "" {
 		t.Error("View()が空です")
+	}
+}
+
+func TestStandard_Score境界値(t *testing.T) {
+	tests := []struct {
+		name      string
+		text      string
+		mistakes  int
+		wantScore int
+	}{
+		// accuracy = 正解数 / 総入力数, Score = int(accuracy * 100)
+		{"ミスなし→Score=100", "ab", 0, 100},
+		{"1ミス2正解→Score=66", "ab", 1, 66},  // 2/3 = 0.666... → int(66.6) = 66
+		{"1ミス3正解→Score=75", "abc", 1, 75}, // 3/4 = 0.75 → int(75) = 75
+		{"2ミス2正解→Score=50", "ab", 2, 50},  // 2/4 = 0.5 → int(50) = 50
+		{"99ミス1正解→Score=1", "a", 99, 1},   // 1/100 = 0.01 → int(1) = 1
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			input := domain.ChallengeInput{
+				Difficulty: domain.DifficultyRateStandard,
+				Words:      []string{tt.text},
+			}
+			c := newStandardChallengeForTest(input, 42)
+
+			// ミスを入力
+			for i := 0; i < tt.mistakes; i++ {
+				c, _ = c.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'!'}})
+			}
+			// 正しい文字を入力
+			for _, ch := range tt.text {
+				c, _ = c.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{ch}})
+			}
+
+			result := c.Result()
+			if result == nil {
+				t.Fatal("Result()がnilです")
+			}
+			if result.Score != tt.wantScore {
+				t.Errorf("Score = %d, want %d", result.Score, tt.wantScore)
+			}
+		})
 	}
 }
 

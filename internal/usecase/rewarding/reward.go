@@ -118,8 +118,8 @@ type BattleStatistics struct {
 	// TotalWPM はWPMの合計値です。
 	TotalWPM float64
 
-	// TotalAccuracy は正確性の合計値です。
-	TotalAccuracy float64
+	// TotalScore はスコアの合計値です。
+	TotalScore int
 
 	// ClearTime はクリア時間です。
 	ClearTime time.Duration
@@ -145,12 +145,12 @@ func (s *BattleStatistics) GetAverageWPM() float64 {
 	return s.TotalWPM / float64(s.TotalTypingCount)
 }
 
-// GetAverageAccuracy は平均正確性を返します。
-func (s *BattleStatistics) GetAverageAccuracy() float64 {
+// GetAverageScore は平均スコアを返します。
+func (s *BattleStatistics) GetAverageScore() float64 {
 	if s.TotalTypingCount == 0 {
 		return 0
 	}
-	return s.TotalAccuracy / float64(s.TotalTypingCount)
+	return float64(s.TotalScore) / float64(s.TotalTypingCount)
 }
 
 // RewardResult は報酬計算結果を表す構造体です。

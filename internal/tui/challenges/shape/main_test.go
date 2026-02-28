@@ -33,11 +33,11 @@ func TestShape_正しい入力で進捗(t *testing.T) {
 	if result == nil {
 		t.Fatal("全文字入力後にResult()がnilです")
 	}
-	if result.Status != domain.ChallengeSuccess {
-		t.Errorf("Status = %d, want ChallengeSuccess", result.Status)
+	if result.Status != domain.ChallengePerfect {
+		t.Errorf("Status = %d, want ChallengePerfect（ミスなし完了）", result.Status)
 	}
-	if result.Accuracy != 1.0 {
-		t.Errorf("Accuracy = %f, want 1.0", result.Accuracy)
+	if result.Score != 100 {
+		t.Errorf("Score = %d, want 100", result.Score)
 	}
 }
 

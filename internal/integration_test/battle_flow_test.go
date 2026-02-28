@@ -207,21 +207,19 @@ func TestBattleFlow_SkillUse_Attack(t *testing.T) {
 
 	// タイピング結果
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            80,
-		Accuracy:       0.95,
-		SpeedFactor:    1.5,
-		AccuracyFactor: 0.95,
+		Completed: true,
+		WPM:       80,
+		Score:     95,
 	}
 
 	// 物理攻撃スキルを使用
 	agent := agents[0]
 	skill := agent.Skills[0] // 物理打撃
-	damage := engine.ApplySkillEffect(state, agent, skill, typingResult)
+	result := engine.ApplySkillEffect(state, agent, skill, typingResult)
 
 	// ダメージが与えられた
-	if damage <= 0 {
-		t.Errorf("ダメージは0より大きいべきです: got %d", damage)
+	if result.TotalDamage <= 0 {
+		t.Errorf("ダメージは0より大きいべきです: got %d", result.TotalDamage)
 	}
 
 	// 敵HPが減少
@@ -243,21 +241,19 @@ func TestBattleFlow_SkillUse_Heal(t *testing.T) {
 
 	// タイピング結果
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            80,
-		Accuracy:       0.95,
-		SpeedFactor:    1.5,
-		AccuracyFactor: 0.95,
+		Completed: true,
+		WPM:       80,
+		Score:     95,
 	}
 
 	// 回復スキルを使用
 	agent := agents[0]
 	skill := agent.Skills[2] // ヒール
-	healAmount := engine.ApplySkillEffect(state, agent, skill, typingResult)
+	result := engine.ApplySkillEffect(state, agent, skill, typingResult)
 
 	// 回復量が正の値
-	if healAmount <= 0 {
-		t.Errorf("回復量は0より大きいべきです: got %d", healAmount)
+	if result.TotalHeal <= 0 {
+		t.Errorf("回復量は0より大きいべきです: got %d", result.TotalHeal)
 	}
 
 	// プレイヤーHPが増加
@@ -393,39 +389,6 @@ func TestBattleFlow_BuffDebuffInteraction(t *testing.T) {
 	}
 }
 
-func TestBattleFlow_AccuracyPenalty(t *testing.T) {
-	enemyTypes := createTestEnemyTypes()
-	engine := combat.NewBattleEngine(enemyTypes)
-	agents := createTestAgents()
-
-	// バトル初期化
-	_ = initBattleForTest(engine, 1, agents, enemyTypes)
-
-	agent := agents[0]
-	skill := agent.Skills[0]
-
-	// 高い正確性
-	highAccuracyResult := &typing.TypingResult{
-		Completed:      true,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 0.95,
-	}
-	highDamage := engine.CalculateSkillEffectWithPassive(agent, skill, highAccuracyResult)
-
-	// 低い正確性（50%未満）
-	lowAccuracyResult := &typing.TypingResult{
-		Completed:      true,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 0.4,
-	}
-	lowDamage := engine.CalculateSkillEffectWithPassive(agent, skill, lowAccuracyResult)
-
-	// 低い正確性の方が効果が低い（半減ペナルティ適用）
-	if lowDamage >= highDamage {
-		t.Errorf("低い正確性の効果は高い正確性より低いべきです: low=%d, high=%d", lowDamage, highDamage)
-	}
-}
-
 func TestBattleFlow_Statistics(t *testing.T) {
 	// バトル統計の記録
 	enemyTypes := createTestEnemyTypes()
@@ -438,7 +401,7 @@ func TestBattleFlow_Statistics(t *testing.T) {
 	result := &typing.TypingResult{
 		Completed: true,
 		WPM:       100,
-		Accuracy:  0.95,
+		Score:     95,
 	}
 	engine.RecordTypingResult(state, result)
 

@@ -162,7 +162,7 @@ func (s *HomeScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case components.ConfirmResultYes:
 			s.showingConfirm = false
 			return s, func() tea.Msg { return SaveRequestMsg{} }
-		case components.ConfirmResultNo, components.ConfirmResultCancelled:
+		case components.ConfirmResultNo, components.ConfirmResultCanceled:
 			s.showingConfirm = false
 		}
 		return s, nil

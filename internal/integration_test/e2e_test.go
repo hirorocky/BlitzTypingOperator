@@ -292,11 +292,9 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 
 	// バトル進行：プレイヤーが攻撃して敵を倒す
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            80,
-		Accuracy:       0.95,
-		SpeedFactor:    1.5,
-		AccuracyFactor: 0.95,
+		Completed: true,
+		WPM:       80,
+		Score:     95,
 	}
 
 	// 敵を倒すまで攻撃を繰り返す
@@ -321,7 +319,7 @@ func TestE2E_BattleVictoryFlow(t *testing.T) {
 	// バトル統計を作成
 	battleStats := &rewarding.BattleStatistics{
 		TotalWPM:         result.Stats.TotalWPM,
-		TotalAccuracy:    result.Stats.TotalAccuracy,
+		TotalScore:       result.Stats.TotalScore,
 		TotalTypingCount: result.Stats.TotalTypingCount,
 	}
 	// 敵タイプを作成（確定ドロップ用）
@@ -487,11 +485,9 @@ func TestE2E_ProgressionFlow(t *testing.T) {
 	engine := combat.NewBattleEngine(enemyTypes)
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            80,
-		Accuracy:       0.95,
-		SpeedFactor:    1.5,
-		AccuracyFactor: 0.95,
+		Completed: true,
+		WPM:       80,
+		Score:     95,
 	}
 
 	// 5回バトルして進行

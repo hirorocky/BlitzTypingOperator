@@ -17,12 +17,10 @@ func TestApplySkillEffect_LatentEffect_PerfectTriggersLatent(t *testing.T) {
 	engine, state, agent, skill := setupLatentEffectTest(t, true)
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       1.0,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
-		IsPerfect:      true,
+		Completed: true,
+		WPM:       60.0,
+		Score:     100,
+		IsPerfect: true,
 	}
 
 	initialHP := state.Enemy.HP
@@ -39,12 +37,10 @@ func TestApplySkillEffect_LatentEffect_NonPerfectSkipsLatent(t *testing.T) {
 	engine, state, agent, skill := setupLatentEffectTest(t, true)
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       0.9,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 0.9,
-		IsPerfect:      false,
+		Completed: true,
+		WPM:       60.0,
+		Score:     90,
+		IsPerfect: false,
 	}
 
 	initialHP := state.Enemy.HP
@@ -61,12 +57,10 @@ func TestApplySkillEffect_NormalEffect_AlwaysTriggered(t *testing.T) {
 	engine, state, agent, skill := setupLatentEffectTest(t, false)
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       0.8,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 0.8,
-		IsPerfect:      false,
+		Completed: true,
+		WPM:       60.0,
+		Score:     80,
+		IsPerfect: false,
 	}
 
 	initialHP := state.Enemy.HP
@@ -115,12 +109,10 @@ func TestApplySkillEffect_MultipleLatentEffects_IndependentTrigger(t *testing.T)
 	state.Player.TakeDamage(50)
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       1.0,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
-		IsPerfect:      true,
+		Completed: true,
+		WPM:       60.0,
+		Score:     100,
+		IsPerfect: true,
 	}
 
 	initialEnemyHP := state.Enemy.HP
@@ -146,19 +138,17 @@ func TestApplySkillEffectWithEcho_LatentEffect_PerfectInherited(t *testing.T) {
 	engine, state, agent, skill := setupLatentEffectTest(t, true)
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       1.0,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
-		IsPerfect:      true,
+		Completed: true,
+		WPM:       60.0,
+		Score:     100,
+		IsPerfect: true,
 	}
 
 	initialHP := state.Enemy.HP
 	// 2回発動（エコー）
-	totalEffect := engine.ApplySkillEffectWithEcho(state, agent, skill, typingResult, 2)
+	totalResult := engine.ApplySkillEffectWithEcho(state, agent, skill, typingResult, 2)
 
-	if totalEffect == 0 {
+	if totalResult.TotalDamage == 0 {
 		t.Error("エコースキルで潜在効果が2回発動してダメージを与えるべき")
 	}
 	if state.Enemy.HP >= initialHP {
@@ -172,21 +162,19 @@ func TestApplySkillEffectWithCombo_LatentEffect_PerfectInherited(t *testing.T) {
 	engine, state, agent, skill := setupLatentEffectTest(t, true)
 
 	typingResult := &typing.TypingResult{
-		Completed:      true,
-		WPM:            60.0,
-		Accuracy:       1.0,
-		SpeedFactor:    1.0,
-		AccuracyFactor: 1.0,
-		IsPerfect:      true,
+		Completed: true,
+		WPM:       60.0,
+		Score:     100,
+		IsPerfect: true,
 	}
 
 	initialHP := state.Enemy.HP
 	// DoubleCast経路: ApplySkillEffectWithComboを2回呼び出し
-	effect1 := engine.ApplySkillEffectWithCombo(state, agent, skill, typingResult, 0)
-	effect2 := engine.ApplySkillEffectWithCombo(state, agent, skill, typingResult, 0)
+	result1 := engine.ApplySkillEffectWithCombo(state, agent, skill, typingResult, 0)
+	result2 := engine.ApplySkillEffectWithCombo(state, agent, skill, typingResult, 0)
 
-	if effect1 == 0 || effect2 == 0 {
-		t.Errorf("DoubleCastの両方の発動で潜在効果がダメージを与えるべき: effect1=%d, effect2=%d", effect1, effect2)
+	if result1.TotalDamage == 0 || result2.TotalDamage == 0 {
+		t.Errorf("DoubleCastの両方の発動で潜在効果がダメージを与えるべき: effect1=%d, effect2=%d", result1.TotalDamage, result2.TotalDamage)
 	}
 	if state.Enemy.HP >= initialHP {
 		t.Error("DoubleCastの追加発動でも潜在効果が発動するべき")

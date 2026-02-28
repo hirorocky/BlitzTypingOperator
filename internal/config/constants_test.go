@@ -22,13 +22,6 @@ func TestBattleConstants(t *testing.T) {
 		}
 	})
 
-	t.Run("AccuracyPenaltyThresholdが0.5である", func(t *testing.T) {
-		expected := 0.5
-		if AccuracyPenaltyThreshold != expected {
-			t.Errorf("AccuracyPenaltyThresholdが期待値と異なります: got %f, want %f", AccuracyPenaltyThreshold, expected)
-		}
-	})
-
 	t.Run("MinEnemyAttackIntervalが500msである", func(t *testing.T) {
 		expected := 500 * time.Millisecond
 		if MinEnemyAttackInterval != expected {

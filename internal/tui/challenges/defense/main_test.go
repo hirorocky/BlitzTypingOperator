@@ -100,8 +100,9 @@ func TestDefense_CompleteByAttackで自動終了(t *testing.T) {
 	if result.Status != domain.ChallengeSuccess {
 		t.Errorf("Status = %d, want ChallengeSuccess", result.Status)
 	}
-	if result.Accuracy != defenseRate {
-		t.Errorf("Accuracy = %f, want %f（防御率がAccuracyに反映されるべき）", result.Accuracy, defenseRate)
+	expectedScore := int(defenseRate * 100)
+	if result.Score != expectedScore {
+		t.Errorf("Score = %d, want %d（防御率がScoreに反映されるべき）", result.Score, expectedScore)
 	}
 }
 

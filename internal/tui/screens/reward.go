@@ -325,10 +325,10 @@ func (s *RewardScreen) renderTypingStatsSection() string {
 
 	if s.result.Stats != nil {
 		avgWPM := s.result.Stats.GetAverageWPM()
-		avgAccuracy := s.result.Stats.GetAverageAccuracy()
+		avgScore := s.result.Stats.GetAverageScore()
 
 		items = append(items, itemStyle.Render(fmt.Sprintf("  平均WPM: %.1f", avgWPM)))
-		items = append(items, itemStyle.Render(fmt.Sprintf("  平均正確性: %.1f%%", avgAccuracy)))
+		items = append(items, itemStyle.Render(fmt.Sprintf("  平均スコア: %.0f", avgScore)))
 		items = append(items, itemStyle.Render(fmt.Sprintf("  総ダメージ: %d", s.result.Stats.TotalDamageDealt)))
 		items = append(items, itemStyle.Render(fmt.Sprintf("  被ダメージ: %d", s.result.Stats.TotalDamageTaken)))
 		if s.result.Stats.TotalHealAmount > 0 {

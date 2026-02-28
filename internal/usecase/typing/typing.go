@@ -25,10 +25,6 @@ const (
 	DifficultyHard Difficulty = 3
 )
 
-// SpeedFactorMax は速度係数の上限です。
-
-const SpeedFactorMax = 2.0
-
 // ==================== チャレンジ生成（Task 6.1） ====================
 
 // Dictionary はタイピング辞書を表す構造体です。
@@ -210,19 +206,10 @@ type TypingResult struct {
 	Completed bool
 
 	// WPM はWords Per Minuteです。
-
 	WPM float64
 
-	// Accuracy は正確性（0.0〜1.0）です。
-
-	Accuracy float64
-
-	// SpeedFactor は速度係数（上限2.0）です。
-
-	SpeedFactor float64
-
-	// AccuracyFactor は正確性係数です。
-	AccuracyFactor float64
+	// Score はタイピングスコア（0-100）です。int(accuracy×100)で算出。
+	Score int
 
 	// CompletionTime は完了までの時間です。
 	CompletionTime time.Duration
@@ -293,20 +280,10 @@ func (e *Evaluator) CompleteChallenge(state *ChallengeState) *TypingResult {
 		accuracy = float64(state.CorrectCount) / float64(state.TotalInputCount)
 	}
 
-	speedFactor := 1.0
-	if completionTime.Seconds() > 0 {
-		speedFactor = state.Challenge.TimeLimit.Seconds() / completionTime.Seconds()
-	}
-	if speedFactor > SpeedFactorMax {
-		speedFactor = SpeedFactorMax
-	}
-
 	return &TypingResult{
 		Completed:      state.CurrentIndex >= len(state.Challenge.Text),
 		WPM:            wpm,
-		Accuracy:       accuracy,
-		SpeedFactor:    speedFactor,
-		AccuracyFactor: accuracy,
+		Score:          int(accuracy * 100),
 		CompletionTime: completionTime,
 		Timeout:        false,
 	}
@@ -349,9 +326,7 @@ func (e *Evaluator) GetTimeoutResult(state *ChallengeState) *TypingResult {
 	return &TypingResult{
 		Completed:      false,
 		WPM:            0,
-		Accuracy:       0,
-		SpeedFactor:    0,
-		AccuracyFactor: 0,
+		Score:          0,
 		CompletionTime: state.Challenge.TimeLimit,
 		Timeout:        true,
 	}

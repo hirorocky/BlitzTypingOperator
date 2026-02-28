@@ -28,17 +28,18 @@ When プレイヤーがバトルを開始する, the battle system shall:
 **種別**: Ubiquitous
 
 The battle system shall calculate skill effects using:
-- HP変化量 = (base + stat_coef × STAT) × SpeedFactor × AccuracyFactor
+- HP変化量 = base + stat_coef × STAT
 - 各スキルは複数のEffectsを持ち、それぞれが独立して発動判定される
 - LUKによる確率補正: 補正後確率 = ベース確率 + LUK × luk_factor
 - 潜在効果（IsLatent=true）はパーフェクトタイピング時にのみ発動判定される
 - スキル使用可否判定: ManaCost > 0 かつ Mana < ManaCost の場合、スキル選択不可
+- EffectTableのDamageMultiplierによる最終倍率が適用される
 
 **受け入れ基準**:
-1. 正確性50%未満で効果半減
-2. ダメージは最低1保証
-3. Effectのtargetに応じた対象（enemy→敵、self→自分）
-4. 潜在効果（IsLatent=true）はIsPerfect=true時のみ発動判定（false時はスキップ）
+1. ダメージは最低1保証
+2. Effectのtargetに応じた対象（enemy→敵、self→自分）
+3. 潜在効果（IsLatent=true）はIsPerfect=true時のみ発動判定（false時はスキップ）
+4. ダメージ計算はScoreに依存しない（base + stat_coef × STATのみ）
 
 ### REQ-BATTLE-3: 敵攻撃システム
 **種別**: State-Driven
@@ -90,8 +91,7 @@ When 敵HP=0, the battle system shall end with victory.
 
 **ルール**:
 1. 乱数生成器は初期化時にシード設定
-2. 正確性ペナルティ閾値は0.5固定
-3. スキルはEffects配列で複数効果を持つ（カテゴリ廃止）
+2. スキルはEffects配列で複数効果を持つ（カテゴリ廃止）
 
 ### BattleState
 
@@ -146,24 +146,37 @@ stateDiagram-v2
 ### パーフェクトタイピング判定
 
 **定義**:
-- パーフェクトタイピング: ChallengeStatus=Success かつ Accuracy >= 1.0（ミスなし）の非ディフェンスタイプチャレンジ
-- ディフェンスタイプは除外（Accuracyが防御率を表すため）
+- パーフェクトタイピング: ChallengeStatus==ChallengePerfect の非ディフェンスタイプチャレンジ
+- ディフェンスタイプはChallengePerfectにならない（常にSuccess）
 
 **処理フロー**:
-1. チャレンジ完了時（Success時）に、Accuracy >= 1.0 かつディフェンスタイプでない場合、パーフェクトと判定
-2. パーフェクト判定はコンボ判定（既存のAccuracy >= 1.0チェック）と同一タイミング
-3. パーフェクト時は "PERFECT!" ASCIIアート演出を表示（約0.5秒間、解放状態に関係なく常に表示）
-4. TUI層で`latent_effect`機能の解放状態をチェック:
+1. チャレンジ完了時にStatus==ChallengePerfectかどうかで判定
+2. パーフェクト判定はコンボ判定と同一タイミング
+3. TUI層で`latent_effect`機能の解放状態をチェック:
    - 解放済みの場合: `typingResult.IsPerfect = true`
    - 未解放の場合: `typingResult.IsPerfect = false` にリセット
-5. BattleEngineへ渡すTypingResultはIsPerfect値を反映
+4. BattleEngineへ渡すTypingResultはIsPerfect値を反映
 
 ### チャレンジ完了時の効果適用
 
 **ChallengeStatusと効果適用の対応**:
-- **Success**: ChallengeOutputからTypingResultへ変換し、既存の効果適用パイプライン（ApplySkillEffectWithCombo）を実行。コンボ・パッシブ判定も実行
+- **Success/Perfect**: ChallengeOutputからTypingResultへ変換し、効果適用パイプライン（ApplySkillEffectWithCombo）を実行。コンボ・パッシブ判定も実行。ApplySkillEffectはSkillEffectResult（通常効果/潜在効果の分離記録）を返す
 - **Fail**: 効果なし。タイムアウト時
 - **Cancel**: 効果なし。ESCキー押下時
+
+**SkillEffectResult**:
+- TotalDamage: 総HP変動量（EffectTable補正後の最終値）
+- NormalEffects: 通常効果の詳細リスト（EffectDetail）
+- LatentEffects: 潜在効果の詳細リスト（EffectDetail）
+- EffectDetailのHPChangeはEffectTable補正前の素の値（base + stat_coef × STAT）を記録
+- バフ/デバフ効果はDescriptionフィールドに説明テキストを記録
+
+**リザルト表示**:
+- 使用スキルのエージェントボックスにリザルト情報をオーバーレイ表示
+- ステータス文字列（"Perfect"/"Success"/"Failed"/"Canceled"）を表示
+- 通常効果/潜在効果を個別に表示（マージしない。EffectTable補正前の素の値）
+- リザルト表示は5秒経過またはカーソル移動で閉じる
+- リザルト表示中も他エージェントのスキル選択・使用が可能
 
 **ディフェンスタイプの特殊処理**:
 - チャレンジ終了後の効果適用パイプライン・コンボ・パッシブ判定はすべてスキップ

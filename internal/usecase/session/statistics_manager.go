@@ -151,17 +151,17 @@ func (m *StatisticsManager) GetWinRate() float64 {
 }
 
 // RecordTypingStats はバトル中のタイピング統計を記録します（簡易版）。
-func (m *StatisticsManager) RecordTypingStats(wpm float64, accuracy float64) {
+func (m *StatisticsManager) RecordTypingStats(wpm float64, score float64) {
 	m.typing.TotalSessions++
 	m.typing.TotalWPM += wpm
 	if int(wpm) > m.typing.MaxWPM {
 		m.typing.MaxWPM = int(wpm)
 	}
-	// 正確性からCorrect/Missedを概算
-	correctCount := int(accuracy)
+	// スコアからCorrect/Missedを概算
+	correctCount := int(score)
 	m.typing.TotalCorrectCharacters += correctCount
 	m.typing.TotalMissedCharacters += 100 - correctCount
-	if accuracy >= 100.0 {
+	if score >= 100.0 {
 		m.typing.PerfectAccuracyCount++
 	}
 }

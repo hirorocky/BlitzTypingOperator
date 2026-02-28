@@ -4,7 +4,7 @@
       "id": "slime",
       "name": "スライム",
       "rank": 1,
-      "base_hp": 50,
+      "base_hp": 200,
       "normal_action_pattern": ["act_slime_attack_phys"],
       "enhanced_action_pattern": [
         "act_slime_attack_phys",
@@ -20,7 +20,7 @@
       "id": "bat",
       "name": "コウモリ",
       "rank": 1,
-      "base_hp": 40,
+      "base_hp": 300,
       "normal_action_pattern": ["act_bat_attack_phys", "act_bat_attack_phys"],
       "enhanced_action_pattern": [
         "act_bat_attack_phys",
@@ -36,7 +36,7 @@
       "id": "goblin",
       "name": "ゴブリン",
       "rank": 1,
-      "base_hp": 80,
+      "base_hp": 400,
       "normal_action_pattern": [
         "act_goblin_attack_phys",
         "act_goblin_attack_phys"

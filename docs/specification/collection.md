@@ -14,7 +14,7 @@
 
 When タイピング結果が記録される, the collection system shall check:
 - WPMマイルストーン: 50, 80, 100, 120
-- 正確性100%達成
+- スコア100達成（パーフェクト）
 
 **受け入れ基準**:
 1. 各閾値到達時に実績解除
@@ -113,7 +113,7 @@ The collection system shall track collected items:
 | wpm_80 | タイピング上手 | WPM 80達成 |
 | wpm_100 | タイピングマスター | WPM 100達成 |
 | wpm_120 | タイピングレジェンド | WPM 120達成 |
-| perfect_accuracy | 完璧主義者 | 正確性100% |
+| perfect_accuracy | 完璧主義者 | スコア100達成 |
 
 **バトル実績**:
 | ID | 名前 | 条件 |
@@ -140,7 +140,7 @@ The collection system shall track collected items:
 
 ## 関連ドメイン
 
-- **Typing**: WPM/正確性に基づく実績トリガー
+- **Typing**: WPM/スコアに基づく実績トリガー
 - **Battle**: 敵撃破/レベル/ノーダメージに基づく実績トリガー
 - **Game Loop**: 実績状態の永続化、エンカウント敵の追跡
 - **Agent**: インベントリからのコア/スキル/チェイン効果取得

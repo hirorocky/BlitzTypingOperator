@@ -10,6 +10,7 @@ import (
 	"hirorocky/type-battle/internal/domain"
 	"hirorocky/type-battle/internal/tui/components"
 	"hirorocky/type-battle/internal/tui/styles"
+	"hirorocky/type-battle/internal/usecase/combat"
 	"hirorocky/type-battle/internal/usecase/combat/recast"
 
 	"github.com/charmbracelet/lipgloss"
@@ -27,15 +28,11 @@ func (s *BattleScreen) View() string {
 	builder.WriteString(enemyArea)
 	builder.WriteString("\n")
 
-	// 中央: エージェントエリア / タイピングエリア / 結果表示 / パーフェクト演出
+	// 中央: エージェントエリア / タイピングエリア / 結果表示
 	if s.showingResult {
 		// 結果表示（WIN/LOSE ASCIIアート）
 		resultArea := s.renderResultArea()
 		builder.WriteString(resultArea)
-	} else if s.showingPerfect {
-		// パーフェクト演出（PERFECT! ASCIIアート）
-		perfectArea := s.renderPerfectArea()
-		builder.WriteString(perfectArea)
 	} else if s.activeChallenge != nil {
 		// タイピングチャレンジ（ChallengeModelのViewに委譲）
 		challengeArea := s.renderChallengeArea()
@@ -255,86 +252,15 @@ func (s *BattleScreen) renderAgentArea() string {
 			cardContent.WriteString(nameStyle.Render(agent.GetCoreTypeName()))
 			cardContent.WriteString("\n")
 
-			// パッシブスキル表示（コア特性から）- ShortDescriptionを使用
-			if agent.Core != nil && agent.Core.PassiveSkill.ID != "" {
-				passiveNotification := components.NewPassiveSkillNotification(&agent.Core.PassiveSkill)
-				shortDesc := passiveNotification.GetShortDescription()
-				passiveStyle := lipgloss.NewStyle().
-					Foreground(styles.ColorBuff).
-					Bold(true)
-				cardContent.WriteString(passiveStyle.Render(fmt.Sprintf("★ %s", shortDesc)))
-				cardContent.WriteString("\n")
-			}
+			// リザルト表示中のエージェントかチェック
+			showingResult := s.resultDisplay != nil && s.resultDisplay.AgentIndex == i
 
-			// リキャスト状態表示
-			if recastState != nil {
-				recastBar := components.NewRecastProgressBar()
-				recastBar.SetProgress(recastState.RemainingSeconds, recastState.TotalSeconds)
-				cardContent.WriteString(lipgloss.NewStyle().Foreground(styles.ColorWarning).Render("⏳ "))
-				cardContent.WriteString(recastBar.RenderCompact(10))
-				cardContent.WriteString("\n")
-			}
-
-			// エージェントのスキル一覧（2行表示）
-			// 待機中チェイン効果を取得（発動中の強調表示判定用）
-			pendingChain := s.chainEffectManager.GetPendingEffectForAgent(i)
-
-			agentSkills := s.getSkillsForAgent(i)
-			for j, slot := range agentSkills {
-				// ディフェンススキル未解放時は非表示
-				if !s.isDefenseSkillUnlocked() && slot.Skill.GetChallengeType() == domain.ChallengeTypeDefense {
-					continue
-				}
-
-				isSkillSelected := isSelected && j == s.getSelectedSkillInAgent(i)
-
-				// スキルアイコン
-				icon := slot.Skill.Icon()
-
-				// スキル名のスタイル
-				var skillStyle lipgloss.Style
-				if isSkillSelected {
-					skillStyle = lipgloss.NewStyle().
-						Bold(true).
-						Foreground(styles.ColorSelectedFg).
-						Background(styles.ColorSelectedBg)
-				} else if !slot.IsReady() || recastState != nil {
-					// クールダウン中またはリキャスト中は淡い色
-					skillStyle = lipgloss.NewStyle().Foreground(styles.ColorSubtle)
-				} else if s.isManaSystemUnlocked() && slot.Skill.Type.ManaCost > 0 && s.player.Mana < slot.Skill.Type.ManaCost {
-					// マナ不足時は淡い色（マナシステム解放時のみ判定）
-					skillStyle = lipgloss.NewStyle().Foreground(styles.ColorSubtle)
-				} else {
-					skillStyle = lipgloss.NewStyle().Foreground(styles.ColorSecondary)
-				}
-
-				prefix := "  "
-				if isSkillSelected {
-					prefix = "> "
-				}
-
-				// 1行目: プレフィックス + アイコン + スキル名
-				cardContent.WriteString(skillStyle.Render(fmt.Sprintf("%s%s %s", prefix, icon, slot.Skill.Name())))
-				cardContent.WriteString("\n")
-
-				// 2行目: チェイン効果（あれば）または空行
-				if slot.Skill.HasChainEffect() {
-					chainBadge := components.NewChainEffectBadge(slot.Skill.ChainEffect)
-					// このスキルのチェイン効果が発動中かチェック
-					// リキャスト中 かつ 待機中チェイン効果がこのスキルのものなら発動中
-					isChainActive := pendingChain != nil &&
-						pendingChain.Effect.Type == slot.Skill.ChainEffect.Type
-					cardContent.WriteString("    ") // インデント（prefixと同じ幅 + アイコン分）
-					if isChainActive {
-						cardContent.WriteString(chainBadge.RenderActive())
-					} else {
-						cardContent.WriteString(chainBadge.RenderWithValue())
-					}
-					cardContent.WriteString("\n")
-				} else {
-					// チェイン効果がなくても空行を出力（高さを揃えるため）
-					cardContent.WriteString("\n")
-				}
+			if showingResult {
+				// リザルト表示オーバーレイ
+				s.renderResultOverlay(&cardContent, s.resultDisplay)
+			} else {
+				// 通常のスキル一覧表示
+				s.renderAgentSkills(&cardContent, i, isSelected, recastState)
 			}
 		} else {
 			// 空スロット
@@ -507,26 +433,6 @@ func (s *BattleScreen) renderResultArea() string {
 	return areaStyle.Render(centeredArt)
 }
 
-// renderPerfectArea はパーフェクト演出エリアを描画します。
-func (s *BattleScreen) renderPerfectArea() string {
-	perfectArt := s.perfectRenderer.RenderPerfect()
-
-	// 中央揃え
-	centeredArt := lipgloss.NewStyle().
-		Width(s.width - 8).
-		Align(lipgloss.Center).
-		Render(perfectArt)
-
-	// エリアボックス
-	areaStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorPrimary).
-		Padding(2, 2).
-		Width(s.width - 4)
-
-	return areaStyle.Render(centeredArt)
-}
-
 // renderChallengeArea はチャレンジ中のタイピングエリアを描画します。
 // ChallengeModelのView()に委譲し、ボックスで囲みます。
 func (s *BattleScreen) renderChallengeArea() string {
@@ -595,6 +501,153 @@ func (s *BattleScreen) renderEnemyActionBar(remainingSeconds float64, ratio floa
 		textStyle.Render(timeText) +
 		barStyle.Render(afterText) +
 		bracketStyle.Render("]")
+}
+
+// ==================== エージェントカード内表示 ====================
+
+// renderAgentSkills はエージェントカード内のスキル一覧を描画します。
+func (s *BattleScreen) renderAgentSkills(builder *strings.Builder, agentIdx int, isSelected bool, recastState *recast.RecastState) {
+	agent := s.equippedAgents[agentIdx]
+
+	// パッシブスキル表示（コア特性から）- ShortDescriptionを使用
+	if agent.Core != nil && agent.Core.PassiveSkill.ID != "" {
+		passiveNotification := components.NewPassiveSkillNotification(&agent.Core.PassiveSkill)
+		shortDesc := passiveNotification.GetShortDescription()
+		passiveStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorBuff).
+			Bold(true)
+		builder.WriteString(passiveStyle.Render(fmt.Sprintf("★ %s", shortDesc)))
+		builder.WriteString("\n")
+	}
+
+	// リキャスト状態表示
+	if recastState != nil {
+		recastBar := components.NewRecastProgressBar()
+		recastBar.SetProgress(recastState.RemainingSeconds, recastState.TotalSeconds)
+		builder.WriteString(lipgloss.NewStyle().Foreground(styles.ColorWarning).Render("⏳ "))
+		builder.WriteString(recastBar.RenderCompact(10))
+		builder.WriteString("\n")
+	}
+
+	// スキル一覧
+	pendingChain := s.chainEffectManager.GetPendingEffectForAgent(agentIdx)
+
+	agentSkills := s.getSkillsForAgent(agentIdx)
+	for j, slot := range agentSkills {
+		// ディフェンススキル未解放時は非表示
+		if !s.isDefenseSkillUnlocked() && slot.Skill.GetChallengeType() == domain.ChallengeTypeDefense {
+			continue
+		}
+
+		isSkillSelected := isSelected && j == s.getSelectedSkillInAgent(agentIdx)
+
+		icon := slot.Skill.Icon()
+
+		var skillStyle lipgloss.Style
+		if isSkillSelected {
+			skillStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(styles.ColorSelectedFg).
+				Background(styles.ColorSelectedBg)
+		} else if !slot.IsReady() || recastState != nil {
+			skillStyle = lipgloss.NewStyle().Foreground(styles.ColorSubtle)
+		} else if s.isManaSystemUnlocked() && slot.Skill.Type.ManaCost > 0 && s.player.Mana < slot.Skill.Type.ManaCost {
+			skillStyle = lipgloss.NewStyle().Foreground(styles.ColorSubtle)
+		} else {
+			skillStyle = lipgloss.NewStyle().Foreground(styles.ColorSecondary)
+		}
+
+		prefix := "  "
+		if isSkillSelected {
+			prefix = "> "
+		}
+
+		builder.WriteString(skillStyle.Render(fmt.Sprintf("%s%s %s", prefix, icon, slot.Skill.Name())))
+		builder.WriteString("\n")
+
+		if slot.Skill.HasChainEffect() {
+			chainBadge := components.NewChainEffectBadge(slot.Skill.ChainEffect)
+			isChainActive := pendingChain != nil &&
+				pendingChain.Effect.Type == slot.Skill.ChainEffect.Type
+			builder.WriteString("    ")
+			if isChainActive {
+				builder.WriteString(chainBadge.RenderActive())
+			} else {
+				builder.WriteString(chainBadge.RenderWithValue())
+			}
+			builder.WriteString("\n")
+		} else {
+			builder.WriteString("\n")
+		}
+	}
+}
+
+// renderResultOverlay はリザルト表示をエージェントカード内に描画します。
+func (s *BattleScreen) renderResultOverlay(builder *strings.Builder, rd *ResultDisplayState) {
+	// ステータス文字列
+	statusText, statusColor := s.getStatusDisplay(rd.Status)
+	statusStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(statusColor)
+	builder.WriteString(statusStyle.Render(statusText))
+	builder.WriteString("\n\n")
+
+	if rd.EffectResult == nil {
+		return
+	}
+
+	// 通常効果の個別表示
+	effectStyle := lipgloss.NewStyle().Foreground(styles.ColorSecondary)
+	for _, e := range rd.EffectResult.NormalEffects {
+		text := s.formatEffect(e)
+		if text != "" {
+			builder.WriteString(effectStyle.Render(text))
+			builder.WriteString("\n")
+		}
+	}
+
+	// 潜在効果の個別表示
+	latentStyle := lipgloss.NewStyle().Foreground(styles.ColorPrimary).Bold(true)
+	for _, e := range rd.EffectResult.LatentEffects {
+		text := s.formatEffect(e)
+		if text != "" {
+			builder.WriteString(latentStyle.Render(fmt.Sprintf("潜在: %s", text)))
+			builder.WriteString("\n")
+		}
+	}
+}
+
+// getStatusDisplay はChallengeStatusに対応する表示文字列と色を返します。
+func (s *BattleScreen) getStatusDisplay(status domain.ChallengeStatus) (string, lipgloss.Color) {
+	switch status {
+	case domain.ChallengePerfect:
+		return "Perfect", styles.ColorPrimary
+	case domain.ChallengeSuccess:
+		return "Success", styles.ColorHPHigh
+	case domain.ChallengeFail:
+		return "Failed", styles.ColorDamage
+	case domain.ChallengeCancel:
+		return "Canceled", styles.ColorSubtle
+	default:
+		return "Unknown", styles.ColorSubtle
+	}
+}
+
+// formatEffect は単一のEffectDetailを表示用文字列にします。
+func (s *BattleScreen) formatEffect(e combat.EffectDetail) string {
+	if e.Description != "" {
+		return e.Description
+	}
+	if e.TargetIsEnemy {
+		if e.HPChange < 0 {
+			return fmt.Sprintf("敵に%dダメージ", -e.HPChange)
+		}
+	} else {
+		if e.HPChange > 0 {
+			return fmt.Sprintf("%d回復", e.HPChange)
+		}
+	}
+	return ""
 }
 
 // ==================== UIヘルパー ====================

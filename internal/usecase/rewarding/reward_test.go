@@ -53,7 +53,7 @@ func TestBattleReward_Victory_ShowsRewardScreen(t *testing.T) {
 
 	stats := &BattleStatistics{
 		TotalWPM:         80.5,
-		TotalAccuracy:    0.95,
+		TotalScore:       95,
 		ClearTime:        2*time.Minute + 30*time.Second,
 		TotalTypingCount: 15,
 	}
@@ -77,7 +77,7 @@ func TestBattleReward_Victory_ShowsStatistics(t *testing.T) {
 
 	stats := &BattleStatistics{
 		TotalWPM:         80.5,
-		TotalAccuracy:    0.95,
+		TotalScore:       95,
 		ClearTime:        2*time.Minute + 30*time.Second,
 		TotalTypingCount: 15,
 	}
@@ -87,8 +87,8 @@ func TestBattleReward_Victory_ShowsStatistics(t *testing.T) {
 	if result.Stats.TotalWPM != 80.5 {
 		t.Errorf("WPMが期待値と異なる: got %f, want %f", result.Stats.TotalWPM, 80.5)
 	}
-	if result.Stats.TotalAccuracy != 0.95 {
-		t.Errorf("正確性が期待値と異なる: got %f, want %f", result.Stats.TotalAccuracy, 0.95)
+	if result.Stats.TotalScore != 95 {
+		t.Errorf("スコアが期待値と異なる: got %d, want %d", result.Stats.TotalScore, 95)
 	}
 	if result.Stats.ClearTime != 2*time.Minute+30*time.Second {
 		t.Errorf("クリアタイムが期待値と異なる: got %v", result.Stats.ClearTime)
@@ -100,9 +100,9 @@ func TestBattleReward_Defeat_NoRewardScreen(t *testing.T) {
 	calculator := NewRewardCalculator(nil, nil, nil)
 
 	stats := &BattleStatistics{
-		TotalWPM:      50.0,
-		TotalAccuracy: 0.80,
-		ClearTime:     3 * time.Minute,
+		TotalWPM:   50.0,
+		TotalScore: 80,
+		ClearTime:  3 * time.Minute,
 	}
 
 	result := calculator.CreateRewardResult(false, stats, 10)
@@ -448,7 +448,7 @@ func TestCalculateGuaranteedReward_EnemyWithDropCategory(t *testing.T) {
 
 	stats := &BattleStatistics{
 		TotalWPM:         80.0,
-		TotalAccuracy:    0.95,
+		TotalScore:       95,
 		TotalTypingCount: 10,
 	}
 
@@ -506,7 +506,7 @@ func TestCalculateGuaranteedReward_SkillDrop(t *testing.T) {
 
 	stats := &BattleStatistics{
 		TotalWPM:         80.0,
-		TotalAccuracy:    0.95,
+		TotalScore:       95,
 		TotalTypingCount: 10,
 	}
 
@@ -546,7 +546,7 @@ func TestCalculateGuaranteedReward_PanicOnMissingDropConfig(t *testing.T) {
 
 	stats := &BattleStatistics{
 		TotalWPM:         80.0,
-		TotalAccuracy:    0.95,
+		TotalScore:       95,
 		TotalTypingCount: 10,
 	}
 
@@ -582,7 +582,7 @@ func TestCalculateGuaranteedReward_PanicOnInvalidTypeID(t *testing.T) {
 
 	stats := &BattleStatistics{
 		TotalWPM:         80.0,
-		TotalAccuracy:    0.95,
+		TotalScore:       95,
 		TotalTypingCount: 10,
 	}
 
@@ -990,7 +990,7 @@ func TestCalculateGuaranteedRewardWithProgress(t *testing.T) {
 
 	stats := &BattleStatistics{
 		TotalWPM:         80.0,
-		TotalAccuracy:    0.95,
+		TotalScore:       95,
 		TotalTypingCount: 10,
 	}
 
@@ -1059,7 +1059,7 @@ func TestCalculateGuaranteedRewardWithProgress_RankUnlock(t *testing.T) {
 
 	stats := &BattleStatistics{
 		TotalWPM:         80.0,
-		TotalAccuracy:    0.95,
+		TotalScore:       95,
 		TotalTypingCount: 10,
 	}
 

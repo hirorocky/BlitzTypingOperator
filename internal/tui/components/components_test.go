@@ -430,7 +430,7 @@ func TestConfirmDialogHandleKeyEscape(t *testing.T) {
 	dialog.Show()
 
 	result := dialog.HandleKey("esc")
-	if result != ConfirmResultCancelled {
+	if result != ConfirmResultCanceled {
 		t.Errorf("Escapeで正しい結果が返されませんでした: got %v", result)
 	}
 }

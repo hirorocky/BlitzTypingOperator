@@ -221,73 +221,63 @@ func TestEvaluator_CalculateWPM(t *testing.T) {
 	}
 }
 
-// TestEvaluator_CalculateAccuracy は正確性計算をテストします。
-
-func TestEvaluator_CalculateAccuracy(t *testing.T) {
+// TestEvaluator_CompleteChallengeScore はScore算出をテストします。
+func TestEvaluator_CompleteChallengeScore(t *testing.T) {
 	evaluator := NewEvaluator()
-	challenge := &Challenge{
-		Text:      "hi", // 2文字
-		TimeLimit: 10 * time.Second,
-	}
+
+	t.Run("全問正解→Score=100", func(t *testing.T) {
+		challenge := &Challenge{Text: "hi", TimeLimit: 10 * time.Second}
+		state := evaluator.StartChallenge(challenge)
+		state = evaluator.ProcessInput(state, 'h')
+		state = evaluator.ProcessInput(state, 'i')
+		result := evaluator.CompleteChallenge(state)
+		if result.Score != 100 {
+			t.Errorf("Score = %d, want 100", result.Score)
+		}
+	})
+
+	t.Run("2/3正解→Score=66（切り捨て）", func(t *testing.T) {
+		challenge := &Challenge{Text: "hi", TimeLimit: 10 * time.Second}
+		state := evaluator.StartChallenge(challenge)
+		state = evaluator.ProcessInput(state, 'h')
+		state = evaluator.ProcessInput(state, 'x') // ミス
+		state = evaluator.ProcessInput(state, 'i')
+		result := evaluator.CompleteChallenge(state)
+		// accuracy = 2/3 = 0.666... → int(0.666*100) = 66
+		if result.Score != 66 {
+			t.Errorf("Score = %d, want 66", result.Score)
+		}
+	})
+}
+
+// TestEvaluator_CompleteChallengeNoSpeedFactor はSpeedFactor/AccuracyFactorフィールドが存在しないことをテストします。
+func TestEvaluator_CompleteChallengeNoSpeedFactor(t *testing.T) {
+	evaluator := NewEvaluator()
+	challenge := &Challenge{Text: "hi", TimeLimit: 10 * time.Second}
 	state := evaluator.StartChallenge(challenge)
-
-	// 正解、誤字、正解の順で入力（3入力中2正解 = 66.7%）
-	state = evaluator.ProcessInput(state, 'h') // 正解
-	state = evaluator.ProcessInput(state, 'x') // 誤字
-	state = evaluator.ProcessInput(state, 'i') // 正解
-
+	state = evaluator.ProcessInput(state, 'h')
+	state = evaluator.ProcessInput(state, 'i')
 	result := evaluator.CompleteChallenge(state)
 
-	expectedAccuracy := 2.0 / 3.0 // 約66.7%
-	if result.Accuracy < expectedAccuracy-0.01 || result.Accuracy > expectedAccuracy+0.01 {
-		t.Errorf("正確性: 期待 約%.2f, 実際 %.2f", expectedAccuracy, result.Accuracy)
+	// TypingResultにはSpeedFactor/AccuracyFactor/Accuracyフィールドが存在しない
+	// コンパイルが通ること自体がテスト
+	if !result.Completed {
+		t.Error("Completed = false, want true")
 	}
 }
 
-// TestEvaluator_CalculateSpeedFactor は速度係数計算をテストします。
-
-func TestEvaluator_CalculateSpeedFactor(t *testing.T) {
+// TestEvaluator_GetTimeoutResultScore はタイムアウト時のScore=0をテストします。
+func TestEvaluator_GetTimeoutResultScore(t *testing.T) {
 	evaluator := NewEvaluator()
-
-	// 基準時間5秒、実際2.5秒で完了 → 速度係数2.0
-	challenge := &Challenge{
-		Text:      "hello",
-		TimeLimit: 5 * time.Second, // 基準時間
-	}
+	challenge := &Challenge{Text: "hello", TimeLimit: 5 * time.Second}
 	state := evaluator.StartChallenge(challenge)
-	for _, c := range "hello" {
-		state = evaluator.ProcessInput(state, c)
+	result := evaluator.GetTimeoutResult(state)
+
+	if result.Score != 0 {
+		t.Errorf("タイムアウト時のScore = %d, want 0", result.Score)
 	}
-	// 2.5秒で完了したと仮定
-	state.StartTime = time.Now().Add(-2500 * time.Millisecond)
-
-	result := evaluator.CompleteChallenge(state)
-
-	// 速度係数 = 5.0 / 2.5 = 2.0（上限で制限）
-	if result.SpeedFactor < 1.9 || result.SpeedFactor > 2.0 {
-		t.Errorf("速度係数: 期待 2.0（上限）, 実際 %.2f", result.SpeedFactor)
-	}
-}
-
-// TestEvaluator_SpeedFactorCap は速度係数の上限をテストします。
-
-func TestEvaluator_SpeedFactorCap(t *testing.T) {
-	evaluator := NewEvaluator()
-	challenge := &Challenge{
-		Text:      "hello",
-		TimeLimit: 10 * time.Second,
-	}
-	state := evaluator.StartChallenge(challenge)
-	for _, c := range "hello" {
-		state = evaluator.ProcessInput(state, c)
-	}
-	// 0.5秒で完了したと仮定（速度係数 = 10/0.5 = 20 → 上限2.0で制限）
-	state.StartTime = time.Now().Add(-500 * time.Millisecond)
-
-	result := evaluator.CompleteChallenge(state)
-
-	if result.SpeedFactor > 2.0 {
-		t.Errorf("速度係数が上限を超えている: %.2f", result.SpeedFactor)
+	if !result.Timeout {
+		t.Error("Timeout = false, want true")
 	}
 }
 

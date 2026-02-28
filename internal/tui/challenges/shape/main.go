@@ -188,7 +188,11 @@ func (c *shapeChallenge) processCharInput(input rune) (challenges.ChallengeModel
 	}
 
 	if c.currentIndex >= len(c.text) {
-		c.complete(domain.ChallengeSuccess)
+		if c.mistakeCount == 0 {
+			c.complete(domain.ChallengePerfect)
+		} else {
+			c.complete(domain.ChallengeSuccess)
+		}
 		return c, nil
 	}
 
@@ -236,19 +240,10 @@ func (c *shapeChallenge) complete(status domain.ChallengeStatus) {
 		wpm = (float64(c.correctCount) / completionTime.Seconds() * 60) / 5
 	}
 
-	speedFactor := 1.0
-	if completionTime.Seconds() > 0 && status == domain.ChallengeSuccess {
-		speedFactor = c.timeLimit.Seconds() / completionTime.Seconds()
-		if speedFactor > 2.0 {
-			speedFactor = 2.0
-		}
-	} else if status != domain.ChallengeSuccess {
-		speedFactor = 0
-	}
+	score := int(accuracy * 100)
 
 	c.result = &domain.ChallengeOutput{
-		Accuracy:       accuracy,
-		SpeedFactor:    speedFactor,
+		Score:          score,
 		WPM:            wpm,
 		CompletionTime: completionTime,
 		Status:         status,

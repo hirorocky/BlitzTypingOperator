@@ -243,7 +243,7 @@ func (c *defenseChallenge) CompleteByAttack() {
 		return
 	}
 	c.result = &domain.ChallengeOutput{
-		Accuracy:       c.defenseRate,
+		Score:          int(c.defenseRate * 100),
 		Status:         domain.ChallengeSuccess,
 		CompletionTime: time.Since(c.startTime),
 	}

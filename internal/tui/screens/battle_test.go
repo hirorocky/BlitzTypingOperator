@@ -1058,7 +1058,7 @@ func TestBattleScreenChainEffectTrigger(t *testing.T) {
 	screen.StartCooldown(screen.selectedSkillIdx, slot0.CooldownTotal)
 	screen.startAgentRecast(slot0.AgentIndex, slot0.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 
 	// 待機中チェイン効果があること
@@ -1073,7 +1073,7 @@ func TestBattleScreenChainEffectTrigger(t *testing.T) {
 	screen.StartCooldown(screen.selectedSkillIdx, slot1.CooldownTotal)
 	screen.startAgentRecast(slot1.AgentIndex, slot1.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 
 	// チェイン効果が発動して削除されているはず
@@ -1108,7 +1108,7 @@ func TestBattleScreenRecastCompletionPersistsChainEffect(t *testing.T) {
 	screen.StartCooldown(screen.selectedSkillIdx, slot.CooldownTotal)
 	screen.startAgentRecast(slot.AgentIndex, slot.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 
 	// チェイン効果が登録されている
@@ -1159,7 +1159,7 @@ func TestBattleScreenChainEffectTriggersAfterRecastCompletion(t *testing.T) {
 	screen.StartCooldown(screen.selectedSkillIdx, slot0.CooldownTotal)
 	screen.startAgentRecast(slot0.AgentIndex, slot0.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 
 	// チェイン効果が登録されている
@@ -1189,7 +1189,7 @@ func TestBattleScreenChainEffectTriggersAfterRecastCompletion(t *testing.T) {
 	screen.StartCooldown(screen.selectedSkillIdx, slot1.CooldownTotal)
 	screen.startAgentRecast(slot1.AgentIndex, slot1.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 
 	// エージェント0のチェイン効果が発動して消えている
@@ -1216,7 +1216,7 @@ func TestBattleScreenStartRecastClearsChainEffectForNoChainSkill(t *testing.T) {
 	screen.StartCooldown(screen.selectedSkillIdx, slot0.CooldownTotal)
 	screen.startAgentRecast(slot0.AgentIndex, slot0.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 
 	// チェイン効果が登録されている
@@ -1259,7 +1259,7 @@ func TestBattleScreenPendingChainEffectTriggersWhenOtherAgentUsesNonChainSkill(t
 	screen.StartCooldown(screen.selectedSkillIdx, slot0.CooldownTotal)
 	screen.startAgentRecast(slot0.AgentIndex, slot0.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 
 	// チェイン効果が登録されていることを確認
@@ -1277,7 +1277,7 @@ func TestBattleScreenPendingChainEffectTriggersWhenOtherAgentUsesNonChainSkill(t
 	screen.StartCooldown(screen.selectedSkillIdx, slot1.CooldownTotal)
 	screen.startAgentRecast(slot1.AgentIndex, slot1.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 
 	// エージェント0の待機中チェイン効果が発動して消費されていることを確認
@@ -1376,7 +1376,7 @@ func TestBattleScreenChainEffectTimingVerification(t *testing.T) {
 	screen.StartCooldown(screen.selectedSkillIdx, slot0.CooldownTotal)
 	screen.startAgentRecast(slot0.AgentIndex, slot0.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 
 	// 待機中チェイン効果が存在
@@ -1394,7 +1394,7 @@ func TestBattleScreenChainEffectTimingVerification(t *testing.T) {
 	screen.StartCooldown(screen.selectedSkillIdx, slot1.CooldownTotal)
 	screen.startAgentRecast(slot1.AgentIndex, slot1.Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 
 	// チェイン効果が発動している（敵にダメージが与えられている）
@@ -1613,7 +1613,7 @@ func TestDoubleCast_DoublesDamageEffect(t *testing.T) {
 	screen1.selectedSlot = 0
 	initialHP1 := enemy1.HP
 	screen1.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 	baseDamage := initialHP1 - enemy1.HP
 
@@ -1633,7 +1633,7 @@ func TestDoubleCast_DoublesDamageEffect(t *testing.T) {
 	screen2.selectedSlot = 0
 	initialHP2 := enemy2.HP
 	screen2.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 	doubleDamage := initialHP2 - enemy2.HP
 
@@ -1665,7 +1665,7 @@ func TestDoubleCast_ZeroProbability(t *testing.T) {
 	screen.selectedSlot = 0
 	initialEnemyHP := enemy.HP
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 
 	// 通常の1回分ダメージのみ
@@ -1703,7 +1703,7 @@ func TestOverheal_ConvertExcessToTempHP(t *testing.T) {
 	screen.selectedSkillIdx = 2 // 回復スキル
 	screen.selectedSlot = 2
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
-		Status: domain.ChallengeSuccess, Accuracy: 1.0, SpeedFactor: 1.0, WPM: 60,
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
 
 	// Overhealにより超過分がTempHPに変換されているはず

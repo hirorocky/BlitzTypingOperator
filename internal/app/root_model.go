@@ -553,8 +553,8 @@ func (m *RootModel) handleBattleResult(result screens.BattleResultMsg) {
 		// タイピング統計を記録（平均値を計算）
 		if result.Stats.TotalTypingCount > 0 {
 			avgWPM := result.Stats.TotalWPM / float64(result.Stats.TotalTypingCount)
-			avgAccuracy := result.Stats.TotalAccuracy / float64(result.Stats.TotalTypingCount)
-			stats.RecordTypingStats(avgWPM, avgAccuracy)
+			avgScore := float64(result.Stats.TotalScore) / float64(result.Stats.TotalTypingCount)
+			stats.RecordTypingStats(avgWPM, avgScore)
 		}
 	}
 
@@ -575,7 +575,7 @@ func (m *RootModel) handleBattleResult(result screens.BattleResultMsg) {
 		// バトル統計を変換
 		rewardStats := &rewarding.BattleStatistics{
 			TotalWPM:         result.Stats.TotalWPM,
-			TotalAccuracy:    result.Stats.TotalAccuracy,
+			TotalScore:       result.Stats.TotalScore,
 			TotalTypingCount: result.Stats.TotalTypingCount,
 			TotalDamageDealt: result.Stats.TotalDamageDealt,
 			TotalDamageTaken: result.Stats.TotalDamageTaken,

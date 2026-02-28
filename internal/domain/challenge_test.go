@@ -35,15 +35,48 @@ func TestDifficultyRateClamp(t *testing.T) {
 // === ChallengeStatus ===
 
 func TestChallengeStatusValues(t *testing.T) {
-	// 3つの状態が定義されていることを確認
-	statuses := []ChallengeStatus{ChallengeSuccess, ChallengeFail, ChallengeCancel}
-	if len(statuses) != 3 {
-		t.Errorf("ChallengeStatusは3つの値を持つべき")
+	// 4つの状態が定義されていることを確認
+	statuses := []ChallengeStatus{ChallengeSuccess, ChallengeFail, ChallengeCancel, ChallengePerfect}
+	if len(statuses) != 4 {
+		t.Errorf("ChallengeStatusは4つの値を持つべき")
 	}
 
 	// それぞれが異なることを確認
-	if ChallengeSuccess == ChallengeFail || ChallengeSuccess == ChallengeCancel || ChallengeFail == ChallengeCancel {
-		t.Errorf("ChallengeStatusの値はそれぞれ異なるべき")
+	seen := make(map[ChallengeStatus]bool)
+	for _, s := range statuses {
+		if seen[s] {
+			t.Errorf("ChallengeStatusに重複値がある: %d", s)
+		}
+		seen[s] = true
+	}
+}
+
+func TestChallengePerfect_Value(t *testing.T) {
+	// ChallengePerfectは値3であること（iota末尾、後方互換）
+	if ChallengePerfect != 3 {
+		t.Errorf("ChallengePerfect = %d, want 3", ChallengePerfect)
+	}
+}
+
+func TestIsSuccess(t *testing.T) {
+	tests := []struct {
+		name   string
+		status ChallengeStatus
+		want   bool
+	}{
+		{"Success→true", ChallengeSuccess, true},
+		{"Perfect→true", ChallengePerfect, true},
+		{"Fail→false", ChallengeFail, false},
+		{"Cancel→false", ChallengeCancel, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.status.IsSuccess()
+			if got != tt.want {
+				t.Errorf("ChallengeStatus(%d).IsSuccess() = %v, want %v", tt.status, got, tt.want)
+			}
+		})
 	}
 }
 
@@ -141,18 +174,14 @@ func TestChallengeInputValidate(t *testing.T) {
 
 func TestChallengeOutputFields(t *testing.T) {
 	output := ChallengeOutput{
-		Accuracy:       0.95,
-		SpeedFactor:    1.5,
+		Score:          95,
 		WPM:            80.0,
 		CompletionTime: 5 * time.Second,
 		Status:         ChallengeSuccess,
 	}
 
-	if output.Accuracy != 0.95 {
-		t.Errorf("Accuracy = %f, want 0.95", output.Accuracy)
-	}
-	if output.SpeedFactor != 1.5 {
-		t.Errorf("SpeedFactor = %f, want 1.5", output.SpeedFactor)
+	if output.Score != 95 {
+		t.Errorf("Score = %d, want 95", output.Score)
 	}
 	if output.WPM != 80.0 {
 		t.Errorf("WPM = %f, want 80.0", output.WPM)

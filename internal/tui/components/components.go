@@ -668,8 +668,8 @@ const (
 	ConfirmResultYes
 	// ConfirmResultNo は「いいえ」が選択されたことを表します
 	ConfirmResultNo
-	// ConfirmResultCancelled はキャンセルされたことを表します
-	ConfirmResultCancelled
+	// ConfirmResultCanceled はキャンセルされたことを表します
+	ConfirmResultCanceled
 )
 
 // ConfirmDialog は確認ダイアログを表します。
@@ -736,7 +736,7 @@ func (d *ConfirmDialog) HandleKey(key string) ConfirmResult {
 		d.Hide()
 		return d.Result
 	case "esc", "escape":
-		d.Result = ConfirmResultCancelled
+		d.Result = ConfirmResultCanceled
 		d.Hide()
 		return d.Result
 	}

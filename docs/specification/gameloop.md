@@ -78,7 +78,7 @@ When バトルが終了する, the game loop shall:
 3. 同ランク全敵撃破時に次ランクを解放
 4. ランク解放時、RankRewardマスタデータから該当報酬を検索
 5. ランクアップ報酬のコア・スキル・チェイン効果をインベントリに追加
-6. タイピング結果を統計に反映
+6. タイピング結果を統計に反映（Score(int)ベース。TotalScore蓄積、AverageScore算出。Score==100でPerfectAccuracyCount加算）
 7. 実績達成条件を自動チェック
 8. ランクアップ時にApplyRankで該当ランク以下の未解放機能をPendingTutorial化
 9. PendingTutorial機能がある場合、報酬画面にチュートリアル誘導を表示
