@@ -887,7 +887,7 @@ func TestBattleScreenHasRecastManager(t *testing.T) {
 	}
 }
 
-// TestBattleScreenSkillUsageStartsRecast はスキル使用時にリキャストが開始されることを検証します。
+// TestBattleScreenSkillUsageStartsRecast はチャレンジ完了時にリキャストが開始されることを検証します。
 func TestBattleScreenSkillUsageStartsRecast(t *testing.T) {
 	enemy := createTestEnemy()
 	player := createTestPlayer()
@@ -904,16 +904,22 @@ func TestBattleScreenSkillUsageStartsRecast(t *testing.T) {
 		t.Error("初期状態でエージェントがリキャスト中になっています")
 	}
 
-	// スキル選択時にクールダウンとリキャストを開始
+	// スキル選択（チャレンジ開始のみ）
 	screen.selectedSkillIdx = 0
-	slot := screen.skillSlots[screen.selectedSkillIdx]
-	screen.StartCooldown(screen.selectedSkillIdx, slot.CooldownTotal)
-	screen.startAgentRecast(slot.AgentIndex, slot.Skill)
-	screen.startChallenge(slot.Skill)
+	screen.startChallenge(screen.skillSlots[0].Skill)
 
-	// スキル選択直後にエージェント0がリキャスト中になっているはず
+	// スキル選択直後はまだReady（CDはチャレンジ完了時に開始される）
+	if !screen.recastManager.IsAgentReady(0) {
+		t.Error("スキル選択直後にリキャストが開始されています")
+	}
+
+	// チャレンジ完了でリキャストが開始される
+	screen.handleChallengeComplete(&domain.ChallengeOutput{
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
+	})
+
 	if screen.recastManager.IsAgentReady(0) {
-		t.Error("スキル選択後もエージェントがReady状態です")
+		t.Error("チャレンジ完了後もエージェントがReady状態です")
 	}
 }
 
@@ -1027,16 +1033,22 @@ func TestBattleScreenSkillUsageRegistersChainEffect(t *testing.T) {
 		t.Error("初期状態で待機中チェイン効果が存在します")
 	}
 
-	// スキル選択時にクールダウンとリキャストを開始（チェイン効果も登録される）
+	// スキル選択（チャレンジ開始のみ）
 	screen.selectedSkillIdx = 0
-	slot := screen.skillSlots[screen.selectedSkillIdx]
-	screen.StartCooldown(screen.selectedSkillIdx, slot.CooldownTotal)
-	screen.startAgentRecast(slot.AgentIndex, slot.Skill)
+	screen.startChallenge(screen.skillSlots[0].Skill)
 
-	// スキル選択直後にチェイン効果が登録されているはず
+	// スキル選択直後はチェイン効果が登録されていない
+	if len(screen.chainEffectManager.GetPendingEffects()) != 0 {
+		t.Error("スキル選択時にチェイン効果が登録されています")
+	}
+
+	// チャレンジ完了後にチェイン効果が登録される
+	screen.handleChallengeComplete(&domain.ChallengeOutput{
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
+	})
 	pendingEffects := screen.chainEffectManager.GetPendingEffects()
 	if len(pendingEffects) == 0 {
-		t.Error("スキル選択後にチェイン効果が登録されていません")
+		t.Error("チャレンジ完了後にチェイン効果が登録されていません")
 	}
 }
 
@@ -1052,11 +1064,9 @@ func TestBattleScreenChainEffectTrigger(t *testing.T) {
 		t.Skip("スキルスロットが足りません")
 	}
 
-	// エージェント0のスキル選択（チェイン効果を登録）→チャレンジ完了
+	// エージェント0のスキル選択→チャレンジ完了（チェイン効果が登録される）
 	screen.selectedSkillIdx = 0
-	slot0 := screen.skillSlots[screen.selectedSkillIdx]
-	screen.StartCooldown(screen.selectedSkillIdx, slot0.CooldownTotal)
-	screen.startAgentRecast(slot0.AgentIndex, slot0.Skill)
+	screen.startChallenge(screen.skillSlots[0].Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
@@ -1066,12 +1076,10 @@ func TestBattleScreenChainEffectTrigger(t *testing.T) {
 		t.Error("エージェント0のチェイン効果が登録されていません")
 	}
 
-	// エージェント1のスキル選択（チェイン効果が発動）→チャレンジ完了
+	// エージェント1のスキル選択→チャレンジ完了（チェイン効果が発動）
 	screen.selectedSkillIdx = 4 // エージェント1の最初のスキル
 	screen.selectedAgentIdx = 1
-	slot1 := screen.skillSlots[screen.selectedSkillIdx]
-	screen.StartCooldown(screen.selectedSkillIdx, slot1.CooldownTotal)
-	screen.startAgentRecast(slot1.AgentIndex, slot1.Skill)
+	screen.startChallenge(screen.skillSlots[4].Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
@@ -1102,11 +1110,9 @@ func TestBattleScreenRecastCompletionPersistsChainEffect(t *testing.T) {
 		t.Skip("スキルスロットがありません")
 	}
 
-	// エージェント0のスキル選択（チェイン効果を登録）→チャレンジ完了
+	// エージェント0のスキル選択→チャレンジ完了（チェイン効果が登録される）
 	screen.selectedSkillIdx = 0
-	slot := screen.skillSlots[screen.selectedSkillIdx]
-	screen.StartCooldown(screen.selectedSkillIdx, slot.CooldownTotal)
-	screen.startAgentRecast(slot.AgentIndex, slot.Skill)
+	screen.startChallenge(screen.skillSlots[0].Skill)
 	screen.handleChallengeComplete(&domain.ChallengeOutput{
 		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
 	})
@@ -1407,6 +1413,167 @@ func TestBattleScreenChainEffectTimingVerification(t *testing.T) {
 		if pe.AgentIndex == 0 {
 			t.Error("エージェント0のチェイン効果が発動後も残っています")
 		}
+	}
+}
+
+// ==================== 受け入れテスト: クールタイム開始タイミング変更 ====================
+
+// TestCooldownNotStartedOnSkillSelection はスキル選択時にクールダウン・リキャストが開始されないことを検証します（受け入れ基準1）。
+func TestCooldownNotStartedOnSkillSelection(t *testing.T) {
+	enemy := createTestEnemy()
+	player := createTestPlayer()
+	agents := createTestAgents()
+
+	screen := NewBattleScreen(enemy, player, agents, nil)
+
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
+	}
+
+	// スキル選択を実行（startChallengeのみ、CD/リキャスト開始なし）
+	screen.selectedSkillIdx = 0
+	slot := screen.skillSlots[screen.selectedSkillIdx]
+	screen.startChallenge(slot.Skill)
+
+	// クールダウンが開始されていないこと
+	if screen.skillSlots[0].CooldownRemaining > 0 {
+		t.Errorf("スキル選択時にクールダウンが開始されています: %f", screen.skillSlots[0].CooldownRemaining)
+	}
+
+	// リキャストが開始されていないこと
+	if !screen.recastManager.IsAgentReady(slot.AgentIndex) {
+		t.Error("スキル選択時にリキャストが開始されています")
+	}
+}
+
+// TestCooldownStartedOnChallengeComplete は各種チャレンジ完了時にクールダウン・リキャストが開始されることを検証します（受け入れ基準2-4）。
+func TestCooldownStartedOnChallengeComplete(t *testing.T) {
+	testCases := []struct {
+		name        string
+		output      *domain.ChallengeOutput
+		errorSuffix string
+	}{
+		{
+			name:        "Success",
+			output:      &domain.ChallengeOutput{Status: domain.ChallengeSuccess, Score: 80, WPM: 60},
+			errorSuffix: "成功後",
+		},
+		{
+			name:        "Perfect",
+			output:      &domain.ChallengeOutput{Status: domain.ChallengePerfect, Score: 100, WPM: 80},
+			errorSuffix: "パーフェクト後",
+		},
+		{
+			name:        "Fail",
+			output:      &domain.ChallengeOutput{Status: domain.ChallengeFail, Score: 0, WPM: 0},
+			errorSuffix: "失敗後",
+		},
+		{
+			name:        "Cancel",
+			output:      &domain.ChallengeOutput{Status: domain.ChallengeCancel, Score: 0, WPM: 0},
+			errorSuffix: "キャンセル後",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			enemy := createTestEnemy()
+			player := createTestPlayer()
+			agents := createTestAgents()
+			screen := NewBattleScreen(enemy, player, agents, nil)
+
+			if len(screen.skillSlots) == 0 {
+				t.Skip("スキルスロットがありません")
+			}
+
+			// スキル選択（チャレンジ開始のみ）
+			screen.selectedSkillIdx = 0
+			slot := screen.skillSlots[screen.selectedSkillIdx]
+			screen.startChallenge(slot.Skill)
+
+			// チャレンジ完了
+			screen.handleChallengeComplete(tc.output)
+
+			// クールダウンが開始されていること
+			if screen.skillSlots[0].CooldownRemaining <= 0 {
+				t.Errorf("チャレンジ%sにクールダウンが開始されていません", tc.errorSuffix)
+			}
+
+			// リキャストが開始されていること
+			if screen.recastManager.IsAgentReady(slot.AgentIndex) {
+				t.Errorf("チャレンジ%sにリキャストが開始されていません", tc.errorSuffix)
+			}
+		})
+	}
+}
+
+// TestCooldownStartedOnDefenseAutoEnd はディフェンスチャレンジの敵攻撃自動終了時にクールダウン・リキャストが開始されることを検証します（受け入れ基準5）。
+func TestCooldownStartedOnDefenseAutoEnd(t *testing.T) {
+	enemy := createTestEnemy()
+	player := createTestPlayer()
+	agents := createTestAgents()
+
+	screen := NewBattleScreen(enemy, player, agents, nil)
+
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
+	}
+
+	// スキル選択（チャレンジ開始のみ）
+	screen.selectedSkillIdx = 0
+	slot := screen.skillSlots[screen.selectedSkillIdx]
+	screen.startChallenge(slot.Skill)
+
+	// モックDefenseProviderでprocessEnemyAttackWithDefenseの実パスを通す
+	dp := &mockDefenseProvider{defenseRate: 0.5}
+	screen.processEnemyAttackWithDefense(dp)
+
+	// クールダウンが開始されていること
+	if screen.skillSlots[0].CooldownRemaining <= 0 {
+		t.Error("ディフェンス自動終了後にクールダウンが開始されていません")
+	}
+
+	// リキャストが開始されていること
+	if screen.recastManager.IsAgentReady(slot.AgentIndex) {
+		t.Error("ディフェンス自動終了後にリキャストが開始されていません")
+	}
+}
+
+// TestChainEffectRegisteredOnChallengeComplete はチャレンジ完了時にチェイン効果が登録されることを検証します（受け入れ基準6）。
+func TestChainEffectRegisteredOnChallengeComplete(t *testing.T) {
+	enemy := createTestEnemy()
+	player := createTestPlayer()
+	agents := createTestAgentsWithChainEffect()
+
+	screen := NewBattleScreen(enemy, player, agents, nil)
+
+	if len(screen.skillSlots) == 0 {
+		t.Skip("スキルスロットがありません")
+	}
+
+	// 初期状態で待機中チェイン効果なし
+	if len(screen.chainEffectManager.GetPendingEffects()) != 0 {
+		t.Error("初期状態で待機中チェイン効果が存在します")
+	}
+
+	// スキル選択（チャレンジ開始のみ、チェイン効果は登録されない）
+	screen.selectedSkillIdx = 0
+	slot := screen.skillSlots[screen.selectedSkillIdx]
+	screen.startChallenge(slot.Skill)
+
+	// スキル選択直後はチェイン効果が登録されていないこと
+	if len(screen.chainEffectManager.GetPendingEffects()) != 0 {
+		t.Error("スキル選択時にチェイン効果が登録されています")
+	}
+
+	// チャレンジ完了後にチェイン効果が登録されること
+	screen.handleChallengeComplete(&domain.ChallengeOutput{
+		Status: domain.ChallengeSuccess, Score: 100, WPM: 60,
+	})
+
+	pendingEffects := screen.chainEffectManager.GetPendingEffects()
+	if len(pendingEffects) == 0 {
+		t.Error("チャレンジ完了後にチェイン効果が登録されていません")
 	}
 }
 
@@ -1828,3 +1995,12 @@ func createTestAgentsWithChainEffectMultiple() []*domain.AgentModel {
 
 	return []*domain.AgentModel{agent1, agent2}
 }
+
+// mockDefenseProvider はDefenseProviderインターフェースのテスト用モック。
+type mockDefenseProvider struct {
+	defenseRate float64
+	completed   bool
+}
+
+func (m *mockDefenseProvider) DefenseRate() float64 { return m.defenseRate }
+func (m *mockDefenseProvider) CompleteByAttack()    { m.completed = true }

@@ -263,6 +263,17 @@ func (s *BattleScreen) isSkillUsable(slotIndex int) bool {
 	return true
 }
 
+// startCooldownAndRecast は選択中スキルのクールダウンとリキャストを一括で開始します。
+// チャレンジ終了時に呼ぶことで、タイピング中はCDが進行しないようにします。
+func (s *BattleScreen) startCooldownAndRecast() {
+	if s.selectedSkillIdx < 0 || s.selectedSkillIdx >= len(s.skillSlots) {
+		return
+	}
+	slot := s.skillSlots[s.selectedSkillIdx]
+	s.StartCooldown(s.selectedSkillIdx, slot.CooldownTotal)
+	s.startAgentRecast(slot.AgentIndex, slot.Skill)
+}
+
 // startAgentRecast はエージェントのリキャストを開始し、チェイン効果を登録します。
 func (s *BattleScreen) startAgentRecast(agentIndex int, skill *domain.SkillModel) {
 	if s.recastManager == nil {
@@ -486,6 +497,9 @@ func (s *BattleScreen) handleChallengeComplete(result *domain.ChallengeOutput) {
 	// チャレンジをクリア
 	s.activeChallenge = nil
 
+	// クールダウンとリキャストを開始（全終了パターン共通）
+	s.startCooldownAndRecast()
+
 	// キャンセル時は効果を適用しない
 	if result.Status == domain.ChallengeCancel {
 		s.message = "タイピングキャンセル"
@@ -668,6 +682,9 @@ func (s *BattleScreen) processEnemyAttackWithDefense(dp challenges.DefenseProvid
 	defenseRate := dp.DefenseRate()
 	dp.CompleteByAttack()
 	s.activeChallenge = nil
+
+	// クールダウンとリキャストを開始
+	s.startCooldownAndRecast()
 
 	if s.battleEngine == nil || s.battleState == nil {
 		return
