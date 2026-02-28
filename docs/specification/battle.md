@@ -159,6 +159,12 @@ stateDiagram-v2
 
 ### チャレンジ完了時の効果適用
 
+**クールダウン・リキャスト開始タイミング**:
+- スキル選択時にはCD・リキャストは開始されない（タイピング中はCDが進行しない）
+- チャレンジ終了時に開始される（Success/Perfect/Fail/Cancelすべて共通）
+- ディフェンスの敵攻撃自動終了時も同様にCD・リキャストが開始される
+- チェイン効果の登録もリキャスト開始と同時（チャレンジ終了時）
+
 **ChallengeStatusと効果適用の対応**:
 - **Success/Perfect**: ChallengeOutputからTypingResultへ変換し、効果適用パイプライン（ApplySkillEffectWithCombo）を実行。コンボ・パッシブ判定も実行。ApplySkillEffectはSkillEffectResult（通常効果/潜在効果の分離記録）を返す
 - **Fail**: 効果なし。タイムアウト時

@@ -500,12 +500,8 @@ func (s *BattleScreen) handleSkillSelection(msg tea.KeyMsg) (tea.Model, tea.Cmd)
 			skill := s.skillSlots[s.selectedSlot].Skill
 
 			// ChallengeInput を構築してチャレンジを開始
+			// クールダウンとリキャストはチャレンジ終了後に開始される（startCooldownAndRecast）
 			cmd := s.startChallenge(skill)
-
-			// スキル選択直後にクールダウンとリキャストを開始
-			slot := s.skillSlots[s.selectedSkillIdx]
-			s.StartCooldown(s.selectedSkillIdx, slot.CooldownTotal)
-			s.startAgentRecast(slot.AgentIndex, skill)
 
 			if cmd != nil {
 				return s, cmd
